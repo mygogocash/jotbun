@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 100ms
+   × the screen shows presence, AI help with uses left, the note switch and haptics 96ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the screen shows presence, AI help with uses left, the note switch and haptics
+AssertionError: th light: expected '27 / 27ประโยค' to be '27 / 30ประโยค' // Object.is equality
+
+Expected: "27 / 30ประโยค"
+Received: "27 / 27ประโยค"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:157:61
+    155|     expect(within(found('ai-settings-ai')).queryAllByText(say('bunai.a…
+    156|     expect(within(found('ai-settings-uses')).queryAllByText(say('bunai…
+    157|     expect(found('ai-settings-uses-parse').textContent, at).toBe(`27 /…
+       |                                                             ^
+    158|     expect(found('ai-settings-uses-slip').textContent, at).toBe(`9 / 1…
+    159|     expect(found('ai-settings-uses-ask').textContent, at).toBe(`19 / 2…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:03:58
+   Duration  2.68s (transform 1.71s, setup 64ms, import 2.25s, tests 100ms, environment 116ms)
+

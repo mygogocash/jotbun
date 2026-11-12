@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx (19 tests | 1 failed | 18 skipped) 86ms
+   × a restore records record_restored once Jotbun has it, with the kind only 83ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a restore records record_restored once Jotbun has it, with the kind only
+AssertionError: expected [] to deeply equal [ { name: 'record_restored', …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "name": "record_restored",
+-     "properties": {
+-       "kind": "expense",
+-       "origin": "app",
+-     },
+-   },
+- ]
++ []
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx:276:24
+    274|     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    275|     expect(await screen.findByText('Bills ฿12,268.00 is back in Histor…
+    276|     expect(captures()).toEqual([{ name: 'record_restored', properties:…
+       |                        ^
+    277|     const json = JSON.stringify(recorded.sent);
+    278|     for (const secret of ['1226800', '12,268', 'Rent', 'Daily account'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  21:50:40
+   Duration  918ms (transform 343ms, setup 51ms, import 553ms, tests 86ms, environment 105ms)
+

@@ -1,0 +1,46 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 355ms
+   × a turn-on that failed is not still said when the consent opens again 353ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > a turn-on that failed is not still said when the consent opens again
+AssertionError: expected [ <div dir="auto" …(4)></div> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <div
++     class="css-text-146c3p1"
++     data-testid="ai-consent-problem"
++     dir="auto"
++     role="alert"
++     style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 23px; color: rgba(17, 16, 20, 1.00);"
++   >
++     เปิดตัวช่วย AI ไม่ได้ตอนนี้ ลองอีกครั้งเมื่อต่อเน็ต
++   </div>,
++ ]
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:315:57
+    313|   startAnimations();
+    314|   named('dialog', 'ตัวช่วย AI ของบัน');
+    315|   expect(screen.queryAllByTestId('ai-consent-problem')).toEqual([]);
+       |                                                         ^
+    316| });
+    317|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:15:51
+   Duration  1.69s (transform 826ms, setup 42ms, import 1.10s, tests 355ms, environment 86ms)
+

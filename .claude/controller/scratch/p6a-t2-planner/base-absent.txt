@@ -1,0 +1,6 @@
+apps/app/src/wallet/outside/widgetSnapshot.ts
+apps/app/src/wallet/outside/outsideCopy.draft.ts
+apps/app/src/wallet/outside/useOutsideCopy.ts
+apps/app/src/wallet/outside/widgetSnapshot.test.ts
+apps/app/src/wallet/outside/outsideCopy.test.ts
+docs/implementation/receipts/P6A-T2.md

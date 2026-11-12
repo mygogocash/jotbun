@@ -1,0 +1,9 @@
+# P6A-T2 files (WT-relative). shared = another task edits it too; add only, in the documented order.
+apps/app/src/ui/dateStep.ts  modified, SHARED (P2-T31 added monthShortLabel and shortDateLabel; this task appends monthIndex, monthName, shortDayName)
+apps/app/src/ui/dateStep.test.ts  modified, SHARED (import line gains monthName and shortDayName; two cases appended)
+apps/app/src/wallet/outside/widgetSnapshot.ts  new
+apps/app/src/wallet/outside/outsideCopy.draft.ts  new (later P6A tasks append lines)
+apps/app/src/wallet/outside/useOutsideCopy.ts  new (P6A-T13 switches it to the catalogs)
+apps/app/src/wallet/outside/widgetSnapshot.test.ts  new
+apps/app/src/wallet/outside/outsideCopy.test.ts  new
+docs/implementation/receipts/P6A-T2.md  new

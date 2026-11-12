@@ -1,0 +1,14 @@
+apply-check of p6a-t2.patch and diffs/ over orig/ (patch -p1 -F0), 2026-11-12 20:30 +07
+patch exit 0
+equal apps/app/src/ui/dateStep.test.ts
+equal apps/app/src/ui/dateStep.ts
+equal apps/app/src/wallet/outside/outsideCopy.draft.ts
+equal apps/app/src/wallet/outside/outsideCopy.test.ts
+equal apps/app/src/wallet/outside/useOutsideCopy.ts
+equal apps/app/src/wallet/outside/widgetSnapshot.test.ts
+equal apps/app/src/wallet/outside/widgetSnapshot.ts
+equal docs/implementation/receipts/P6A-T2.md
+whole patch: 8 of 8 files equal real/
+per-file diff applies to orig/ and gives real/: apps/app/src/ui/dateStep.ts
+per-file diff applies to orig/ and gives real/: apps/app/src/ui/dateStep.test.ts
+check folder removed: yes

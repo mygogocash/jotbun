@@ -1,0 +1,104 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 3 failed) 474ms
+     × a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 28ms
+     × an unexpected failure sends its class name only, without the person 23ms
+     × a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "transactions.create",
+-     "TypeError",
++     "Error",
+    ],
+    [
+      "sync.changes",
+-     "SyntaxError",
++     "Error",
+    ],
+  ]
+
+ ❯ test/workers/server-events.test.ts:336:133
+    334|     ])
+    335|     const counts = r.sent.filter((message) => message.event === '$exce…
+    336|     expect(counts.map((message) => [message.properties.route, (message…
+       |                                                                                                                                     ^
+    337|       ['transactions.create', 'TypeError'],
+    338|       ['sync.changes', 'SyntaxError'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person
+AssertionError: expected { …(3) } to match object { event: '$exception', …(1) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  {
+    "event": "$exception",
+    "properties": {
+      "$exception_list": [
+        {
+-         "type": "RangeError",
+-         "value": "RangeError",
++         "type": "Error",
++         "value": "Error",
+        },
+      ],
+      "$process_person_profile": false,
+      "origin": "server",
+      "route": "wallets.list",
+
+ ❯ test/workers/server-events.test.ts:403:19
+    401|     expect(r.sent).toHaveLength(1)
+    402|     const [count] = r.sent
+    403|     expect(count).toMatchObject({
+       |                   ^
+    404|       event: '$exception',
+    405|       properties: { $exception_list: [{ type: 'RangeError', value: 'Ra…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person
+AssertionError: expected [ [ '$exception', …(2) ] ] to deeply equal [ [ '$exception', …(2) ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "$exception",
+      "transactions.create",
+-     "VaultOwnerMismatch",
++     "Error",
+    ],
+  ]
+
+ ❯ test/workers/server-events.test.ts:443:162
+    441|     })
+    442|     await r.settled()
+    443|     expect(r.sent.map((message) => [message.event, message.properties.…
+       |                                                                                                                                                                  ^
+    444|       ['$exception', 'transactions.create', 'VaultOwnerMismatch'],
+    445|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 16 passed (19)
+   Start at  01:56:06
+   Duration  3.06s (transform 992ms, setup 1.95s, import 35ms, tests 474ms, environment 0ms)
+

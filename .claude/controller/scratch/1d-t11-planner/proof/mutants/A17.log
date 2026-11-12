@@ -1,0 +1,173 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 6 failed) 413ms
+     × without the key the analytics id is null, and nothing is sent under the person 28ms
+     × a record saved by a person who said yes sends one record_saved with kind and category only 20ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 26ms
+     × a resent command sends no second event 21ms
+     × nothing is sent for a person who said no, or while their phone says off 27ms
+     × an edit, a delete or an import is not a record_saved 22ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ [ 'record_saved', …(1) ] ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "record_saved",
+-     "62a1dce1759c000dddc47bb15f2a2bcf59de67686519d4f8149e4612187456c0",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:183:74
+    181|     await saved(keyed, user, wallet)
+    182|     await r.settled()
+    183|     expect(r.sent.map((message) => [message.event, message.distinctId]…
+       |                                                                          ^
+    184|   })
+    185|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a record saved by a person who said yes sends one record_saved with kind and category only
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "daf8627029c529351d9077f21c90512970fef701579902dd88e9b3dbc944fee2",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "food",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:218:20
+    216|     expect((await record(client, user, body)).status).toBe(201)
+    217|     await r.settled()
+    218|     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), even…
+       |                    ^
+    219|     const text = JSON.stringify(r.sent)
+    220|     for (const value of [user.sub, String(body.id), wallet, '6500', 'ร…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "3f8eaa0bcab4ebea9e27b953d5a93593aa5f5731f63b29d736fcb45d1028c989",
+-     "event": "record_saved",
+-     "properties": {
+-       "kind": "transfer",
+-       "origin": "server",
+-     },
+-   },
+-   {
+-     "distinctId": "3f8eaa0bcab4ebea9e27b953d5a93593aa5f5731f63b29d736fcb45d1028c989",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "custom",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:236:20
+    234|     await r.settled()
+    235|     const id = await hmacOf(user.sub)
+    236|     expect(r.sent).toEqual([
+       |                    ^
+    237|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    238|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:255:52
+    253|     expect(again).toEqual(first)
+    254|     await r.settled()
+    255|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    256|   })
+    257|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:274:52
+    272|     await saved(client, user, wallet)
+    273|     await r.settled()
+    274|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    275|   })
+    276|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:285:52
+    283|     expect((await record(client, user, body)).status).toBe(201)
+    284|     await r.settled()
+    285|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    286|     const path = `/v1/transactions/${String(body.id)}`
+    287|     expect((await client.as(user).patch(path, { amount_minor: '7000' }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 13 passed (19)
+   Start at  01:55:55
+   Duration  3.08s (transform 1.03s, setup 2.02s, import 32ms, tests 413ms, environment 0ms)
+

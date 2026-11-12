@@ -1,0 +1,61 @@
+(node:61627) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncEngine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:61627) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/package.json.
+✔ sends drafts once, in order, and resolves them only from the confirmed state (17.156709ms)
+✔ airplane mode: an unreachable server leaves the command uncertain and frozen; the retry checks status, then resends the same command (14.66975ms)
+✔ a timeout after the commit resolves through command status, without a resend (14.843416ms)
+✔ an app killed after the commit but before the local acknowledgement recovers on the next launch (17.585875ms)
+✔ a response that arrives after a session change is dropped; the next session resolves the command (12.691125ms)
+✔ an expired token is refreshed once and the same command resent; a second refusal stops with drafts kept (16.419916ms)
+✔ a denied account stops the flush without losing drafts (7.618542ms)
+✔ 429 is pacing (Retry-After, no failure count); a 5xx may have committed, so it is uncertain and counts (29.076333ms)
+✖ an outcome names its run's failure code as its reason, and a run without a failure names none (1D-T7) (6.850333ms)
+✔ five transport failures in a row pause the engine until the app comes to the foreground or the user retries (15.416583ms)
+✔ validation refusals need review instead of retrying forever; others still go (14.862792ms)
+✔ 426 pauses unsent commands for an upgrade, keeps uncertain ones uncertain, and stops all sending (17.335875ms)
+✔ an unsupported command schema needs review and keeps its draft; the rest are sent (11.245667ms)
+✔ a 200-draft backlog drains at the write limit with progress, never pausing and never sending twice at once (349.322333ms)
+✔ one flush at a time per account: a call during a run waits and runs once after it (15.203ms)
+✔ archived or deleted references, and drafts older than 30 days, need review without data loss (6.516916ms)
+✔ a flush for another account or session does nothing (3.10225ms)
+✔ retry delays start at 1 s, double with jitter to 60 s, honour Retry-After, and pause after five failures (0.222875ms)
+✔ the scheduler keeps at most one 60-second foreground timer and tears it down on background or switch (0.3355ms)
+✔ a live flush lifts the failure pause but waits out the server's pacing (20.625875ms)
+✔ a poke that joins a queued follow-up still lifts the pause (16.164333ms)
+✔ a follow-up keeps the strongest trigger asked for, whatever order the calls came in (15.42175ms)
+✔ twenty pokes during a flush run one follow-up (6.632375ms)
+✔ the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke (0.215833ms)
+✔ a pending choice is never sent by the sync engine (9.789209ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 24
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 826.478666
+
+✖ failing tests:
+
+test at src/sync/syncEngine.test.ts:140:1
+✖ an outcome names its run's failure code as its reason, and a run without a failure names none (1D-T7) (6.850333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'LOCAL_ERROR'
+  - null
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncEngine.test.ts:150:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'LOCAL_ERROR',
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,82 @@
+# P2-T16-fix: a conflict and Bun's words in private mode, the bound on a tray that never says it has gone, and the reviews' pins
+
+- **Status:** built and verified locally on `p2/t16-add-tray-host` (`.claude/worktrees/p2-t16`), one commit on PR #439's reviewed head `81f66c0e`. Not pushed. This is the fix round on PR #439 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T16.md`) said Needs fixes: one major (M1), two minors (m1, m2) and one nit (n1);
+  - the second (`P2-T16-second.md`, money, the wallet and privacy) approved, with four minors (m1 to m4). Its m2 is the first's M1, and its m1 is the first's m1.
+
+  The controller ruled R117, and the planner's brief is `.claude/controller/briefs/P2-T16-fix.md`. Under R87 this receipt is its own file; `P2-T16.md` is corrected and points here.
+- **Base:** `81f66c0e`, with no merge: the controller merges the integration branch up.
+- **Files:** modified `apps/app/src/wallet/add/AddTrayHost.tsx` (464 lines before, 505 after), `apps/app/src/wallet/add/copy.ts` (52, 55: one draft line), `apps/app/src/wallet/add/AddTray.render.test.tsx` (875, 1113; 17 cases before, 22 after) and `docs/implementation/receipts/P2-T16.md` (a line pointing here, and the lines R117 makes untrue); created this receipt. `entrySave.ts` is unchanged, since 1D-T7 edits it. No route, package or lockfile changes.
+- **M1, a conflict in private mode (R117.1):**
+  - A conflict's words quote the amount of the record Jotbun holds. `useEntrySave` builds them with `useAmountWords`, which does not know private mode.
+  - While private mode is on and the save's status is `conflict`, the host draws today's line with the amount masked (฿••••). The line has its own words, with `common.amountHidden` (ซ่อนยอดเงินอยู่) in the amount's place, and iOS is told those words.
+  - Today's line, masked, rather than a new draft line: it is R115's shape for the refused archive's ฿0 (P2-T21-fix), it adds nothing to E2-B's copy pass, and the sentence is the same in both modes with only the amount hidden, as every other amount in private mode is.
+  - Every other message `useEntrySave` can hand the host was checked, and none holds an amount of the person's:
+    - `saveProblem`'s and `localSaveProblem`'s messages are fixed words.
+    - The check's own amount lines are dropped whenever the keypad refuses the amount, and the keypad refuses whatever they would. Its other lines name a field, a date or a length.
+    - The server's field errors hold constants only: the cap (฿999,999,999.99) and an example amount (65 or 65.50). Neither can reach this host: the keypad caps the amount and sends a plain satang string.
+  - The case runs in Thai and English, on both reviews' probe (PROBE-5 and P5). An answer lost says its usual words in private mode. The resend finds the entry saved as ฿99.00, and the case checks the line drawn, its words and what iOS is told: today's words, masked, with no digit in any of them.
+- **The second review's m3, Bun's words on confirm in private mode (R117.2):**
+  - R114's reasoning applies: no mask keeps up with every form of an amount, and Bun's merchant and note come from the same sentence.
+  - In private mode a title that would quote Bun is the tray's own (จดรายจ่าย, จดรายรับ or โอนเงิน). That is a merchant Bun filled, or with no merchant, a note Bun filled. A note Bun guessed reads as ซ่อนอยู่ (`add.noteHidden`, a draft line for E2-B) and keeps its บันเดา.
+  - What the person typed shows (R106): a name typed in income's name field, and a note written in the note pick. The host keeps the place Bun last named (`bunMerchant`), so a later draft of Bun's that names none still leaves the place Bun's, as `applyDraft` keeps it.
+  - The case, on the second review's probe P4a: a note alone from Bun, which out of private mode would be the title; a merchant and a note, each holding the amount, with no digit left in confirm's text or its words; Bun told again of the amount only; and what the person writes and types, which shows.
+- **m1, the bound on a tray that never says it has gone (R117.3):**
+  - Once a tray is hidden, its entry goes when the Modal says so (`onClosed`), or after 1.5 s (`CLOSED_BOUND_MS`), whichever comes first. iOS hears `onClosed` only from the Modal's `onDismiss`, which never comes for a dismissal UIKit never ends, so a later open and a `whenClosed` run no longer wait for ever.
+  - It stays idempotent per entry: the host's `closed` takes the entry and does nothing once that entry has gone. A dismissal that comes after the bound, or after a new tray has opened, changes nothing.
+  - The bound is armed on every platform. Off iOS the tray reports its close after its 220 ms exit, which ends the entry and clears the bound first, so a platform check would be a guard no case could see.
+  - The bound lives in the entry, so it ends with it, and a host that goes away (a sign-out) runs nothing queued. `show` and `closed` keep one identity across renders, so a parent that draws again cannot restart the bound.
+  - The case uses a Modal that holds its dismissal back, as the reviews' wedge probes do. It checks that the queued run and the open wait, then that the bound lets both through once; that a late dismissal and another 1.6 s leave the new tray open; and that a host unmounted while its tray leaves sends nothing more.
+- **n1, the save's problem above Save (R117.4):** the copy case now checks that, in the tray's pinned footer, `add-save-problem` comes before the button. The first review's R8 is killed.
+- **The second review's m4, its six survivors (R117.5),** each pinned on its own probe. The code was already right:
+  - M3 (P11): a note Bun wrote is one of its guesses, `โน้ต ค่าข้าวกับพี่ บันเดา`. This is in the Tell Bun case.
+  - M4 and M5 (P2, P1): income's track has its own category's key (`salary`), and a move's has none. The move is kept exactly: `50000` from the main account to cash. This is a new case.
+  - M6 (P8): a day chosen for cash, then the main account, which started later, is refused on Save with today's words, and nothing is kept. This is a new case.
+  - M8 (P12): an opening that names income is named จดรายรับ while its lists load. This is in the waiting case.
+  - M10 (P13): an open that waited for a leaving tray asks again when it runs, so a host blocked by then opens nothing. This is in the `whenClosed` case.
+- **The first review's m2 (R117.6, no code):** the lock's cover loses what the person typed into Tell Bun, and this host is the first of the "later Sheet hosts". Both receipts' Risks say so.
+- **RED to GREEN:**
+  - RED is `81f66c0e`'s code with the round's suite. No stub is needed: the new cases use nothing the code does not already export.
+    - `npm run typecheck:app`: exit 0.
+    - The suite: `Tests 3 failed | 19 passed (22)`. Each failure is an `AssertionError`, with no load or lookup error and no `stderr |` block:
+      - the conflict in private mode (`th: expected [ …(3) ] to deeply equal [ …(3) ]`);
+      - Bun's words on confirm (`expected [ 'ข้าวมันไก่ 65 บาท', …(1) ] to deeply equal [ 'จดรายจ่าย', 'โน้ต ซ่อนอยู่ บันเดา' ]`);
+      - the bound (`a dialog named จดรายรับ: expected null not to be null`).
+    - The 19 that pass are the first round's 17 cases, with their new parts, and the two new cases that pin code that was already right (the track's keys, and the day before a wallet started).
+  - GREEN:
+    - `typecheck:app`: exit 0.
+    - The suite: `Tests 22 passed (22)`, with no `stderr |` block.
+    - The add flow's and the tray's Node files with the draft check: 19 of 19.
+    - The eight kit render files: 142 of 142. The four routes tests: 15 of 15. The first round's other render files (AddSteps, entrySave, QuickAddScreen, catalogueRoute): 110 of 110. Each is the same as at `81f66c0e`.
+    - The catalogue's wallet sections (`-t "bw-"`, both suites): 96 passed. The registry rule: 1 passed.
+- **Mutation check:** 126 mutants: 126 killed, 0 survived. Each file was restored, with its SHA-256 checked, and every failing case in every mutant's run fails on an `AssertionError`.
+  - The first round's 86 (H1 to H77, K1, S1 to S6, T1, C1). H28, H30 and H41 are re-pointed at the lines this round moves.
+  - The first review's R1 to R8, R8 being its n1. The second review's M2 to M8, M10, M11 and M13, with M3 to M6, M8 and M10 being its m4. Some are re-pointed where the code moved. Not run: M1, M9 and M12, which are the same edits as R1, R2 and H68; and M14, which the second review found equivalent.
+  - This round's F1 to F21 and K2: the conflict's mask (F1 to F7), Bun's words on confirm (F8 to F17, K2), and the bound (F18 to F21).
+- **Gate (R100, with R117's files, each named):**
+  - `npm run typecheck:app`: exit 0.
+  - `npm run test:app`: exit 0, `ℹ fail 0`.
+  - `npm run test:unit`: exit 0, `ℹ fail 0`, the Hermes guards included.
+  - The add flow's and the tray's Node files with the draft check (`addFlow`, `amountStepNative`, `addStepsNative`, `trayGesture`, `draftText`): 19 of 19.
+  - The round's suite: 22 of 22.
+  - The eight kit render files that import the wallet catalogue index (CardStack, WalletLooks, PrivateMode, walletHarness, Tray, Lock, AmountStep, WalletsList): 142 of 142.
+  - The four routes tests (SpendRoutes, AccountRoutes, InsightsRoutes, PlanningRoutes): 15 of 15.
+  - The first round's other render files (AddSteps, entrySave, QuickAddScreen, catalogueRoute): 110 of 110.
+  - `git diff --check`: clean before the commit, and against `origin/claude/p1a-vault-core...HEAD` after it.
+- **Deviations:** none from the brief's rulings.
+- **SKIPPED and CI:**
+  - In CI on the PR (R100): the full render suite, whose per-section jobs open `bw-tray-saving`, `bw-tray-unconfirmed` and `bw-tray-add-large`; `export:web` and the iOS export; the database, edge and image jobs; and `test:ops`.
+  - Not needed: `typecheck:routes` (no route changes), and the API and edge suites, since nothing outside `apps/app` and the receipts changes.
+  - SKIPPED until a device: a close and a quick reopen on an iPhone with the bound in place; a present that UIKit refuses (the tray follow-up's check, before P2-T18); VoiceOver hearing the masked conflict line in private mode; and the first round's list.
+- **Risks:**
+  - A present that UIKit refuses stays a risk (R117.3): the tray is open in the host with nothing on screen, so later opens are ignored and nothing on screen closes it. It is the tray follow-up's, with its device check before P2-T18.
+  - The bound's 1.5 s is a judgment, and no device has measured it. If UIKit's dismissal ever takes longer (a slow phone, or the app sent away mid-close), the entry goes while the Modal is still leaving, and the next present may be refused: the risk above.
+  - The lock's cover loses what the person typed into Tell Bun (the first review's m2, R117.6). Today's sheet keeps its sentence, its phase and Bun's result in its own state, inside the tray's content, which the cover unmounts; the cover also comes when the app goes inactive. This host is the first of the "later Sheet hosts" in `followups.md`. The controller carries it to P2-T34, P3-T18 and E2-B.
+  - In private mode Bun's words still show where the person edits them: the open sheet (P10d), income's name field on the amount step, and the note pick's field.
+- **Notes for later tasks:**
+  - **P2-T18:** the bound frees a tray whose Modal never says it has gone, but not one whose present was refused (Risks). That device check comes before the + and Magic Tap reach the host.
+  - **P2-T26 and P2-T30:** open another Modal from the add tray's `whenClosed`, or from its own tray's `onClosed`, as both reviews say. The bound orders only this host's trays.
+  - **1D-T7:** `entrySave.ts` is unchanged. Two saves in one React batch both write (the first review's PROBE-4); a ref guard in `save` would hold that for any caller.
+  - **P2-T37:** in private mode the conflict line is masked and confirm draws none of Bun's words. The sweep's exemptions must know the constant figures in the save's words (the cap, the example amount 65 or 65.50, and the 120- and 500-character limits) and the editable fields under Risks.
+  - **E2-B (the owner):** in private mode, the tray's own title in place of Bun's merchant, and ซ่อนอยู่ for its note (R117.2, which the owner may overrule); the masked conflict line's words, which read "as Amount hidden" in English.
+  - **Not in R117,** left as the second review recorded them: its n1 (a refused save's words stay until the next Save), n2 (`fill()` has no guard where `keypadOf()` has one) and n3 (an `onSaved` that throws leaves the tray open with a dead Save), and its notes for P2-T17, P2-T26, P3-T13 and closing from `unconfirmed`.

@@ -1,0 +1,16 @@
+red: real/apps/app/src/config/featureFlags.ts
+red: real/apps/app/src/config/featureFlags.test.ts
+red: stubs/apps/app/src/wallet/bunai/drafts.ts
+red: real/apps/app/src/wallet/bunai/drafts.test.ts
+red: stubs/apps/app/src/wallet/bunai/useBunAiCopy.ts
+red: stubs/apps/app/src/wallet/bunai/aiArea.ts
+red: stubs/apps/app/src/wallet/bunai/aiConsent.ts
+red: stubs/apps/app/src/wallet/bunai/AiConsentContent.tsx
+red: stubs/apps/app/src/wallet/bunai/AiConsentTray.tsx
+red: stubs/apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+red: real/apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+red: real/apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+red: stubs/apps/app/app/settings/ai.tsx
+red: real/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+red: real/apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+red: 15 files placed

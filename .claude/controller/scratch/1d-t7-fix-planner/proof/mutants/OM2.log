@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/entry/entrySave.render.test.tsx (9 tests | 1 failed | 8 skipped) 41ms
+   × a device save calls onSaved once, after the diary kept it 39ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/entry/entrySave.render.test.tsx > a device save calls onSaved once, after the diary kept it
+AssertionError: expected [ { kind: 'capture', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "kind": "capture",
++     "name": "record_saved",
++     "properties": {
++       "has_photo": false,
++       "kind": "expense",
++       "offline": true,
++       "origin": "app",
++       "seconds_to_save": 0,
++       "source": "typed",
++     },
++   },
++ ]
+
+ ❯ src/screens/redesign/entry/entrySave.render.test.tsx:145:74
+    143|   expect(onSaved.mock.calls[0][0]).toMatchObject({ via: 'device', trac…
+    144|   // A save without a track sends no record_saved: the track is finish…
+    145|   expect(recorded.sent.filter((event) => event.name === 'record_saved'…
+       |                                                                          ^
+    146|
+    147|   cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 skipped (9)
+   Start at  21:51:03
+   Duration  781ms (transform 339ms, setup 45ms, import 495ms, tests 41ms, environment 87ms)
+

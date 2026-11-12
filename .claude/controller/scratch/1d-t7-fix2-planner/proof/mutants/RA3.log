@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 154ms
+   × an acknowledged "use yours" records one record_edited; the refused edit before it records none 151ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" records one record_edited; the refused edit before it records none
+AssertionError: expected [ { name: 'conflict_shown', …(1) } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -5,14 +5,6 @@
+        "origin": "app",
+        "reason_code": "VERSION_CONFLICT",
+        "screen": "/spend/record/[id]",
+      },
+    },
+-   {
+-     "name": "record_edited",
+-     "properties": {
+-       "category_key": "bills",
+-       "kind": "expense",
+-       "origin": "app",
+-     },
+-   },
+  ]
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:1034:37
+    1032|     fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+    1033|     expect(await screen.findByLabelText('Amount, Expense ฿12,000.00'))…
+    1034|     expect(captures(recorded.sent)).toEqual([shown, { name: 'record_ed…
+       |                                     ^
+    1035|     sendsNothingOfTheRent(recorded.sent);
+    1036|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  02:16:07
+   Duration  1.03s (transform 410ms, setup 50ms, import 604ms, tests 154ms, environment 102ms)
+

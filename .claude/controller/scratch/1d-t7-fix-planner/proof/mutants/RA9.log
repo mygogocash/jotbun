@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 175ms
+   × an acknowledged edit records record_edited, and an unconfirmed one nothing until it is 173ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged edit records record_edited, and an unconfirmed one nothing until it is
+AssertionError: expected [ { name: 'record_edited', …(1) } ] to deeply equal [ { name: 'record_edited', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "name": "record_edited",
+      "properties": {
+-       "category_key": "bills",
++       "category_key": "custom",
+        "kind": "expense",
+        "origin": "app",
+      },
+    },
+  ]
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:977:37
+    975|     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    976|     expect(await screen.findByLabelText('Amount, Expense ฿12,000.00'))…
+    977|     expect(captures(recorded.sent)).toEqual([{ name: 'record_edited', …
+       |                                     ^
+    978|     sendsNothingOfTheRent(recorded.sent);
+    979|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  21:50:38
+   Duration  1.09s (transform 422ms, setup 51ms, import 631ms, tests 175ms, environment 111ms)
+

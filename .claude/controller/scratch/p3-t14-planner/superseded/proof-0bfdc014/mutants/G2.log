@@ -1,0 +1,29 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 6ms
+   × the catalogue lists bw-ai-consent, bw-ai-settings and bw-ai-settings-off after the lock's, and each reaches its state 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the catalogue lists bw-ai-consent, bw-ai-settings and bw-ai-settings-off after the lock's, and each reaches its state
+AssertionError: bw-ai-consent: expected 40 to be greater than 47
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:413:31
+    411|   const ids = WALLET_SECTIONS.map((section) => section.id);
+    412|   const at = ids.indexOf('bw-ai-consent');
+    413|   expect(at, 'bw-ai-consent').toBeGreaterThan(ids.indexOf('bw-lock-cov…
+       |                               ^
+    414|   expect(ids.slice(at, at + 3)).toEqual(['bw-ai-consent', 'bw-ai-setti…
+    415|   const sections = WALLET_SECTIONS.slice(at, at + 3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:05:18
+   Duration  1.67s (transform 1.10s, setup 41ms, import 1.44s, tests 6ms, environment 78ms)
+

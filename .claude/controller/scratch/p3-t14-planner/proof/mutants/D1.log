@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:4704) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 85ms
+   × the consent names what is sent, to whom and what is kept 84ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > the consent names what is sent, to whom and what is kept
+AssertionError: expected 'ส่งอะไรบ้างเฉพาะสิ่งที่งานนั้นต้องใช้…' to be 'ส่งอะไรบ้างเฉพาะสิ่งที่งานนั้นต้องใช้…' // Object.is equality
+
+Expected: "ส่งอะไรบ้างเฉพาะสิ่งที่งานนั้นต้องใช้: ประโยคที่คุณพิมพ์ รูปสลิปหรือใบเสร็จ รวมชื่อและเลขบัญชีบางส่วนที่พิมพ์อยู่ในรูป ชื่อกระเป๋าและหมวดให้บันเลือก ยอดของวันและของเดือน งบที่เหลือ กับชื่อหมวดสำหรับโน้ตประจำวัน และเมื่อคุณถาม ยอดรวม ชื่อร้าน และโน้ตที่จดไว้ ไม่ส่งอีเมล เบอร์โทร หรือรหัสบัญชี Jotbun ของคุณ"
+Received: "ส่งอะไรบ้างเฉพาะสิ่งที่งานนั้นต้องใช้: ประโยคที่คุณพิมพ์ รูปสลิปหรือใบเสร็จ รวมชื่อและเลขบัญชีบางส่วนที่พิมพ์อยู่ในรูป ยอดของวันและของเดือน งบที่เหลือ กับชื่อหมวดสำหรับโน้ตประจำวัน และเมื่อคุณถาม ยอดรวม ชื่อร้าน และโน้ตที่จดไว้ ไม่ส่งอีเมล เบอร์โทร หรือรหัสบัญชี Jotbun ของคุณ"
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:159:20
+    157|       // B8: what prompts carry, by name, in the plan's own words.
+    158|       const what = found('ai-consent-what').textContent ?? '';
+    159|       expect(what).toBe(`ส่งอะไรบ้าง${WHAT_THAI}`);
+       |                    ^
+    160|       for (const words of ['ชื่อกระเป๋า', 'ชื่อร้าน', 'โน้ตที่จดไว้', …
+    161|       expect(found('ai-consent-who').textContent).toBe('ส่งให้ใครผ่านเ…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:14:41
+   Duration  2.27s (transform 1.44s, setup 67ms, import 1.83s, tests 85ms, environment 139ms)
+

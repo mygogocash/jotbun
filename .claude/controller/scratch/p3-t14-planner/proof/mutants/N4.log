@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 50ms
+   × the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going 47ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going
+AssertionError: promise rejected "Error: full" instead of resolving
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:353:57
+    351|   const note = probed;
+    352|   expect(note, 'the probe has read the setting').not.toBeNull();
+    353|   await act(async () => { await expect(note?.set(false)).resolves.toBe…
+       |                                                         ^
+    354|   await settle();
+    355| }
+ ❯ ../../node_modules/@testing-library/react/dist/act-compat.js:47:24
+ ❯ process.env.NODE_ENV.exports.act ../../node_modules/react/cjs/react.development.js:890:22
+ ❯ Proxy.<anonymous> ../../node_modules/@testing-library/react/dist/act-compat.js:46:25
+ ❯ turnNoteOff src/wallet/bunai/WalletAiSettings.render.test.tsx:353:9
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:395:9
+
+Caused by: Error: full
+ ❯ Object.setItem src/wallet/bunai/WalletAiSettings.render.test.tsx:392:62
+ ❯ Object.set src/wallet/store/walletStore.ts:27:35
+ ❯ Object.set src/wallet/bunai/aiConsent.ts:80:31
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:353:46
+ ❯ ../../node_modules/@testing-library/react/dist/act-compat.js:47:24
+ ❯ process.env.NODE_ENV.exports.act ../../node_modules/react/cjs/react.development.js:890:22
+ ❯ Proxy.<anonymous> ../../node_modules/@testing-library/react/dist/act-compat.js:46:25
+ ❯ turnNoteOff src/wallet/bunai/WalletAiSettings.render.test.tsx:353:9
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:395:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:15:25
+   Duration  1.40s (transform 841ms, setup 41ms, import 1.12s, tests 50ms, environment 81ms)
+

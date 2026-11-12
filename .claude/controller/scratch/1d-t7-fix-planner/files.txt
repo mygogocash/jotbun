@@ -1,0 +1,15 @@
+# 1D-T7 fix round's files (R119), on 78f91ca5. Column 1: M (modified) or A (added).
+# Column 2: what RED holds (real = real/, base = left as 78f91ca5 has it, later =
+# a receipt, copied at the end). GREEN holds real/ for every line but the receipts.
+M base apps/app/src/analytics/controller.ts
+M base apps/app/src/sync/deviceSync.ts
+M real apps/app/src/analytics/controller.test.ts
+M real apps/app/src/analytics/appAnalytics.render.test.tsx
+M real apps/app/src/sync/deviceSync.render.test.tsx
+M real apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+M real apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+M real apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+M real apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+M real apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx
+M later docs/implementation/receipts/1D-T7.md
+A later docs/implementation/receipts/1D-T7-fix.md

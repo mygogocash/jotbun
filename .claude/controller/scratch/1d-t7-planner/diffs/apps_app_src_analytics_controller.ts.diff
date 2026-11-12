@@ -1,0 +1,37 @@
+diff --git a/apps/app/src/analytics/controller.ts b/apps/app/src/analytics/controller.ts
+index 29ca2e42531126b093146eaac8c552ecea1a89a8..d8d9a32ae74425654f48d9c132cafc82fe1b82ec 100644
+--- a/apps/app/src/analytics/controller.ts
++++ b/apps/app/src/analytics/controller.ts
+@@ -73,6 +73,10 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
+   let undelivered = false;
+   let identifiedId: string | null = null;
+   let common: Partial<CommonProps> = {};
++  // The screen on display: its pattern, or null when it cannot be named. Sent
++  // when the answer turns yes, so the first screen of a launch or a sign-in is
++  // not missing (1D-T6's review, m3).
++  let onDisplay: string | null = null;
+   const held: Held[] = [];
+   const listeners = new Set<() => void>();
+   let generation = 0;
+@@ -126,6 +130,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
+     if (entering && deps.replay) client?.startSessionRecording(false);
+     const queued = held.splice(0, held.length);
+     for (const item of queued) client?.capture(item.name, payload(item.properties));
++    if (entering && onDisplay !== null) client?.screen(onDisplay, payload({}));
+   }
+ 
+   function openQuestion(): void {
+@@ -290,10 +295,9 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
+     },
+ 
+     screen(segments) {
+-      if (current !== 'yes') return;
+-      const pattern = screenPattern(segments);
+-      if (pattern === null) return;
+-      client?.screen(pattern, payload({}));
++      onDisplay = screenPattern(segments);
++      if (current !== 'yes' || onDisplay === null) return;
++      client?.screen(onDisplay, payload({}));
+     },
+ 
+     async refresh() {

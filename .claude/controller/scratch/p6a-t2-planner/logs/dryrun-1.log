@@ -1,0 +1,53 @@
+== 1.5
+apps/app/src/ui/dateStep.ts: OK
+apps/app/src/ui/dateStep.test.ts: OK
+apps/app/src/wallet/copy/draftText.ts: OK
+apps/app/src/wallet/copy/useDraftCopy.ts: OK
+apps/app/src/wallet/money/walletMoney.ts: OK
+apps/app/src/spend/v1/money.ts: OK
+apps/app/src/spend/v1/redesign/budgetPace.ts: OK
+apps/app/src/spend/v1/redesign/shared.ts: OK
+apps/app/src/spend/v1/redesign/testing/fixtures.ts: OK
+apps/app/scripts/test-unit.mjs: OK
+exit 0
+== 1.6
+apps/app/src/wallet/outside/widgetSnapshot.ts: OK (absent)
+apps/app/src/wallet/outside/outsideCopy.draft.ts: OK (absent)
+apps/app/src/wallet/outside/useOutsideCopy.ts: OK (absent)
+apps/app/src/wallet/outside/widgetSnapshot.test.ts: OK (absent)
+apps/app/src/wallet/outside/outsideCopy.test.ts: OK (absent)
+apps/app/src/ui/dateStep.ts: OK (orig/)
+apps/app/src/ui/dateStep.test.ts: OK (orig/)
+base: 7 of 7 OK
+exit 0
+== 2.1
+copied stubs/apps/app/src/wallet/outside/widgetSnapshot.ts -> apps/app/src/wallet/outside/widgetSnapshot.ts
+copied stubs/apps/app/src/wallet/outside/outsideCopy.draft.ts -> apps/app/src/wallet/outside/outsideCopy.draft.ts
+copied real/apps/app/src/wallet/outside/useOutsideCopy.ts -> apps/app/src/wallet/outside/useOutsideCopy.ts
+copied real/apps/app/src/wallet/outside/widgetSnapshot.test.ts -> apps/app/src/wallet/outside/widgetSnapshot.test.ts
+copied real/apps/app/src/wallet/outside/outsideCopy.test.ts -> apps/app/src/wallet/outside/outsideCopy.test.ts
+copied stubs/apps/app/src/ui/dateStep.ts -> apps/app/src/ui/dateStep.ts
+copied real/apps/app/src/ui/dateStep.test.ts -> apps/app/src/ui/dateStep.test.ts
+exit 0
+== 2.2
+red: 7 of 7 OK
+== 2.4
+typecheck 0
+== 2.5
+exit 1
+ℹ tests 32
+ℹ pass 12
+ℹ fail 20
+20
+0
+== 3.1
+7
+== 3.2
+green: 7 of 7 OK
+== 3.4
+typecheck 0
+== 3.5
+exit 0
+ℹ tests 32
+ℹ pass 32
+ℹ fail 0

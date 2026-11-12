@@ -1,0 +1,158 @@
+(node:13477) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13477) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.675959ms)
+✔ leap days follow the Gregorian rules (0.07325ms)
+✔ only real YYYY-MM-DD dates are accepted (0.160542ms)
+✔ never steps into the future (0.079167ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.044792ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.247583ms)
+✔ other days are written out, with the year only when it is not this year (0.0815ms)
+✔ Thai dates show Buddhist-era years (0.109083ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.066292ms)
+✔ weekday initials run Sunday first in each language (0.080542ms)
+✔ a month's short name has no year, in each language (0.080958ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.058791ms)
+✔ monthName gives short and long names in Thai and English (0.123834ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.07375ms)
+(node:13478) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.007875ms)
+(node:13479) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13479) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.033708ms)
+✖ with the Face ID lock on, the lock face holds no amount, private mode or not (0.753083ms)
+✔ private mode masks both faces and keeps the count (0.199792ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.227375ms)
+✔ no budget has no side line and no gauge figure (0.265542ms)
+✔ after midnight the widget shows a new day with nothing logged (0.191ms)
+✔ each face names its day (0.161ms)
+✔ on the month's last evening the next entry drops the budget figures (0.227125ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.16925ms)
+✔ the second midnight asks to open Jotbun (0.186333ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.058375ms)
+✔ entryAt picks the newest started entry, else the first (0.10675ms)
+✖ faceFor gives system families the home face and accessory families the lock face (1.534416ms)
+✔ Vietnamese reads the English lines (0.154792ms)
+✔ a signed-out snapshot has no figures (0.067042ms)
+✖ sameSnapshot ignores only the first entry's time (0.316125ms)
+✔ both snapshots carry the link words in the person's language (0.209209ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 29
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 162.314166
+
+✖ failing tests:
+
+test at src/wallet/outside/widgetSnapshot.test.ts:100:1
+✖ with the Face ID lock on, the lock face holds no amount, private mode or not (0.753083ms)
+  AssertionError [ERR_ASSERTION]: hidden false
+  + actual - expected
+  
+    [
+  +   false,
+  -   true,
+      'ใช้วันนี้',
+  +   '฿132',
+  -   '฿••••',
+      '3 รายการ',
+      'วันนี้ · 3 รายการ',
+      'เหลือวันนี้',
+  +   '≈ ฿580',
+  -   '฿••••',
+      false,
+      'งบ ต.ค.',
+  +   '74%',
+  +   0.742
+  -   null,
+  -   null
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:104:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [
+      false,            'ใช้วันนี้',
+      '฿132',           '3 รายการ',
+      'วันนี้ · 3 รายการ', 'เหลือวันนี้',
+      '≈ ฿580',         false,
+      'งบ ต.ค.',        '74%',
+      0.742
+    ],
+    expected: [
+      true,             'ใช้วันนี้',
+      '฿••••',          '3 รายการ',
+      'วันนี้ · 3 รายการ', 'เหลือวันนี้',
+      '฿••••',          false,
+      'งบ ต.ค.',        null,
+      null
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:225:1
+✖ faceFor gives system families the home face and accessory families the lock face (1.534416ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(now.home !== null && now.lock !== null && now.home.masked !== now.lock.masked)
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:227:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/wallet/outside/widgetSnapshot.test.ts:247:1
+✖ sameSnapshot ignores only the first entry's time (0.316125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:253:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

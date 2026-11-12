@@ -1,0 +1,48 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/HistoryScreen.render.test.tsx (36 tests | 1 failed | 35 skipped) 225ms
+   × a delete from History records record_deleted, and its undo undo_used, each once Jotbun has it 220ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/HistoryScreen.render.test.tsx > a delete from History records record_deleted, and its undo undo_used, each once Jotbun has it
+AssertionError: expected [ { name: 'record_deleted', …(1) } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -5,13 +5,6 @@
+        "category_key": "bills",
+        "kind": "expense",
+        "origin": "app",
+      },
+    },
+-   {
+-     "name": "undo_used",
+-     "properties": {
+-       "kind": "expense",
+-       "origin": "app",
+-     },
+-   },
+  ]
+
+ ❯ src/screens/redesign/HistoryScreen.render.test.tsx:577:24
+    575|     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    576|     expect(await screen.findByRole('button', { name: ROWS.rent })).toB…
+    577|     expect(captures()).toEqual([deleted, { name: 'undo_used', properti…
+       |                        ^
+    578|     const json = JSON.stringify(recorded.sent);
+    579|     for (const secret of ['1226800', '12,268', 'Rent', 'Daily account'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 skipped (36)
+   Start at  21:50:44
+   Duration  1.19s (transform 474ms, setup 45ms, import 708ms, tests 225ms, environment 88ms)
+

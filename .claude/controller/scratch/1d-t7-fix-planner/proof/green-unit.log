@@ -1,0 +1,53 @@
+(node:57117) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:57117) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.598042ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.429458ms)
+✔ held events are dropped when another account signs in, and on no (0.159667ms)
+✔ what was held before the launch's first answer survives it, also when no one is signed in, and is sent after a sign-in and a yes (0.086959ms)
+✔ signing out still drops what was held, so the next sign-in starts with nothing (P14, L4) (0.078792ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.152ms)
+✔ replay never starts when it is not allowed (0.083208ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.060625ms)
+✔ a no read at launch after an earlier yes resets the identity (0.065083ms)
+✔ a no given on another phone stops this phone at its next foreground (0.104958ms)
+✔ a pending no is kept until the server has it (0.370208ms)
+✔ saying no stops replay and resets the identity (0.096334ms)
+✔ a no from another phone is not asked again on this one (0.06025ms)
+✔ a yes the server could not save rejects and changes nothing (0.123417ms)
+✔ offline with nothing known waits, then asks (0.095125ms)
+✔ the held events stop at 50, oldest first out (0.095208ms)
+✔ screens are sent only as patterns and only after yes (0.196125ms)
+✔ the screen on display when the answer turns yes is sent then, once, and only when it has a pattern (0.105917ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.045291ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.048917ms)
+✔ without a client, nothing is sent and consent still resolves (0.028917ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.0975ms)
+✔ a no from the server stops capture before this phone stores it (0.056542ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.046459ms)
+✔ a yes still on its way cannot outlast a later no at the server (4.818583ms)
+✔ a yes being stored when the person says no cannot replace the no (3.688125ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (4.79325ms)
+✔ a yes waiting behind another call is refused once another account has signed in (3.741584ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (3.600916ms)
+✔ a yes still waiting when the person says no is never sent (3.549709ms)
+✔ a refresh after a yes does not keep the yes from the server (3.601792ms)
+✔ a no given while a refresh is on its way is stored at once (4.748916ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.271667ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (3.600416ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.1045ms)
+✔ a no the server takes at once is pending only while its call is on its way (3.570334ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.119792ms)
+✔ a yes, or a sign-out, ends a pending no (0.052667ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 182.387208

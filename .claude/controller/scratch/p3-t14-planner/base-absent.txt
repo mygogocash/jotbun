@@ -1,0 +1,14 @@
+apps/app/src/wallet/bunai/drafts.ts
+apps/app/src/wallet/bunai/drafts.test.ts
+apps/app/src/wallet/bunai/useBunAiCopy.ts
+apps/app/src/wallet/bunai/aiArea.ts
+apps/app/src/wallet/bunai/aiConsent.ts
+apps/app/src/wallet/bunai/AiConsentContent.tsx
+apps/app/src/wallet/bunai/AiConsentTray.tsx
+apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+apps/app/app/settings/ai.tsx
+apps/app/src/dev/catalogue/wallet/bunaiSections.tsx
+apps/app/src/dev/catalogue/wallet/bunaiScreens.tsx
+docs/implementation/receipts/P3-T14.md

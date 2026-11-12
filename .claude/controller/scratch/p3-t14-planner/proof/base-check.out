@@ -1,0 +1,8 @@
+apps/app/src/config/featureFlags.ts: OK
+apps/app/src/config/featureFlags.test.ts: OK
+apps/app/src/dev/catalogue/wallet/index.ts: OK
+apps/app/src/screens/redesign/account/SettingsScreen.tsx: OK
+apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx: OK
+apps/app/src/screens/redesign/account/CompanionSettings.tsx: OK
+apps/app/src/screens/redesign/ai/AiConsentSheet.tsx: OK
+apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx: OK

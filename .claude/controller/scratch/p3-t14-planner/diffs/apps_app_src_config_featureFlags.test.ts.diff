@@ -1,0 +1,46 @@
+diff --git a/apps/app/src/config/featureFlags.test.ts b/apps/app/src/config/featureFlags.test.ts
+index 13646deb4a4dced22c91ae5e19a59b68eee07fc2..184078f2a8fc596662c636ab9ecc29d7a5418313 100644
+--- a/apps/app/src/config/featureFlags.test.ts
++++ b/apps/app/src/config/featureFlags.test.ts
+@@ -1,6 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
++import { bunAiAreaOn, useBunAiArea, usePhotosArea } from '../wallet/bunai/aiArea.ts';
+ import { isRedesignEnabled } from './featureFlags.ts';
+ 
+ // E2 checkpoint 1 approved the core loop (19 October 2026): it is on unless switched off.
+@@ -101,3 +102,33 @@ test('analytics is off by default, on when named, and on with all', () => {
+     assert.equal(isRedesignEnabled('analytics', value), true, value);
+   }
+ });
++
++// P3-T14 (P3:ai-area): photos and the Bun AI screens wait for their E2 screenshots (P3-T24 approves them).
++test('bunai is off by default, on when named and on with all', () => {
++  for (const value of [undefined, '', 'core', 'wallet', 'catalogue,companion,conflict,wallet,signin,analytics', 'bunais', '-bunai,all', 'bunai,off']) {
++    assert.equal(isRedesignEnabled('bunai', value), false, String(value));
++  }
++  for (const value of ['bunai', ' BUNAI ', 'wallet, bunai', 'all']) {
++    assert.equal(isRedesignEnabled('bunai', value), true, value);
++  }
++});
++
++// Both hooks call no React hook today (P6B-T15 adds the rollout inside useBunAiArea), so Node can read them too.
++test('bunAiAreaOn needs both wallet and bunai', () => {
++  const saved = process.env.EXPO_PUBLIC_REDESIGN;
++  const answers: readonly (readonly [string | undefined, boolean])[] = [
++    [undefined, false], ['bunai', false], ['wallet', false], ['wallet,bunai', true], ['all', true], ['all,-wallet', false], ['all,-bunai', false],
++  ];
++  try {
++    for (const [value, on] of answers) {
++      if (value === undefined) delete process.env.EXPO_PUBLIC_REDESIGN;
++      else process.env.EXPO_PUBLIC_REDESIGN = value;
++      assert.equal(bunAiAreaOn(), on, String(value));
++      assert.equal(useBunAiArea(), on, `useBunAiArea ${String(value)}`);
++      assert.equal(usePhotosArea(), on, `usePhotosArea ${String(value)}`);
++    }
++  } finally {
++    if (saved === undefined) delete process.env.EXPO_PUBLIC_REDESIGN;
++    else process.env.EXPO_PUBLIC_REDESIGN = saved;
++  }
++});

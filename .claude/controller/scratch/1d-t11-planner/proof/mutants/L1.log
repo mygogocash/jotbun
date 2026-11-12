@@ -1,0 +1,46 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the sockets cannot be listed
+    at DurableObjectState.<anonymous> (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/test/workers/live.test.ts:169:15)
+    at DurableObjectState.getWebSockets (Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/@vitest/spy/dist/index.js:332:34)
+    at pokeOthers (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/live.ts:69:26)
+    at afterVaultWork (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/live.ts:123:41)
+    at UserVault.afterCall (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/user-vault.ts:321:5)
+    at UserVault.callWithAnalytics (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/user-vault.ts:248:12)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+stdout | test/workers/live.test.ts > pokes > a commit whose pokes fail still answers, and its revision moves: the work after a call never throws
+{"level":"error","request_id":"510c2b79-f360-4917-871e-8b8c6ac02faf","route":"POST /v1/wallets","status":500,"error":"Error"}
+
+ ❯ test/workers/live.test.ts (22 tests | 1 failed) 1010ms
+     × a commit whose pokes fail still answers, and its revision moves: the work after a call never throws 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/live.test.ts > pokes > a commit whose pokes fail still answers, and its revision moves: the work after a call never throws
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ ❯ createWallet test/workers/live.test.ts:74:22
+     72| async function createWallet(user: TestUser): Promise<CommandAck> {
+     73|   const res = await client.as(user).post('/v1/wallets', { id: crypto.r…
+     74|   expect(res.status).toBe(201)
+       |                      ^
+     75|   return (await res.json()) as CommandAck
+     76| }
+ ❯ test/workers/live.test.ts:175:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  01:57:22
+   Duration  6.48s (transform 2.60s, setup 4.61s, import 32ms, tests 1.01s, environment 0ms)
+

@@ -1,0 +1,68 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 2 failed) 373ms
+     × the analytics id is the HMAC of the caller's id, with the weeks and the consent 20ms
+     × without the key the analytics id is null, and nothing is sent under the person 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the analytics id is the HMAC of the caller's id, with the weeks and the consent
+AssertionError: expected { status: 200, body: { …(3) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "analytics_id": "eeac26b8117bb6b8fb086304c42b375714a66e33fc078cef1a6cf37eff1d7e4f",
+-     "consent": "unasked",
++     "consent": "no",
+      "weeks_since_signup": 0,
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/server-events.test.ts:158:19
+    156|     const read = async () => json(await client.as(user).get('/v1/me/an…
+    157|     const first = await read()
+    158|     expect(first).toEqual({ status: 200, body: { analytics_id: id, wee…
+       |                   ^
+    159|     expect(Object.keys(first.body)).toEqual(['analytics_id', 'weeks_si…
+    160|     await answer(client, user, true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected { status: 200, body: { …(3) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "analytics_id": null,
+-     "consent": "unasked",
++     "consent": "no",
+      "weeks_since_signup": 0,
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/server-events.test.ts:173:71
+    171|     const client = await frontDoor(r, CONFIG, { POSTHOG_PROJECT_TOKEN:…
+    172|     const { user, wallet } = await ledger(client)
+    173|     expect(await json(await client.as(user).get('/v1/me/analytics'))).…
+       |                                                                       ^
+    174|     await answer(client, user, true)
+    175|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  01:54:52
+   Duration  2.45s (transform 789ms, setup 1.56s, import 31ms, tests 373ms, environment 0ms)
+

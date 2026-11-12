@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 80ms
+   × a delete records record_deleted and its undo records undo_used, each once Jotbun has it 78ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > a delete records record_deleted and its undo records undo_used, each once Jotbun has it
+AssertionError: expected [ { name: 'record_deleted', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "name": "record_deleted",
++     "properties": {
++       "category_key": "bills",
++       "kind": "expense",
++       "origin": "app",
++     },
++   },
++ ]
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:991:37
+    989|     fireEvent.click(await screen.findByRole('button', { name: 'Delete'…
+    990|     expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    991|     expect(captures(recorded.sent)).toEqual([]);
+       |                                     ^
+    992|     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    993|     await screen.findByText('Entry deleted');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  02:16:10
+   Duration  935ms (transform 397ms, setup 51ms, import 591ms, tests 80ms, environment 94ms)
+

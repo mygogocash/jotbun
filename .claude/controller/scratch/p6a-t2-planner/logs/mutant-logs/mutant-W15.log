@@ -1,0 +1,80 @@
+(node:14602) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14602) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.701292ms)
+✔ leap days follow the Gregorian rules (0.123ms)
+✔ only real YYYY-MM-DD dates are accepted (0.627375ms)
+✔ never steps into the future (0.117625ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.061042ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.387417ms)
+✔ other days are written out, with the year only when it is not this year (0.112625ms)
+✔ Thai dates show Buddhist-era years (0.213375ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.123375ms)
+✔ weekday initials run Sunday first in each language (0.130917ms)
+✔ a month's short name has no year, in each language (0.1345ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.086916ms)
+✔ monthName gives short and long names in Thai and English (0.158625ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.151875ms)
+(node:14603) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.058875ms)
+(node:14604) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14604) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.841792ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.848667ms)
+✔ private mode masks both faces and keeps the count (0.194792ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.364291ms)
+✖ no budget has no side line and no gauge figure (0.356541ms)
+✔ after midnight the widget shows a new day with nothing logged (0.31975ms)
+✔ each face names its day (0.3845ms)
+✔ on the month's last evening the next entry drops the budget figures (0.318625ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.145666ms)
+✔ the second midnight asks to open Jotbun (0.169583ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.079167ms)
+✔ entryAt picks the newest started entry, else the first (0.166708ms)
+✔ faceFor gives system families the home face and accessory families the lock face (0.16ms)
+✔ Vietnamese reads the English lines (0.123083ms)
+✔ a signed-out snapshot has no figures (0.073333ms)
+✔ sameSnapshot ignores only the first entry's time (0.605875ms)
+✔ both snapshots carry the link words in the person's language (0.263292ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 31
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 201.326958
+
+✖ failing tests:
+
+test at src/wallet/outside/widgetSnapshot.test.ts:142:1
+✖ no budget has no side line and no gauge figure (0.356541ms)
+  AssertionError [ERR_ASSERTION]: buildWidgetSnapshot threw: TypeError: Cannot read properties of null (reading 'limitMinor')
+      at build (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:51:12)
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:144:23)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'fail',
+    diff: 'simple'
+  }

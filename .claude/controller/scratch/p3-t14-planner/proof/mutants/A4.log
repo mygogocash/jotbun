@@ -1,0 +1,51 @@
+(node:4508) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app/src/config/featureFlags.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ an approved area is on by default (0.493042ms)
+✔ off (or 0) switches every area off, and -area switches one off (0.084041ms)
+✔ an area not yet approved is on only by name, or all at once (0.049625ms)
+✔ planning is on by default since its approval, and -planning or off switches it off (0.042458ms)
+✔ insights is on by default since its approval, and -insights or off switches it off (0.039834ms)
+✔ account is on by default since its approval, and -account or off switches it off (0.06475ms)
+✔ import is on by default since its approval, and -import or off switches it off (0.069417ms)
+✔ companion is on by default, and -companion or off switches it off (0.057542ms)
+✔ the catalogue is still opt-in (0.045917ms)
+✔ conflict is off by default, on when named, and on with all (0.06975ms)
+✔ the wallet area is off unless named (0.070917ms)
+✔ the signin area is off unless named (0.045375ms)
+✔ analytics is off by default, on when named, and on with all (0.051583ms)
+✔ bunai is off by default, on when named and on with all (0.051542ms)
+✖ bunAiAreaOn needs both wallet and bunai (0.416458ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.394042
+
+✖ failing tests:
+
+test at src/config/featureFlags.test.ts:117:1
+✖ bunAiAreaOn needs both wallet and bunai (0.416458ms)
+  AssertionError [ERR_ASSERTION]: useBunAiArea undefined
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app/src/config/featureFlags.test.ts:127:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,69 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 2 failed) 474ms
+     × an edit, a delete or an import is not a record_saved 48ms
+     × the change log counts a create once, by its first version, inside the revision range only 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved
+AssertionError: expected [ Array(3) ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:294:52
+    292|     expect(await countRows(user, 'transactions')).toBe(records + 3)
+    293|     await r.settled()
+    294|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    295|   })
+    296|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: expected [ Array(2) ] to deeply equal [ { name: 'record_saved', …(1) } ]
+
+- Expected
++ Received
+
+@@ -4,6 +4,13 @@
+      "properties": {
+        "category_key": "food",
+        "kind": "expense",
+      },
+    },
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
+  ]
+
+ ❯ test/workers/server-events.test.ts:525:71
+    523|     await expect(events('transactions.create', '0', afterFirst)).resol…
+    524|     // After the first record: the second record only, not the edit's …
+    525|     await expect(events('transactions.create', afterFirst, afterEdit))…
+       |                                                                       ^
+    526|     // Any other route reads nothing (Q16).
+    527|     await expect(events('transactions.update', '0', afterEdit)).resolv…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  01:55:58
+   Duration  3.17s (transform 1.04s, setup 2.04s, import 35ms, tests 474ms, environment 0ms)
+

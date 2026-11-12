@@ -1,0 +1,11 @@
+red: real/apps/edge/src/v1/protocol.ts
+red: real/apps/edge/src/v1/env.ts
+red: stubs/apps/edge/src/v1/handler.ts
+red: stubs/apps/edge/src/vault/analytics.ts
+red: stubs/apps/edge/src/vault/user-vault.ts
+red: real/apps/edge/src/vault/routes.ts
+red: real/apps/edge/test/workers/support/v1-client.ts
+red: real/apps/edge/test/workers/server-events.test.ts
+red: real/apps/edge/test/workers/live.test.ts
+red: real/apps/edge/test/route-coverage.test.ts
+red: 10 files placed

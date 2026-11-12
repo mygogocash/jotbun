@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/planning/BudgetScreen.render.test.tsx (39 tests | 1 failed | 38 skipped) 120ms
+   × saving the month's budget records one budget_set, without the amount 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/BudgetScreen.render.test.tsx > saving the month's budget records one budget_set, without the amount
+AssertionError: expected [ { name: 'budget_set', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "name": "budget_set",
++     "properties": {
++       "budget": "set",
++       "origin": "app",
++     },
++   },
++ ]
+
+ ❯ src/screens/redesign/planning/BudgetScreen.render.test.tsx:597:24
+    595|     expect(await screen.findByText(UNCONFIRMED)).toBeTruthy();
+    596|     const captured = () => recorded.sent.filter((event) => event.kind …
+    597|     expect(captured()).toEqual([]);
+       |                        ^
+    598|     click('Try again');
+    599|     expect(await screen.findByText('Budget saved')).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 38 skipped (39)
+   Start at  21:50:53
+   Duration  890ms (transform 319ms, setup 62ms, import 482ms, tests 120ms, environment 120ms)
+

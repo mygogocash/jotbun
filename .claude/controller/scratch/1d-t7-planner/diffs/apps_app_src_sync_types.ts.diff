@@ -1,0 +1,18 @@
+diff --git a/apps/app/src/sync/types.ts b/apps/app/src/sync/types.ts
+index 8c1ba29fcbaa48f68bd3271fdec07852143e1d9a..e2cae0999e8c9554733f820b84930338e4fc5cd3 100644
+--- a/apps/app/src/sync/types.ts
++++ b/apps/app/src/sync/types.ts
+@@ -39,6 +39,13 @@ export type SyncOutcome = {
+   nextAttemptAt: number | null;
+   uncertain: number;
+   needsReview: number;
++  /**
++   * The V1Error code of the run's failure (NETWORK_ERROR, TIMEOUT, HTTP_502,
++   * INTERNAL_ERROR, LOCAL_ERROR, ...), else null (1D-T7: sync_failed's
++   * reason_code). The engine always sets it; an outcome made elsewhere (the
++   * scheduler's flush that threw, a fixture) may leave it out.
++   */
++  reason?: string | null;
+ };
+ 
+ /** The session a flush runs for (F5): the store must belong to the same account. */

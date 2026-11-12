@@ -1,0 +1,132 @@
+--- a/apps/edge/src/v1/handler.ts
++++ b/apps/edge/src/v1/handler.ts
+@@ -4,7 +4,10 @@
+ import type { AiFeature, PolicyKind, PolicyVersionDto } from '@gogospend/contracts'
+ 
+ import { ProblemException } from '@api/common/api-problem.filter'
++import { failureName } from '@api/common/operational-metrics'
+ 
++import { analyticsIdFor, createServerAnalytics } from '../analytics/server-analytics'
++import type { ServerAnalytics, ServerEvent } from '../analytics/server-analytics'
+ import type { ModelTransport } from './ai/transport'
+ import { transportFromEnv } from './ai/transport'
+ import { BASE_HEADERS, errorResponse, jsonResponse, problemResponse } from '../server/http/problem'
+@@ -15,7 +18,7 @@
+ import type { V1Env } from './env'
+ import { logFailure } from './log'
+ import { matchRoute } from './match'
+-import type { PublishedPolicies, VaultAccess, VaultClaims, VaultReply } from './protocol'
++import type { PublishedPolicies, VaultAccess, VaultAnalytics, VaultClaims, VaultReply, VaultRouteId } from './protocol'
+ import { VAULT_V1_ROUTES } from './routes'
+ import type { VaultRoute } from './routes'
+ import { tokenVerifierFromEnv } from './tokens'
+@@ -38,6 +41,11 @@
+   transport?: ModelTransport | null
+   /** Each AI route's deadline in ms (P3-T6), in place of AI_ROUTE_DEADLINE_MS's. Tests give short ones; the Worker gives none. */
+   aiDeadlines?: Partial<Record<AiFeature, number>>
++  /**
++   * Server analytics (1D-T11): the PostHog client for this env, or null to send nothing. Absent, it is
++   * createServerAnalytics(env, waitUntil), which builds no client without POSTHOG_PROJECT_TOKEN. Tests give one with a fake port.
++   */
++  analytics?: (env: V1Env) => ServerAnalytics | null
+ }
+ 
+ /** A route marked `starts` hands its vault to startWork only after a 2xx answer. */
+@@ -140,7 +148,7 @@
+     // The live socket (1D-T10): after every check above, the vault's fetch answers it in place of the vault call.
+     if (route.live) return await openLiveSocket(request, stub, claims)
+     if (!route.vault) throw new Error('a bound route names no vault call')
+-    const reply = await stub.call({
++    const { reply, analytics } = await stub.callWithAnalytics({
+       route: route.vault,
+       access: route.access,
+       charge: route.method === 'GET' ? 'read' : 'write',
+@@ -152,12 +160,86 @@
+       body,
+     })
+     if (startsWork(route, reply.status)) handOffWork(deps, stub)
+-    return await headOf(replyResponse(reply, requestId), method)
++    // Server events (1D-T11): what the vault read goes to PostHog or nowhere, never into the response.
++    await sendServerEvents(request, env, deps, route.vault, claims, reply, analytics)
++    const answer = route.vault === 'me.analytics' ? await withAnalyticsId(reply, env, claims) : reply
++    return await headOf(replyResponse(answer, requestId), method)
+   } catch (error) {
+-    return errorResponse(error, requestId, `${route.method} ${route.path}`)
++    const response = errorResponse(error, requestId, `${route.method} ${route.path}`)
++    // An unexpected Worker exception (1D-T11, L6): only what errorResponse answers with 500 INTERNAL_ERROR is
++    // counted, by its class name and anonymously; a deliberate refusal never is.
++    if (response.status === 500) countWorkerFailure(env, deps, error)
++    return response
++  }
++}
++
++/** The routes the phone's outbox and sync use: a 500 on one is a sync_failed (L6). */
++const OUTBOX_ROUTES: readonly VaultRouteId[] = ['transactions.create', 'sync.changes']
++
++const isInternalError = (reply: VaultReply): boolean => !reply.ok && reply.status === 500 && reply.code === 'INTERNAL_ERROR'
++
++/** The server's PostHog client for this request, or null (1D-T11); built only when there is something to send. */
++function analyticsOf(env: V1Env, deps: V1Deps): ServerAnalytics | null {
++  return deps.analytics ? deps.analytics(env) : createServerAnalytics(env, deps.waitUntil ?? waitUntil)
++}
++
++/** The analytics id (L5): the HMAC of the account id under ANALYTICS_ID_KEY, or null while the key is unset. */
++async function analyticsIdOf(env: V1Env, claims: VaultClaims): Promise<string | null> {
++  const key = env.ANALYTICS_ID_KEY
++  return key ? analyticsIdFor(claims.accountId, key) : null
++}
++
++/** GET /v1/me/analytics (L5): exactly the analytics id, the weeks and the consent; a refusal goes back unchanged. */
++async function withAnalyticsId(reply: VaultReply, env: V1Env, claims: VaultClaims): Promise<VaultReply> {
++  if (!reply.ok) return reply
++  const { weeks_since_signup, consent } = reply.body as { weeks_since_signup: number; consent: VaultAnalytics['consent'] }
++  return { ...reply, body: { analytics_id: await analyticsIdOf(env, claims), weeks_since_signup, consent } }
++}
++
++/** The events a reply itself says (L6): resync_required for a 410 RESYNC_REQUIRED, sync_failed for a 500 INTERNAL_ERROR on the outbox's routes. */
++function replyEvents(vault: VaultRouteId, reply: VaultReply): ServerEvent[] {
++  if (!reply.ok && reply.status === 410 && reply.code === 'RESYNC_REQUIRED') return [{ name: 'resync_required', properties: { reason_code: 'RESYNC_REQUIRED' } }]
++  if (isInternalError(reply) && OUTBOX_ROUTES.includes(vault)) return [{ name: 'sync_failed', properties: { reason_code: 'INTERNAL_ERROR' } }]
++  return []
++}
++
++/** `X-GoGoSpend-Analytics: off`, which the phone sends unless its answer is yes (L4), stops server events for this request. */
++function analyticsOff(request: Request): boolean {
++  return request.headers.get('x-gogospend-analytics')?.toLowerCase() === 'off'
++}
++
++/**
++ * Server events after a vault call (1D-T11, L6). A 500 INTERNAL_ERROR is counted by its class name,
++ * anonymously, whatever the consent. Under the analytics id, only when the person said yes, this request is
++ * not marked off and ANALYTICS_ID_KEY is set: the records the call committed, and what the reply says.
++ * Never throws, so the reply stands whatever PostHog does; a failure is logged by its class name only.
++ */
++async function sendServerEvents(request: Request, env: V1Env, deps: V1Deps, vault: VaultRouteId, claims: VaultClaims, reply: VaultReply, analytics: VaultAnalytics): Promise<void> {
++  try {
++    const failed = isInternalError(reply)
++    const events = analytics.consent === 'yes' && !analyticsOff(request) ? [...analytics.events, ...replyEvents(vault, reply)] : []
++    if (!failed && events.length === 0) return
++    const client = analyticsOf(env, deps)
++    if (client === null) return
++    if (failed) client.captureFailure(analytics.failure ?? 'Error', vault)
++    if (events.length === 0) return
++    const analyticsId = await analyticsIdOf(env, claims)
++    if (analyticsId === null) return
++    for (const event of events) client.capture(analyticsId, event)
++  } catch (error) {
++    logFailure('server_events_failed', error)
+   }
+ }
+ 
++/** Counts an unexpected Worker exception by its class name, as the Worker's own; never throws. */
++function countWorkerFailure(env: V1Env, deps: V1Deps, error: unknown): void {
++  try {
++    analyticsOf(env, deps)?.captureFailure(failureName(error), 'worker')
++  } catch (failure) {
++    logFailure('server_events_failed', failure)
++  }
++}
++
+ /**
+  * JSON, as the edge's dispatcher reads it: `readJsonBody` ignores any other
+  * content type. A `stream` route then keeps that unread body for the handler.

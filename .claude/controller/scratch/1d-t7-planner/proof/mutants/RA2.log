@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+ ❯ src/screens/redesign/record/recordActions.render.test.tsx (7 tests | 1 failed | 6 skipped) 62ms
+   × an acknowledged edit that moves the entry to another category records the new category's key (1D-T7) 60ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/record/recordActions.render.test.tsx > an acknowledged edit that moves the entry to another category records the new category's key (1D-T7)
+AssertionError: expected [ [ 'record_edited', …(1) ] ] to deeply equal [ [ 'record_edited', …(1) ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "record_edited",
+      {
+-       "category_key": "food",
++       "category_key": "bills",
+        "kind": "expense",
+        "origin": "app",
+      },
+    ],
+  ]
+
+ ❯ src/screens/redesign/record/recordActions.render.test.tsx:183:22
+    181|     await waitFor(() => expect(state()).toContain('editing none'));
+    182|     const captured = recorded.sent.filter((event) => event.kind === 'c…
+    183|     expect(captured).toEqual([['record_edited', { kind: 'expense', cat…
+       |                      ^
+    184|   } finally {
+    185|     recorded.restore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 skipped (7)
+   Start at  20:51:44
+   Duration  940ms (transform 330ms, setup 52ms, import 533ms, tests 62ms, environment 118ms)
+

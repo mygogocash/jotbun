@@ -1,0 +1,25 @@
+diff --git a/apps/app/src/config/featureFlags.ts b/apps/app/src/config/featureFlags.ts
+index 8bfb25142c9ff47005f908901559a66558b782b8..d8932969772d404059bc58ecc6d031c4d141f034 100644
+--- a/apps/app/src/config/featureFlags.ts
++++ b/apps/app/src/config/featureFlags.ts
+@@ -11,7 +11,7 @@ export function isLegacySpendEnabled(): boolean {
+ }
+ 
+ /** Areas of the "Bun diary" redesign, each switched on once its screenshots are approved (E2). */
+-export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet' | 'signin' | 'analytics';
++export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'account' | 'import' | 'companion' | 'conflict' | 'wallet' | 'signin' | 'analytics' | 'bunai';
+ 
+ /**
+  * Approved areas, on by default. The core loop (Home, Quick add, History,
+@@ -45,6 +45,11 @@ export type RedesignArea = 'core' | 'catalogue' | 'planning' | 'insights' | 'acc
+  * The analytics area (1D-T8: D34's consent question in the spend layout and
+  * Privacy's ช่วยพัฒนา Jotbun switch) waits for its E2 screenshots (decided,
+  * Q9), so it is on only when named or with `all`.
++ *
++ * The Bun AI area (phase 3, P3:ai-area: photos and the Bun AI screens in the
++ * Bun Wallet look) waits for its E2 screenshots (E2-P3-A and E2-P3-B; P3-T24
++ * approves it), so it is on only when named or with `all`, and its screens
++ * show only while the wallet area is on too (src/wallet/bunai/aiArea.ts).
+  */
+ const APPROVED: readonly RedesignArea[] = ['core', 'planning', 'insights', 'account', 'import', 'companion'];
+ 

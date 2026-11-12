@@ -1,0 +1,111 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 4 failed) 399ms
+     × a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 28ms
+     × a deliberate refusal is never an error count 34ms
+     × an unexpected failure sends its class name only, without the person 19ms
+     × a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count
+AssertionError: expected [] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "transactions.create",
+-     "TypeError",
+-   ],
+-   [
+-     "sync.changes",
+-     "SyntaxError",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:336:133
+    334|     ])
+    335|     const counts = r.sent.filter((message) => message.event === '$exce…
+    336|     expect(counts.map((message) => [message.properties.route, (message…
+       |                                                                                                                                     ^
+    337|       ['transactions.create', 'TypeError'],
+    338|       ['sync.changes', 'SyntaxError'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count
+AssertionError: expected [] to deeply equal [ '$exception' ]
+
+- Expected
++ Received
+
+- [
+-   "$exception",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:381:52
+    379|     }
+    380|     await r.settled()
+    381|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+       |                                                    ^
+    382|   })
+    383|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:401:20
+    399|     }
+    400|     await r.settled()
+    401|     expect(r.sent).toHaveLength(1)
+       |                    ^
+    402|     const [count] = r.sent
+    403|     expect(count).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ [ '$exception', …(2) ] ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "$exception",
+-     "transactions.create",
+-     "VaultOwnerMismatch",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:443:162
+    441|     })
+    442|     await r.settled()
+    443|     expect(r.sent.map((message) => [message.event, message.properties.…
+       |                                                                                                                                                                  ^
+    444|       ['$exception', 'transactions.create', 'VaultOwnerMismatch'],
+    445|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 15 passed (19)
+   Start at  01:56:56
+   Duration  2.70s (transform 867ms, setup 1.72s, import 40ms, tests 399ms, environment 0ms)
+

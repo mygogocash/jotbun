@@ -1,0 +1,21 @@
+diff --git a/apps/app/src/screens/redesign/deleted/deletedData.ts b/apps/app/src/screens/redesign/deleted/deletedData.ts
+index 6c28ba5ff579376e6699a9d1855aa30660ff7364..b47373d12d5d3c851d6a62bdbff898b2d79c9f69 100644
+--- a/apps/app/src/screens/redesign/deleted/deletedData.ts
++++ b/apps/app/src/screens/redesign/deleted/deletedData.ts
+@@ -2,6 +2,7 @@ import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
+ import type { CategoryDto, DeletedHistoryPage, DeletedTransactionDto, WalletSnapshot } from '@gogospend/contracts';
+ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+ 
++import { trackRecordRestored } from '@mobile/analytics/events';
+ import { V1Error } from '@mobile/api/client';
+ import { useCopy } from '@mobile/i18n/useCopy';
+ import { playHaptic } from '@mobile/lib/hapticMoment';
+@@ -132,6 +133,8 @@ export function useRecentlyDeleted(now?: Date): RecentlyDeletedState {
+     try {
+       await resources.restoreTransaction(row.recordId, row.version, key);
+       keys.settle(slot);
++      // Restore is this rule (1D-T7, R61): one record_restored, with the record's kind only.
++      trackRecordRestored({ kind: row.type });
+       setPending(null);
+       // Off this list at once; the list is read again in place below.
+       setLists((current) => (current ? { ...current, items: current.items.filter((item) => item.id !== row.recordId) } : current));

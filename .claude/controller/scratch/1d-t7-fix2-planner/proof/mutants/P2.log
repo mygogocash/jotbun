@@ -1,0 +1,45 @@
+(node:65039) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app/src/consent/systemPermissionTelemetry.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:65039) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/packages/contracts/package.json.
+✖ a camera or photos denial records permission_denied with its class name; a grant or Open Settings records nothing (1.45325ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.989917
+
+✖ failing tests:
+
+test at src/consent/systemPermissionTelemetry.test.ts:8:1
+✖ a camera or photos denial records permission_denied with its class name; a grant or Open Settings records nothing (1.45325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      kind: 'capture',
+      name: 'permission_denied',
+      properties: {
+        origin: 'app',
+  +     reason_code: 'CAMERA_DENIED'
+  -     reason_code: 'PHOTOS_DENIED'
+      }
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app/src/consent/systemPermissionTelemetry.test.ts:14:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { kind: 'capture', name: 'permission_denied', properties: { reason_code: 'CAMERA_DENIED', origin: 'app' } },
+    expected: { kind: 'capture', name: 'permission_denied', properties: { reason_code: 'PHOTOS_DENIED', origin: 'app' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

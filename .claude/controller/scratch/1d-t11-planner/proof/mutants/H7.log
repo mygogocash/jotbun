@@ -1,0 +1,56 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 2 failed) 691ms
+     × a deliberate refusal is never an error count 54ms
+     × an unexpected failure sends its class name only, without the person 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count
+AssertionError: expected [ '$exception', 'sync_failed' ] to deeply equal [ '$exception' ]
+
+- Expected
++ Received
+
+  [
+    "$exception",
++   "sync_failed",
+  ]
+
+ ❯ test/workers/server-events.test.ts:381:52
+    379|     }
+    380|     await r.settled()
+    381|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+       |                                                    ^
+    382|   })
+    383|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person
+AssertionError: expected [ { …(3) }, { …(3) } ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ test/workers/server-events.test.ts:401:20
+    399|     }
+    400|     await r.settled()
+    401|     expect(r.sent).toHaveLength(1)
+       |                    ^
+    402|     const [count] = r.sent
+    403|     expect(count).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 17 passed (19)
+   Start at  01:56:41
+   Duration  3.45s (transform 1.06s, setup 2.08s, import 46ms, tests 691ms, environment 1ms)
+

@@ -1,0 +1,10 @@
+# 1D-T7 second fix round's files (R120), on d8d7364a. Column 1: M (modified) or A (added).
+# Column 2: what RED holds (stub = stubs/, real = real/, base = left as d8d7364a has it,
+# later = a receipt, copied at the end). GREEN holds real/ for every line but the receipts.
+M stub apps/app/src/analytics/controller.ts
+M base apps/app/src/analytics/AnalyticsUpkeep.tsx
+M real apps/app/src/analytics/controller.test.ts
+M real apps/app/src/analytics/appAnalytics.render.test.tsx
+M real apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+M later docs/implementation/receipts/1D-T7-fix.md
+A later docs/implementation/receipts/1D-T7-fix2.md

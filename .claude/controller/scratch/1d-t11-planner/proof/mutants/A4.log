@@ -1,0 +1,34 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 663ms
+     × the weeks since sign-up are whole weeks on the vault clock, from 0 to 1040 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the weeks since sign-up are whole weeks on the vault clock, from 0 to 1040
+AssertionError: 2005-10-27T18:55:04.165Z: expected 1098 to be 1040 // Object.is equality
+
+- Expected
++ Received
+
+- 1040
++ 1098
+
+ ❯ test/workers/server-events.test.ts:204:40
+    202|     for (const [createdAt, expected] of cases) {
+    203|       await sqlExec(user, 'UPDATE account_state SET created_at = ? WHE…
+    204|       expect(await weeks(), createdAt).toBe(expected)
+       |                                        ^
+    205|     }
+    206|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:55:01
+   Duration  3.06s (transform 960ms, setup 1.85s, import 35ms, tests 663ms, environment 0ms)
+

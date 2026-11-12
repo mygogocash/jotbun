@@ -1,0 +1,9 @@
+red: real/apps/app/src/analytics/controller.test.ts
+red: real/apps/app/src/analytics/appAnalytics.render.test.tsx
+red: real/apps/app/src/sync/deviceSync.render.test.tsx
+red: real/apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+red: real/apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+red: real/apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+red: real/apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+red: real/apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx
+red: 8 files placed

@@ -1,0 +1,9 @@
+equal to real/: apps/app/src/config/featureFlags.ts
+equal to real/: apps/app/src/config/featureFlags.test.ts
+equal to real/: apps/app/src/dev/catalogue/wallet/index.ts
+equal to real/: apps/app/src/screens/redesign/account/SettingsScreen.tsx
+equal to real/: apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+equal to real/: apps/app/src/screens/redesign/account/CompanionSettings.tsx
+equal to real/: apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+equal to real/: apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+applycheck: 8 of 8 equal

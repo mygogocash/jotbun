@@ -1,0 +1,46 @@
+diff --git a/apps/app/src/analytics/controller.test.ts b/apps/app/src/analytics/controller.test.ts
+index a0002fc42eaecf794ed2467f8b8ff5805e9d0a90..b5d3ddb06242807136555d21b36bad81574e8d2f 100644
+--- a/apps/app/src/analytics/controller.test.ts
++++ b/apps/app/src/analytics/controller.test.ts
+@@ -194,6 +194,41 @@ test('signing out still drops what was held, so the next sign-in starts with not
+   assert.equal(h.captures().length, 0);
+ });
+ 
++// R120 (1D-T7's second fix round, from the confirming review's CM1): a sign-out drops what is
++// held whether or not its account was named. AnalyticsUpkeep names an account from /v1/me, so
++// offline A's session can end before the controller ever hears of A. A said no on this phone
++// earlier; B, who signs in next, has said yes on the server.
++const SAVED_OFFLINE = { kind: 'expense', source: 'typed', category_key: 'food', has_photo: false, offline: true, seconds_to_save: 12 };
++
++test("L1: a sign-out drops what was held while the account was never named, so the next account's yes sends none of it", async () => {
++  const h = harness({ consent: 'yes', stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: false } });
++  // A's session was restored, but A's account read failed offline: the launch has said nothing yet.
++  h.analytics.track('record_saved', SAVED_OFFLINE);
++  assert.equal(h.analytics.status(), 'loading');
++  await h.analytics.setAccount(null, { signedOut: true });
++  assert.equal(h.analytics.status(), 'signed_out');
++  await h.analytics.setAccount(ACCOUNT_B);
++  assert.equal(h.analytics.status(), 'yes');
++  assert.deepEqual(h.captures(), []);
++});
++
++test("L2: a sign-out drops what was held and resets also when no one was named since the launch's null, so the next account's yes sends none of it", async () => {
++  const h = harness({ consent: 'yes', stored: { accountId: ACCOUNT_A, answer: 'no', pendingServer: false } });
++  // The launch's first answer: no one is signed in yet.
++  await h.analytics.setAccount(null);
++  // A signs in, but A's account read fails offline: the controller still holds no one.
++  h.analytics.track('record_saved', SAVED_OFFLINE);
++  assert.equal(h.analytics.status(), 'signed_out');
++  const resetsBefore = h.resets().length;
++  await h.analytics.setAccount(null, { signedOut: true });
++  const resetsAtSignOut = h.resets().length - resetsBefore;
++  assert.equal(h.analytics.status(), 'signed_out');
++  await h.analytics.setAccount(ACCOUNT_B);
++  assert.equal(h.analytics.status(), 'yes');
++  assert.deepEqual(h.captures(), []);
++  assert.equal(resetsAtSignOut, 1);
++});
++
+ test('the server\'s yes sends at once, identifies with the analytics id and starts replay', async () => {
+   const h = harness({ consent: 'yes', weeks: 3 });
+   h.analytics.setCommon({ app_version: '1.2.3', platform: 'ios', language: 'th', home_currency: 'THB' });

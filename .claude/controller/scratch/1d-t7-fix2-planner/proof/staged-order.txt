@@ -1,0 +1,7 @@
+apps/app/src/analytics/AnalyticsUpkeep.tsx
+apps/app/src/analytics/appAnalytics.render.test.tsx
+apps/app/src/analytics/controller.test.ts
+apps/app/src/analytics/controller.ts
+apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+docs/implementation/receipts/1D-T7-fix.md
+docs/implementation/receipts/1D-T7-fix2.md

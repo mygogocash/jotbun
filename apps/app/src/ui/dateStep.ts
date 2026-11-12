@@ -219,3 +219,35 @@ export function shortDateLabel(date: string, today: string, locale: DateLocale):
   const day = partsOf(date);
   return shortDate(day, locale, day.year !== partsOf(today).year);
 }
+
+/** A month's place in the year, 0 to 11. Anything but a `YYYY-MM` month from year 1 throws a TypeError. */
+function monthIndex(month: string): number {
+  const match = ISO_MONTH.exec(month);
+  const number = match ? Number(match[2]) : 0;
+  if (!match || Number(match[1]) < 1 || number < 1 || number > 12) throw new TypeError(`Expected a YYYY-MM month, got ${month}.`);
+  return number - 1;
+}
+
+/**
+ * A month's name without its year, short or long: "ต.ค." or "ตุลาคม", "Oct"
+ * or "October", "thg 10" or "tháng 10". The widget's gauge (P6A-T2) says
+ * "งบ ต.ค." and VoiceOver "งบเดือนตุลาคม".
+ */
+export function monthName(month: string, locale: DateLocale, form: 'short' | 'long'): string {
+  const words = WORDS[locale];
+  return (form === 'long' ? words.monthsLong : words.monthsShort)[monthIndex(month)];
+}
+
+/**
+ * The day on a widget face (ox-widget-lock): a short weekday, then the day
+ * of the month: "ส. 24", "Sat 24", "T7, 24". Thai shortens the weekday as
+ * Thai calendars do, with a full stop.
+ */
+export function shortDayName(date: string, locale: DateLocale): string {
+  const day = partsOf(date);
+  const words = WORDS[locale];
+  const index = weekday(day);
+  if (locale === 'th') return `${words.weekdaysNarrow[index]}. ${day.day}`;
+  if (locale === 'vi') return `${words.weekdaysNarrow[index]}, ${day.day}`;
+  return `${words.weekdaysShort[index]} ${day.day}`;
+}

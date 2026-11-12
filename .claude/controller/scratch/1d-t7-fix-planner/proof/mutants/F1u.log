@@ -1,0 +1,39 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/analytics/appAnalytics.render.test.tsx (3 tests | 1 failed | 2 skipped) 122ms
+   × a signed-out first launch keeps the step tracked before the install, and sends it after the sign-in and a yes 121ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/analytics/appAnalytics.render.test.tsx > a signed-out first launch keeps the step tracked before the install, and sends it after the sign-in and a yes
+AssertionError: expected [ 'private', 'first_coffee' ] to deeply equal [ 'coffee', 'private', 'first_coffee' ]
+
+- Expected
++ Received
+
+  [
+-   "coffee",
+    "private",
+    "first_coffee",
+  ]
+
+ ❯ src/analytics/appAnalytics.render.test.tsx:104:19
+    102|   setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'ses…
+    103|   await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+    104|   expect(steps()).toEqual(['coffee', 'private', 'first_coffee']);
+       |                   ^
+    105| });
+    106|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  21:51:00
+   Duration  642ms (transform 142ms, setup 46ms, import 271ms, tests 122ms, environment 91ms)
+

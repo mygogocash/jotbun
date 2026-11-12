@@ -1,0 +1,115 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 80ms
+   × while Bun's AI help rests, the switch keeps the answer and says so, with no uses 76ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > while Bun's AI help rests, the switch keeps the answer and says so, with no uses
+AssertionError: expected [ <div …(3)>…(2)</div> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <div
++     class="css-view-g5y9jx"
++     data-testid="ai-settings-uses"
++     style="gap: 6px;"
++   >
++     <div
++       class="css-text-146c3p1"
++       dir="auto"
++       style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 500; line-height: 20px; color: rgba(17, 16, 20, 1.00);"
++     >
++       วันนี้ใช้ได้อีก
++     </div>
++     <div
++       class="css-view-g5y9jx"
++       style="flex-direction: row; gap: 6px;"
++     >
++       <div
++         class="css-view-g5y9jx"
++         data-testid="ai-settings-uses-parse"
++         style="background-color: rgba(244, 243, 249, 1.00); padding: 6px 10px; border-radius: 12px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(17, 16, 20, 1.00);"
++         >
++           27 / 30
++         </div>
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(107, 104, 120, 1.00);"
++         >
++           ประโยค
++         </div>
++       </div>
++       <div
++         class="css-view-g5y9jx"
++         data-testid="ai-settings-uses-slip"
++         style="background-color: rgba(244, 243, 249, 1.00); padding: 6px 10px; border-radius: 12px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(17, 16, 20, 1.00);"
++         >
++           9 / 10
++         </div>
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(107, 104, 120, 1.00);"
++         >
++           สลิป
++         </div>
++       </div>
++       <div
++         class="css-view-g5y9jx"
++         data-testid="ai-settings-uses-ask"
++         style="background-color: rgba(244, 243, 249, 1.00); padding: 6px 10px; border-radius: 12px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(17, 16, 20, 1.00);"
++         >
++           19 / 20
++         </div>
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(107, 104, 120, 1.00);"
++         >
++           คำถาม
++         </div>
++       </div>
++     </div>
++   </div>,
++ ]
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:322:55
+    320|   expect(checked(named('switch', 'ตัวช่วย AI ของบัน'))).toBe('true');
+    321|   expect(found('ai-settings-resting').textContent).toBe(translateCopy(…
+    322|   expect(screen.queryAllByTestId('ai-settings-uses')).toEqual([]);
+       |                                                       ^
+    323|   cleanup();
+    324|   await mountSettings(BOARD);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:03:55
+   Duration  2.31s (transform 1.43s, setup 62ms, import 1.89s, tests 80ms, environment 122ms)
+

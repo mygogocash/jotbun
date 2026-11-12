@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/HomeScreen.render.test.tsx (46 tests | 1 failed | 45 skipped) 120ms
+   × creating a wallet records one wallet_added, without its name or opening balance 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/HomeScreen.render.test.tsx > creating a wallet records one wallet_added, without its name or opening balance
+AssertionError: expected [] to deeply equal [ { name: 'wallet_added', …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "name": "wallet_added",
+-     "properties": {
+-       "origin": "app",
+-     },
+-   },
+- ]
++ []
+
+ ❯ src/screens/redesign/HomeScreen.render.test.tsx:840:42
+    838|     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    839|     expect(await screen.findByLabelText('กระเป๋าเงินสด ฿1,234.50')).to…
+    840|     expect(capturedNames(recorded.sent)).toEqual([{ name: 'wallet_adde…
+       |                                          ^
+    841|     const json = JSON.stringify(recorded.sent);
+    842|     for (const secret of ['กระเป๋าเงินสด', '123450', '1,234.50']) expe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 skipped (46)
+   Start at  21:50:47
+   Duration  914ms (transform 363ms, setup 43ms, import 547ms, tests 120ms, environment 90ms)
+

@@ -1,0 +1,64 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+ ❯ test/route-coverage.test.ts (9 tests | 2 failed) 9ms
+     × lists each route once, and nothing NestJS lacks but the edge-only and the added routes 3ms
+     × GET /v1/me/analytics is an added route with a vault handler, and the added routes are exactly these two (1D-T11) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes
+AssertionError: expected [ 'GET /v1/ai/note', …(8) ] to deeply equal [ 'GET /v1/ai/note', …(7) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,10 @@
+  [
+    "GET /v1/ai/note",
+    "GET /v1/bridge/gogocash/catalogue",
+    "GET /v1/me/ai-preferences",
++   "GET /v1/me/analytics",
+    "GET /v1/sync/live",
+    "POST /v1/ai/ask",
+    "POST /v1/ai/parse",
+    "POST /v1/ai/slip",
+    "PUT /v1/me/ai-preferences",
+
+ ❯ test/route-coverage.test.ts:88:64
+     86|     const listed = [...served, ...VAULT_DEFERRED_ROUTES, ...VAULT_RETI…
+     87|     expect(new Set(listed).size).toBe(listed.length)
+     88|     expect(listed.filter((key) => !nestByKey.has(key)).sort()).toEqual…
+       |                                                                ^
+     89|     expect(VAULT_EDGE_ONLY_ROUTES.filter((key) => VAULT_ADDED_ROUTES.i…
+     90|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler, and the added routes are exactly these two (1D-T11)
+AssertionError: expected [ 'GET /v1/sync/live' ] to deeply equal [ 'GET /v1/me/analytics', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "GET /v1/me/analytics",
+    "GET /v1/sync/live",
+  ]
+
+ ❯ test/route-coverage.test.ts:158:44
+    156|
+    157|   it('GET /v1/me/analytics is an added route with a vault handler, and…
+    158|     expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analyt…
+       |                                            ^
+    159|     expect(VAULT_V1_ROUTES.filter((route) => keyOf(route) === 'GET /v1…
+    160|     expect(VAULT_HANDLERS['me.analytics']).toBeTypeOf('function')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)
+   Start at  01:57:19
+   Duration  657ms (transform 328ms, setup 0ms, import 510ms, tests 9ms, environment 0ms)
+

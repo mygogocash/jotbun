@@ -28,3 +28,11 @@ if [ -n "$wt" ]; then
 fi
 /usr/bin/git -C "$root" branch -D "$branch" 2>/dev/null || true
 /usr/bin/git -C "$root" push -q origin --delete "$branch" 2>/dev/null && echo "deleted origin/$branch" || true
+# Free the disk: the task's scratch folders keep their sources, probes and logs, but their node_modules
+# (fresh installs in proof trees) are reinstallable. On 13 Nov they filled the disk (47 GB across 211 folders).
+if [ -n "$task" ]; then
+  t=$(echo "$task" | tr 'A-Z' 'a-z')
+  find "$root/.claude/controller/scratch" -mindepth 1 -maxdepth 1 -type d \( -name "$t" -o -name "$t-*" \) -print0 \
+    | while IFS= read -r -d '' d; do find "$d" -type d -name node_modules -prune -exec rm -rf {} + 2>/dev/null; done
+  echo "pruned node_modules in scratch/$t*"
+fi

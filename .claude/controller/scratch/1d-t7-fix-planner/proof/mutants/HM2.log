@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/HomeScreen.render.test.tsx (46 tests | 1 failed | 45 skipped) 91ms
+   × a first wallet an earlier attempt had already made records one wallet_added; a refused one records none 89ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/HomeScreen.render.test.tsx > a first wallet an earlier attempt had already made records one wallet_added; a refused one records none
+AssertionError: expected [] to deeply equal [ { name: 'wallet_added', …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "name": "wallet_added",
+-     "properties": {
+-       "origin": "app",
+-     },
+-   },
+- ]
++ []
+
+ ❯ src/screens/redesign/HomeScreen.render.test.tsx:864:42
+    862|     fireEvent.click(screen.getByRole('button', { name: 'Create wallet'…
+    863|     expect(await screen.findByLabelText('Cash ฿0.00')).toBeTruthy();
+    864|     expect(capturedNames(recorded.sent)).toEqual([{ name: 'wallet_adde…
+       |                                          ^
+    865|   } finally {
+    866|     recorded.restore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 skipped (46)
+   Start at  21:50:49
+   Duration  988ms (transform 396ms, setup 61ms, import 589ms, tests 91ms, environment 111ms)
+

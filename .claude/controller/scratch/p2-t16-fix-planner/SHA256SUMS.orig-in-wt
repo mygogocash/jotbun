@@ -1,0 +1,4 @@
+0431be15d246f5bc4e8c074d0653210f6a1fd89fcb7bbfa67d1111d92c8399ea  apps/app/src/wallet/add/AddTrayHost.tsx
+972b67507491fbfe8eeffc03bdae200a26be1b431f4d119f40574992dafce234  apps/app/src/wallet/add/copy.ts
+e9f3a85fa76bed25776784e30c45f99db91668a216c1265c58a434e2e43a38a4  apps/app/src/wallet/add/AddTray.render.test.tsx
+6ae01c4a5743588cb5862bb9ed3871e90501b2c777e08c7175ff77b41f7af4c0  docs/implementation/receipts/P2-T16.md

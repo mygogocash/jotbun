@@ -1,0 +1,141 @@
+== 0.2
+8434af62 Merge pull request #418 from mygogocash/p3/t5-draft-review
+== 0.3
+0bfdc014
+== 0.4
+rc=0
+68
+== 0.5
+apps/app/src/config/featureFlags.ts: OK
+apps/app/src/config/featureFlags.test.ts: OK
+apps/app/src/dev/catalogue/wallet/index.ts: OK
+apps/app/src/screens/redesign/account/SettingsScreen.tsx: OK
+apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx: OK
+apps/app/src/screens/redesign/account/CompanionSettings.tsx: OK
+apps/app/src/screens/redesign/ai/AiConsentSheet.tsx: OK
+apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx: OK
+== 0.6
+checked
+== 0.8
+rc=0
+== 1
+red: real/apps/app/src/config/featureFlags.ts
+red: real/apps/app/src/config/featureFlags.test.ts
+red: stubs/apps/app/src/wallet/bunai/drafts.ts
+red: real/apps/app/src/wallet/bunai/drafts.test.ts
+red: stubs/apps/app/src/wallet/bunai/useBunAiCopy.ts
+red: stubs/apps/app/src/wallet/bunai/aiArea.ts
+red: stubs/apps/app/src/wallet/bunai/aiConsent.ts
+red: stubs/apps/app/src/wallet/bunai/AiConsentContent.tsx
+red: stubs/apps/app/src/wallet/bunai/AiConsentTray.tsx
+red: stubs/apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+red: real/apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+red: real/apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+red: stubs/apps/app/app/settings/ai.tsx
+red: real/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+red: real/apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+red: 15 files placed
+== 2
+rc=0
+== 3.1
+rc=1
+ℹ tests 16
+ℹ pass 14
+ℹ fail 2
+2
+== 3.2
+rc=1
+      Tests  27 failed | 77 passed (104)
+27
+0
+== 4
+green: 21 files placed
+== 5.1
+rc=0
+== 5.2
+rc=0
+ℹ tests 16
+ℹ pass 16
+ℹ fail 0
+== 5.3
+rc=0
+      Tests  104 passed (104)
+0
+== 5.4
+rc=0
+      Tests  14 passed (14)
+== 6
+rc=0
+74 of 74 killed; survivors []; not restored []
+74
+ M apps/app/src/config/featureFlags.test.ts
+ M apps/app/src/config/featureFlags.ts
+ M apps/app/src/dev/catalogue/wallet/index.ts
+ M apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+ M apps/app/src/screens/redesign/account/CompanionSettings.tsx
+ M apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+ M apps/app/src/screens/redesign/account/SettingsScreen.tsx
+ M apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+?? apps/app/app/settings/ai.tsx
+?? apps/app/src/dev/catalogue/wallet/bunaiScreens.tsx
+?? apps/app/src/dev/catalogue/wallet/bunaiSections.tsx
+?? apps/app/src/wallet/bunai/
+== 7
+receipt: real/docs/implementation/receipts/P3-T14.md
+receipt: 1 files placed
+== 8
+compared
+== 9.1
+typecheck:app rc=0
+typecheck:routes rc=0
+== 9.2
+rc=0
+ Test Files  2 passed (2)
+      Tests  56 passed | 612 skipped (668)
+== 9.3
+rc=0
+ Test Files  4 passed (4)
+      Tests  16 passed (16)
+== 9.4
+rc=0
+ Test Files  8 passed (8)
+      Tests  141 passed (141)
+== 9.5
+test:app rc=0
+test:unit rc=0
+== 9.6
+export:web rc=0
+Web Bundled 824ms node_modules/expo-router/entry.js (4885 modules)
+Exported: dist
+== 9.7
+diff-check rc=0
+== 10.1
+== 10.2
+apps/app/app/settings/ai.tsx
+apps/app/src/config/featureFlags.test.ts
+apps/app/src/config/featureFlags.ts
+apps/app/src/dev/catalogue/wallet/bunaiScreens.tsx
+apps/app/src/dev/catalogue/wallet/bunaiSections.tsx
+apps/app/src/dev/catalogue/wallet/index.ts
+apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+apps/app/src/screens/redesign/account/CompanionSettings.tsx
+apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+apps/app/src/screens/redesign/account/SettingsScreen.tsx
+apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+apps/app/src/wallet/bunai/AiConsentContent.tsx
+apps/app/src/wallet/bunai/AiConsentTray.tsx
+apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+apps/app/src/wallet/bunai/aiArea.ts
+apps/app/src/wallet/bunai/aiConsent.ts
+apps/app/src/wallet/bunai/drafts.test.ts
+apps/app/src/wallet/bunai/drafts.ts
+apps/app/src/wallet/bunai/useBunAiCopy.ts
+docs/implementation/receipts/P3-T14.md
+cached-check rc=0
+== 10.3
+commit rc=0
+== 10.4
+status done
+dryrun rc=0
