@@ -191,3 +191,6 @@
 
 ## A second fix round needs its prompt paths fixed by hand (13 Nov)
 - `make_prompt.py fixer <T>` always names `briefs/<T>-fix.md`, `reviews/<T>.md` and `scratch/<t>-fix/`. For a second round (`briefs/<T>-fix2.md`, answering `reviews/<T>-confirm.md`), sed those three paths in the generated prompt before dispatch, and grep the prompt for `-fix` to check.
+
+## Never start a watcher with `&` inside a foreground Bash call (13 Nov)
+- A watcher started as `cmd &` inside a normal Bash call is detached: the harness never reports its exit, so the controller is not woken. Twice tonight the controller did this and had to kill it. Always start `watch_agents.sh` and `ci_watch.sh` with the tool's `run_in_background` (and `timeout: 7200000`), then `t3_background_wait`.

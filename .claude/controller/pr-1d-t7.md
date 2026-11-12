@@ -45,7 +45,7 @@
   - The proofs: RED 2 of 40 Node and 3 of 99 render, all assertions; GREEN 40 and 99; **89 of 89 mutants killed** (QE equivalent); `test:unit` 1087, `test:app` 36, routes 17. All 7 kit files are byte-identical.
   - Planned on Claude Opus, built on Claude Haiku 5.5.
 - [x] The controller merged the integration head as `bf79af59` (controller state only; no code change since the last merge).
-- [ ] CI on this pull request is green at `bf79af59`.
+- [x] CI at `bf79af59`: 9 of 9.
 - [ ] Second confirming review (Opus).
 - [ ] SKIPPED: device checks (events on a real PostHog EU project, for 1D-T15's two-phone run).
 
