@@ -1,4 +1,4 @@
-// The add tray's catalogue sections (P2-T14, P2-T15; development only).
+// The add tray's catalogue sections (P2-T14, P2-T15, P2-T16; development only).
 //
 // P2-T14's two: the amount step for spending (bw-tray-amount) and for income
 // (rh-income), each inside a Tray with the type switch as its header (at the
@@ -20,6 +20,16 @@
 // this list never loads the steps. While it loads, the section reads
 // `catalogue-screen-running`, as a screen section's stage does while its
 // script runs, so the catalogue's suites wait for it.
+//
+// P2-T16's three: the real add tray host on the catalogue's fakes, opened at
+// once over a page: a save in flight (Save says กำลังบันทึก… and nothing
+// closes the tray), an online save whose answer was lost (today's words and
+// Try again), and the tray to capture at the largest text size by hand. Their
+// stage, addHostSection.tsx, loads lazily: the host reaches Quick add's keys
+// (screens/v1/parts.tsx loads expo-crypto), which no catalogue list may load.
+// Each runs on a screen section's stage (its own fakes, and a script: the
+// first two type 5 and 0, go on and save), drawn as a kit section beside the
+// add tray's others: the tray covers the page, and its title names the dialog.
 //
 // Their own list, spread after the tray's in ./index.ts. The sample words are
 // catalogue samples, not app copy. A section never imports the wallet test
@@ -45,9 +55,13 @@ import { TextLink } from '@mobile/wallet/tray/TextLink';
 import { Tray } from '@mobile/wallet/tray/Tray';
 import { SpecimenLabel } from '../parts';
 import type { CatalogueSection } from '../registry';
+import { goldenFake } from '../screenFixtures';
+import { screenSection } from '../screenSection';
+import type { ScreenFixture, ScriptStep } from '../screenSection';
 import type { StepStart } from './addStepsSection';
 
 const StepsTray = lazy(() => import('./addStepsSection'));
+const HostTray = lazy(() => import('./addHostSection'));
 
 const SAMPLES = {
   ...COPY,
@@ -146,6 +160,35 @@ function stepsSection(label: string, start: StepStart) {
   );
 }
 
+/** The amount step is drawn: the host has opened the tray on its lists. */
+const OPENED: ScriptStep = { waitFor: 'add-next' };
+const tap = (testID: string): ScriptStep => ({ call: 'onPress', on: { testID } });
+/** ฿50 typed, on to confirm, then Save. */
+const SAVE_50: readonly ScriptStep[] = [OPENED, { press: '5' }, { press: '0' }, tap('add-next'), { waitFor: 'add-save' }, tap('add-save')];
+
+/** Online, with no diary, on the golden fakes; `prepare` holds or fails the save. */
+function online(prepare: (fake: ReturnType<typeof goldenFake>) => void = () => undefined): ScreenFixture {
+  const fake = goldenFake();
+  prepare(fake);
+  return { resources: fake.resources, diary: null };
+}
+
+/** One of P2-T16's sections: the real host, opened at once (it loads lazily), on a screen section's stage, as a kit section. */
+function hostSection(spec: { id: string; title: string; label: string; fixture: () => ScreenFixture; script: readonly ScriptStep[] }): CatalogueSection {
+  const { render } = screenSection({
+    id: spec.id,
+    title: spec.title,
+    fixture: spec.fixture,
+    script: () => spec.script,
+    render: () => (
+      <Suspense fallback={null}>
+        <HostTray label={spec.label} />
+      </Suspense>
+    ),
+  });
+  return { id: spec.id, title: spec.title, group: 'Kit', render };
+}
+
 export const WALLET_ADD_SECTIONS: readonly CatalogueSection[] = [
   {
     id: 'bw-tray-amount',
@@ -205,4 +248,26 @@ export const WALLET_ADD_SECTIONS: readonly CatalogueSection[] = [
       { step: 'category', type: 'expense', amountMinor: '5000', filled: false, merchant: '', bunSaid: false, guessed: [] },
     ),
   },
+  hostSection({
+    id: 'bw-tray-saving',
+    title: 'Bun Wallet: add tray, saving',
+    label: 'Saving ฿50 online while Jotbun has not answered: Save says it is saving, and nothing closes the tray',
+    // Jotbun never answers, so the save stays in flight.
+    fixture: () => online((fake) => { fake.hold('createTransaction'); }),
+    script: SAVE_50,
+  }),
+  hostSection({
+    id: 'bw-tray-unconfirmed',
+    title: 'Bun Wallet: add tray, not confirmed',
+    label: "An online save whose answer was lost: today's words and Try again, which resends the same entry; the tray can be closed",
+    fixture: () => online((fake) => { fake.fail('createTransaction', 'network'); }),
+    script: [...SAVE_50, { waitFor: 'add-try-again' }],
+  }),
+  hostSection({
+    id: 'bw-tray-add-large',
+    title: 'Bun Wallet: add tray, largest text',
+    label: 'Capture at AX5: the add tray fills the screen, its title pinned and the type switch under the amount',
+    fixture: () => online(),
+    script: [OPENED],
+  }),
 ];
