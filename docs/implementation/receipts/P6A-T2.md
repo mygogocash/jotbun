@@ -1,0 +1,57 @@
+# P6A-T2: The widget snapshot
+
+- **Status:** built and verified locally on `p6a/t2-widget-snapshot` (`.claude/worktrees/p6a-t2`), from `c7f947c5`. Not pushed. Under R87 this receipt is its own file; `premium-progress.md` is not edited. Under R100 whole suites are CI's. No route, app entry, config or screen changed, so `typecheck:routes` and `export:web` are not in the local gate.
+- **Delivers:** the plan's X2 and X3 as pure functions. `buildWidgetSnapshot` turns Home's facts into three timed entries of display-ready faces: now; the next Bangkok midnight, a new day with nothing logged; the midnight after, a prompt to open Jotbun. A widget only draws strings: it never formats money, reads copy or works out a day. `signedOutSnapshot` is the one-prompt snapshot for a signed-out phone or the `outside` area off. `entryAt`, `faceFor`, `nextBangkokMidnight` and `sameSnapshot` are for P6A-T3a and P6A-T8. Nothing is written or wired yet: P6A-T3a's bridge writes the snapshot from Home.
+- **Files:**
+  - New:
+    - `apps/app/src/wallet/outside/widgetSnapshot.ts`: the snapshot (pure; Node test).
+    - `apps/app/src/wallet/outside/outsideCopy.draft.ts`: `OUTSIDE_DRAFT`, the plan's 21 `outside.*` lines, Thai and English, drafts until E2.
+    - `apps/app/src/wallet/outside/useOutsideCopy.ts`: `useOutsideCopy()` (`useDraftCopy(OUTSIDE_DRAFT)`) and `outsideT(locale)` (`tableT(OUTSIDE_DRAFT, locale)`).
+    - `apps/app/src/wallet/outside/widgetSnapshot.test.ts` (17 cases: the plan's 16 and the planner's month case).
+    - `apps/app/src/wallet/outside/outsideCopy.test.ts` (1 case).
+    - `docs/implementation/receipts/P6A-T2.md` (this receipt).
+  - Modified (shared):
+    - `apps/app/src/ui/dateStep.ts`: `monthName(month, locale, form)` and `shortDayName(date, locale)`, with a private `monthIndex` that checks a month as `monthShortLabel` does. Appended after P2-T31's `shortDateLabel`; nothing else moved.
+    - `apps/app/src/ui/dateStep.test.ts`: the import line gains `monthName` and `shortDayName` in its alphabetical order; two cases at the end.
+- **What a face holds** (ox-widget-home, ox-widget-lock): the day (`ส. 24`, `Sat 24`), ใช้วันนี้ and today's money out (`฿132`), the count (`3 รายการ`, `วันนี้ · 3 รายการ`), the side line (`เหลือวันนี้ ≈ ฿580`, or `เกินงบไป ฿420`), the gauge (`งบ ต.ค.`, `74%` and `0.742`), and what VoiceOver says for each family (`วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท`, `งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์`). Money is P2-T10's text over BigInt satang. The side figure is worked out for the face's own day: the estimated amount left divided by the days left from that day, today included. VoiceOver says the whole baht the face shows. The percent is rounded down in BigInt, and the fraction is capped at 1 before it becomes a number.
+- **Masking (D41, B21, R114):** private mode masks both faces. The Face ID lock masks the lock-screen faces in every entry (default pending owner Q9). A masked face shows `฿••••` for today's money and the side figure, keeps the words, the day and the count, has no gauge figure, and says only `วันนี้ 3 รายการ ยอดเงินซ่อนอยู่` and `งบเดือนนี้ ซ่อนอยู่`. Nothing the person wrote (a note, a payee, a category or wallet name) is ever in the snapshot.
+- **The entries (X3):** entry 1 starts at the next Bangkok midnight with nothing logged. In the same month it keeps the gauge, stays over by the same amount, or shares what is left among one day fewer (`≈ ฿662` on the 25th). A new month's entry has no side line and no gauge figure, under the new month's name (`งบ พ.ย.`). So does any face whose day is not in the pace's month, such as 00:30 on the 1st before Home's pace moves on. Entry 2 has no faces and says `เปิด Jotbun เพื่อดูยอดวันนี้`.
+- **RED to GREEN** (`node scripts/test-unit.mjs src/wallet/outside/widgetSnapshot.test.ts src/wallet/outside/outsideCopy.test.ts src/ui/dateStep.test.ts`, from `apps/app`):
+  - RED, with the planner's typed stubs (`widgetSnapshot.ts`, `outsideCopy.draft.ts` with an empty table, `dateStep.ts` with the two functions answering `''`): `npm run typecheck:app` passed. `ℹ tests 32`, `ℹ pass 12`, `ℹ fail 20`. The 12 passing are `dateStep.test.ts`'s existing cases. All 20 failures are `AssertionError`s, through asserting lookups (`no entry 0`) or value checks. No load or type error.
+  - GREEN: `npm run typecheck:app` passed; `ℹ tests 32`, `ℹ pass 32`, `ℹ fail 0`.
+- **Mutation check:** `mutants.py` (the planner's runner), 51 of 51 killed. Every kill fails on an `AssertionError` in the case named for it, and each file was restored byte for byte. The plan's five: P1, the lock face masked only in private mode (the B21 case); P2, tomorrow's faces worked out on today's day (the midnight case, `≈ ฿580`); P3, VoiceOver handed the per-day satang (`66285`); P4, the budget figures kept across a month end (the last-evening case and the planner's month case); P5, the link words in Thai whatever the language. Masking: W1 to W8. The side line and the gauge: W9 to W16, among them W10, spent to the satang counted as over, and W14, a zero limit divided by. VoiceOver: W17 to W20. The entries, the clock and the helpers: W21 to W31. `dateStep.ts`: D1 to D9. The copy checks: C1 to C6.
+- **Fast local gate (R100):**
+  - `npm run typecheck:app`: passed.
+  - The three focused files: RED to GREEN as above.
+  - `npm run test:app`: passed. `npm run test:unit`: passed, with the Hermes guard (`no app code reaches for the Web Crypto global`) and P2-T3's `draftText.test.ts`.
+  - The four routes tests (`SpendRoutes`, `account/AccountRoutes`, `insights/InsightsRoutes`, `planning/PlanningRoutes` `.render.test.tsx`): passed, 4 files. Route screens load `dateStep.ts`.
+  - `git diff --check`: clean.
+- **CI (R100):** the full render suite and sections 1 to 3, `export:web` and the iOS export, `test:edge:workers`, the database suites (Docker is stopped locally) and `test:ops`.
+- **SKIPPED:** device checks. Nothing native draws the snapshot until P6A-T8, which waits on owner Q1.
+- **Deviations:** the brief's planner rulings P1 to P20 (`.claude/controller/briefs/P6A-T2.md`), as accepted by the controller. In short:
+  - The side figure is worked out for each face's own day. It equals the pace's own figures whenever Home's pace is for today, and never divides by zero (P4).
+  - A pace for another month, or a zero limit, draws no budget figures (P5, P6).
+  - `vi` faces read the English lines and English day words (P2).
+  - The English lines are drafts (P9).
+  - `useOutsideCopy` is P2-T3's memoised hook, and neither reader has its own test (P10).
+  - The links are written by name (P12).
+  - The planner's month case and the extra assertions (P16).
+- **Notes for later tasks:**
+  - **P6A-T3a (the bridge):**
+    - `WidgetFacts` carries no day of its own: `now` names entry 0's day. Build the facts from a Home model made for `now`'s Bangkok date, or skip the write until Home has reloaded after midnight. Otherwise entry 0 shows yesterday's count and spending under today's name. The budget figures are already safe: another month's pace draws none.
+    - Wait for private mode's `ready` before writing `hidden` (followups, P2-T10's review).
+    - `spoken` is `(minor) => spokenMoney(minor, commonT)` with `commonT = useDraftCopy(COMMON_COPY)`.
+    - `useOutsideCopy()` is stable across renders, so it can go in an effect's dependencies.
+    - `sameSnapshot` ignores only `entries[0].from`, so a write that changes nothing but the time is skipped.
+  - **P6A-T3b:** `outsideT` lives in `useOutsideCopy.ts`, which imports P2-T3's hook, so a Node test cannot load it. `eraseOutside`'s tests are render tests, which can. A pure module that needs the lines takes a `WalletT`, as `buildWidgetSnapshot` does.
+  - **P6A-T4:** `shortDayName(day, 'th')` gives the quick action's `ส. 24`. Add the new `outside.*` lines to `outsideCopy.draft.ts`. `outsideCopy.test.ts` checks this task's 21 keys as a subset, so later lines need no change there.
+  - **P6A-T8:**
+    - `faceFor` gives the home face to the system families and the lock face to everything else.
+    - `entryAt` picks the entry a timeline shows at a time.
+    - `gaugeFraction` is 0 to 1 with three decimals.
+    - Mark home amounts privacy-sensitive (Q9).
+    - The spoken lines are the faces' accessibility labels.
+  - **P6A-T13 and E2:**
+    - Every English line is a draft. `{count} records` reads `1 records` for one record; P2-T31's `insights.entries` does the same.
+    - A new month's entry says `ยังไม่ได้ตั้งงบ` for its gauge until Jotbun opens, since the widget does not know the new month's budget.
+    - The money text is P2-T10's baht text; once phase 5's home-currency text exists, the faces follow it.
