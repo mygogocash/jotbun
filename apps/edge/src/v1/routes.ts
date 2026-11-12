@@ -170,6 +170,9 @@ export const VAULT_STEP_ROUTES: Partial<Record<VaultRouteId, VaultStepRoute>> = 
   'ai.consume': {},
   'ai.facts': {},
   'ai.tool': {},
+  // P3-T7: the use a failed model call gives back. Like the receipt's release, it only gives back the
+  // request's own use, so it still runs after the session ended or the policy changed during the call.
+  'ai.refund': { anySession: true },
 }
 
 /** The step-only entry a vault call names, or undefined when the id is not a step. */
