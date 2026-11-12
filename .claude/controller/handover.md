@@ -49,6 +49,14 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:10: P2-T16 brief READY (Opus); its implementer is building (Haiku).**
+  - Size L: `AddTrayHost.tsx` and `AddTray.render.test.tsx` (new), `addHostSection.tsx` (new), and one-line or one-case edits to `copy.ts`, `addSections.tsx`, `WalletsList.render.test.tsx`, `AddSteps.render.test.tsx` and `Tray.render.test.tsx`. No route, `index.ts`, package or catalog change. RED 17 of 17 on assertions, GREEN, 86 of 86 mutants.
+  - `check_kit.sh` at `7a29bc70`: 28 of 28 sums, `orig/` 5 of 5 identical. **P1 to P21 accepted.**
+    - Tell Bun: `TellBunSheet` stays unchanged (the plan; P3-T18 keeps its tests), so confirm shows no บันอ่านจาก line after Tell Bun, an E2-B difference. P2-T15's confirm m1 is pinned in `AddSteps.render.test.tsx`. `useDraftReview` is P3-T13's.
+    - Open risk: on iOS a tray that never presented gets no `onClosed`, so later opens would wait for it (a device check).
+  - The controller's pre-flight on the new worktree: the kit eight plus `AddTray` and `AddSteps` 176, routes 15, `test:unit` 1049, `typecheck:app`; then reset clean.
+  - Worktree `p2-t16` on `p2/t16-add-tray-host` at `7a29bc70`, installed. Implementer `mcp:launch:7faf443aa0909c6ce4c6fbbe050c5198d88da0b1aa2988afb17847addada5ca8`. The planner thread is archived.
+  - **Reviews when it is done:** Opus (xhigh) and a Sonnet second review (it saves money records).
 - **20:05: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261112e.md`, head `9e72d8b4`):
   - 1D-T7, the phase 1 app events (depth 7, App; privacy, so Opus and Sonnet reviews): `mcp:launch:24efbf37def9dc4a9da04ef516a46fa5dc1ba244cffe2a698dc0c2b299f25c96`, WT `p1-1d-t7` on `p1/1d-t7-app-events`. Carries followups lines 111, 177 to 180 and 601.
   - P6A-T2, the widget snapshot (depth 7, App): `mcp:launch:e1931d4fd1e7cb20880a0bed309c13878880522a6ecf72419167625881b21aa2`, WT `p6a-t2` on `p6a/t2-widget-snapshot`.
