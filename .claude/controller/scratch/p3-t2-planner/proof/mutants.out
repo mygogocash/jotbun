@@ -1,0 +1,28 @@
+M1 killed {"contracts": 1, "workers": 1} plan: parseTransactionSource accepts any string
+M2 killed {"contracts": 1, "workers": 1, "app": 1} parseTransactionSource refuses null instead of reading it as none
+M3 killed {"contracts": 1} a snapshot may hold any source
+M4 killed {"contracts": 1, "workers": 1} a snapshot with a source fails the exact-key check
+M5 killed {"contracts": 1} the sources out of the spec order
+M6 killed {"app": 1} the client minimum lowered to 0.1.0
+M7 killed {"workers": 1} the column takes any text (no CHECK)
+M8 killed {"workers": 1} the CHECK leaves out siri
+M9 killed {"workers": 1} the column is NOT NULL DEFAULT 'typed'
+M10 killed {"workers": 1} plan's rule: the upgrade loses the receipt links, as a rebuild's DROP TABLE would (CASCADE)
+M11 killed {"workers": 1} checklist step 3: the journal entry's when equals 0004's
+M12 killed {"workers": 1} the Drizzle schema has no source
+M13 killed {"workers": 1} plan: the DTO mapping drops source
+M14 killed {"workers": 1} plan: the edit's known fields include source
+M15 killed {"workers": 1} the create refuses source as an unknown field
+M16 killed {"workers": 1} the digested payload always names the source, null when none
+M17 killed {"workers": 1} the digested payload leaves the source out
+M18 killed {"workers": 1} the insert writes no source
+M19 killed {"workers": 1} the shared read columns leave out source
+M20 killed {"app": 1} the outbox never checks the source's value
+M21 killed {"app": 1} an entry's allowed keys leave out source
+M22 killed {"app": 1} a transfer's allowed keys leave out source
+M23 killed {"app": 1} plan: expo.version stays 0.1.0
+M24 killed {"currency": 1} P5-T4 minor 1: an unseeded table that references wallets, made before the rebuild
+M25 killed {"currency": 1} P5-T4 minor 2: a key to wallets with ON DELETE CASCADE, before the rebuild
+M26 killed {"currency": 1} P5-T4 minor 2: a later key to wallets with ON DELETE CASCADE
+M27 killed {"currency": 1} the narrowed row check still pins 0002's columns (rate's default)
+27 of 27 killed; survivors []; not restored []

@@ -1,0 +1,494 @@
+[
+  {
+    "id": "M1",
+    "mutant": "plan: parseTransactionSource accepts any string",
+    "file": "packages/contracts/src/v1/transactions.ts",
+    "runs": {
+      "contracts": {
+        "exit": 1,
+        "failed": [
+          " test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source",
+          "test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source"
+        ]
+      },
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written",
+          "test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M2",
+    "mutant": "parseTransactionSource refuses null instead of reading it as none",
+    "file": "packages/contracts/src/v1/transactions.ts",
+    "runs": {
+      "contracts": {
+        "exit": 1,
+        "failed": [
+          " test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source",
+          "test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source"
+        ]
+      },
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          " test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          "test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          "test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH"
+        ]
+      },
+      "app": {
+        "exit": 1,
+        "failed": [
+          "a pending entry may carry a source, and an unknown one is refused"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M3",
+    "mutant": "a snapshot may hold any source",
+    "file": "packages/contracts/src/v1/transactions.ts",
+    "runs": {
+      "contracts": {
+        "exit": 1,
+        "failed": [
+          " test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else",
+          "test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M4",
+    "mutant": "a snapshot with a source fails the exact-key check",
+    "file": "packages/contracts/src/v1/transactions.ts",
+    "runs": {
+      "contracts": {
+        "exit": 1,
+        "failed": [
+          " test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else",
+          "test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else"
+        ]
+      },
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          " test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          "test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M5",
+    "mutant": "the sources out of the spec order",
+    "file": "packages/contracts/src/v1/transactions.ts",
+    "runs": {
+      "contracts": {
+        "exit": 1,
+        "failed": [
+          " test/contracts-source.test.ts > a record source > the sources are the spec's seven, in order",
+          "test/contracts-source.test.ts > a record source > the sources are the spec's seven, in order"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M6",
+    "mutant": "the client minimum lowered to 0.1.0",
+    "file": "packages/contracts/src/v1/ai.ts",
+    "runs": {
+      "app": {
+        "exit": 1,
+        "failed": [
+          "this build is at least the minimum client version"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M7",
+    "mutant": "the column takes any text (no CHECK)",
+    "file": "apps/edge/src/vault/migrations/0005_transaction_source.sql",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else",
+          "test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M8",
+    "mutant": "the CHECK leaves out siri",
+    "file": "apps/edge/src/vault/migrations/0005_transaction_source.sql",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else",
+          "test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M9",
+    "mutant": "the column is NOT NULL DEFAULT 'typed'",
+    "file": "apps/edge/src/vault/migrations/0005_transaction_source.sql",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays",
+          " test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          " test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link",
+          " test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          " test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row",
+          " test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else",
+          " test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column",
+          "test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays",
+          "test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          "test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link",
+          "test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          "test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M10",
+    "mutant": "plan's rule: the upgrade loses the receipt links, as a rebuild's DROP TABLE would (CASCADE)",
+    "file": "apps/edge/src/vault/migrations/0005_transaction_source.sql",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them",
+          " test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row",
+          "test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them",
+          "test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M11",
+    "mutant": "checklist step 3: the journal entry's when equals 0004's",
+    "file": "apps/edge/src/vault/migrations/index.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row",
+          " test/workers/vault-schema.test.ts > a new vault has every core table, migrated once",
+          "test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row",
+          "test/workers/vault-schema.test.ts > a new vault has every core table, migrated once"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M12",
+    "mutant": "the Drizzle schema has no source",
+    "file": "apps/edge/src/vault/schema.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column",
+          "test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M13",
+    "mutant": "plan: the DTO mapping drops source",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M14",
+    "mutant": "plan: the edit's known fields include source",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M15",
+    "mutant": "the create refuses source as an unknown field",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          " test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          " test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written",
+          " test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          "test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          "test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written",
+          "test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M16",
+    "mutant": "the digested payload always names the source, null when none",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays",
+          "test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M17",
+    "mutant": "the digested payload leaves the source out",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH",
+          "test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M18",
+    "mutant": "the insert writes no source",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M19",
+    "mutant": "the shared read columns leave out source",
+    "file": "apps/edge/src/vault/domain/transactions.ts",
+    "runs": {
+      "workers": {
+        "exit": 1,
+        "failed": [
+          " test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          " test/workers/transaction-source.test.ts > a record source > an edit cannot set the source",
+          "test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it",
+          "test/workers/transaction-source.test.ts > a record source > an edit cannot set the source"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M20",
+    "mutant": "the outbox never checks the source's value",
+    "file": "apps/app/src/storage/diaryRepository.ts",
+    "runs": {
+      "app": {
+        "exit": 1,
+        "failed": [
+          "a pending entry may carry a source, and an unknown one is refused"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M21",
+    "mutant": "an entry's allowed keys leave out source",
+    "file": "apps/app/src/storage/diaryRepository.ts",
+    "runs": {
+      "app": {
+        "exit": 1,
+        "failed": [
+          "a pending entry may carry a source, and an unknown one is refused"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M22",
+    "mutant": "a transfer's allowed keys leave out source",
+    "file": "apps/app/src/storage/diaryRepository.ts",
+    "runs": {
+      "app": {
+        "exit": 1,
+        "failed": [
+          "a pending entry may carry a source, and an unknown one is refused"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M23",
+    "mutant": "plan: expo.version stays 0.1.0",
+    "file": "apps/app/app.json",
+    "runs": {
+      "app": {
+        "exit": 1,
+        "failed": [
+          "this build is at least the minimum client version"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M24",
+    "mutant": "P5-T4 minor 1: an unseeded table that references wallets, made before the rebuild",
+    "file": "apps/edge/src/vault/migrations/0001_vault_files.sql",
+    "runs": {
+      "currency": {
+        "exit": 1,
+        "failed": [
+          " test/workers/currency-migration.test.ts > every table that references wallets keeps its rows",
+          "test/workers/currency-migration.test.ts > every table that references wallets keeps its rows"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M25",
+    "mutant": "P5-T4 minor 2: a key to wallets with ON DELETE CASCADE, before the rebuild",
+    "file": "apps/edge/src/vault/migrations/0001_vault_files.sql",
+    "runs": {
+      "currency": {
+        "exit": 1,
+        "failed": [
+          " test/workers/currency-migration.test.ts > every table that references wallets keeps its rows",
+          " test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them",
+          "test/workers/currency-migration.test.ts > every table that references wallets keeps its rows",
+          "test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M26",
+    "mutant": "P5-T4 minor 2: a later key to wallets with ON DELETE CASCADE",
+    "file": "apps/edge/src/vault/migrations/0005_transaction_source.sql",
+    "runs": {
+      "currency": {
+        "exit": 1,
+        "failed": [
+          " test/workers/currency-migration.test.ts > every table that references wallets keeps its rows",
+          "test/workers/currency-migration.test.ts > every table that references wallets keeps its rows"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  },
+  {
+    "id": "M27",
+    "mutant": "the narrowed row check still pins 0002's columns (rate's default)",
+    "file": "apps/edge/src/vault/migrations/0002_currencies_trips.sql",
+    "runs": {
+      "currency": {
+        "exit": 1,
+        "failed": [
+          " test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key",
+          " test/workers/currency-migration.test.ts > older records gain THB money fields",
+          "test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key",
+          "test/workers/currency-migration.test.ts > older records gain THB money fields"
+        ]
+      }
+    },
+    "killed": true,
+    "restored": true
+  }
+]

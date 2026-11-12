@@ -51,10 +51,15 @@
 - **Candidate flake, the shared write budget (12 Nov).** `shared-rate-limit.integration.spec.ts`, "two API replicas share one write budget per binding" (Expected false, Received true).
   - It failed on #408's SQL job (run 43043193178, head `31c5c5ed`, 14:59 UTC), while the Mac was under heavy load.
   - That head changes nothing in `apps/api` over its base, so the controller reran it once.
+  - The rerun passed: 9 of 9 at `31c5c5ed` (checked 12 Nov, 06:30).
   - If it fails again on a head that doesn't touch the rate limiter, record it as a known flake beside R-B.
 - **Candidate flake, hermesc SIGSEGV in the iOS export (12 Nov).** "Exports (web and iOS bundles)" failed on #416 at `f6a2b681`: `hermesc -emit-binary ... exited with signal: SIGSEGV` (run 43094481395, 03:37 Bangkok, Mac under thermal load).
   - The same job had passed at `4eb15b3e`, and the only change between them was the catalogue's `index.ts`. One `gh run rerun --failed` (`C/rerun_then_wait.sh`) passed.
   - If it happens again on a head whose bundle input is unchanged, record it as a known flake (memory pressure in the Colima VM, which runs two runners and dind).
+- **Routes tests load the real wallet screens (12 Nov, #412 and #411).** `app/spend/deleted.tsx` and `app/spend/recap/[month].tsx` import `WalletDeletedScreen` and `WalletRecapScreen` directly. Once a fix round gave those screens an import that cannot load in vitest (`react-native-safe-area-context`, the router's internals), `SpendRoutes` and `InsightsRoutes` failed to load ("SyntaxError: Unexpected token 'typeof'"), and R100's fast gate never ran them.
+  - #412 went red in CI; the controller caught #411 before the push by running all four routes tests.
+  - The fix is a stub for the screen, the way the file stubs its other screens (the routes tests check only the routes' rules).
+  - make_prompt's RULES now put the four routes tests in the fast gate whenever a screen a route imports changes. In zsh, name each file: an unquoted `$VAR` holding several paths is not split, and vitest then runs none of them.
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
@@ -114,6 +119,10 @@
 
 - **After a machine move, GitHub is the state, not the local folder.** On 9 Nov a Super Engineering session read this machine's day-old `.claude/controller` (gh auth had failed), restarted three agents and redid merged work. Fetch first, read the handover from `origin/claude/p1a-vault-core`, and prove the old controller is dead by GitHub activity. Move a stale local folder aside, then `git archive` the committed state into place.
 - **Measure, don't hand-adjust, totals after a moved base.** On 9 Nov the earlier controller's adjusted 1D-T6 totals were off by 2 (unit) and 1 (web, iOS). One baseline run at the head (unit, app, full render, web and iOS exports), plus each brief's delta, gave four agents exact Expected lines; none stopped on a count.
+- **A kit can hold a nested git repository (P3-T2, 12 Nov).** The planner's `proof/applycheck/make` had its own `.git`, so `git add -f` committed it as a gitlink with no `.gitmodules`. The 13 files under it vanished from the kit, and a gitlink without `.gitmodules` can trip the checkout's submodule steps.
+  - Its SHA256SUMS also covered 125 files inside the nested `.git` folders. Git never tracks those, so they can never verify elsewhere.
+  - `sync_state.sh` now strips nested `.git` folders from kit copies. It and `check_kit.sh` skip `/.git/` lines when they verify.
+  - Fixed on the integration branch by storing the tree as plain files.
 - **Kits lose gitignored files in the commit.** `*.log` is ignored, so the 1B-T6 kit arrived without its 8 proof logs, and its SHA256SUMS failed on another machine. `sync_state.sh` now force-adds each kit it is given. For an older kit, check the sums with the log lines removed.
 - **Prove a brief's grep checks on the real head.** 1B-T6's "no PostgreSQL code in the bundle" counted the word `node-postgres`, and #352 then added a doc comment that says it (R95). Check for driver markers (`pg-protocol`, `pg-pool`, `drizzle-orm/node-postgres`, ...), not prose words that comments can carry.
 - **zsh's `status` is read-only.** An agent's `cmd; status=$?; rmdir <lock>` aborts before the rmdir and leaves the heavy lock held. Agents keep exit codes in `rc`; make_prompt's lock text says so.

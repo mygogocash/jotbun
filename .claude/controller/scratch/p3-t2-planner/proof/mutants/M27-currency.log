@@ -1,0 +1,104 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 23ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 22ms
+ × test/workers/currency-migration.test.ts > older records gain THB money fields 25ms
+   → expected [ { currency: 'THB', …(6) }, …(2) ] to deeply equal [ { currency: 'THB', …(6) }, …(2) ]
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 25ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 28ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 25ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 27ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 24ms
+ × test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 24ms
+   → expected { type: 'expense', …(16) } to deeply equal { type: 'expense', …(16) }
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 32ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration.test.ts > older records gain THB money fields
+AssertionError: expected [ { currency: 'THB', …(6) }, …(2) ] to deeply equal [ { currency: 'THB', …(6) }, …(2) ]
+
+- Expected
++ Received
+
+@@ -1,27 +1,27 @@
+  [
+    {
+      "currency": "THB",
+-     "rate": "1",
++     "rate": "2",
+      "rate_date": null,
+      "rate_source": "reference",
+      "to_amount_minor": null,
+      "trip_id": null,
+      "wallet_amount_minor": null,
+    },
+    {
+      "currency": "THB",
+-     "rate": "1",
++     "rate": "2",
+      "rate_date": null,
+      "rate_source": "reference",
+      "to_amount_minor": null,
+      "trip_id": null,
+      "wallet_amount_minor": null,
+    },
+    {
+      "currency": "THB",
+-     "rate": "1",
++     "rate": "2",
+      "rate_date": null,
+      "rate_source": "reference",
+      "to_amount_minor": null,
+      "trip_id": null,
+      "wallet_amount_minor": null,
+
+ ❯ test/workers/currency-migration.test.ts:142:211
+
+ ❯ test/workers/currency-migration.test.ts:79:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key
+AssertionError: expected { type: 'expense', …(16) } to deeply equal { type: 'expense', …(16) }
+
+- Expected
++ Received
+
+@@ -4,11 +4,11 @@
+    "deleted_at": null,
+    "destination_wallet_id": null,
+    "home_amount_minor": null,
+    "merchant": null,
+    "note": null,
+-   "rate": "1",
++   "rate": "2",
+    "rate_date": null,
+    "rate_source": "reference",
+    "source_wallet_id": null,
+    "to_amount_minor": null,
+    "trip_id": null,
+
+ ❯ test/workers/currency-migration.test.ts:298:17
+    296|     // 1A's columns and this migration's eight only: later migrations …
+    297|     const [row] = rows(state, `SELECT ${[...RECORD_1A_COLUMNS, ...RECO…
+    298|     expect(row).toEqual({
+       |                 ^
+    299|       type: 'expense', source_wallet_id: null, destination_wallet_id: …
+    300|       currency: 'THB', rate: '1', rate_source: 'reference', rate_date:…
+ ❯ test/workers/currency-migration.test.ts:79:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  03:20:27
+   Duration  2.42s (transform 758ms, setup 1.63s, import 12ms, tests 256ms, environment 0ms)
+

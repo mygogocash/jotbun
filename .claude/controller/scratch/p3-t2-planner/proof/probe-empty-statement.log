@@ -1,0 +1,14 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/probe-empty-statement.test.ts > probe: a statement that is only a comment
+PROBE {"commentOnly":"Error: SQL code did not contain a statement.","selectOne":"ok"}
+
+ ✓ test/workers/probe-empty-statement.test.ts > probe: a statement that is only a comment 27ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  03:15:08
+   Duration  2.62s (transform 970ms, setup 1.90s, import 4ms, tests 28ms, environment 0ms)
+
