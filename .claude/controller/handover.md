@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:40: #440 (P3-T14) opened; Opus and Sonnet reviews and CI running.**
+  - The implementer reported DONE at `1247404f` on `2dec12ea` (RED 2 of 16 Node and 27 of 104 render on assertions; GREEN 16 and 104; 74 of 74 mutants; gate `typecheck:app`, `typecheck:routes`, `test:app` 36, `test:unit` 1052, catalogue 56, routes 16, kit eight 141, `export:web`). All 22 `real/` files byte-identical. PR body `pr-p3-t14.md`, issue #198. The consent lines stay drafts until counsel answers Q11.
+  - Reviews (notes `scratch/dispatch/P3-T14-review-notes.md`): Opus xhigh `mcp:launch:0a80e83071e3e845c989029752a96be7bd872829cbe844e2cc638bae86ca8389`; Sonnet high `mcp:launch:0d57842bdc7e390e75392fffa9cbe019cceea8264cc889a6da0e3d31910025e5`.
+  - Watchers: CI on #439 and #440 (`ci_watch.sh`, one each); the four verdicts and the 1D-T11, 1D-T7 and P6A-T2 kits.
+- **20:35: #439 (P2-T16) opened; Opus and Sonnet reviews and CI running.**
+  - The implementer reported DONE at `81f66c0e` on `afab7fd5` (RED 17 of 17 on assertions; GREEN 17, neighbours 249, catalogue 96; 86 of 86 mutants, matching the planner's line for line; gate 266 focused, routes 18, `test:app`, `test:unit`). All 8 `real/` files byte-identical. PR body `pr-p2-t16.md`, issue #162.
+  - Reviews (notes `scratch/dispatch/P2-T16-review-notes.md`): Opus xhigh `mcp:launch:88a0e699c24bc48811976bdda3343e73218ab55fc6485ff6837dccc151f53021`; Sonnet high `mcp:launch:17fb31020a5887e548e5873c681fb2a989bf30291e09742ba7239b368df9ec18`.
 - **20:25: P3-T14 brief READY (Opus); its implementer is building (Haiku).**
   - Size L: 14 new files under `apps/app/src/wallet/bunai/`, the route `app/settings/ai.tsx`, `bunaiSections.tsx` and `bunaiScreens.tsx`, and edits to `featureFlags.ts`, the catalogue `index.ts`, `SettingsScreen.tsx`, `CompanionSettings.tsx`, `AiConsentSheet.tsx` and `AccountRoutes.render.test.tsx`. Re-proved at `afab7fd5` after #436 and #435 (the controller first told it wrongly that it need not; corrected within the minute, lessons.md). RED 2 of 16 Node and 27 of 104 render on assertions, GREEN, 74 of 74 mutants.
   - `check_kit.sh` at `afab7fd5`: 81 of 81 sums, `orig/` 8 of 8 identical. **P1 to P19 accepted** (P3 `onDetails`; P5 `ai_enabled` = `companion && available`; P12 `bunaiScreens.tsx`; P13 the route's case in `AccountRoutes`).
