@@ -1,0 +1,11 @@
+93e32f8d71017275348f4901061df183514684f9de56dfb5a67bbb8b9f571c94  apps/app/src/analytics/controller.ts
+15c5660966d5a787f72990c9a0706317a5841a8298cac63f0b2b20134ce77b9c  apps/app/src/sync/deviceSync.ts
+66126c65dfa845a35106ef94f01cf803ea7ec7d40372042218de028c1830aafb  apps/app/src/analytics/controller.test.ts
+8fe63ed1199c1ebdc6cf0b3a792f03171942f7690de2b08bfde3d1d7e265bb9e  apps/app/src/analytics/appAnalytics.render.test.tsx
+a4bd57f3884bcbd069063f56b748108cc02c58ce8c942fbf52af43b75254a021  apps/app/src/sync/deviceSync.render.test.tsx
+21051e037847255e87563119886cc5be523b972e486295000e36797a90f1e742  apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+f9ea87eecc165856980060b5ff414df6f6d0d12b9dc1933a74731e3af548348f  apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+91803c753ce52ae03c28e192ad2175d98973fb0773c8586f9f608defbbdea100  apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+2d30e2a5223e40d4acd9ca29e762d21687c3d1b38b658ba8fb0e54af6255f484  apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+b972d2e23b3361e2ad408e31021c92026782099214dc48134cb0c89b6261db6e  apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx
+6e2d1919398cd8ef6880e9be79aee9a621c57d2f597539c866943f4d166ef94c  docs/implementation/receipts/1D-T7.md

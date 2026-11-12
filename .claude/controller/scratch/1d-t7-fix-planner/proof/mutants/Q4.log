@@ -1,0 +1,40 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/QuickAddScreen.render.test.tsx (86 tests | 1 failed | 85 skipped) 171ms
+   × Add another starts a new entry: one more record_started, and its seconds count from there 169ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/QuickAddScreen.render.test.tsx > Add another starts a new entry: one more record_started, and its seconds count from there
+AssertionError: expected [ +0, +0 ] to deeply equal [ 30, 5 ]
+
+- Expected
++ Received
+
+  [
+-   30,
+-   5,
++   0,
++   0,
+  ]
+
+ ❯ src/screens/redesign/QuickAddScreen.render.test.tsx:1159:89
+    1157|     expect(await screen.findByText('Saved')).toBeTruthy();
+    1158|     expect(captured(recorded.sent).map((event) => event.name)).toEqual…
+    1159|     expect(savedEvents(recorded.sent).map((event) => event.properties.…
+       |                                                                                         ^
+    1160|   } finally {
+    1161|     recorded.restore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 85 skipped (86)
+   Start at  21:50:16
+   Duration  906ms (transform 340ms, setup 40ms, import 499ms, tests 171ms, environment 94ms)
+

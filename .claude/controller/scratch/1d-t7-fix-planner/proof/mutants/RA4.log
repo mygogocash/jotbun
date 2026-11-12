@@ -1,0 +1,45 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 95ms
+   × a delete records record_deleted and its undo records undo_used, each once Jotbun has it 92ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > a delete records record_deleted and its undo records undo_used, each once Jotbun has it
+AssertionError: expected [] to deeply equal [ { name: 'record_deleted', …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "name": "record_deleted",
+-     "properties": {
+-       "category_key": "bills",
+-       "kind": "expense",
+-       "origin": "app",
+-     },
+-   },
+- ]
++ []
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:995:37
+    993|     await screen.findByText('Entry deleted');
+    994|     const deleted = { name: 'record_deleted', properties: { kind: 'exp…
+    995|     expect(captures(recorded.sent)).toEqual([deleted]);
+       |                                     ^
+    996|     fake.loseResponse('restoreTransaction');
+    997|     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  21:50:31
+   Duration  850ms (transform 350ms, setup 43ms, import 513ms, tests 95ms, environment 83ms)
+

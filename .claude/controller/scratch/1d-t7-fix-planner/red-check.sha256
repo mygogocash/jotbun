@@ -1,0 +1,10 @@
+54b22dd77215e016e359bf2db68964cdaa0842846df85e0d911e480bc9ec44c2  apps/app/src/analytics/controller.test.ts
+afee7f929aaef79bbc6ab6804608dcf2c5d2758b8f8420d18211d03f2164dbb1  apps/app/src/analytics/appAnalytics.render.test.tsx
+81aa584b05fb2af4048d3c3bddb626b1f467617355646781d682e4e23b9a566a  apps/app/src/sync/deviceSync.render.test.tsx
+0757f953da80394f9face4d2ebd7381ab13edebf36542ed1df92e48bc60579e3  apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+ec784956169618782d9dd26648eb5d469ce9edada626a43dcedc55096dc5048b  apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+9e7525441523fb9f78e6a5fdbc860d54c0eae5d7d8d0f70add635a9becf036e2  apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+0ad068965bf9ef3d5b83b58717d6440d6a48ec7bed5d82ef1862c76f906d4b5b  apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+8530a206d53bc7b05e6d4b9867712b0adb5894240a45bf19b4906c637c3ff12a  apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx
+93e32f8d71017275348f4901061df183514684f9de56dfb5a67bbb8b9f571c94  apps/app/src/analytics/controller.ts
+15c5660966d5a787f72990c9a0706317a5841a8298cac63f0b2b20134ce77b9c  apps/app/src/sync/deviceSync.ts

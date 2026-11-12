@@ -1,0 +1,47 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 120ms
+   × a delete records record_deleted and its undo records undo_used, each once Jotbun has it 118ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > a delete records record_deleted and its undo records undo_used, each once Jotbun has it
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -6,11 +6,11 @@
+        "kind": "expense",
+        "origin": "app",
+      },
+    },
+    {
+-     "name": "undo_used",
++     "name": "record_restored",
+      "properties": {
+        "kind": "expense",
+        "origin": "app",
+      },
+    },
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:1002:37
+    1000|     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    1001|     expect(await screen.findByRole('button', { name: 'Edit' })).toBeTr…
+    1002|     expect(captures(recorded.sent)).toEqual([deleted, { name: 'undo_us…
+       |                                     ^
+    1003|     sendsNothingOfTheRent(recorded.sent);
+    1004|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  21:50:34
+   Duration  919ms (transform 379ms, setup 44ms, import 553ms, tests 120ms, environment 86ms)
+
