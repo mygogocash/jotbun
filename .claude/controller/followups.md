@@ -619,7 +619,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n2: a reset among concurrent adds (kills M3);
     - n3: a stored unsafe integer in the corrupt-shape case (kills M1);
     - n4 and n5: the receipt should name the brief's three deviations (`import()` for `require`, `void | Promise<void>`, the added render test) and who ran `check_kit`.
-- P2-T32 (#411): the confirming review is `reviews/P2-T32-confirm.md` (Opus, approved at `9add4415`: m1 to m3, n1 to n3). The merge is recorded below once it lands. Carried:
+- P2-T32 (#411, merged 12 Nov as ab9f2c1 at 764ea0ac, after the R110 fix round; promotion #424): the confirming review is `reviews/P2-T32-confirm.md` (Opus, approved at `9add4415`: m1 to m3, n1 to n3). Carried:
   - **Before E2-C (n3):** `recapScreens.tsx:14-15` writes the catalogue's August 2026 celebration mark to the real `walletDeviceStore()`, so on the phone that runs the catalogue the real August 2026 recap never celebrates.
     - Give the catalogue's sections a device store in memory, as P7 did for private mode.
     - Carry it with the next catalogue or recap task; it must land before the owner's E2-C pass.

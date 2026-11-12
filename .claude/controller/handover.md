@@ -49,6 +49,23 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **08:30: #411 (P2-T32) MERGED as `ab9f2c1`; the head is `ab9f2c1`.**
+  - The confirming review approved, and CI was 9 of 9 at `764ea0ac`.
+  - Issue #178 is closed and it is promoted as **#424** (stack #379 holds 24). Its carriers are in followups.md (n3 must land before E2-C).
+  - **#412 (P2-T25):** the head was merged again as `6e2541a2`. `index.ts` is the kit's final `a07ed204…`: ADD, LIST, RECORD, RECAP, LOCK. On the merged tree: tsc 0, and 61 of 61.
+    - The stale run on `a6aaee0b` was cancelled, and CI is running at `6e2541a2`. It merges when green.
+  - **#420 (P3-T2):** the SQL job hit the documented R-B flake (`attachments.integration.spec.ts`, expected 1, got 2; P3-T2 touches no `apps/api`). Rerun once with `--failed`. Its Flash second review is still running.
+  - **CI watching:** the new `C/ci_watch.sh <cap> <prs...>` reports each PR head once as its checks finish.
+- **08:20: #421 (P2-T31): Opus says NEEDS FIXES**, with 8 majors (`reviews/P2-T31.md`).
+  - The majors: sync blanks the screen, the budget line is off-scale, private mode marks empty days, wrong early-state dates, money not exact (`Math.round(Number())`), a failed compare month drawn as ฿0, hard-coded Thai, and 15 unheld guards. There are 11 minors and 7 nits.
+  - Both Flash reviews (brief and second) had approved it, so an Opus gate on Flash-planned UI stays required.
+  - **R112:** fix every major and minor as the review proposes, and stop BLOCKED where the plan cannot settle a question. The notes are in `scratch/dispatch/P2-T31-fix-planner-notes.md`.
+  - Fix planner (Opus): `mcp:launch:107b72851c10606aeb3ce21e75bea5afcdbf24b0ee096246265d90f6839874ba`. It writes `briefs/P2-T31-fix.md`, with the kit at `scratch/p2-t31-fix-planner/`, on `afc19276`.
+- **08:15: CI was the bottleneck. A third local runner is up (`runners.sh up 3`, `jotbun-runner-3`).**
+  - Six runs of 9 jobs were queued behind two busy runners. The Colima VM has 10 CPUs and 32 GiB, thermal pressure was 0 and 58% of memory was free.
+  - The promotion run for #422 was cancelled to let task PRs go first. **Rerun it when the queue is idle:** `gh run rerun 43127891515 --repo mygogocash/jotbun`.
+  - **#420 (P3-T2): Opus APPROVED** (m1, m2, n1 to n3). Flash's second review is running.
+  - **m2's release rule, for the owner and P6C:** raise the server's client minimum (`MIN_CLIENT_VERSION_IOS` and `_ANDROID`, or KV `client_versions`) to at least 0.2.0 before any build sends a source. A 0.1.0 build's `isTransactionSnapshot` refuses a snapshot carrying `source`.
 - **08:05: #423 (P2-T29) opened, and three Opus planners started.**
   - **#423 (P2-T29):** head `cee7eff5`. The controller checked 9 of 10 `real/` files byte-identical, and `index.ts` equals the proven `911e4ce0…`.
     - Opus reviewer `mcp:launch:951238c9df0e081ca25bf00475e6972b6668ed55dfa3b4629c55c1e187ca6d4d` writes `reviews/P2-T29.md`.
