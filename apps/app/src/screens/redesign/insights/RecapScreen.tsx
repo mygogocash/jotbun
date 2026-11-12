@@ -19,35 +19,30 @@
 // Nothing here moves, so reduced motion has nothing to take away: the bun
 // stands on the stage. Copy is in the catalogs, with Thai, approved at E2
 // checkpoint 3.
-import { HISTORY_MAX_LIMIT } from '@gogospend/contracts';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ScrollView, Share, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
 import { useBunIntensity } from '@mobile/mascot/BunIntensityProvider';
-import { compareWindow, monthPhase, readMonthDays, recapView } from '@mobile/spend/v1/redesign/insights/recapModel';
-import type { MonthDays, RecapData } from '@mobile/spend/v1/redesign/insights/recapModel';
+import { recapView } from '@mobile/spend/v1/redesign/insights/recapModel';
 import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
-import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
-import { monthRange, todayInBangkok } from '@mobile/spend/v1/viewModels';
+import { todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { useBunColors } from '@mobile/theme/ThemeProvider';
 import { BunText } from '@mobile/ui/BunText';
 import { EmptyState } from '@mobile/ui/EmptyState';
 import { BUN_SPACE } from '@mobile/ui/layout';
 import { PillButton } from '@mobile/ui/PillButton';
 import { StageHeader } from '@mobile/ui/StageHeader';
-import { useLoad, useMoneyLocale } from '../../v1/parts';
+import { useMoneyLocale } from '../../v1/parts';
 import { LoadingBlock, Notice, useDateLocale, useGoBack } from '../HistoryParts';
 import { CompareBars, RecapSlip } from './RecapParts';
-
-const NOTHING_READ: MonthDays = { days: [], complete: true };
+import { shareText, useRecapData } from './recapData';
 
 export function RecapScreen({ month, now }: { month: string; now?: Date }) {
-  const resources = useSpendV1();
   const router = useRouter();
   const tc = useCopy();
   const locale = useMoneyLocale();
@@ -60,25 +55,7 @@ export function RecapScreen({ month, now }: { month: string; now?: Date }) {
   const today = todayInBangkok(now ?? new Date());
   const [shareProblem, setShareProblem] = useState<string | null>(null);
 
-  const loaded = useLoad<RecapData>(async () => {
-    const months = compareWindow(month, today);
-    // A month that has not started has nothing to read.
-    const started = monthPhase(month, today) !== 'future';
-    const [summary, categories, days, others] = await Promise.all([
-      started ? resources.summary(month) : null,
-      resources.categories(),
-      started ? readMonthDays(month, (cursor) => resources.history({ ...monthRange(month), sort: 'date_desc' }, cursor, HISTORY_MAX_LIMIT)) : NOTHING_READ,
-      // The month shown shares its own summary with its bar.
-      Promise.all(months.filter((other) => other !== month).map(async (other) => [other, (await resources.summary(other)).expense_minor] as const)),
-    ]);
-    const spentIn = new Map(others);
-    return {
-      summary,
-      categories,
-      days,
-      compare: months.map((shown) => ({ month: shown, expenseMinor: shown === month && summary ? summary.expense_minor : spentIn.get(shown) ?? '0' })),
-    };
-  }, [resources, month, today]);
+  const loaded = useRecapData(month, now);
 
   useEffect(() => setShareProblem(null), [month]);
 
@@ -88,7 +65,7 @@ export function RecapScreen({ month, now }: { month: string; now?: Date }) {
   async function share(message: string) {
     setShareProblem(null);
     try {
-      await Share.share({ message });
+      await shareText(message);
     } catch {
       setShareProblem(tc("Couldn't open sharing. Try again."));
     }

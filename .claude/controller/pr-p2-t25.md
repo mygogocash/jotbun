@@ -49,7 +49,9 @@
 - [x] CI at `0be9ba27`: 8 of 9. The render job could not load `SpendRoutes.render.test.tsx` (`SyntaxError: Unexpected token 'typeof'`): the route imports the real `WalletDeletedScreen`, which now reads the safe-area inset (m5), and that package cannot load in vitest. The local gate (R100) never ran that file.
 - [x] Controller fix `272aa84b`: the routes test stubs `WalletDeletedScreen`, as it stubs every other screen (it tests only the route's rule). SpendRoutes, HistoryReturn, SpendLayout, HistoryScreen and WalletDeleted: 76 of 76; `typecheck:app` clean.
 - [x] CI on this pull request is green at `272aa84b`: 9 of 9, including the full render suite, `export:web` and the iOS export.
-- [ ] Confirming review (Opus) of the fix commit.
+- [x] Confirming review (Opus): **Approved** at `272aa84b` (`.claude/controller/reviews/P2-T25-confirm.md`). It checked the controller's stub on its own: a stub is the right tool there, and no coverage was lost. It left one minor (m1: no case turns the `wallet` area on in the routes test) and three nits, which are carried in `followups.md`.
+- [x] The controller merged the integration head (with #416, P2-T20) as `a6aaee0b`. `index.ts` takes the fix kit's proven file for #416 then #412 (`merge/orders/416-412-411/2-pr412.ts`, sha256 `6a4b1644…`): ADD, LIST, RECORD, LOCK. On the merged tree: `typecheck:app` 0, and the focused, neighbour and routes tests 65 of 65.
+- [ ] CI on this pull request is green at `a6aaee0b`.
 - [ ] SKIPPED: device checks (none for this screen beyond E2's captures).
 
 Closes #171 once merged (closed by hand, since the base is not the default branch).
