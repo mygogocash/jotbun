@@ -679,3 +679,20 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n1: a mount with the same archived wallet on both sides, expecting no `transfer-problem` (kills R1);
     - n2: a move whose `walletId` differs from `fromWalletId`, so the from row draws the from wallet's material (kills R4).
   - **P2-T37:** the sweep must check that free text quoting the person is not drawn in private mode (R114), not just that it has no digits.
+- P2-T29 (#423, merged 12 Nov as 59edd56 at f7f47fa4, after the R113 fix round; promotion #433). The confirming review is `reviews/P2-T29-confirm.md` (Opus, approved: m1 to m3, n1 to n3). Carried by **a categories follow-up** (or the next task that edits `src/wallet/categories`, such as P2-T30 or P2-T37):
+  - **m1:** pin six held guards (`logs/my-mutants.out` in the confirm's scratch).
+    - MT and MU, the most important: an unconfirmed tray can be closed. After Close while unconfirmed, assert the tray is gone and the grid read again.
+    - MA: the limit field is frozen while unconfirmed.
+    - MC: new opens on the รายรับ tab's type.
+    - MI: an unarchive refused as changed elsewhere reads again.
+    - MO: a budget conflict in the tray is told as the budget's own words.
+  - **m2:** an unconfirmed unarchive loses its frozen Try again when the type tab changes. `ArchivedCategories` owns its hook, and it unmounts on the other tab.
+    - Hold that hook above the type switch, or disable the switch while it is unconfirmed, as today's toggle is (`CategoriesScreen.tsx:253`).
+    - Probes C3 and C3b; there is no data harm.
+  - **m3, both screens:** the pack tray reopened before the read after an add lands offers what was just added, so a second add duplicates (probe C4; today's screen has the same window).
+    - Have `useLoad` report a refresh in flight and the pack card and trays wait for it, or treat the keys added since the last read as มีแล้ว.
+  - **Nits:**
+    - n1: keep the message while `blocked` when a tray reopens;
+    - n2: another tile opens the frozen tray (show at E2-C);
+    - n3: say a landed change to screen readers (E2-C or P2-T37).
+  - **Known risk:** no route mounts `WalletLooksProvider` until P2-T18, so a picked icon is not kept on a phone before then.
