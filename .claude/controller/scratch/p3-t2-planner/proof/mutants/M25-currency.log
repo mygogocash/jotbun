@@ -1,0 +1,82 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 29ms
+   → expected [] to deeply equal [ { …(3) } ]
+ × test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 16ms
+   → expected [ { …(4) } ] to deeply equal []
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 25ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 24ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 24ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 33ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 29ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 23ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 26ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 32ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "category_id": "7037a956-e626-4077-b95d-77cd6494d23a",
+-     "selection_id": "174c8fa9-ffdb-41a6-a514-dbb7bcae6061",
+-     "wallet_id": "b05c4eb6-b448-40b2-b204-31c3d0e7d8c8",
+-   },
+- ]
++ []
+
+ ❯ test/workers/currency-migration.test.ts:92:99
+     90|     expect(rows(state, 'PRAGMA index_list(wallets)')).toEqual(indexes)
+     91|     expect(rows(state, 'SELECT transaction_id, attachment_id FROM tran…
+     92|     expect(rows(state, 'SELECT selection_id, wallet_id, category_id FR…
+       |                                                                                                   ^
+     93|     expect(rows(state, DANGLING)).toEqual([{ refs: 5, missing: 0 }])
+     94|     expect(() =>
+ ❯ test/workers/currency-migration.test.ts:79:5
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/currency-migration.test.ts > every table that references wallets keeps its rows
+AssertionError: expected [ { …(4) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "column": "wallet_id",
++     "on_delete": "CASCADE",
++     "table": "import_selection_rows",
++     "to": "id",
++   },
++ ]
+
+ ❯ test/workers/currency-migration.test.ts:120:67
+    118|     const before = references()
+    119|     // DROP TABLE wallets fires each child's ON DELETE action, deferre…
+    120|     expect(before.filter((key) => key.on_delete !== 'NO ACTION')).toEq…
+       |                                                                   ^
+    121|     const was = held(before)
+    122|     // A referencing table with no row here would pass the comparison …
+ ❯ test/workers/currency-migration.test.ts:79:11
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  03:20:20
+   Duration  2.77s (transform 928ms, setup 1.93s, import 14ms, tests 261ms, environment 0ms)
+

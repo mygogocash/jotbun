@@ -44,6 +44,44 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
 | P2-T29 brief review | `mcp:launch:ace87dce42421318826d8890e57ae2508b26992f7d04509a85b471baffa8e523` | Argon High | (none) | `reviews/P2-T29-brief.md` |
 | P2-T31 brief review | `mcp:launch:a569ea765b0df6c9b03b8e2b0a6f229e7afcf5329d146fa878f016c06eefa795` | Argon High | (none) | `reviews/P2-T31-brief.md` |
 
+- **06:35: P2-T25 fix brief READY.**
+  - Flash wrote `briefs/P2-T25-fix.md` from the Opus kit, whose proofs had finished before the cutoff. The kit sums are 96 of 96 OK, and #412's head is still `b840c195`.
+  - The controller accepted P1 to P18.
+  - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
+  - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **07:10: two builders on Flash, two Flash briefs back with their planners.**
+  - **P3-T5 built:** brief READY (21 of 21 sums, P1 to P8 accepted). Worktree `p3-t5` (`p3/t5-draft-review`) is new at `e8de291d`. Implementer `mcp:launch:ac24bb4fba73b7eb7efbf6c5250f4d862ad9ada2eb9ab26c9cb7020e1adcb8b1`.
+  - **P3-T2 built:** brief READY (224 of 224 sums, P1 to P9 accepted). Worktree `p3-t2` (`p3/t2-transaction-source`) has `install-edge`. Implementer `mcp:launch:999ef88c17e1038764bf0574381259d14a12621076fb1cb7c26758f9641961d5`, `--lock`.
+    - The notes amend Step 0.3 to 224 lines; the brief says 222.
+    - The `expo.version` bump to 0.2.0 is the plan's own Step 3.
+    - `events.ts` with P3-T5 merges cleanly both ways (`git merge-file`, same result).
+  - **P2-T29 brief review (Flash): Needs fixes.** It found a one-line clamp, 38 pt and 28 pt controls, raw hex, English fallbacks, and a silent `ThaiPackTray` failure. Sent back to its planner `11bf3529…` (run 4).
+  - **P2-T31 brief review (Flash): Needs fixes.** B1: `InsightsRoutes` cannot load the unstubbed `WalletInsightsScreen`. Sent back to its planner `92c37c30…` (run 4), with merge proofs required against #411's `9add4415` stub in the same file.
+- **07:00: Gemini 4 Argon's quota is spent too, until about 14 Nov 07:49 Bangkok** ("Usage Limit Reached ... reset in 2 days, 1 hour", 06:19). All four Argon threads failed within minutes and were archived. They are relaunched on **Gemini 3.8 Flash High**, which is now the only lane with quota, with their prompts amended:
+
+| Task | Flash thread | Writes |
+| --- | --- | --- |
+| P3-T2 planner (resume) | `mcp:launch:2f9c7b68c3e87852698db3fb669e72effcbd0c7315daef0e80cba8e68fec20fe` | `briefs/P3-T2.md` |
+| P3-T5 planner (resume) | `mcp:launch:e786e23313d4506ef35cd8d8622ceeb9b4da7276bd3228c86b52671c2397fc35` | `briefs/P3-T5.md` |
+| P2-T29 brief review | `mcp:launch:14bce5dde6d43967daa65f0861fa29211e339703d8c10928c2eb13487c5d32c0` | `reviews/P2-T29-brief.md` |
+| P2-T31 brief review | `mcp:launch:0721e78bb0fc927712f72ce1bf002e5bcf3ac0db6c52779a1018c7dc90a83cae` | `reviews/P2-T31-brief.md` |
+
+- **The routes tests (lessons.md, make_prompt RULES).**
+  - #412's CI went red: `SpendRoutes.render.test.tsx` could not load the real `WalletDeletedScreen` after the fix gave it `useSafeAreaInsets`. The controller fix `272aa84b` stubs that screen, and CI is rerunning.
+  - #411 had the same fault in `InsightsRoutes`, caught before the push. The controller fix is `9add4415`, on top of the Flash fix `b4a99b6e` (all 16 kit files byte-identical). It is pushed, and CI is running.
+  - The fast gate now always runs the four routes tests when a screen a route imports changes.
+- **06:50: P2-T25 fix DONE and pushed: #412 head `0be9ba27`.**
+  - The commit sits on the merge `52d647bf` of `a00fff7c`.
+  - The controller checked it: all 8 `real/` files are byte-identical, and the merged `index.ts` equals the kit's `merge/index.ts`.
+  - The fixer reports RED 8 of 15 plus 2 catalogue cases (all assertions), 6 of 6 pins, GREEN, 48 of 48 mutants, and the gate passing.
+  - The PR body is updated. CI is running.
+  - **It merges after the Opus confirming review (14 Nov, from 03:00) with CI green.**
+- **06:42: P2-T32 fix brief READY.**
+  - Flash wrote `briefs/P2-T32-fix.md` from the Opus kit. It reran and restored the 91 mutants, and found no mutant left in the proof tree.
+  - The kit sums are 69 of 69 OK, and #411's head is still `71b2255e`.
+  - The controller accepted P1 to P16.
+  - **Fixer dispatched (Flash):** `mcp:launch:48767a615b887ee875265631e807ec99f364f3bb21aeec672b248e4654225235`, in worktree `p2-t32`. Step 1 merges the moving head, which differs from `a00fff7c` only in `.claude/`.
+  - The Opus confirming review follows after 14 Nov 03:00.
 - **The old Opus planner threads.** `t3_thread_interrupt` gave `no_active_run`, so they were archived instead. **At 03:00 on 14 Nov, check that none resumed, and stop any that did**; otherwise they would overwrite the Gemini briefs.
 - **Next steps:**
   - **A brief lands:** run check_kit, rule on its P-calls, create the worktree, then dispatch a Flash implementer (`make_prompt.py implementer <task> --spread`).

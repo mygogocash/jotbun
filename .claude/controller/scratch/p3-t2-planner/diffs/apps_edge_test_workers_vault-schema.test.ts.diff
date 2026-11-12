@@ -1,0 +1,23 @@
+diff --git a/apps/edge/test/workers/vault-schema.test.ts b/apps/edge/test/workers/vault-schema.test.ts
+index f92894b8e5583058a2ec519da54f0f81136b5f96..3e6461c5012da9cd8dcbdae9f577f315cd08aac4 100644
+--- a/apps/edge/test/workers/vault-schema.test.ts
++++ b/apps/edge/test/workers/vault-schema.test.ts
+@@ -17,6 +17,8 @@ it('a new vault has every core table, migrated once', async () => {
+   expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachment_checks', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
+   // The journal runs in order: idx 0 to n - 1, one key each, and each `when` later than the last, so an upgrade applies every new entry.
+   const entries = VAULT_MIGRATIONS.journal.entries
++  // Every migration, in order; each vault migration adds its tag here (P3-T2: 0005_transaction_source).
++  expect(entries.map((entry) => entry.tag)).toEqual(['0000_vault_core', '0001_vault_files', '0002_currencies_trips', '0003_alarm_indexes', '0004_alarm_bounds', '0005_transaction_source'])
+   expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entry, i) => i))
+   expect(Object.keys(VAULT_MIGRATIONS.migrations).sort()).toEqual(entries.map((entry) => `m${String(entry.idx).padStart(4, '0')}`))
+   expect(entries.every((entry, i) => i === 0 || entry.when > entries[i - 1].when)).toBe(true)
+@@ -38,6 +40,9 @@ it('the Drizzle schema matches the migrated tables column for column', async ()
+     const pragma = await sql(stub, `PRAGMA table_info(${config.name})`)
+     expect(config.columns.map((c) => [c.name, c.notNull]).sort()).toEqual(pragma.map((p) => [p.name, p.notnull === 1 || (p.pk > 0 && p.type === 'INTEGER')]).sort())
+   }
++  // P3-T2 (B2): how a record was made is a TEXT column with no default, NULL until a create names it.
++  const source = (await sql(stub, 'PRAGMA table_info(transactions)')).filter((column) => column.name === 'source')
++  expect(source.map(({ type, notnull, dflt_value }) => ({ type, notnull, dflt_value }))).toEqual([{ type: 'TEXT', notnull: 0, dflt_value: null }])
+ })
+ 
+ it('foreign keys hold: a transaction naming an unknown wallet is refused', async () => {

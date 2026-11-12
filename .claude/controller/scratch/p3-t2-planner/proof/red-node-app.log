@@ -1,0 +1,100 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/storage/diaryRepository.test.ts src/api/aiClientVersion.test.ts
+
+(node:55979) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/api/aiClientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55979) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/packages/contracts/package.json.
+✖ this build is at least the minimum client version (0.564042ms)
+(node:55980) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55980) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (26.117833ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (2.862333ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (3.892333ms)
+✖ a pending entry may carry a source, and an unknown one is refused (2.688667ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (34.124708ms)
+✔ a page fetched before the cursor moved is refused, never written back (4.153625ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (3.623709ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (2.364375ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (37.377291ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (4.454167ms)
+✔ stores exact integer strings and no credentials (2.859417ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (3.637833ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (2.539084ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (2.363875ms)
+✔ a build that knows the import entities stores them (2.641166ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (5.683292ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (2.813667ms)
+✔ logged days are the distinct dates of live records and drafts (2.563666ms)
+✔ the applied revision is read without loading the diary (2.847ms)
+✔ a pending choice is kept, replaced per record and dropped (3.978542ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (2.485334ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (2.608292ms)
+✔ choices survive a lock and reopen, and go with the erase (5.006916ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (7.368459ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (3.186667ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 24
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 347.517167
+
+✖ failing tests:
+
+test at src/api/aiClientVersion.test.ts:11:1
+✖ this build is at least the minimum client version (0.564042ms)
+  AssertionError [ERR_ASSERTION]: app.json's expo.version 0.1.0 is below 0.2.0
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/api/aiClientVersion.test.ts:13:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/storage/diaryRepository.test.ts:116:1
+✖ a pending entry may carry a source, and an unknown one is refused (2.688667ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted rejection.
+  Actual message: "A pending entry is not a valid create: fields."
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.test.ts:121:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: A pending entry is not a valid create: fields.
+        at fail (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.ts:131:11)
+        at assertDraft (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.ts:139:98)
+        at file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.ts:335:15
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/diaryRepository.ts:290:22
+        at async file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app/src/storage/serialDatabase.ts:41:24,
+    expected: undefined,
+    operator: 'doesNotReject',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/storage/diaryRepository.test.ts src/api/aiClientVersion.test.ts

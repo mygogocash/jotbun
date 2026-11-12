@@ -1,0 +1,58 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/edge
+
+ ✓ test/contracts-source.test.ts > a record source > the sources are the spec's seven, in order 1ms
+ × test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else 3ms
+   → expected [ 'typed', false ] to deeply equal [ 'typed', true ]
+ × test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source 0ms
+   → expected null to be 'typed' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts-source.test.ts > a record source > a record snapshot accepts each source or none, and refuses anything else
+AssertionError: expected [ 'typed', false ] to deeply equal [ 'typed', true ]
+
+- Expected
++ Received
+
+  [
+    "typed",
+-   true,
++   false,
+  ]
+
+ ❯ test/contracts-source.test.ts:48:71
+     46|   it('a record snapshot accepts each source or none, and refuses anyth…
+     47|     for (const source of TRANSACTION_SOURCES) {
+     48|       expect([source, isTransactionSnapshot({ ...expense, source })]).…
+       |                                                                       ^
+     49|       expect([source, isTransactionSnapshot({ ...transfer, source })])…
+     50|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/contracts-source.test.ts > a record source > parseTransactionSource reads absent and null as none and refuses other values on source
+AssertionError: expected null to be 'typed' // Object.is equality
+
+- Expected:
+"typed"
+
++ Received:
+null
+
+ ❯ test/contracts-source.test.ts:59:86
+     57|     expect(parseTransactionSource(undefined)).toBeNull()
+     58|     expect(parseTransactionSource(null)).toBeNull()
+     59|     for (const source of TRANSACTION_SOURCES) expect(parseTransactionS…
+       |                                                                                      ^
+     60|     for (const value of ['manual', '', 'TELL_BUN', ' photo', 1, true, …
+     61|       expect([value, refusal(() => parseTransactionSource(value))]).to…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  03:13:43
+   Duration  224ms (transform 65ms, setup 0ms, import 83ms, tests 4ms, environment 0ms)
+

@@ -1,0 +1,5 @@
+C1 exit 1 (expected 1) [' test/workers/currency-migration-base.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key', 'test/workers/currency-migration-base.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key'] followup: the head's currency-migration test fails on this task's column (its exact-row case only)
+C2 exit 0 (expected 0) [] followup: with a later table that references wallets (P4's slip_accounts), this task's test passes
+C3 exit 0 (expected 0) [] followup: with M24's unseeded table, the head's referencing-table case passes, so only this task's new assertion catches it
+C4 exit 1 (expected 1) [' test/workers/currency-migration-base.test.ts > every table that references wallets keeps its rows', 'test/workers/currency-migration-base.test.ts > every table that references wallets keeps its rows'] followup: with C2's later table, the head's referencing-table case fails (the P5-T4 review's mutD), where this task's passes (C2)
+4 of 4 as expected; unexpected []

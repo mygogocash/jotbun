@@ -31,7 +31,7 @@ LOCK = ("The heavy lock wraps every workers or database run and every mutant run
 RULES = ("Never keep anything under /private/tmp. Docker is stopped and stays stopped, so database suites are SKIPPED (CI runs them). "
          "Each shell call starts fresh, so type full paths. Use /usr/bin/git, one plain command per call. "
          "The machine is shared: a test that times out under load in a file your work does not touch is a load flake; rerun that file alone once and record both runs. "
-         "R100: whole suites (the full render suite, the full workers suite, export:web unless routes or the app entry change, the iOS export, database suites, test:ops) run in CI on the PR, not locally; skip any such step a brief lists and record it as CI in the receipt.")
+         "R100: whole suites (the full render suite, the full workers suite, export:web unless routes or the app entry change, the iOS export, database suites, test:ops) run in CI on the PR, not locally; skip any such step a brief lists and record it as CI in the receipt. The fast gate always includes the four routes tests (src/screens/redesign/SpendRoutes, account/AccountRoutes, insights/InsightsRoutes and planning/PlanningRoutes .render.test.tsx, each file named) when a change touches any screen an app/ route imports: a route loads the real wallet screen, and an import that cannot load in vitest breaks that routes test.")
 # Owner's routing (11 Nov): every delegated role runs on Antigravity's credits, so Claude Code's 5-hour limit
 # is left to the controller. Opus plans and reviews; Sonnet builds; Gemini gives the second, different-family
 # look at money-path and privacy PRs. Each role: (providerInstanceId, model, options, label for the trailer).

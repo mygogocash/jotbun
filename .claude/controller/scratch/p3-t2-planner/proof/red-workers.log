@@ -1,0 +1,286 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t2-planner/red/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 25ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 23ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 44ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 47ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 38ms
+ × test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 59ms
+   → expected [] to deeply equal [ { type: 'TEXT', notnull: +0, …(1) } ]
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 25ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 16ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 15ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 15ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 13ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 30ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 25ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 31ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 36ms
+ × test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 147ms
+   → expected 422 to be 201 // Object.is equality
+ × test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 31ms
+   → expected 422 to be 201 // Object.is equality
+ × test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 34ms
+   → expected [ 'manual', 422, { …(4) } ] to deeply equal [ 'manual', 422, ObjectContaining{…} ]
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 18ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 18ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 18ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 12ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 34ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 23ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 28ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 34ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 32ms
+ × test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 24ms
+   → expected 422 to be 201 // Object.is equality
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 34ms
+ × test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 24ms
+   → expected 422 to be 201 // Object.is equality
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 25ms
+ × test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 34ms
+   → expected [ [ 'typed', …(1) ], …(11) ] to deeply equal [ [ 'typed', 'ok' ], …(11) ]
+ × test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 25ms
+   → expected [ 'id', 'type', 'amount_minor', …(19) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it
+AssertionError: expected 422 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 422
+
+ ❯ test/workers/transaction-source.test.ts:58:78
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key
+AssertionError: expected 422 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 422
+
+ ❯ test/workers/transaction-source.test.ts:80:79
+     78|     const nulled = s.expense({ source: null })
+     79|     expect((await client.as(s.user).post('/v1/transactions', plain)).s…
+     80|     expect((await client.as(s.user).post('/v1/transactions', nulled)).…
+       |                                                                               ^
+     81|     for (const id of [plain.id, nulled.id]) {
+     82|       const got = await record(s, id)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written
+AssertionError: expected [ 'manual', 422, { …(4) } ] to deeply equal [ 'manual', 422, ObjectContaining{…} ]
+
+- Expected
++ Received
+
+  [
+    "manual",
+    422,
+    {
+-     "code": "VALIDATION_FAILED",
++     "code": "UNKNOWN_FIELD",
+      "fields": {
+        "source": "UNKNOWN_FIELD",
+      },
++     "message_key": "errors.unknown_field",
++     "request_id": "6642f7cc-cee7-4040-8e96-27e16bcf649a",
+    },
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:94:54
+     92|       const key = randomUUID()
+     93|       const res = await client.as(s.user).post('/v1/transactions', s.e…
+     94|       expect([source, res.status, await res.json()]).toEqual([source, …
+       |                                                      ^
+     95|       expect(await sqlRows(s.user, 'SELECT command_id FROM command_rec…
+     96|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH
+AssertionError: expected 422 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 422
+
+ ❯ test/workers/transaction-source.test.ts:105:26
+    103|     const lunch = s.expense({ source: 'tell_bun' })
+    104|     const first = await client.as(s.user).post('/v1/transactions', lun…
+    105|     expect(first.status).toBe(201)
+       |                          ^
+    106|     const sameAgain = await client.as(s.user).post('/v1/transactions',…
+    107|     expect(await sameAgain.json()).toEqual(await first.json())
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > an edit cannot set the source
+AssertionError: expected 422 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 422
+
+ ❯ test/workers/transaction-source.test.ts:140:78
+    138|     const s = await setup()
+    139|     const lunch = s.expense({ source: 'typed' })
+    140|     expect((await client.as(s.user).post('/v1/transactions', lunch)).s…
+       |                                                                              ^
+    141|     const res = await client.as(s.user).patch(`/v1/transactions/${Stri…
+    142|     expect([res.status, await res.json()]).toEqual([422, expect.object…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else
+AssertionError: expected [ [ 'typed', …(1) ], …(11) ] to deeply equal [ [ 'typed', 'ok' ], …(11) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "typed",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "photo",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "slip_import",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "tell_bun",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "statement",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "share_extension",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "siri",
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      null,
+-     "ok",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "manual",
+-     "CHECK",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "",
+-     "CHECK",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "Photo",
+-     "CHECK",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+    [
+      "tell_bun ",
+-     "CHECK",
++     "Error: table transactions has no column named source: SQLITE_ERROR",
+    ],
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:175:18
+    173|     const seen: [unknown, string][] = []
+    174|     for (const [source] of cases) seen.push([source, await outcome(sou…
+    175|     expect(seen).toEqual(cases)
+       |                  ^
+    176|   })
+    177|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row
+AssertionError: expected [ 'id', 'type', 'amount_minor', …(19) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+- Expected
++ Received
+
+@@ -19,7 +19,6 @@
+    "rate_date",
+    "home_amount_minor",
+    "wallet_amount_minor",
+    "to_amount_minor",
+    "trip_id",
+-   "source",
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:205:25
+    203|       expect(before.columns).not.toContain('source')
+    204|       await upgrade()
+    205|       expect(columns()).toEqual([...before.columns, 'source'])
+       |                         ^
+    206|       expect(rows(records)).toEqual(before.records.map((row) => ({ ...…
+    207|       expect(rows(links)).toEqual(before.links)
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1b-t13-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column
+AssertionError: expected [] to deeply equal [ { type: 'TEXT', notnull: +0, …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "dflt_value": null,
+-     "notnull": 0,
+-     "type": "TEXT",
+-   },
+- ]
++ []
+
+ ❯ test/workers/vault-schema.test.ts:45:90
+     43|   // P3-T2 (B2): how a record was made is a TEXT column with no defaul…
+     44|   const source = (await sql(stub, 'PRAGMA table_info(transactions)')).…
+     45|   expect(source.map(({ type, notnull, dflt_value }) => ({ type, notnul…
+       |                                                                                          ^
+     46| })
+     47|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  8 failed | 25 passed (33)
+   Start at  03:15:17
+   Duration  3.24s (transform 2.92s, setup 6.34s, import 95ms, tests 1.04s, environment 0ms)
+
