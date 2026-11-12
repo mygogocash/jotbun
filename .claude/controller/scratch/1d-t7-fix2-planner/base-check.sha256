@@ -1,0 +1,6 @@
+6482a5b95a774dab8c9222e436214d8e36c3ba398b6704fc5ec24148369f9244  apps/app/src/analytics/controller.ts
+d26fbb3492ec527d3d224b55a04b335ccfa9517409a3daa50c56c4a926b6705b  apps/app/src/analytics/AnalyticsUpkeep.tsx
+54b22dd77215e016e359bf2db68964cdaa0842846df85e0d911e480bc9ec44c2  apps/app/src/analytics/controller.test.ts
+afee7f929aaef79bbc6ab6804608dcf2c5d2758b8f8420d18211d03f2164dbb1  apps/app/src/analytics/appAnalytics.render.test.tsx
+ec784956169618782d9dd26648eb5d469ce9edada626a43dcedc55096dc5048b  apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+578d07b232b754229a277c67e5592eaecd5634dcba16436ced59e2409466e680  docs/implementation/receipts/1D-T7-fix.md
