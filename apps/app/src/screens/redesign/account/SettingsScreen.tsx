@@ -12,6 +12,10 @@
 //   warnings and errors; the phone's own vibration switch still applies.
 // - The Face ID lock (P2-T33, W26): its row, only while the `wallet` area is
 //   on (LockSettingsRow), opens the lock's setup.
+// - Bun and AI (P3-T14): while the Bun AI area is on (useBunAiArea), one row
+//   opens /settings/ai, which holds Bun's AI help, and the companion card keeps
+//   only its cashback tips switch (§5.2). Otherwise the companion card is as
+//   before, Bun's AI help included.
 // - The diary's links: Wallets, Categories and Budget under the planning
 //   area, Reminders under insights, Import only with its flag. Each area
 //   waits for its own approval.
@@ -52,11 +56,15 @@ import { useDiaryView, useSpendDiary } from '@mobile/spend/v1/SpendDiaryContext'
 import { useBunColors, useTheme } from '@mobile/theme/ThemeProvider';
 import type { ThemePreference } from '@mobile/theme/themePreference';
 import { BunText } from '@mobile/ui/BunText';
+import { OutlinedCard } from '@mobile/ui/Card';
 import { BUN_SPACE } from '@mobile/ui/layout';
 import { PillButton } from '@mobile/ui/PillButton';
 import { ConfirmSheet } from '@mobile/ui/Sheet';
 import { StageHeader } from '@mobile/ui/StageHeader';
 import { SyncBanner } from '@mobile/ui/SyncBanner';
+import { useBunAiArea } from '@mobile/wallet/bunai/aiArea';
+import { BUNAI_DRAFTS } from '@mobile/wallet/bunai/drafts';
+import { useBunAiCopy } from '@mobile/wallet/bunai/useBunAiCopy';
 import { LockSettingsRow } from '@mobile/wallet/lock/LockSettingsRow';
 import { Notice } from '../HistoryParts';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
@@ -141,6 +149,17 @@ function HapticsChoice() {
   );
 }
 
+/** P3-T14: the บันและ AI row, to Bun and AI settings (/settings/ai). */
+function BunAiRow() {
+  const router = useRouter();
+  const t = useBunAiCopy(BUNAI_DRAFTS);
+  return (
+    <OutlinedCard testID="settings-bunai">
+      <LinkRow first label={t('bunai.settingsTitle')} onPress={() => router.push('/settings/ai')} />
+    </OutlinedCard>
+  );
+}
+
 function DiaryLinks({ links }: { links: readonly DiaryLinkKey[] }) {
   const tc = useCopy();
   const router = useRouter();
@@ -188,6 +207,7 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
   const router = useRouter();
   const back = useBackTo('/spend');
   const areas: SettingsAreas = { ...appSettingsAreas(), ...givenAreas };
+  const bunAi = useBunAiArea();
   const diary = useSpendDiary();
   const view = useDiaryView();
   const [confirming, setConfirming] = useState<Confirming>(null);
@@ -275,7 +295,8 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
           <BunChoice />
           <HapticsChoice />
           <LockSettingsRow />
-          {isRedesignEnabled('companion') ? <CompanionSettings /> : null}
+          {bunAi ? <BunAiRow /> : null}
+          {isRedesignEnabled('companion') ? <CompanionSettings showAi={!bunAi} /> : null}
           <DiaryLinks links={diaryLinks(areas)} />
           <Section title={tc('Account')} testID="settings-account">
             <BunText>{methodLine(services.signInMethod, tc)}</BunText>
