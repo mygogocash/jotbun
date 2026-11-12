@@ -49,6 +49,10 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:05: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261112e.md`, head `9e72d8b4`):
+  - 1D-T7, the phase 1 app events (depth 7, App; privacy, so Opus and Sonnet reviews): `mcp:launch:24efbf37def9dc4a9da04ef516a46fa5dc1ba244cffe2a698dc0c2b299f25c96`, WT `p1-1d-t7` on `p1/1d-t7-app-events`. Carries followups lines 111, 177 to 180 and 601.
+  - P6A-T2, the widget snapshot (depth 7, App): `mcp:launch:e1931d4fd1e7cb20880a0bed309c13878880522a6ecf72419167625881b21aa2`, WT `p6a-t2` on `p6a/t2-widget-snapshot`.
+  - Live now: five Opus planners (P2-T16, P3-T14, 1D-T11, 1D-T7, P6A-T2). The server tasks P4-T3, P3-T3, P4-T2 and P5-T9 wait for 1D-T11's lane (they share `v1/routes.ts` and its neighbours).
 - **20:00: #435 (P3-T7) MERGED as `bfce84e`; the head is `bfce84e`.**
   - Both reviews approved with no blocker or major (Opus: m1, m2, n1; Sonnet: m1 to m3, n1, n2), and CI was 9 of 9 at `088b346a`. A person cannot abort a model call; only the transport's deadline and the SDK's timer can.
   - Issue #191 is closed, the worktree and branch are removed, and it is promoted as **#438** (stack #379 holds 33).
