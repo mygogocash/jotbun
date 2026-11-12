@@ -1,0 +1,21 @@
+green: real/packages/contracts/src/v1/ai.ts
+green: real/packages/contracts/src/index.ts
+green: real/apps/edge/src/v1/ai/models.ts
+green: real/apps/edge/src/v1/ai/service.ts
+green: real/apps/edge/src/v1/ai/routes.ts
+green: real/apps/edge/src/v1/env.ts
+green: real/apps/edge/src/v1/handler.ts
+green: real/apps/edge/src/v1/worker-routes.ts
+green: real/apps/edge/src/server/ai/model.ts
+green: real/apps/edge/test/workers/support/v1-client.ts
+green: real/apps/edge/test/workers/ai.test.ts
+green: real/apps/edge/test/contracts-ai.test.ts
+green: real/apps/edge/test/workers/ai-routing.test.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.ts
+green: real/apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.test.ts
+green: real/apps/app/src/dev/catalogue/companion/companionSections.tsx
+green: real/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+green: real/apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
+green: real/apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx
+green: 20 files placed

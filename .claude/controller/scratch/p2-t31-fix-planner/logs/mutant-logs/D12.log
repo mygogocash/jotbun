@@ -1,0 +1,409 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ × src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 37ms
+   → insights-month-bars: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 12ms
+   → month-bar-2026-05: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 11ms
+   → th: expected [] to have a length of 1 but got +0
+ × src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 14ms
+   → button ตัวเลขนี้คืออะไร: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 8ms
+   → insights-categories: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 8ms
+   → insights-categories: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 32ms
+   → calendar-day-2: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 16ms
+   → in-out-income: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 16ms
+   → in-out-kept: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 16ms
+   → calendar-day-1: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 16ms
+   → calendar-day-1: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 16ms
+   → heading ตุลาคม 2569: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 15ms
+   → day-record-t40: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 15ms
+   → button เดือนถัดไป: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 14ms
+   → calendar-day-1: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 8ms
+   → insights-early-state: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 9ms
+   → button ตัวเลขนี้คืออะไร: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 15ms
+   → calendar-day-2: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 17ms
+   → insights-month-bars: expected null not to be null
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 38ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 9ms
+   → insights-changed: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 8ms
+   → insights-month-bars: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 15ms
+   → in-out-income: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 9ms
+   → spending-tab: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 14ms
+   → calendar-grid: expected null not to be null
+ × src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 8311ms
+   → bw-insights: expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  25 failed | 1 passed (26)
+   Start at  08:53:53
+   Duration  10.39s (transform 1.08s, setup 53ms, import 1.43s, tests 8.70s, environment 92ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:80648) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 25 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line
+AssertionError: insights-month-bars: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:174:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline
+AssertionError: month-bar-2026-05: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ rise src/wallet/insights/WalletInsights.render.test.tsx:193:42
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:195:62
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:195:47
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount
+AssertionError: th: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:222:76
+    220|     mountInsights({ locale });
+    221|     await settle();
+    222|     expect(screen.queryAllByRole('img', { name: spoken[locale] }), loc…
+       |                                                                            ^
+    223|     expect(found('insights-month-bars').getAttribute('role'), locale).…
+    224|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray
+AssertionError: button ตัวเลขนี้คืออะไร: expected null not to be null
+ ❯ named src/wallet/insights/WalletInsights.render.test.tsx:134:42
+    132| function named(role: string, name: string, inside: HTMLElement = docum…
+    133|   const element = within(inside).queryByRole(role, { name });
+    134|   expect(element, `${role} ${name}`).not.toBeNull();
+       |                                          ^
+    135|   return element as HTMLElement;
+    136| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:231:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it
+AssertionError: insights-categories: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ rowsOf src/wallet/insights/WalletInsights.render.test.tsx:146:40
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:243:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong
+AssertionError: insights-categories: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ rowsOf src/wallet/insights/WalletInsights.render.test.tsx:146:40
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:274:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar
+AssertionError: calendar-day-2: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ day src/wallet/insights/WalletInsights.render.test.tsx:148:28
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:300:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus
+AssertionError: in-out-income: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:319:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words
+AssertionError: in-out-kept: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ textOf src/wallet/insights/WalletInsights.render.test.tsx:138:36
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:347:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert
+AssertionError: calendar-day-1: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ day src/wallet/insights/WalletInsights.render.test.tsx:148:28
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:368:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart
+AssertionError: calendar-day-1: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ day src/wallet/insights/WalletInsights.render.test.tsx:148:28
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:388:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact
+AssertionError: heading ตุลาคม 2569: expected null not to be null
+ ❯ named src/wallet/insights/WalletInsights.render.test.tsx:134:42
+    132| function named(role: string, name: string, inside: HTMLElement = docum…
+    133|   const element = within(inside).queryByRole(role, { name });
+    134|   expect(element, `${role} ${name}`).not.toBeNull();
+       |                                          ^
+    135|   return element as HTMLElement;
+    136| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:408:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone
+AssertionError: day-record-t40: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:432:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month
+AssertionError: button เดือนถัดไป: expected null not to be null
+ ❯ named src/wallet/insights/WalletInsights.render.test.tsx:134:42
+    132| function named(role: string, name: string, inside: HTMLElement = docum…
+    133|   const element = within(inside).queryByRole(role, { name });
+    134|   expect(element, `${role} ${name}`).not.toBeNull();
+       |                                          ^
+    135|   return element as HTMLElement;
+    136| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:440:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read
+AssertionError: calendar-day-1: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ day src/wallet/insights/WalletInsights.render.test.tsx:148:28
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:473:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day
+AssertionError: insights-early-state: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:484:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again
+AssertionError: button ตัวเลขนี้คืออะไร: expected null not to be null
+ ❯ named src/wallet/insights/WalletInsights.render.test.tsx:134:42
+    132| function named(role: string, name: string, inside: HTMLElement = docum…
+    133|   const element = within(inside).queryByRole(role, { name });
+    134|   expect(element, `${role} ${name}`).not.toBeNull();
+       |                                          ^
+    135|   return element as HTMLElement;
+    136| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:523:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place
+AssertionError: calendar-day-2: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ day src/wallet/insights/WalletInsights.render.test.tsx:148:28
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:549:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again
+AssertionError: insights-month-bars: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:589:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh
+AssertionError: insights-changed: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:634:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values
+AssertionError: insights-month-bars: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:648:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words
+AssertionError: in-out-income: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ textOf src/wallet/insights/WalletInsights.render.test.tsx:138:36
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:681:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words
+AssertionError: spending-tab: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:700:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut
+AssertionError: calendar-grid: expected null not to be null
+ ❯ found src/wallet/insights/WalletInsights.render.test.tsx:128:31
+    126| function found(testID: string, inside: HTMLElement = document.body): H…
+    127|   const element = within(inside).queryByTestId(testID);
+    128|   expect(element, testID).not.toBeNull();
+       |                               ^
+    129|   return element as HTMLElement;
+    130| }
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:718:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/25]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+AssertionError: bw-insights: expected null not to be null
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:761:76
+    759|     // The section's script runs its steps, then the stage says ready,…
+    760|     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-…
+    761|     expect(screen.queryByTestId('catalogue-screen-ready'), section.id)…
+       |                                                                            ^
+    762|     expect(states[section.id](), section.id).toEqual(expected[section.…
+    763|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/25]⎯
+

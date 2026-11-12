@@ -1,0 +1,237 @@
+diff --git a/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx b/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
+index d38b2d0c..476b5ab7 100644
+--- a/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
++++ b/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
+@@ -23,15 +23,15 @@
+ // is offered, which resends the very same commands under the same keys. A
+ // definite refusal settles the key, so a corrected save is a new command. A
+ // version conflict shows the category or budget as it now is beside yours,
+-// with Reload.
++// with Reload. The rule itself is `useCategoryCommands` (categoryCommands.ts,
++// P2-T29), which the Bun Wallet's trays share; this screen hands it its own
++// effects (the form, the archive sheet, the type shown and the reads).
+ import type { BudgetDto, CategoryDto, CategoryType } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+-import { useRef, useState } from 'react';
++import { useState } from 'react';
+ import type { ReactNode } from 'react';
+ import { ScrollView, View } from 'react-native';
+ 
+-import { V1Error } from '@mobile/api/client';
+-import type { V1Outcome } from '@mobile/api/client';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { PACK_BEFORE_C3, missingPackItems, packCommands } from '@mobile/spend/v1/redesign/planning/thaiPack';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+@@ -39,12 +39,9 @@ import { Bun } from '@mobile/mascot/Bun';
+ import { formatMinor } from '@mobile/spend/v1/money';
+ import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
+ import {
+-  LABEL_PROBLEM_TEXT, SAVE_PROBLEM_WORDS, afterCategoryAck, archiveCommand, budgetConflict, categoryConflict, checkLabel, commandSlot, draftName, editCategoryDraft,
+-  groupCategories, hasLimitField, limitProblem, newCategoryDraft, planSave, readConflict, readLimit, suggestColor,
++  LABEL_PROBLEM_TEXT, archiveCommand, checkLabel, draftName, editCategoryDraft, groupCategories, hasLimitField, limitProblem, newCategoryDraft, planSave, readLimit, suggestColor,
+ } from '@mobile/spend/v1/redesign/planning/categoriesModel';
+-import type { CategoryCommand, CategoryDraft, CategoryItem, ConflictView, FormErrors } from '@mobile/spend/v1/redesign/planning/categoriesModel';
+-import type { Translate } from '@mobile/spend/v1/redesign/shared';
+-import type { SpendV1Resources } from '@mobile/spend/v1/resources';
++import type { CategoryDraft, CategoryItem, FormErrors } from '@mobile/spend/v1/redesign/planning/categoriesModel';
+ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+ import { monthOf, todayInBangkok } from '@mobile/spend/v1/viewModels';
+ import { EmptyState } from '@mobile/ui/EmptyState';
+@@ -54,11 +51,11 @@ import { BunText } from '@mobile/ui/BunText';
+ import { PillButton } from '@mobile/ui/PillButton';
+ import { ConfirmSheet } from '@mobile/ui/Sheet';
+ import { StageHeader } from '@mobile/ui/StageHeader';
+-import type { SaveProblem } from '../../v1/parts';
+-import { isOwnCreate, newId, ownCreateMatches, refusedBeforeProcessing, saveProblem, useCommandKeys, useLoad, useMoneyLocale } from '../../v1/parts';
++import { newId, useLoad, useMoneyLocale } from '../../v1/parts';
+ import { ActionFooter, ActionRow, EntryPage } from '../ActionFooter';
+ import { LoadingBlock, Notice, useGoBack } from '../HistoryParts';
+ import { ArchivedSection, CategoryTile, ChipPreview, ConflictPanel, LabelField, LimitField, NoBudgetNote, SwatchPicker, TypeToggle } from './CategoryParts';
++import { useCategoryCommands } from './categoryCommands';
+ 
+ export type CategoriesScreenProps = {
+   /** The clock, for tests; this month is its Bangkok month. */
+@@ -67,38 +64,6 @@ export type CategoriesScreenProps = {
+ 
+ type Loaded = { categories: CategoryDto[]; budget: BudgetDto | null };
+ type Form = { draft: CategoryDraft; errors: FormErrors };
+-/** What to say once every command is acknowledged, and the draft (if any) the commands came from. */
+-type Origin = { success: string; draft: CategoryDraft | null; seen: BudgetDto | null };
+-/** `idle`: nothing running. `saving`: commands are being sent. `unconfirmed`: one may have committed; frozen until Try again. */
+-type Status = 'idle' | 'saving' | 'unconfirmed';
+-type Conflict = { view: ConflictView; withYours: boolean };
+-
+-/** Refusals that keep the shared words; those that speak of an entry are said in a category's (`SAVE_PROBLEM_WORDS`). */
+-const SHARED_WORDS: readonly V1Outcome[] = ['policy_required', 'signed_out', 'session_changed'];
+-
+-/** `saveProblem` (unconfirmed, blocked, fields) in a category's words. */
+-function categoryProblem(error: unknown, tc: Translate): SaveProblem {
+-  const problem = saveProblem(error, tc);
+-  const outcome = error instanceof V1Error ? error.outcome : undefined;
+-  const own = outcome ? SAVE_PROBLEM_WORDS[outcome] : undefined;
+-  if (own) return { ...problem, message: tc(own) };
+-  if ((outcome && SHARED_WORDS.includes(outcome)) || (outcome === 'invalid' && Object.keys(problem.fields).length > 0)) return problem;
+-  return { ...problem, message: tc('Could not save that. Try again.') };
+-}
+-
+-/** Sends one command under its key. */
+-function sendCommand(resources: SpendV1Resources, command: CategoryCommand, key: string) {
+-  if (command.slot === 'budget') return resources.setBudget(command.month, command.input, key, command.existing);
+-  switch (command.kind) {
+-    case 'create': return resources.createCategory(command.input, key);
+-    case 'update': return resources.updateCategory(command.id, command.version, command.changes, key);
+-    case 'archive': return resources.archiveCategory(command.id, command.version, key);
+-    case 'unarchive': return resources.unarchiveCategory(command.id, command.version, key);
+-  }
+-}
+-
+-/** A refusal about the category's state (already archived, archived elsewhere, not archived): it changed elsewhere. */
+-const stateChanged = (error: unknown) => error instanceof V1Error && (error.outcome === 'not_found' || error.outcome === 'deleted' || 'archived' in (error.fields ?? {}));
+ 
+ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
+   const resources = useSpendV1();
+@@ -108,7 +73,6 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
+   const companion = isRedesignEnabled('companion');
+   const router = useRouter();
+   const goBack = useGoBack('/spend/budget');
+-  const keys = useCommandKeys();
+   const month = monthOf(todayInBangkok(now ?? new Date()));
+   const loaded = useLoad(async (): Promise<Loaded> => {
+     const [categories, budget] = await Promise.all([resources.ensureBuiltinCategories(), resources.budget(month)]);
+@@ -119,125 +83,26 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
+   const [form, setForm] = useState<Form | null>(null);
+   const [archivedOpen, setArchivedOpen] = useState(false);
+   const [confirming, setConfirming] = useState(false);
+-  const [status, setStatus] = useState<Status>('idle');
+-  /** A problem with the last send, said in the footer. */
+-  const [message, setMessage] = useState<string | null>(null);
+-  /** Frozen, and resending must wait (an update, a changed session): Try again is disabled. */
+-  const [resendBlocked, setResendBlocked] = useState(false);
+-  /** Saving cannot work until the person acts elsewhere (an update, a changed session): the draft stays, saving waits. */
+-  const [blocked, setBlocked] = useState(false);
+-  const [conflict, setConflict] = useState<Conflict | null>(null);
+-  /** What the last finished change did, said politely on the grid. */
+-  const [done, setDone] = useState<string | null>(null);
+-  /** The unarchive being sent, for its busy button. */
+-  const [unarchiving, setUnarchiving] = useState<string | null>(null);
+-  /** The commands whose outcome is unknown: Try again resends exactly these. */
+-  const pending = useRef<{ commands: CategoryCommand[]; origin: Origin } | null>(null);
+-  const running = useRef(false);
+-
+-  const locked = status !== 'idle';
+-  const data = loaded.state === 'ready' ? loaded.data : null;
+-
+-  /**
+-   * Sends the commands in order. Each acknowledged category command rebases
+-   * the open draft, so if a later one is refused, saving again sends only
+-   * what is left. The first unconfirmed one freezes the screen with the
+-   * commands from it on, under their keys.
+-   */
+-  async function send(commands: readonly CategoryCommand[], origin: Origin) {
+-    if (running.current) return;
+-    running.current = true;
+-    const resend = pending.current !== null;
+-    let draft = origin.draft;
+-    setStatus('saving');
+-    setMessage(null);
+-    setDone(null);
+-    try {
+-      for (const [index, command] of commands.entries()) {
+-        const slot = commandSlot(command);
+-        const key = keys.keyFor(slot, command);
+-        try {
+-          const ack = await sendCommand(resources, command, key);
+-          keys.settle(slot);
+-          draft = draft ? afterCategoryAck(draft, command, ack.version) : null;
+-          continue;
+-        } catch (error) {
+-          // The category's id is fixed for this draft: if it already exists, an earlier attempt committed.
+-          if (command.slot === 'category' && command.kind === 'create' && isOwnCreate(error, command.input.id) && ownCreateMatches(error, command.input)) {
+-            keys.settle(slot);
+-            const held = (error as V1Error).current as CategoryDto;
+-            draft = draft ? afterCategoryAck(draft, command, held.version) : null;
+-            continue;
+-          }
+-          const problem = categoryProblem(error, tc);
+-          // Once unconfirmed, a refusal before processing says nothing about that attempt: it stays frozen with its key.
+-          const stillUnknown = problem.unconfirmed || (resend && index === 0 && refusedBeforeProcessing(error));
+-          if (!stillUnknown) keys.settle(slot);
+-          const rebased = draft;
+-          if (rebased) setForm((current) => (current ? { ...current, draft: rebased } : current));
+-          setConfirming(false);
+-          if (stillUnknown) {
+-            pending.current = { commands: commands.slice(index), origin: { ...origin, draft } };
+-            setResendBlocked(problem.blocked);
+-            setMessage(problem.message);
+-            setStatus('unconfirmed');
+-            return;
+-          }
+-          pending.current = null;
+-          setResendBlocked(false);
+-          setBlocked(problem.blocked);
+-          setStatus('idle');
+-          refused(error, command, problem, { ...origin, draft });
+-          return;
+-        }
+-      }
+-      pending.current = null;
+-      setResendBlocked(false);
++  const { status, message, setMessage, resendBlocked, blocked, conflict, setConflict, done, setDone, unarchiving, setUnarchiving, send, tryAgain } = useCategoryCommands({
++    rebase: (rebased) => setForm((current) => (current ? { ...current, draft: rebased } : current)),
++    stopped: () => setConfirming(false),
++    saved: (origin) => {
+       setConfirming(false);
+       setForm(null);
+-      setStatus('idle');
+-      setDone(origin.success);
+       // The grid shows the type just saved, so a new income category is in view.
+       if (origin.draft) setType(origin.draft.type);
+       // Reading the result is a separate load: its failure is a load problem, never an unconfirmed save.
+       loaded.refresh();
+-    } finally {
+-      running.current = false;
+-      setUnarchiving(null);
+-    }
+-  }
+-
+-  /** A definite refusal: a conflict to show, a change made elsewhere, or a problem to fix here. */
+-  function refused(error: unknown, command: CategoryCommand, problem: SaveProblem, origin: Origin) {
+-    const outcome = error instanceof V1Error ? error.outcome : undefined;
+-    if (outcome === 'conflict') {
+-      const copy = readConflict(command, (error as V1Error).current);
+-      if (copy?.kind === 'category') {
+-        setConflict({ view: categoryConflict(origin.draft, copy.server, tc), withYours: origin.draft !== null });
+-        return;
+-      }
+-      if (copy?.kind === 'budget' && origin.draft && origin.seen) {
+-        setConflict({ view: budgetConflict(origin.draft, origin.seen, copy.server, { tc, locale }), withYours: true });
+-        return;
+-      }
+-    }
+-    if (outcome === 'conflict' || stateChanged(error)) {
+-      // No usable copy of theirs: read everything again rather than loop on a stale version.
++    },
++    changedElsewhere: () => {
+       setForm(null);
+-      setMessage(tc('This category changed on another device.'));
+       loaded.reload();
+-      return;
+-    }
+-    setMessage(problem.message);
+-    const fields = problem.fields;
+-    const errors: FormErrors = { label: fields.label, limit: fields.category_limits ?? fields.overall_limit_minor };
+-    setForm((current) => (current ? { ...current, errors } : current));
+-  }
++    },
++    fieldErrors: (errors) => setForm((current) => (current ? { ...current, errors } : current)),
++  });
+ 
+-  function tryAgain() {
+-    const stored = pending.current;
+-    if (stored && !resendBlocked) void send(stored.commands, stored.origin);
+-  }
++  const locked = status !== 'idle';
++  const data = loaded.state === 'ready' ? loaded.data : null;
+ 
+   function reload() {
+     setConflict(null);

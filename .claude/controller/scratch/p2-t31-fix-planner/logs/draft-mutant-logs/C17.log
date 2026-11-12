@@ -1,0 +1,89 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 67ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 45ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 30ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 28ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 43ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 52ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 59ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 37ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 39ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 34ms
+   → light day 1: expected [ 'rgba(59, 39, 144, 1.00)', '3,241' ] to deeply equal [ 'rgba(59, 39, 144, 1.00)', '3,240' ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 58ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 47ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 30ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 126ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 27ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 39ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 81ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 64ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 20ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 27ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 18ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 60ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 56ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 57ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 38ms
+   → expected undefined to deeply equal [ 1.353, …(1) ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 517ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  08:45:42
+   Duration  3.22s (transform 926ms, setup 67ms, import 1.22s, tests 1.70s, environment 111ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:43767) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert
+AssertionError: light day 1: expected [ 'rgba(59, 39, 144, 1.00)', '3,241' ] to deeply equal [ 'rgba(59, 39, 144, 1.00)', '3,240' ]
+
+- Expected
++ Received
+
+  [
+    "rgba(59, 39, 144, 1.00)",
+-   "3,240",
++   "3,241",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:369:141
+    367|     for (const [n, step, amount] of [[1, 5, '3,240'], [2, 2, '412'], […
+    368|       const cell = day(n);
+    369|       expect([cell.style.backgroundColor, within(cell).queryByTestId(`…
+       |                                                                                                                                             ^
+    370|       expect(within(cell).getByText(String(n)).style.color, `${mode} d…
+    371|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut
+AssertionError: expected undefined to deeply equal [ 1.353, …(1) ]
+
+- Expected:
+[
+  1.353,
+  "\"DM Sans\", Anuphan, system-ui, sans-serif",
+]
+
++ Received:
+undefined
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:725:33
+    723|   // The grid's numbers stop at the largest standard size, in DM Sans;…
+    724|   const grown = (text: string) => seen.props.filter((props) => props.c…
+    725|   expect(grown('3,240').at(-1)).toEqual([LARGEST_STANDARD_SCALE, LATIN…
+       |                                 ^
+    726|   expect(grown('24').at(-1)).toEqual([LARGEST_STANDARD_SCALE, LATIN_UI…
+    727|   expect(grown('2,000+').at(-1)).toEqual([LARGEST_STANDARD_SCALE, LATI…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

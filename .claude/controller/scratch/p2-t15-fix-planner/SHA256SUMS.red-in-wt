@@ -1,0 +1,4 @@
+4a6bd7d1ab1b7cf6b2fe0c85e2e50f460e7c078922c3ed57f1a883e292a5e840  apps/app/src/wallet/add/AddSteps.render.test.tsx
+acdfc3e7d3c91c96ee9298078a473963f52242803819fc32bada9759b2b01b3a  apps/app/src/wallet/add/addStepsNative.test.ts
+750c4fd89e86b9580118e5b1ff50ab1498a79a8efa997396e9ef3d66b9ba91c6  apps/app/src/wallet/add/copy.ts
+fc5c8fd77d880ea4d43da9babfedf4bd2c1cff2a04c5d2c6098bc4b5948be98c  apps/app/src/wallet/add/TransferStep.tsx

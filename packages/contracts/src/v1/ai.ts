@@ -16,11 +16,33 @@ import { assertKnownFields } from "./validation.ts";
 /** Bump when the AI notice text changes; consent to an older notice no longer counts. */
 export const AI_NOTICE_VERSION = 1;
 
+/**
+ * The oldest app build that reads phase 3's contract changes (C5), starting
+ * with a record's `source` (P3-T2). A release carrying them raises the
+ * server's minimum client versions to at least this, and the app's own
+ * version (app.json `expo.version`) is never below it.
+ */
+export const AI_MIN_CLIENT_VERSION = "0.2.0";
+
 export const AI_FEATURES = ["parse", "slip", "note", "ask"] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
 /** Uses per account per Bangkok day. */
 export const AI_DAILY_LIMITS: Readonly<Record<AiFeature, number>> = { parse: 30, slip: 10, note: 3, ask: 20 };
+
+/**
+ * Each AI route's deadline on the server (H3), from the start of its work:
+ * every vault step and model call of one request ends inside it, and the
+ * route then answers with what it has (the rules, the plain facts or 503).
+ */
+export const AI_ROUTE_DEADLINE_MS: Readonly<Record<AiFeature, number>> = { parse: 15_000, slip: 45_000, note: 10_000, ask: 55_000 };
+
+/**
+ * How long the phone waits for each AI route (H3): its deadline and 5 seconds
+ * more, 15 for a slip, whose image takes longer to send. The phone outwaits
+ * the route, so it hears the route's own answer, never its own timeout.
+ */
+export const AI_PHONE_TIMEOUT_MS: Readonly<Record<AiFeature, number>> = { parse: 20_000, slip: 60_000, note: 15_000, ask: 60_000 };
 
 export const AI_LOCALES = ["th", "en", "vi"] as const;
 export type AiLocale = (typeof AI_LOCALES)[number];
@@ -97,12 +119,24 @@ export type AiDraft = {
 
 export const AI_DRAFTS_MAX = 5;
 
+/**
+ * Who wrote the words a result shows (H4): Haiku 5.5, which reads first,
+ * Opus 5.5, which reads again only when D25 or D28 says so, or `rules` for the
+ * offline rules and the plain facts. The models are fixed in code (H1).
+ */
+export const AI_MODELS = ["claude-haiku-5-5", "claude-opus-5-5", "rules"] as const;
+export type AiModel = (typeof AI_MODELS)[number];
+
 export type AiParseRequest = { text: string; today: string; locale: AiLocale };
-/** `rules`: the offline rule parser answered (AI off, paused, out of uses or unsure). */
-export type AiParseResult = { drafts: AiDraft[]; source: "ai" | "rules" };
+/**
+ * `rules`: the offline rule parser answered (AI off, paused, out of uses or
+ * unsure). Every AI result names its `model` and says whether an Opus call
+ * ran (`escalated`, H4).
+ */
+export type AiParseResult = { drafts: AiDraft[]; source: "ai" | "rules"; model: AiModel; escalated: boolean };
 
 export type AiSlipRequest = { image_base64: string; media_type: AiSlipMediaType; today: string; locale: AiLocale };
-export type AiSlipResult = { drafts: AiDraft[]; bank: string | null; source: "ai" };
+export type AiSlipResult = { drafts: AiDraft[]; bank: string | null; source: "ai"; model: AiModel; escalated: boolean };
 
 /** One true fact about the user's own numbers. Money is exact satang. */
 export const BUN_FACT_KINDS = [
@@ -130,12 +164,12 @@ export type BunFact = {
 };
 
 /** GET /v1/ai/note?date=&locale= */
-export type AiNoteResult = { date: string; facts: BunFact[]; text: string; source: "ai" | "facts" };
+export type AiNoteResult = { date: string; facts: BunFact[]; text: string; source: "ai" | "facts"; model: AiModel; escalated: boolean };
 
 export type AiAskRequest = { question: string; today: string; locale: AiLocale };
 /** A figure the answer used, read from the user's records by a server tool. */
 export type AiFigure = { label: string; amount_minor: Minor };
-export type AiAskResult = { answer: string; figures: AiFigure[]; source: "ai" | "facts" };
+export type AiAskResult = { answer: string; figures: AiFigure[]; source: "ai" | "facts"; model: AiModel; escalated: boolean };
 
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 

@@ -1,0 +1,39 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10188ms
+     × a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+AssertionError: parse: expected [ { model: 'claude-haiku-5-5', …(1) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "model": "claude-haiku-5-5",
++     "timeoutMs": 1000,
++   },
++ ]
+
+ ❯ test/workers/ai-routing.test.ts:263:34
+    261|       const service = new VaultAiService({ transport: model.transport,…
+    262|       const answer = await run(service, fakeVault(clock, deadlineMs - …
+    263|       expect(model.calls, route).toEqual([])
+       |                                  ^
+    264|       if (route === 'parse') expect(answer).toMatchObject({ status: 20…
+    265|       if (route === 'note') expect(answer).toMatchObject({ status: 200…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:35:09
+   Duration  12.64s (transform 942ms, setup 1.83s, import 33ms, tests 10.19s, environment 0ms)
+

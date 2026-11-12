@@ -3,6 +3,7 @@ import files from './0001_vault_files.sql?raw'
 import currenciesTrips from './0002_currencies_trips.sql?raw'
 import alarmIndexes from './0003_alarm_indexes.sql?raw'
 import alarmBounds from './0004_alarm_bounds.sql?raw'
+import transactionSource from './0005_transaction_source.sql?raw'
 
 // The journal drizzle-orm's durable-sqlite migrator reads (handwritten SQL, so
 // no drizzle-kit). The migrator applies an entry only when its `when` is later
@@ -19,7 +20,8 @@ export const VAULT_MIGRATIONS: {
       { idx: 2, when: 1761523200000, tag: '0002_currencies_trips', breakpoints: true },
       { idx: 3, when: 1761609600000, tag: '0003_alarm_indexes', breakpoints: true },
       { idx: 4, when: 1761696000000, tag: '0004_alarm_bounds', breakpoints: true },
+      { idx: 5, when: 1761782400000, tag: '0005_transaction_source', breakpoints: true },
     ],
   },
-  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds },
+  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds, m0005: transactionSource },
 }

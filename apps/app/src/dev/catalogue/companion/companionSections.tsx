@@ -25,14 +25,14 @@ import type { ScreenFixture, Translate } from '../screenSection';
 
 type CompanionFixture = ScreenFixture & { readonly ai: AiResources };
 
-/** AI resources that answer at once from fixed data. */
-function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Partial<AiResources> = {}): AiResources {
+/** AI resources that answer at once from fixed data. The wallet recap's cashback state uses them too (P2-T32). */
+export function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Partial<AiResources> = {}): AiResources {
   let current: AiPreferencesDto = { companion: false, cashback_tips: false, notice_version: null, current_notice_version: 1, remaining: { ...AI_DAILY_LIMITS }, available: true, ...preferences };
   return {
     preferences: async () => current,
     setPreferences: async (update) => (current = { ...current, ...update }),
-    parse: async () => ({ drafts: [], source: 'rules' }),
-    slip: async () => ({ drafts: [], bank: null, source: 'ai' }),
+    parse: async () => ({ drafts: [], source: 'rules', model: 'rules', escalated: false }),
+    slip: async () => ({ drafts: [], bank: null, source: 'ai', model: 'claude-haiku-5-5', escalated: false }),
     // Worded as the edge words them (fact-text.ts): in Thai for Thai, English otherwise.
     note: async (date, locale) => ({
       date,
@@ -40,12 +40,16 @@ function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Par
       facts: [{ kind: 'top_category', amount_minor: '1226800', percent: 99, category_key: 'bills', category_label: null }],
       text: locale === 'th' ? 'เดือนนี้ใช้กับค่าบิลมากที่สุด ฿12,268' : 'Bills leads this month at ฿12,268.',
       source: 'facts',
+      model: 'rules',
+      escalated: false,
     }),
     ask: async ({ locale }) => ({
       // The golden month's food: one entry, ฿182 on 26 September.
       answer: locale === 'th' ? 'เดือนนี้ใช้กับอาหารไป ฿182 ทั้งหมดเป็นของวันที่ 26' : 'You spent ฿182 on food this month, all of it on the 26th.',
       figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200' }],
       source: 'ai',
+      model: 'claude-haiku-5-5',
+      escalated: false,
     }),
     cashbackCatalogue: async () => ({ source: 'builtin', updated_at: null, home_href: GOGOCASH_HOME, brands: [...BUILTIN_CASHBACK_BRANDS] }),
     ...overrides,

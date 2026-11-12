@@ -34,6 +34,9 @@ vi.mock('@mobile/screens/CustomerSpendAllScreen', stub('CustomerSpendAllScreen',
 vi.mock('@mobile/screens/v1/TransactionsScreen', stub('TransactionsScreen', () => 'current list'));
 vi.mock('@mobile/screens/redesign/HistoryScreen', stub('HistoryScreen', (props) => `redesigned history from ${String(props.initialMonth)}`));
 vi.mock('@mobile/screens/redesign/RecordScreen', stub('RecordScreen', (props) => `record ${String(props.id)} in ${String(props.mode)} mode`));
+// The route imports the wallet screen too; stubbed like the others, since its real imports (the safe-area inset, the
+// router's internals) cannot load here and this file tests only the route's rule.
+vi.mock('@mobile/wallet/records/WalletDeletedScreen', stub('WalletDeletedScreen', () => 'wallet recently deleted'));
 vi.mock('@mobile/screens/redesign/RecentlyDeletedScreen', async () => {
   const { createElement } = await import('react');
   const { Text } = await import('react-native');

@@ -1,0 +1,38 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ❯ src/dev/catalogue/screenReader.render.test.tsx (303 tests | 1 failed | 276 skipped) 1418ms
+   × section bw-insights-in-out: every control has a name, nothing hidden takes focus 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/dev/catalogue/screenReader.render.test.tsx > section bw-insights-in-out: every control has a name, nothing hidden takes focus
+AssertionError: bw-insights-in-out th: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "img: <div role=\"img\" data-native-accessible=\"true\" class=\"css-view-g5y9jx\" style=\"background-color: rgba(255, 255, 255, 1.00); padding: 16px; border-radius: 20px;\" d",
++ ]
+
+ ❯ src/dev/catalogue/screenReader.render.test.tsx:75:46
+     73|     const view = await open(id, locale);
+     74|     const body = screen.getByTestId(`catalogue-section-${id}`);
+     75|     expect(unnamed(body), `${id} ${locale}`).toEqual([]);
+       |                                              ^
+     76|     expect(hiddenButFocusable(body), `${id} ${locale}`).toEqual([]);
+     77|     expect(ungroupedProgress(body), `${id} ${locale}`).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 53 passed | 572 skipped (626)
+   Start at  08:50:32
+   Duration  13.29s (transform 16.12s, setup 98ms, import 19.51s, tests 4.68s, environment 204ms)
+

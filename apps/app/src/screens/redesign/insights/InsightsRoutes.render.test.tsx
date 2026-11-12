@@ -27,8 +27,14 @@ function stub(name: string, text: (props: Record<string, unknown>) => string) {
   };
 }
 vi.mock('@mobile/screens/redesign/insights/InsightsScreen', stub('InsightsScreen', () => 'insights'));
+// The insights route imports the wallet insights too; stubbed like the others, since its real imports (the safe-area inset,
+// the router's internals) cannot load here and this file tests only the routes' rules.
+vi.mock('@mobile/wallet/insights/WalletInsightsScreen', stub('WalletInsightsScreen', () => 'wallet insights'));
 vi.mock('@mobile/screens/redesign/insights/RecapScreen', stub('RecapScreen', (props) => `recap of ${String(props.month)}`));
 vi.mock('@mobile/screens/redesign/insights/RemindersScreen', stub('RemindersScreen', () => 'reminders'));
+// The recap route imports the wallet recap too; stubbed like the others, since its real imports (the safe-area inset,
+// the router's internals) cannot load here and this file tests only the routes' rules.
+vi.mock('@mobile/wallet/recap/WalletRecapScreen', stub('WalletRecapScreen', (props) => `wallet recap of ${String(props.month)}`));
 
 const ENV = { redesign: process.env.EXPO_PUBLIC_REDESIGN, legacy: process.env.EXPO_PUBLIC_LEGACY_SPEND };
 function flags({ redesign, legacy }: { redesign?: string; legacy?: string }) {
@@ -57,6 +63,16 @@ test.each([[SpendInsightsRoute, 'insights'], [SpendRemindersRoute, 'reminders']]
   cleanup();
   flags({ redesign: 'insights', legacy: '1' });
   render(<Route />);
+  expect(screen.getByText('redirect to /spend')).toBeTruthy();
+});
+
+test('spend insights: when wallet redesign is enabled, shows wallet insights screen', () => {
+  flags({ redesign: 'wallet' });
+  render(<SpendInsightsRoute />);
+  expect(screen.getByText('wallet insights with shared resources')).toBeTruthy();
+  cleanup();
+  flags({ redesign: 'wallet', legacy: '1' });
+  render(<SpendInsightsRoute />);
   expect(screen.getByText('redirect to /spend')).toBeTruthy();
 });
 

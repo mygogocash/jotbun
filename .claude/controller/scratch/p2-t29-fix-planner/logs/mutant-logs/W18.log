@@ -1,0 +1,104 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 162ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 157ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 309ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 372ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 235ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 45ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 260ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 160ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 133ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 203ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 199ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 18ms
+   → no new: expected [ <button …(6)>…(1)</button> ] to deeply equal []
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 101ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 105ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 43ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 156ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 388ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 25ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 142ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 190ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 135ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 243ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 38ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 92ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 87ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 366ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 146ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 163ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 120ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 301ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 130ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 104ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  09:43:41
+   Duration  7.49s (transform 1.42s, setup 69ms, import 1.86s, tests 5.33s, environment 101ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:94199) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new
+AssertionError: no new: expected [ <button …(6)>…(1)</button> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <button
++     aria-label="หมวดใหม่"
++     class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++     role="button"
++     style="width: 44px; height: 44px; background-color: rgba(255, 255, 255, 1.00); align-items: center; justify-content: center; opacity: 1; border-width: 1px; border-color: rgba(230, 228, 238, 1.00); border-radius: 22px;"
++     tabindex="0"
++     type="button"
++   >
++     <div
++       aria-hidden="true"
++       class="css-view-g5y9jx"
++     >
++       <svg
++         height="18"
++         viewBox="0 0 24 24"
++         width="18"
++       >
++         <path
++           d="M12 5v14M5 12h14"
++           fill="none"
++           stroke="#111014"
++           stroke-linecap="round"
++           stroke-linejoin="round"
++           stroke-width="2.4"
++         />
++       </svg>
++     </div>
++   </button>,
++ ]
+
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:550:86
+    548|   expect(found('categories-problem').textContent).toContain(tc("We cou…
+    549|   for (const testID of ['categories-builtins', 'categories-pack', 'cat…
+    550|   expect(screen.queryAllByRole('button', { name: say('categories.new')…
+       |                                                                                      ^
+    551|   await press(named('button', say('common.tryAgain')));
+    552|   expect(found(`category-tile-${FOOD.id}`)).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

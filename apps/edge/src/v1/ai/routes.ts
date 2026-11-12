@@ -1,6 +1,5 @@
 import { assertKnownFields, parseAiAskRequest, parseAiDate, parseAiLocale, parseAiParseRequest, parseAiPreferencesUpdate, parseAiSlipRequest } from '@gogospend/contracts'
 
-import { DEFAULT_AI_MODEL } from '../../server/ai/model'
 import type { VaultReply } from '../protocol'
 import type { VaultSession, WorkerContext } from '../worker-routes'
 import { VaultAiService } from './service'
@@ -12,7 +11,7 @@ import { VaultAiService } from './service'
 
 function aiOf(w: WorkerContext): { service: VaultAiService; vault: VaultSession } {
   if (!w.vault) throw new Error('an AI route needs a session')
-  return { service: new VaultAiService({ transport: w.transport ?? null, model: w.env.AI_MODEL || DEFAULT_AI_MODEL }), vault: w.vault }
+  return { service: new VaultAiService({ transport: w.transport ?? null, deadlines: w.aiDeadlines }), vault: w.vault }
 }
 
 /** Every AI route answers 200 (the PostgreSQL routes' statuses: GET and PUT by default, the three POSTs by their `status: 200`). */

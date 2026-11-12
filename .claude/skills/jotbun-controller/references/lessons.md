@@ -60,6 +60,18 @@
   - #412 went red in CI; the controller caught #411 before the push by running all four routes tests.
   - The fix is a stub for the screen, the way the file stubs its other screens (the routes tests check only the routes' rules).
   - make_prompt's RULES now put the four routes tests in the fast gate whenever a screen a route imports changes. In zsh, name each file: an unquoted `$VAR` holding several paths is not split, and vitest then runs none of them.
+- **Two local runners become the bottleneck when five PRs are in flight (12 Nov).** Six runs of 9 jobs queued for over an hour.
+  - `runners.sh up 3` adds runner-3 only; it skips runners already running, so no busy job is lost. The VM (10 CPUs, 32 GiB) took it with memory to spare.
+  - Watch for memory-pressure crashes, such as hermesc's SIGSEGV in the iOS export, and drop back to 2 if they come.
+  - A promotion PR's run can be cancelled to let task PRs go first, and rerun when the queue is idle.
+- **The wallet catalogue's `index.ts` loads every section eagerly (12 Nov, #423).** P2-T29's sections imported its screens, which reach `screens/v1/parts.tsx` and so `expo-crypto`.
+  - The eight kit render files that import the catalogue index stopped loading (five without an `expo-crypto` mock), and CI's render job went red. The brief's gate ran none of them.
+  - Rule, now in make_prompt's RULES: sections load their screens with `lazy()`, as `recordSections.tsx` does, and the gate runs those eight files plus `test:unit`. `test:unit` holds the Hermes guard that caught P2-T29's `globalThis.crypto`.
+  - Together with the routes-test lesson: when a screen gains an import, every test that loads it indirectly (routes, the catalogue index) can break. Run the files that import the entry points, not just the screen's own suite.
+- **Flash-planned UI screens fail Opus review even after a Flash brief review (12 Nov).** P2-T31 got 8 majors, and P2-T29 got 4 blockers and 12 majors.
+  - Both had passed a Flash brief review, and P2-T31 had passed Flash's second review too.
+  - Plan UI screens on Opus. A Flash plan for UI needs an Opus brief review, not a Flash one.
+  - Fix rounds go to an Opus fix planner (R112, R113).
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
@@ -144,6 +156,12 @@
   - `t3_thread_interrupt stop:true` on such a thread returns `no_active_run`, so archive the old thread (`t3_thread_organize archive`), and at the reset check that none resumed. A resumed duplicate would overwrite the new agent's brief.
   - Find an old agent's jsonl by grepping `~/.claude/projects/-Users-kunanonjarat-Developer-jotbun/*.jsonl` for a line from its last message.
   - Money and privacy PRs still wait for their Opus review (owner's 10 Nov routing); Gemini plans, builds and gives the first look meanwhile.
+- **Background Bash dies at 30 minutes unless given a timeout (12 Nov).** The harness stops a `run_in_background` command at its default 30-minute limit, so a `watch_agents.sh ... 120` or a `wait_ci.sh` died long before its own cap.
+  - Start every watcher with `timeout: 7200000` and a cap under 120 minutes (`watch_agents.sh unused 30 115 ...`, `ci_watch.sh 115 ...`).
+  - `C/ci_watch.sh` reports each PR head once (`scratch/ci_watch.seen`), so overlapping watchers never report twice.
+- **The 5-hour window hit again on 12 Nov (09:41 to 13:20)** with five Opus and two Sonnet agents plus the controller.
+  - At the reset T3 resumed every paused thread again, finished implementers included. Stop each finished one at once, before it reruns steps in a worktree whose commit is already pushed.
+  - Then check the heavy lock, the runners and the PRs' checks.
 - **When agents look stalled, check for thermal sleep first.** On 10 Nov, from 03:11 to 06:05, the owner's Mac slept about 15 minutes in every 20 (`pmset -g log`: "Entering Sleep state due to 'Dark Wake Thermal Emergency'"), with the display off and five or six agents running.
   - Everything slowed down: a two-lens review took about 3 hours, and a six-minute whole-file render run never finished cleanly (R103).
   - `pmset -g log | grep -i thermal` shows it at once.

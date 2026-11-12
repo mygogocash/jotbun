@@ -1,0 +1,89 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 66ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 46ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 35ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 34ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 52ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 56ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 69ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 43ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 43ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 43ms
+   → light: expected [ '1px', 'rgba(17, 16, 20, 1.00)' ] to deeply equal [ '2px', 'rgba(17, 16, 20, 1.00)' ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 81ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 56ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 39ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 161ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 34ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 45ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 103ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 84ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 23ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 30ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 24ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 33ms
+   → light: expected [ '1px', 'rgba(17, 16, 20, 1.00)' ] to deeply equal [ '2px', 'rgba(17, 16, 20, 1.00)' ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 60ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 55ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 32ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 519ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  09:00:20
+   Duration  3.72s (transform 1.20s, setup 48ms, import 1.57s, tests 1.87s, environment 110ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:75905) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert
+AssertionError: light: expected [ '1px', 'rgba(17, 16, 20, 1.00)' ] to deeply equal [ '2px', 'rgba(17, 16, 20, 1.00)' ]
+
+- Expected
++ Received
+
+  [
+-   "2px",
++   "1px",
+    "rgba(17, 16, 20, 1.00)",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:374:80
+    372|     expect([day(3).style.borderTopWidth, day(3).style.borderTopColor],…
+    373|     expect([day(1).style.borderTopWidth, day(2).style.borderTopWidth],…
+    374|     expect([day(24).style.borderTopWidth, day(24).style.borderTopColor…
+       |                                                                                ^
+    375|     // Days after today are drawn, are no buttons and are hidden from …
+    376|     const future = found('calendar-future-day-25');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values
+AssertionError: light: expected [ '1px', 'rgba(17, 16, 20, 1.00)' ] to deeply equal [ '2px', 'rgba(17, 16, 20, 1.00)' ]
+
+- Expected
++ Received
+
+  [
+-   "2px",
++   "1px",
+    "rgba(17, 16, 20, 1.00)",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:659:80
+    657|     }
+    658|     expect([1, 2, 3, 5].map((n) => day(n).style.borderTopWidth), mode)…
+    659|     expect([day(24).style.borderTopWidth, day(24).style.borderTopColor…
+       |                                                                                ^
+    660|     // Each day says its date alone.
+    661|     expect([labelOf(day(1)), labelOf(day(3)), labelOf(day(24))], mode)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

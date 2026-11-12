@@ -1,0 +1,845 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > loading: a spinner until the categories and this month's budget arrive 77ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a load problem says so, and Try again loads again; offline is the same retryable problem 44ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: expense categories, built-in then your own, each with its icon or initial in its colour; Back goes back 23ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: income categories on the switch, with nothing of your own yet 42ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > no categories of your own yet: the built-ins, and a line that says what New category is for 21ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating: a name, a colour from the palette and a limit, with a live chip preview; Add this category sends one create, then the limit 95ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating an income category: the type is chosen in the form, and income has no limit 68ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Cancel leaves the form without sending anything 47ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing a built-in: its default name as the placeholder, and "Use the default name" sends label null 72ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing your own category sends only what changed, at the version read 93ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > this month's limit shows when the budget has one, and a change replaces the budget with the overall limit unchanged 112ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > saving: the action is busy and the form is locked until the answer 68ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed: the form freezes, offers only Try again, and Try again resends the same command under the same key 73ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed after the category saved: Try again resends only the budget command, with its own key 73ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a definite refusal unfreezes the form, and the corrected save is a new command with a new key 73ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a changed session blocks saving but keeps the draft; nothing is resent under another identity 45ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a conflict shows the category as it now is beside yours, and Reload shows theirs 74ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a budget changed elsewhere shows this month's limit and budget as they now are, and Reload 64ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archive asks first, saying what archiving does; then the category moves to Archived 100ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archived: the section opens to each archived category, and Unarchive brings it back 54ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 175ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > an unconfirmed unarchive freezes the grid; Try again resends the same command and key 59ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit with no monthly budget: it says a budget comes first and links to Budget, and creates none 69ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit over the total is said inline as it is typed, and nothing is sent 75ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit must be an exact amount above zero 54ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 151ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a label problem: an empty name is refused before sending, a long one as it is typed 67ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the name field is one line 31ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai: built-in names are translated and the text keeps Thai leading 34ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'light', in palette colours 23ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'dark', in palette colours 20ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'light', in palette colours 17ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'dark', in palette colours 18ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'light', in palette colours 15ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'dark', in palette colours 19ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > every control is at least 44 pt and has a role and a name; a swatch is a radio named for its colour 46ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > decorative art is hidden from screen readers: icons, initials and the preview 26ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reduced motion: switching type, choosing a colour and the archive sheet move without a spring 66ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the screen draws with palette tokens only, and keeps money out of floating point 1ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the catalogue has one section per state, with categories-… ids and Categories: … titles 0ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-loading reaches its state in English and Thai, without errors 10ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-load-problem reaches its state in English and Thai, without errors 49ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-expense reaches its state in English and Thai, without errors 50ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 344ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 389ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 234ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 50ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 252ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 155ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 124ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 193ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 184ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-income reaches its state in English and Thai, without errors 671ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-no-custom reaches its state in English and Thai, without errors 53ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 68ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 95ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-create reaches its state in English and Thai, without errors 821ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-edit-builtin reaches its state in English and Thai, without errors 96ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 106ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 41ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-saving reaches its state in English and Thai, without errors 183ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 166ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-unconfirmed reaches its state in English and Thai, without errors 185ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 398ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 29ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 149ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 176ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 119ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-conflict reaches its state in English and Thai, without errors 816ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archived reaches its state in English and Thai, without errors 95ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 240ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 32ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 98ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 87ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 359ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archive-confirm reaches its state in English and Thai, without errors 730ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-no-budget reaches its state in English and Thai, without errors 96ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 133ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 158ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-over reaches its state in English and Thai, without errors 141ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 104ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-label-error reaches its state in English and Thai, without errors 141ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Back goes back, or to Budget with nothing to go back to 16ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday adds the missing categories in Thai (an English "Pets" already counts), then is no longer offered 25ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday is off with the companion area off 16ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 263ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 127ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 98ms
+ × src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again 4119ms
+   → the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+<html
+  data-theme="light"
+  style="color-scheme: light;"
+>
+  <head />
+  <body>
+    <div>
+      <div
+        class="css-view-g5y9jx"
+        data-testid="categories-screen"
+        style="background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+      >
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          data-testid="categories-scroll"
+          style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-bottom: 12px; gap: 16px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              data-testid="stage-header"
+              style="background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="flex-direction: row; align-items: flex-end; gap: 12px;"
+              >
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+                >
+                  <h1
+                    class="css-text-146c3p1"
+                    dir="auto"
+                    role="heading"
+                    style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                  >
+                    Edit category
+                  </h1>
+                </div>
+              </div>
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="padding-right: 16px; padding-left: 16px; gap: 16px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 16px;"
+              >
+                <div
+                  aria-hidden="true"
+                  class="css-view-g5y9jx"
+                  data-testid="category-preview"
+                  style="align-items: center; padding-top: 8px; padding-bottom: 8px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                  >
+                    <div
+                      class="css-view-g5y9jx"
+                      style="width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"
+                    >
+                      <div
+                        aria-hidden="true"
+                        class="css-view-g5y9jx"
+                      >
+                        <div
+                          class="css-text-146c3p1"
+                          dir="auto"
+                          style="font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                        >
+                          P
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"
+                    >
+                      Pets
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"
+                  >
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"
+                    >
+                      Name
+                    </div>
+                    <div
+                      aria-label="4 of 80 characters"
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
+                    >
+                      4 / 80
+                    </div>
+                  </div>
+                  <input
+                    aria-invalid="false"
+                    aria-label="Name"
+                    autocapitalize="sentences"
+                    autocomplete="on...
+ × src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why 4061ms
+   → the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+<html
+  data-theme="light"
+  style="color-scheme: light;"
+>
+  <head />
+  <body>
+    <div>
+      <div
+        class="css-view-g5y9jx"
+        data-testid="categories-screen"
+        style="background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+      >
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          data-testid="categories-scroll"
+          style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-bottom: 12px; gap: 16px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              data-testid="stage-header"
+              style="background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="flex-direction: row; align-items: flex-end; gap: 12px;"
+              >
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+                >
+                  <h1
+                    class="css-text-146c3p1"
+                    dir="auto"
+                    role="heading"
+                    style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                  >
+                    Edit category
+                  </h1>
+                </div>
+              </div>
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="padding-right: 16px; padding-left: 16px; gap: 16px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 16px;"
+              >
+                <div
+                  aria-hidden="true"
+                  class="css-view-g5y9jx"
+                  data-testid="category-preview"
+                  style="align-items: center; padding-top: 8px; padding-bottom: 8px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                  >
+                    <div
+                      class="css-view-g5y9jx"
+                      style="width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"
+                    >
+                      <div
+                        aria-hidden="true"
+                        class="css-view-g5y9jx"
+                      >
+                        <div
+                          class="css-text-146c3p1"
+                          dir="auto"
+                          style="font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                        >
+                          P
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"
+                    >
+                      Pets
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"
+                  >
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"
+                    >
+                      Name
+                    </div>
+                    <div
+                      aria-label="4 of 80 characters"
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
+                    >
+                      4 / 80
+                    </div>
+                  </div>
+                  <input
+                    aria-invalid="false"
+                    aria-label="Name"
+                    autocapitalize="sentences"
+                    autocomplete="on...
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > a category changed on another device closes the form, says so, and reads the grid again 62ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > once the category is accepted and the budget refused, saving again sends only the budget 93ms
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 96 passed (98)
+   Start at  09:39:31
+   Duration  15.78s (transform 1.70s, setup 142ms, import 2.49s, tests 19.79s, environment 315ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:88973) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again
+AssertionError: the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+<html
+  data-theme="light"
+  style="color-scheme: light;"
+>
+  <head />
+  <body>
+    <div>
+      <div
+        class="css-view-g5y9jx"
+        data-testid="categories-screen"
+        style="background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+      >
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          data-testid="categories-scroll"
+          style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-bottom: 12px; gap: 16px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              data-testid="stage-header"
+              style="background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="flex-direction: row; align-items: flex-end; gap: 12px;"
+              >
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+                >
+                  <h1
+                    class="css-text-146c3p1"
+                    dir="auto"
+                    role="heading"
+                    style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                  >
+                    Edit category
+                  </h1>
+                </div>
+              </div>
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="padding-right: 16px; padding-left: 16px; gap: 16px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 16px;"
+              >
+                <div
+                  aria-hidden="true"
+                  class="css-view-g5y9jx"
+                  data-testid="category-preview"
+                  style="align-items: center; padding-top: 8px; padding-bottom: 8px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                  >
+                    <div
+                      class="css-view-g5y9jx"
+                      style="width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"
+                    >
+                      <div
+                        aria-hidden="true"
+                        class="css-view-g5y9jx"
+                      >
+                        <div
+                          class="css-text-146c3p1"
+                          dir="auto"
+                          style="font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                        >
+                          P
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"
+                    >
+                      Pets
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"
+                  >
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"
+                    >
+                      Name
+                    </div>
+                    <div
+                      aria-label="4 of 80 characters"
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
+                    >
+                      4 / 80
+                    </div>
+                  </div>
+                  <input
+                    aria-invalid="false"
+                    aria-label="Name"
+                    autocapitalize="sentences"
+                    autocomplete="on...
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-label="Archive Pets?"
+  aria-modal="true"
+  class="css-view-g5y9jx r-bottom-1p0dtai r-left-1d2f490 r-position-1xcajam r-right-zchlnj r-top-ipm5af r-backgroundColor-1niwhzg"
+  role="dialog"
+>
+  <div
+    class="css-view-g5y9jx r-flex-13awgt0 r-top-ipm5af"
+  >
+    <div
+      class="css-view-g5y9jx"
+      style="justify-content: flex-end; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+    >
+      <div
+        aria-hidden="true"
+        class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+        data-testid="sheet-backdrop"
+        style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; background-color: rgba(35, 27, 58, 1.00); opacity: 0.55;"
+        tabindex="-1"
+      />
+      <div
+        class="css-view-g5y9jx"
+        data-testid="sheet-panel"
+        style="max-height: 92%; background-color: rgba(255, 248, 236, 1.00); border-top-left-radius: 24px; border-top-right-radius: 24px; gap: 16px; transform: translateY(0px); padding: 16px 24px 58px; border-width: 2px 2px 0px; border-color: rgba(35, 27, 58, 1.00);"
+        tabindex="-1"
+      >
+        <div
+          class="css-view-g5y9jx"
+          style="flex-direction: row; align-items: flex-start; gap: 12px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-top: 8px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Archive Pets?
+            </h1>
+          </div>
+          <button
+            aria-label="Close"
+            class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+            role="button"
+            style="min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+            tabindex="0"
+            type="button"
+          >
+            <div
+              aria-hidden="true"
+              class="css-view-g5y9jx"
+            >
+              <div
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                ×
+              </div>
+            </div>
+          </button>
+        </div>
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          style="flex-shrink: 1;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="gap: 16px;"
+          >
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Pets won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 12px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+ ❯ src/screens/redesign/planning/categoryCommands.render.test.tsx:73:115
+     71|   await confirmArchive();
+     72|   await waitFor(() => expect(within(screen.getByTestId('categories-foo…
+     73|   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Arc…
+       |                                                                                                                   ^
+     74|   expect(within(screen.getByTestId('categories-footer')).queryByRole('…
+     75| });
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why
+AssertionError: the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+<html
+  data-theme="light"
+  style="color-scheme: light;"
+>
+  <head />
+  <body>
+    <div>
+      <div
+        class="css-view-g5y9jx"
+        data-testid="categories-screen"
+        style="background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+      >
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          data-testid="categories-scroll"
+          style="flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-bottom: 12px; gap: 16px;"
+          >
+            <div
+              class="css-view-g5y9jx"
+              data-testid="stage-header"
+              style="background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="flex-direction: row; align-items: flex-end; gap: 12px;"
+              >
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+                >
+                  <h1
+                    class="css-text-146c3p1"
+                    dir="auto"
+                    role="heading"
+                    style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                  >
+                    Edit category
+                  </h1>
+                </div>
+              </div>
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="padding-right: 16px; padding-left: 16px; gap: 16px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 16px;"
+              >
+                <div
+                  aria-hidden="true"
+                  class="css-view-g5y9jx"
+                  data-testid="category-preview"
+                  style="align-items: center; padding-top: 8px; padding-bottom: 8px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+                  >
+                    <div
+                      class="css-view-g5y9jx"
+                      style="width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"
+                    >
+                      <div
+                        aria-hidden="true"
+                        class="css-view-g5y9jx"
+                      >
+                        <div
+                          class="css-text-146c3p1"
+                          dir="auto"
+                          style="font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+                        >
+                          P
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"
+                    >
+                      Pets
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="css-view-g5y9jx"
+                  style="gap: 4px;"
+                >
+                  <div
+                    class="css-view-g5y9jx"
+                    style="flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"
+                  >
+                    <div
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"
+                    >
+                      Name
+                    </div>
+                    <div
+                      aria-label="4 of 80 characters"
+                      class="css-text-146c3p1"
+                      dir="auto"
+                      style="font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
+                    >
+                      4 / 80
+                    </div>
+                  </div>
+                  <input
+                    aria-invalid="false"
+                    aria-label="Name"
+                    autocapitalize="sentences"
+                    autocomplete="on...
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-label="Archive Pets?"
+  aria-modal="true"
+  class="css-view-g5y9jx r-bottom-1p0dtai r-left-1d2f490 r-position-1xcajam r-right-zchlnj r-top-ipm5af r-backgroundColor-1niwhzg"
+  role="dialog"
+>
+  <div
+    class="css-view-g5y9jx r-flex-13awgt0 r-top-ipm5af"
+  >
+    <div
+      class="css-view-g5y9jx"
+      style="justify-content: flex-end; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+    >
+      <div
+        aria-hidden="true"
+        class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+        data-testid="sheet-backdrop"
+        style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; background-color: rgba(35, 27, 58, 1.00); opacity: 0.55;"
+        tabindex="-1"
+      />
+      <div
+        class="css-view-g5y9jx"
+        data-testid="sheet-panel"
+        style="max-height: 92%; background-color: rgba(255, 248, 236, 1.00); border-top-left-radius: 24px; border-top-right-radius: 24px; gap: 16px; transform: translateY(0px); padding: 16px 24px 58px; border-width: 2px 2px 0px; border-color: rgba(35, 27, 58, 1.00);"
+        tabindex="-1"
+      >
+        <div
+          class="css-view-g5y9jx"
+          style="flex-direction: row; align-items: flex-start; gap: 12px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-top: 8px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Archive Pets?
+            </h1>
+          </div>
+          <button
+            aria-label="Close"
+            class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+            role="button"
+            style="min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+            tabindex="0"
+            type="button"
+          >
+            <div
+              aria-hidden="true"
+              class="css-view-g5y9jx"
+            >
+              <div
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                ×
+              </div>
+            </div>
+          </button>
+        </div>
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          style="flex-shrink: 1;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="gap: 16px;"
+          >
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Pets won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 12px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+ ❯ src/screens/redesign/planning/categoryCommands.render.test.tsx:82:115
+     80|   await confirmArchive();
+     81|   await waitFor(() => expect(within(screen.getByTestId('categories-foo…
+     82|   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Arc…
+       |                                                                                                                   ^
+     83| });
+     84|
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
