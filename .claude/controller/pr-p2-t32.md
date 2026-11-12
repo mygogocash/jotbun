@@ -35,7 +35,7 @@
   - The proofs: RED on typed stubs, every failing case an assertion; GREEN with neighbours 112 and catalogue `bw-` 44; **91 of 91 mutants killed** (F18 equivalent). All 16 fix-kit files are byte-identical.
   - Planned on Claude Opus (finished on Gemini 3.8 Flash after Claude's weekly limit), built on Gemini 3.8 Flash.
 - [x] Controller fix `9add4415`, found before the push: `InsightsRoutes.render.test.tsx` could not load, because the recap route imports the real `WalletRecapScreen`. It now stubs that screen, as it stubs every other. The four routes tests, `RecapScreen`, `SpendLayout`, `InsightsScreen` and `WalletRecap`: 126 of 126; `typecheck:app` clean.
-- [ ] CI on this pull request is green at `9add4415`: the nine jobs, including the full render suite, `export:web` and the iOS export.
+- [x] CI on this pull request is green at `9add4415`: 9 of 9, including the full render suite, `export:web` and the iOS export.
 - [ ] Confirming review (Opus) of the fix commits.
 - [ ] SKIPPED: device checks (confetti and haptic on a phone, the share sheet).
 
