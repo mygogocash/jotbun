@@ -1,0 +1,94 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+ × test/contracts-ai.test.ts > the AI contract and the two models > every phone timeout outwaits its route's deadline by 5 seconds, and a slip's by 15 5ms
+   → expected { parse: 15000, slip: 45000, …(2) } to deeply equal { parse: 20000, slip: 60000, …(2) }
+ × test/contracts-ai.test.ts > the AI contract and the two models > the models are Haiku 5.5, Opus 5.5 and rules 1ms
+   → expected [ 'rules', 'claude-opus-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5', …(2) ]
+ × test/contracts-ai.test.ts > the AI contract and the two models > Haiku's request base has no betas or fallbacks, and Opus's keeps the fallback beta and fallbacks: 'default' 1ms
+   → expected { model: 'claude-opus-5-5', …(2) } to deeply equal { model: 'claude-haiku-5-5', …(2) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts-ai.test.ts > the AI contract and the two models > every phone timeout outwaits its route's deadline by 5 seconds, and a slip's by 15
+AssertionError: expected { parse: 15000, slip: 45000, …(2) } to deeply equal { parse: 20000, slip: 60000, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "ask": 60000,
+-   "note": 15000,
+-   "parse": 20000,
+-   "slip": 60000,
++   "ask": 55000,
++   "note": 10000,
++   "parse": 15000,
++   "slip": 45000,
+  }
+
+ ❯ test/contracts-ai.test.ts:10:33
+      8|   it("every phone timeout outwaits its route's deadline by 5 seconds, …
+      9|     expect(AI_ROUTE_DEADLINE_MS).toEqual({ parse: 15_000, slip: 45_000…
+     10|     expect(AI_PHONE_TIMEOUT_MS).toEqual({ parse: 20_000, slip: 60_000,…
+       |                                 ^
+     11|     const margins = Object.fromEntries(AI_FEATURES.map((feature) => [f…
+     12|     expect(margins).toEqual({ parse: 5_000, slip: 15_000, note: 5_000,…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/contracts-ai.test.ts > the AI contract and the two models > the models are Haiku 5.5, Opus 5.5 and rules
+AssertionError: expected [ 'rules', 'claude-opus-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "claude-haiku-5-5",
+-   "claude-opus-5-5",
+    "rules",
++   "claude-opus-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/contracts-ai.test.ts:16:23
+     14|
+     15|   it('the models are Haiku 5.5, Opus 5.5 and rules', () => {
+     16|     expect(AI_MODELS).toEqual(['claude-haiku-5-5', 'claude-opus-5-5', …
+       |                       ^
+     17|     expect([HAIKU, OPUS]).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+     18|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/contracts-ai.test.ts > the AI contract and the two models > Haiku's request base has no betas or fallbacks, and Opus's keeps the fallback beta and fallbacks: 'default'
+AssertionError: expected { model: 'claude-opus-5-5', …(2) } to deeply equal { model: 'claude-haiku-5-5', …(2) }
+
+- Expected
++ Received
+
+  {
+    "max_tokens": 8000,
+-   "model": "claude-haiku-5-5",
++   "model": "claude-opus-5-5",
+    "output_config": {
+      "effort": "low",
+    },
+  }
+
+ ❯ test/contracts-ai.test.ts:21:40
+     19|
+     20|   it("Haiku's request base has no betas or fallbacks, and Opus's keeps…
+     21|     expect(haikuRequest('low', 8_000)).toEqual({ model: 'claude-haiku-…
+       |                                        ^
+     22|     expect(haikuRequest('medium', 12_000)).toEqual({ model: 'claude-ha…
+     23|     expect(opusRequest('medium', 8_000)).toEqual({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  08:31:09
+   Duration  282ms (transform 90ms, setup 0ms, import 116ms, tests 7ms, environment 0ms)
+

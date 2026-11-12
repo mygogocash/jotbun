@@ -2,14 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { setConsentedTelemetrySink } from './bus.ts';
+import { APP_EVENTS } from './catalog.ts';
 import type { CleanProps } from './catalog.ts';
 import {
+  trackAiConsentChanged, trackAiDraftReviewed, trackAiUnavailable, trackAskBunAsked, trackAskBunRated,
   trackBudgetSet, trackConflictShown, trackInsightsViewed, trackOnboardingStepViewed, trackPermissionDenied,
   trackPrivateModeToggled, trackRecapOpened, trackRecapShared, trackRecordDeleted, trackRecordEdited,
   trackRecordRestored, trackRecordSaved, trackRecordStarted, trackReminderSet, trackResyncRequired,
-  trackSetupCompleted, trackSignedIn, trackSignedOut, trackSignedUp, trackSyncFailed, trackUndoUsed,
-  trackWalletAdded,
+  trackSetupCompleted, trackSignedIn, trackSignedOut, trackSignedUp, trackSyncFailed, trackTellBunSent,
+  trackUndoUsed, trackWalletAdded,
 } from './events.ts';
+import type { RecordSource } from './events.ts';
+import { recordAnalytics } from './testing/recordAnalytics.ts';
 
 test('the typed emitters send §7\'s names and nothing else', () => {
   const seen: Array<[string, CleanProps]> = [];
@@ -83,6 +87,113 @@ test('the typed emitters send §7\'s names and nothing else', () => {
     assert.deepEqual(seen.at(-1), ['signed_out', { method: 'google' }]);
     trackSignedOut({});
     assert.deepEqual(seen.at(-1), ['signed_out', {}]);
+  } finally {
+    setConsentedTelemetrySink(null);
+  }
+});
+
+// P3-T5. Every property below is one the allow-list (catalog.ts) names for its
+// event, under a closed rule: the Bun AI group's outcome, fields_edited, model
+// and escalated, the Reliability group's reason_code and screen, and the
+// Recording group's source and has_photo.
+test('the Bun AI emitters send §7\'s names and properties', () => {
+  const seen: Array<[string, CleanProps]> = [];
+  setConsentedTelemetrySink((name, properties) => { seen.push([name, properties]); });
+  try {
+    trackTellBunSent({ model: 'rules', escalated: false });
+    assert.deepEqual(seen.at(-1), ['tell_bun_sent', { model: 'rules', escalated: false }]);
+    trackTellBunSent({ model: 'claude-opus-5-5', escalated: true });
+    assert.deepEqual(seen.at(-1), ['tell_bun_sent', { model: 'claude-opus-5-5', escalated: true }]);
+
+    trackAiDraftReviewed({ outcome: 'edited', fieldsEdited: 25, model: 'claude-haiku-5-5', escalated: false });
+    assert.deepEqual(seen.at(-1), ['ai_draft_reviewed', { outcome: 'edited', fields_edited: 20, model: 'claude-haiku-5-5', escalated: false }]);
+    trackAiDraftReviewed({ outcome: 'kept', fieldsEdited: 0, model: 'claude-opus-5-5', escalated: true });
+    assert.deepEqual(seen.at(-1), ['ai_draft_reviewed', { outcome: 'kept', fields_edited: 0, model: 'claude-opus-5-5', escalated: true }]);
+
+    trackAskBunAsked({ model: 'claude-haiku-5-5', escalated: false });
+    assert.deepEqual(seen.at(-1), ['ask_bun_asked', { model: 'claude-haiku-5-5', escalated: false }]);
+
+    // A18 and H16: helpful is kept, not helpful is dropped; edited is never sent for a rating.
+    trackAskBunRated({ helpful: false, model: 'claude-opus-5-5', escalated: true });
+    assert.deepEqual(seen.at(-1), ['ask_bun_rated', { outcome: 'dropped', model: 'claude-opus-5-5', escalated: true }]);
+    trackAskBunRated({ helpful: true, model: 'claude-haiku-5-5', escalated: false });
+    assert.deepEqual(seen.at(-1), ['ask_bun_rated', { outcome: 'kept', model: 'claude-haiku-5-5', escalated: false }]);
+
+    trackAiUnavailable({ reasonCode: 'AI_PAUSED', screen: '/spend/add' });
+    assert.deepEqual(seen.at(-1), ['ai_unavailable', { reason_code: 'AI_PAUSED', screen: '/spend/add' }]);
+
+    trackAiConsentChanged();
+    assert.deepEqual(seen.at(-1), ['ai_consent_changed', {}]);
+
+    // One event per call.
+    assert.equal(seen.length, 9);
+  } finally {
+    setConsentedTelemetrySink(null);
+  }
+});
+
+test('fields_edited is a whole number from 0 to 20', () => {
+  const seen: Array<[string, CleanProps]> = [];
+  setConsentedTelemetrySink((name, properties) => { seen.push([name, properties]); });
+  try {
+    const cases: Array<[number, number]> = [[7, 7], [20, 20], [21, 20], [-3, 0], [2.6, 3], [Number.NaN, 0], [Number.POSITIVE_INFINITY, 0]];
+    for (const [given, sent] of cases) {
+      trackAiDraftReviewed({ outcome: 'edited', fieldsEdited: given, model: 'rules', escalated: false });
+      assert.deepEqual(seen.at(-1), ['ai_draft_reviewed', { outcome: 'edited', fields_edited: sent, model: 'rules', escalated: false }], String(given));
+    }
+  } finally {
+    setConsentedTelemetrySink(null);
+  }
+});
+
+test('ai_unavailable sends a class name and a route pattern, never words or a record\'s id', () => {
+  const seen: Array<[string, CleanProps]> = [];
+  setConsentedTelemetrySink((name, properties) => { seen.push([name, properties]); });
+  try {
+    trackAiUnavailable({ reasonCode: 'บันพักอยู่ ลองใหม่อีกครั้ง', screen: '/spend/record/0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70' });
+    assert.deepEqual(seen.at(-1), ['ai_unavailable', {}]);
+    trackAiUnavailable({ reasonCode: 'AI_LIMIT_REACHED', screen: '/spend/record/[id]' });
+    assert.deepEqual(seen.at(-1), ['ai_unavailable', { reason_code: 'AI_LIMIT_REACHED', screen: '/spend/record/[id]' }]);
+  } finally {
+    setConsentedTelemetrySink(null);
+  }
+});
+
+test('ai_consent_changed carries the new answer only in the common ai_enabled', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    recorded.analytics.setCommon({ ai_enabled: true });
+    trackAiConsentChanged();
+    recorded.analytics.setCommon({ ai_enabled: false });
+    trackAiConsentChanged();
+    assert.deepEqual(recorded.sent, [
+      { kind: 'capture', name: 'ai_consent_changed', properties: { ai_enabled: true, origin: 'app' } },
+      { kind: 'capture', name: 'ai_consent_changed', properties: { ai_enabled: false, origin: 'app' } },
+    ]);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('record_saved carries the photo flag and every source', () => {
+  // RecordSource is P3-T2's to widen to the contract's seven; the allow-list
+  // already takes all seven, so this cast only bridges the type until then.
+  const asSource = (value: string) => value as RecordSource;
+  const seen: Array<[string, CleanProps]> = [];
+  setConsentedTelemetrySink((name, properties) => { seen.push([name, properties]); });
+  try {
+    trackRecordSaved({ kind: 'expense', source: asSource('photo'), categoryKey: 'food', offline: false, secondsToSave: 9, hasPhoto: true });
+    assert.deepEqual(seen.at(-1), ['record_saved', { kind: 'expense', source: 'photo', category_key: 'food', has_photo: true, offline: false, seconds_to_save: 9 }]);
+    trackRecordSaved({ kind: 'expense', source: 'typed', categoryKey: null, offline: true, secondsToSave: 3, hasPhoto: false });
+    assert.deepEqual(seen.at(-1), ['record_saved', { kind: 'expense', source: 'typed', has_photo: false, offline: true, seconds_to_save: 3 }]);
+
+    const rule = APP_EVENTS.record_saved.source;
+    const sources = rule.kind === 'enum' ? rule.values : [];
+    assert.equal(sources.length, 7);
+    for (const source of sources) {
+      trackRecordSaved({ kind: 'income', source: asSource(source), categoryKey: null, offline: false, secondsToSave: 1, hasPhoto: true });
+      assert.deepEqual(seen.at(-1), ['record_saved', { kind: 'income', source, has_photo: true, offline: false, seconds_to_save: 1 }], source);
+    }
   } finally {
     setConsentedTelemetrySink(null);
   }

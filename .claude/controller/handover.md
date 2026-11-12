@@ -49,6 +49,104 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **09:50: #428 (P3-T6) opened.** Head `8b528df1`, built by Haiku. The controller checked 20 of 21 `real/` files byte-identical (the receipt only adds "as accepted by the controller"); 30 of 30 mutants.
+  - Opus reviewer `mcp:launch:7af3cde0bab339da1916635e5abc6cb2713cd4fab4cfb1ad2caa7d968955eb0a` writes `reviews/P3-T6.md`.
+  - Sonnet second reviewer `mcp:launch:7f8ac96f0cd5645510cb20962d374acd6306b633e8d67d1da87e4154feb9e037` writes `reviews/P3-T6-second.md`.
+  - CI is running (`ci_watch.sh 115 427 428`).
+- **09:40: P2-T31 fix brief READY (Opus, R112); its fixer is building (Haiku).**
+  - 127 of 127 mutants. The gate includes the catalogue-index kit files and `test:unit`. Sections load lazily. `dateStep.ts` gains `monthShortLabel` and `shortDateLabel` (additive).
+  - Fixer on worktree `p2-t31` at `afc19276`, with no sync merge. P1 to P23 accepted.
+  - **After its commit:** check the kit, push, then merge the head into the branch. `index.ts` goes KIT, STACK, TRAY, ADD, LIST, RECORD, (CATEGORY when #423 lands), INSIGHTS, RECAP, LOCK. Then CI, then the Opus confirming review.
+- **09:35: #427 (P2-T15) opened; P2-T21 building.**
+  - **#427 (P2-T15):** head `fd41909c`, built by Haiku. The controller checked all 7 `real/` files byte-identical; 104 of 104 mutants, matching the planner.
+    - Opus reviewer `mcp:launch:4b36bd564c682ce13a5243d00f8858d781da321e1c4af0788974d581bdae37b2` writes `reviews/P2-T15.md`.
+    - Sonnet second reviewer `mcp:launch:62f8743d31ad1a4718ee4ef32ae02cd8c170392370e42a1a3c34397c9e024d28` writes `reviews/P2-T15-second.md`.
+    - CI is running.
+  - **P2-T21 brief READY (Opus):** kit sums 55 of 55, 109 of 109 mutants, new routes `app/spend/wallet/new.tsx` and `[id]/edit.tsx`.
+    - The controller's pre-flight on the kit over the head: tsc 0; the eight catalogue-index kit files, the new suites and the routes 175 of 175; `test:unit` 1037 of 1037. Then the worktree was reset.
+    - Worktree `p2-t21` (`p2/t21-wallet-edit`) at `150cfb82`, installed. P1 to P21 accepted. Implementer: Haiku 5.5 max.
+  - **The pre-flight is now routine for UI briefs.** Lay `real/` over a fresh worktree, run the catalogue-index files, the routes and `test:unit`, then `git checkout -- . && git clean -fd apps docs` before dispatch.
+- **09:20: #420 (P3-T2) MERGED as `25ce266`; the head is `25ce266`.**
+  - Opus approved, the second review (Claude Sonnet 5.5) approved, and CI was 9 of 9.
+  - Issue #186 is closed and it is promoted as **#426** (stack #379 holds 26). The release rule (client minimum 0.2.0) is in followups.md for the owner and P6C.
+  - **P3-T6 is building (Haiku 5.5 max, `--lock`).** Worktree `p3-t6` on `p3/t6-haiku-first` at `25ce2661`, with `install-edge`. The kit holds there (72 of 72 sums, 16 of 16 originals). P1 to P13 accepted.
+- **09:10: P2-T15 brief READY (Opus) and building on Haiku.**
+  - Kit sums 25 of 25, 104 of 104 mutants. Its sections join `addSections.tsx`, and `index.ts` is untouched.
+  - **The controller's pre-flight:** the kit's `real/` laid over the head gave the eight catalogue-index kit files plus `AddSteps` 152 of 152, and `test:unit` 1035 of 1035. Then the worktree was reset clean.
+  - Worktree `p2-t15` (`p2/t15-transfer-confirm-pick`) is new at `9a7b767e`, installed. P1 to P19 accepted.
+  - Implementer (Haiku 5.5 max): see the thread titled "P2-T15 implementer".
+- **09:00: GEMINI FLASH IS OUT OF QUOTA TOO** ("Error 429, Individual quota reached", from 07:46 until about 14 Nov 09:58 Bangkok, per T3's snooze of 2026-11-14T02:57:58Z). With Argon and Antigravity's Claude also out, **every lane runs on Claude Code**: `make_prompt.py --claude-code`, which means Haiku 5.5 max builds and fixes, Opus plans and reviews, and Sonnet 5.5 confirms.
+  - The failed Flash threads were archived so they do not resume on 14 Nov: P3-T2's second review, P2-T29's second review, and P2-T31's second review, which had already approved.
+  - **#420 (P3-T2):** CI is now 9 of 9 at `182f3054` (the R-B rerun passed), and Opus approved. The second review was moved to Claude Sonnet 5.5 high to keep two reviews on the vault migration: `mcp:launch:79573ece84af1bbfd409afb9d5ed95afa3d9284c922d090333949b8195a242d1`, writing `reviews/P3-T2-second.md`. **It merges when that approves.**
+  - **P3-T6 brief READY** (Opus; kit `scratch/p3-t6-planner`, 72 sums; 30 of 30 mutants; built on `964f6c0e` plus #420's `182f3054`). Its builder (Haiku) starts once #420 merges, from a new worktree `p3-t6` on `p3/t6-haiku-first`.
+    - Rulings P2 to P5 go beyond the plan: type-only fixture edits in `companionSections.tsx` and three render tests; `ai.test.ts`'s env case; the deadline clock; and fake-clock carries.
+- **08:50: #412 (P2-T25) MERGED as `82b9669`; the head is `82b9669`.**
+  - The confirming review approved, and CI was 9 of 9 at `6e2541a2`.
+  - Issue #171 is closed and it is promoted as **#425** (stack #379 holds 25).
+  - `index.ts` on the head is now ADD, LIST, RECORD, RECAP, LOCK (`a07ed204…`). #421 (P2-T31) and #423 (P2-T29) each need a merge of the head once their fix rounds land: CATEGORY goes after RECORD, and INSIGHTS after CATEGORY, before RECAP.
+- **08:40: #423 (P2-T29): Opus says NEEDS FIXES**, with 4 blockers and 12 majors (`reviews/P2-T29.md`).
+  - The blockers:
+    - B1: the Hermes guard (`globalThis.crypto`) fails `test:unit`;
+    - B2: eight kit render files can't load the eager catalogue import of `expo-crypto`;
+    - B3: unnamed text fields;
+    - B4: an unconfirmed save makes a duplicate category.
+  - CI was red; the run was cancelled.
+  - **R113:** fix every blocker, major and minor; m2 and m6 are required; the files may be rewritten. The gate is widened: `test:unit`, the eight kit files, the catalogue's `bw-categor` suites and the routes tests.
+  - Fix planner (Opus): `mcp:launch:aba488d99e4d62e1879dd2e40b416acd0351c31a6dded1e13b422ad157f50fd5`, writing `briefs/P2-T29-fix.md` with the kit at `scratch/p2-t29-fix-planner/`, on `cee7eff5`.
+  - **Routing (lessons.md):** UI screens are planned on Opus from now on. A Flash brief review is not enough.
+- **08:30: #411 (P2-T32) MERGED as `ab9f2c1`; the head is `ab9f2c1`.**
+  - The confirming review approved, and CI was 9 of 9 at `764ea0ac`.
+  - Issue #178 is closed and it is promoted as **#424** (stack #379 holds 24). Its carriers are in followups.md (n3 must land before E2-C).
+  - **#412 (P2-T25):** the head was merged again as `6e2541a2`. `index.ts` is the kit's final `a07ed204…`: ADD, LIST, RECORD, RECAP, LOCK. On the merged tree: tsc 0, and 61 of 61.
+    - The stale run on `a6aaee0b` was cancelled, and CI is running at `6e2541a2`. It merges when green.
+  - **#420 (P3-T2):** the SQL job hit the documented R-B flake (`attachments.integration.spec.ts`, expected 1, got 2; P3-T2 touches no `apps/api`). Rerun once with `--failed`. Its Flash second review is still running.
+  - **CI watching:** the new `C/ci_watch.sh <cap> <prs...>` reports each PR head once as its checks finish.
+- **08:20: #421 (P2-T31): Opus says NEEDS FIXES**, with 8 majors (`reviews/P2-T31.md`).
+  - The majors: sync blanks the screen, the budget line is off-scale, private mode marks empty days, wrong early-state dates, money not exact (`Math.round(Number())`), a failed compare month drawn as ฿0, hard-coded Thai, and 15 unheld guards. There are 11 minors and 7 nits.
+  - Both Flash reviews (brief and second) had approved it, so an Opus gate on Flash-planned UI stays required.
+  - **R112:** fix every major and minor as the review proposes, and stop BLOCKED where the plan cannot settle a question. The notes are in `scratch/dispatch/P2-T31-fix-planner-notes.md`.
+  - Fix planner (Opus): `mcp:launch:107b72851c10606aeb3ce21e75bea5afcdbf24b0ee096246265d90f6839874ba`. It writes `briefs/P2-T31-fix.md`, with the kit at `scratch/p2-t31-fix-planner/`, on `afc19276`.
+- **08:15: CI was the bottleneck. A third local runner is up (`runners.sh up 3`, `jotbun-runner-3`).**
+  - Six runs of 9 jobs were queued behind two busy runners. The Colima VM has 10 CPUs and 32 GiB, thermal pressure was 0 and 58% of memory was free.
+  - The promotion run for #422 was cancelled to let task PRs go first. **Rerun it when the queue is idle:** `gh run rerun 43127891515 --repo mygogocash/jotbun`.
+  - **#420 (P3-T2): Opus APPROVED** (m1, m2, n1 to n3). Flash's second review is running.
+  - **m2's release rule, for the owner and P6C:** raise the server's client minimum (`MIN_CLIENT_VERSION_IOS` and `_ANDROID`, or KV `client_versions`) to at least 0.2.0 before any build sends a source. A 0.1.0 build's `isTransactionSnapshot` refuses a snapshot carrying `source`.
+- **08:05: #423 (P2-T29) opened, and three Opus planners started.**
+  - **#423 (P2-T29):** head `cee7eff5`. The controller checked 9 of 10 `real/` files byte-identical, and `index.ts` equals the proven `911e4ce0…`.
+    - Opus reviewer `mcp:launch:951238c9df0e081ca25bf00475e6972b6668ed55dfa3b4629c55c1e187ca6d4d` writes `reviews/P2-T29.md`.
+    - Flash second reviewer `mcp:launch:d895f4ff7d236dd310b34a7fdeabe9795753f784f38ab6b5fdcd11f44f2c8f1b` writes `reviews/P2-T29-second.md`.
+  - **#421 (P2-T31):** Flash's second review APPROVED. The Opus review is running.
+  - **Planners (Opus, `--claude-code`, notes `scratch/dispatch/planner-common-notes-20261112b.md` plus each task's own):**
+    - P2-T15, transfer, confirm and pick (critical path, depth 16): `mcp:launch:f193feb1faa3da6812da774bd19f8122914f790daec19c9b6cc1b9ecf483d6f4`, WT `p2-t15` on `p2/t15-transfer-confirm-pick`.
+    - P2-T21, new wallet, edit and correction (depth 13): `mcp:launch:a35bacd79458b3a708da5497d4601a20d85ec522f8962d523e0d752b77823853`, WT `p2-t21` on `p2/t21-wallet-edit`.
+    - P3-T6, Haiku first (depth 10): `mcp:launch:a0660c57000d5b119f09062b69f6e70ffd61008c30f6be47b759e78fe374a45a`, WT `p3-t6` on `p3/t6-haiku-first`. It plans on P3-T2's `real/` for `ai.ts` and `index.ts`, and starts after #420 merges.
+- **07:55: #411 (P2-T32): the confirming review APPROVED at `9add4415`** (m1 to m3, n1 to n3 in followups.md; n3 must land before E2-C).
+  - The controller merged the head as `764ea0ac`. `index.ts` is the kit's proven `merge/index.t20-t32.ts` (`ddd2e6a0…`): ADD, LIST, RECAP, LOCK.
+  - On the merged tree: tsc 0, and 98 of 98. CI is running.
+  - **#412 and #411 conflict with each other in `index.ts`.** Whichever merges second needs one more merge of the head. Use the final file `a07ed2049044…` (`scratch/p2-t25-fix-planner/merge/orders/*/3-*.ts` or `scratch/p2-t32-fix-planner/merge/index.t20-t25-t32.ts`).
+- **07:55: P2-T29 brief reworked and building.**
+  - The controller checked each review fix in `real/`: wrapping, the 56 × 44 switch, no hex, `tc` fallbacks, and `ThaiPackTray`'s error.
+  - `index.ts` takes the planner's proven `logs/merge/index.t20-t29.ts` (`911e4ce0…`), amended in the notes.
+  - The worktree was fast-forwarded to `8434af6`. P1 to P11 accepted.
+  - Implementer (Flash): `mcp:launch:202e13d53adef2adef762589c06f4250fcf19739da8ba6cea3f60960c07e4cd1`.
+- **07:45: #418 (P3-T5) MERGED as `8434af6`; the head is `8434af6`.**
+  - Opus approved (m1 to m3, n1 to n5), Flash approved, and CI was 9 of 9.
+  - Issue #189 is closed and it is promoted as **#422** (stack #379 holds 23). Its minors go to P3-T13, P3-T17, P3-T18, P3-T20, P3-T21 and P3-T22 in followups.md.
+  - #420 (P3-T2) shares `events.ts`, and the 3-way merge was proven clean.
+- **07:44: #412 (P2-T25): the confirming review APPROVED at `272aa84b`** (m1, n1 to n3 in followups.md).
+  - The controller merged the head as `a6aaee0b`. `index.ts` is the kit's proven file for #416 then #412 (`6a4b1644…`): ADD, LIST, RECORD, LOCK.
+  - On the merged tree: tsc 0, and 65 of 65.
+  - CI is running on `a6aaee0b`. It merges when green.
+- **07:40: two more PRs open, each with an Opus review and a Flash second review.**
+  - **#420 (P3-T2)**, head `182f3054`.
+    - The controller checked 17 of 18 `real/` files byte-identical. The receipt corrects the brief's worker total from 34 to 33; the planner's own red log shows 33.
+    - Opus reviewer `mcp:launch:1694057e88c94de16d1ec26cf1914dc3c8298b0e87ec229e8ecd2f32ec94fb7e` writes `reviews/P3-T2.md`.
+    - Flash second reviewer `mcp:launch:e828ca97f02d672488efd6a19c60f30b4020cc13f63b6620a53f8d774721bf25` writes `reviews/P3-T2-second.md`.
+  - **#421 (P2-T31)**, head `afc19276`, the controller's merge of the head with #416.
+    - `index.ts` is the kit's proven `index.t20-then-t31.ts` (`7e85c123…`). On the merged tree: tsc 0, and 45 of 45 in 7 files. All 15 `real/` files are byte-identical.
+    - Opus reviewer `mcp:launch:ef3aeec45b9cf96c3dd96d0b62119cef25672ae4c223a557dde368b5ea363fa6` writes `reviews/P2-T31.md`.
+    - Flash second reviewer `mcp:launch:d051e1237a455348fb57c93bad3c46ba2bd7aaa8c7a816aaaee40870b5ab6f1c` writes `reviews/P2-T31-second.md`.
+  - **#418 (P3-T5):** Flash's second review approved, and CI is green 9 of 9 at `9a6722c3`. The Opus first review is running.
 - **07:30: #416 (P2-T20) MERGED as `0bfd58a`; the head is `0bfd58a`.**
   - Opus approved at `4eb15b3e` (m1 to m3, n1). Flash's second review approved, and CI was green at `f6a2b681`.
   - Issue #166 is closed, the worktree and branch are removed, and it is promoted as **#419** (stack #379 holds 22).

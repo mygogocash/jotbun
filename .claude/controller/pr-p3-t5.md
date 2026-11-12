@@ -36,7 +36,7 @@
   - the release folding (F1, F2);
   - the tally (D1 to D12).
 - [x] R100's fast gate: `typecheck:app`, `test:app` 34, `test:unit` and `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite, `export:web` and the iOS export.
+- [x] CI on this pull request is green at `9a6722c3`: 9 of 9, including the full render suite, `export:web` and the iOS export.
 - [ ] Independent review (Opus), and a second review: every event's properties against the allow-list, and the tally's absence from release bundles.
 - [ ] SKIPPED: the release-bundle check for the key (P3-T22 adds it).
 

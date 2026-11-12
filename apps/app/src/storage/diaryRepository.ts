@@ -1,4 +1,4 @@
-import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isTransactionSnapshot, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isTransactionSnapshot, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, parseTransactionSource, validateOccurredOn } from '@gogospend/contracts';
 import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, TransactionDto, UpdateTransactionRequest, WalletSnapshot } from '@gogospend/contracts';
 
 import { CursorMoved, DiaryLocked, DraftReferenceUnavailable, StaleEpochError } from './types.ts';
@@ -107,8 +107,8 @@ const toCommand = (row: OutboxRow): OutboxCommand => ({
 
 type EntityRow = { entity: string; id: string; version: number; state: EntityChange['state']; snapshot: string | null };
 
-const ENTRY_KEYS = ['amount_minor', 'category_id', 'id', 'merchant', 'note', 'occurred_on', 'type', 'wallet_id'];
-const TRANSFER_KEYS = ['amount_minor', 'destination_wallet_id', 'id', 'merchant', 'note', 'occurred_on', 'source_wallet_id', 'type'];
+const ENTRY_KEYS = ['amount_minor', 'category_id', 'id', 'merchant', 'note', 'occurred_on', 'source', 'type', 'wallet_id'];
+const TRANSFER_KEYS = ['amount_minor', 'destination_wallet_id', 'id', 'merchant', 'note', 'occurred_on', 'source', 'source_wallet_id', 'type'];
 const LATEST_DATE = '9999-12-31';
 
 /** The command canonical form (sorted keys, undefined fields dropped), as the server digests it. */
@@ -147,6 +147,12 @@ async function assertDraft(tx: SqlExecutor, entry: PendingEntry): Promise<void> 
       return fail(field);
     }
     if (normalized !== value) fail(field);
+  }
+  // How the record was made (P3-T2): absent or null is none, anything else one of the seven sources.
+  try {
+    parseTransactionSource(record.source);
+  } catch {
+    fail('source');
   }
   const walletIds = transfer ? [record.source_wallet_id, record.destination_wallet_id] : [record.wallet_id];
   if (transfer && record.source_wallet_id === record.destination_wallet_id) fail('a transfer needs two different wallets');

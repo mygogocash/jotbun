@@ -1,0 +1,30 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 6168ms
+     × each route answers inside its deadline when the model hangs 6032ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+AssertionError: parse: expected 6006 to be less than 4000
+ ❯ test/workers/ai-routing.test.ts:139:31
+    137|     }
+    138|     const parse = await timed(() => client.as(user).post('/v1/ai/parse…
+    139|     expect(parse.ms, 'parse').toBeLessThan(4_000)
+       |                               ^
+    140|     expect(parse).toMatchObject({ status: 200, body: { source: 'rules'…
+    141|     const note = await timed(() => client.as(user).get(`/v1/ai/note?da…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:33:53
+   Duration  8.58s (transform 854ms, setup 1.79s, import 27ms, tests 6.17s, environment 0ms)
+

@@ -598,3 +598,47 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `?reorder=1` is read once at mount, so push a new list instance from Home's จัดเรียง.
     - With no account open, `?reorder=1` opens the tray once the account opens (probe PD). It is not pinned.
   - **E2-B:** a paid-ahead card reads ยอดที่ใช้ไป above a positive balance. A card's row says spending twice; that row is drawn as on the board.
+- P2-T25 (#412, merged 12 Nov as 82b9669 at 6e2541a2, after the R109 fix round; promotion #425): the confirming review is `reviews/P2-T25-confirm.md` (Opus, approved at `272aa84b`: m1, n1 to n3). Carried by the next task that edits `SpendRoutes.render.test.tsx` or `WalletDeleted.render.test.tsx` (P2-T27, or 1D-T7 for the event):
+  - **m1:** nothing checks that the `wallet` area shows `WalletDeletedScreen` on the shared resources. Let the wallet stub read `useSpendV1()`, as the old screen's stub does, and add the review's probe cases. They kill X3a and X3b.
+  - **n1:** pin "a restore, then private mode turned on", which is handled right.
+  - **n2:** pin a transfer's amount on a row.
+  - **n3:** the fix receipt never names the controller's `272aa84b` (the routes stub, and the four routes tests now in the fast gate). Add one line to `P2-T25-fix.md` in the next housekeeping commit.
+- P3-T5 (#418, merged 12 Nov as 8434af6 at 9a6722c3; promotion #422). The first review is `reviews/P3-T5.md` (Opus, approved: m1 to m3, n1 to n5) and the second is `reviews/P3-T5-second.md` (Flash, approved). Carried:
+  - **P3-T13 (the first importer of `useDraftReview`):**
+    - **m1:** wrap `draftReview.ts:36`'s tally call in try/catch, so a tally that throws at once never fails a review; keep the call synchronous. Add the case "a tally that throws at once never fails the review".
+    - **m2:** until P3-T22, nothing in CI holds the release guard. F1 and F2 are killed only by the planner's out-of-repo `release-fold.cjs`. Leave `useDraftReview.ts:23-26` as it is, and reach `@mobile/dev/draftTally` only through it.
+    - The render suite defines `__DEV__` true, so tray tests run the live tally. With an in-memory AsyncStorage the key `jotbun.dev.draft-tally` appears, so a test that asserts the whole key set must allow it.
+  - **P3-T17, P3-T20, P3-T21 (callers of `trackAiUnavailable`):** pass the API error's class constant and a route pattern (`screenPattern(segments)` or a literal). Never pass a pathname, a message or anything built from a record.
+  - **P3-T18:** owns `AiModelName = AiModel` in `events.ts` (plan line 876), not P3-T6. **m3:** the receipt and the brief's P7 name P3-T6; fix the receipt line in a housekeeping commit. If `AiModel` gains a member, add its key to `tallyOf`'s literal.
+  - **P3-T22:**
+    - Check the exports for `jotbun.dev.draft-tally` and `@mobile/dev/draftTally`, not the bare `draftTally`.
+    - Run the 100-slip check with the ai-check route loaded (it uses the catalogue's `if (__DEV__) require(...)` pattern).
+    - The review's `scratch/p3-t5-review/tools/real-transform.cjs` is a ready base.
+  - **Nits for the next task that edits these files:**
+    - n1: an `ask_bun_asked` case with `escalated: true` (kills M6);
+    - n2: a reset among concurrent adds (kills M3);
+    - n3: a stored unsafe integer in the corrupt-shape case (kills M1);
+    - n4 and n5: the receipt should name the brief's three deviations (`import()` for `require`, `void | Promise<void>`, the added render test) and who ran `check_kit`.
+- P2-T32 (#411, merged 12 Nov as ab9f2c1 at 764ea0ac, after the R110 fix round; promotion #424): the confirming review is `reviews/P2-T32-confirm.md` (Opus, approved at `9add4415`: m1 to m3, n1 to n3). Carried:
+  - **Before E2-C (n3):** `recapScreens.tsx:14-15` writes the catalogue's August 2026 celebration mark to the real `walletDeviceStore()`, so on the phone that runs the catalogue the real August 2026 recap never celebrates.
+    - Give the catalogue's sections a device store in memory, as P7 did for private mode.
+    - Carry it with the next catalogue or recap task; it must land before the owner's E2-C pass.
+  - **Any task that changes the recap's month in place** (P6B's recap image, a month chip, a link from a notification), **m1:** a month changed in place spends its one celebration on the previous month's data.
+    - Draw the body under `key={month}`, so `useLoad` starts at loading, or decide only once the data read is the month's.
+    - Add the review's S1 and S4 as cases, and drop July's pre-mark at `WalletRecap.render.test.tsx:376`.
+  - **P2-T38 (turns the wallet area on), m2:** add the case `vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'wallet')` → `wallet recap of 2026-09 with shared resources` in `InsightsRoutes.render.test.tsx` (PROBE-R, kills O1).
+  - **The next task that edits `WalletRecap.render.test.tsx`, m3:**
+    - assert `pointer-events: none` on `recap-confetti` (kills O2);
+    - record analytics in the load-problem case, and expect `['recap_opened']` only after Try again succeeds (kills O3).
+  - **n2 (efficiency only):** with `withRecords`, the first history page is read twice (`recapData.ts:44-51`), and the days logged could come from the records.
+  - **n1 (housekeeping):** the fix receipt omits `9add4415` and the routes gate.
+- P3-T2 (#420, merged 12 Nov as 25ce266 at 182f3054; promotion #426). The first review is `reviews/P3-T2.md` (Opus, approved: m1, m2, n1 to n3) and the second is `reviews/P3-T2-second.md` (Claude Sonnet 5.5, approved: m1, n1 to n3; Gemini was out of quota). Carried:
+  - **The owner and P6C (release), m2: raise the server's client minimum before any build sends a source.** That is `MIN_CLIENT_VERSION_IOS` and `MIN_CLIENT_VERSION_ANDROID`, or the KV config's `client_versions`, to at least `0.2.0`. A 0.1.0 build's `isTransactionSnapshot` refuses a snapshot carrying `source`. The deploy is the owner's call.
+  - **P3-T13 (the first task that sets a source from the add tray), or the next task that edits `transaction-source.test.ts`, m1 (both reviews):** pin source preservation on the write paths that never name it.
+    - Restore (`transactions.ts:334`; the review's R4).
+    - A receipt's retain, replace and remove (`attachments.ts:222`; R5).
+    - An import confirmation (`confirmation.ts:473`). P4-T11 owns `statement` there.
+    - The reviews' probes pass today; only the pins are missing.
+  - **n1:** a transfer twin of the outbox's unknown-source case (`diaryRepository.test.ts:126`; kills R9).
+  - **n3:** `events.ts:6`'s inline `import('@gogospend/contracts').TransactionSource` can become an `import type`, now that #418 has merged.
+  - **Housekeeping:** the receipt's gate counts are the planner's, not the implementer's (1012 and 248 ms). `resources.ts` has no `| null`. `transaction-source.test.ts` has 9 cases. Fix them in the next receipt touch.

@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10170ms
+     × the results name the model 44ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -3,8 +3,8 @@
+    "figures": [
+      {
+        "amount_minor": "6000",
+      },
+    ],
+-   "model": "rules",
++   "model": "claude-haiku-5-5",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ai-routing.test.ts:110:118
+    108|     // A question cut short by an outage after a tool read its figures…
+    109|     model.push(toolUse('spending_total', { from: monthStart, through: …
+    110|     expect(await body(await client.as(who.user).post('/v1/ai/ask', { q…
+       |                                                                                                                      ^
+    111|       source: 'facts',
+    112|       model: 'rules',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:33:27
+   Duration  12.46s (transform 831ms, setup 1.73s, import 26ms, tests 10.17s, environment 0ms)
+

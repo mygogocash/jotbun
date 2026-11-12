@@ -60,6 +60,18 @@
   - #412 went red in CI; the controller caught #411 before the push by running all four routes tests.
   - The fix is a stub for the screen, the way the file stubs its other screens (the routes tests check only the routes' rules).
   - make_prompt's RULES now put the four routes tests in the fast gate whenever a screen a route imports changes. In zsh, name each file: an unquoted `$VAR` holding several paths is not split, and vitest then runs none of them.
+- **Two local runners become the bottleneck when five PRs are in flight (12 Nov).** Six runs of 9 jobs queued for over an hour.
+  - `runners.sh up 3` adds runner-3 only; it skips runners already running, so no busy job is lost. The VM (10 CPUs, 32 GiB) took it with memory to spare.
+  - Watch for memory-pressure crashes, such as hermesc's SIGSEGV in the iOS export, and drop back to 2 if they come.
+  - A promotion PR's run can be cancelled to let task PRs go first, and rerun when the queue is idle.
+- **The wallet catalogue's `index.ts` loads every section eagerly (12 Nov, #423).** P2-T29's sections imported its screens, which reach `screens/v1/parts.tsx` and so `expo-crypto`.
+  - The eight kit render files that import the catalogue index stopped loading (five without an `expo-crypto` mock), and CI's render job went red. The brief's gate ran none of them.
+  - Rule, now in make_prompt's RULES: sections load their screens with `lazy()`, as `recordSections.tsx` does, and the gate runs those eight files plus `test:unit`. `test:unit` holds the Hermes guard that caught P2-T29's `globalThis.crypto`.
+  - Together with the routes-test lesson: when a screen gains an import, every test that loads it indirectly (routes, the catalogue index) can break. Run the files that import the entry points, not just the screen's own suite.
+- **Flash-planned UI screens fail Opus review even after a Flash brief review (12 Nov).** P2-T31 got 8 majors, and P2-T29 got 4 blockers and 12 majors.
+  - Both had passed a Flash brief review, and P2-T31 had passed Flash's second review too.
+  - Plan UI screens on Opus. A Flash plan for UI needs an Opus brief review, not a Flash one.
+  - Fix rounds go to an Opus fix planner (R112, R113).
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;

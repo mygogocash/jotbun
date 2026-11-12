@@ -1,0 +1,37 @@
+diff --git a/apps/app/src/ui/dateStep.test.ts b/apps/app/src/ui/dateStep.test.ts
+--- a/apps/app/src/ui/dateStep.test.ts
++++ b/apps/app/src/ui/dateStep.test.ts
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+-import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
++import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthShortLabel, shortDateLabel, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
+ 
+ test('steps one day across month and year ends', () => {
+   assert.equal(stepDate('2026-10-17', 1), '2026-10-18');
+@@ -110,3 +110,24 @@
+   assert.deepEqual(weekdayInitials('th'), ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']);
+   assert.deepEqual(weekdayInitials('vi'), ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']);
+ });
++
++test("a month's short name has no year, in each language", () => {
++  assert.deepEqual(['2026-05', '2026-06', '2026-10', '2027-01'].map((month) => monthShortLabel(month, 'th')), ['พ.ค.', 'มิ.ย.', 'ต.ค.', 'ม.ค.']);
++  assert.deepEqual(['2026-05', '2026-10', '2027-01'].map((month) => monthShortLabel(month, 'en')), ['May', 'Oct', 'Jan']);
++  assert.equal(monthShortLabel('2026-12', 'vi'), 'thg 12');
++  assert.throws(() => monthShortLabel('2026-13', 'th'), TypeError);
++  assert.throws(() => monthShortLabel('2026-00', 'en'), TypeError);
++  assert.throws(() => monthShortLabel('0000-10', 'en'), TypeError);
++  assert.throws(() => monthShortLabel('2026-10-01', 'en'), TypeError);
++});
++
++test('a short date is written out for today and yesterday too, with the year only when it is not this year', () => {
++  const today = '2026-10-24';
++  assert.equal(shortDateLabel(today, today, 'th'), 'เสาร์ 24 ต.ค.');
++  assert.equal(shortDateLabel('2026-10-23', today, 'th'), 'ศุกร์ 23 ต.ค.');
++  assert.equal(shortDateLabel(today, today, 'en'), 'Sat 24 Oct');
++  assert.equal(shortDateLabel(today, today, 'vi'), 'Thứ 7, 24 thg 10');
++  assert.equal(shortDateLabel('2025-12-31', today, 'th'), 'พุธ 31 ธ.ค. 2568');
++  assert.equal(shortDateLabel('2025-12-31', today, 'en'), 'Wed 31 Dec 2025');
++  assert.throws(() => shortDateLabel('2026-02-30', today, 'en'), TypeError);
++});

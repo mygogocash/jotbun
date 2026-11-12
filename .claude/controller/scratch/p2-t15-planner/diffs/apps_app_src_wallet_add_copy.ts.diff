@@ -1,0 +1,49 @@
+diff --git a/apps/app/src/wallet/add/copy.ts b/apps/app/src/wallet/add/copy.ts
+index f6584c6d4bb7441a216b4bca4735963629980fd3..8e265aeb8709de4645db1cce5124a7c686faa114 100644
+--- a/apps/app/src/wallet/add/copy.ts
++++ b/apps/app/src/wallet/add/copy.ts
+@@ -1,14 +1,15 @@
+ import type { DraftTable } from '../copy/draftText.ts';
+ 
+ /**
+- * The add tray's lines (bw-tray-amount, rh-income, rh-transfer): its titles,
+- * the type switch and its name (the boards' ประเภทรายการ), the wallet chip, Tell
+- * Bun, income's name field and its budget note, a quick chip's spoken words
+- * and the keypad's delete key. Data only: read through `useDraftCopy`, with
+- * COMMON_COPY where a part also says an amount. Default pending owner Q3:
+- * built as written; the English lines, and the Thai lines marked draft (no
+- * board shows them), are drafts for E2-B. P2-T15 and P2-T16 add their lines
+- * here.
++ * The add tray's lines (bw-tray-amount, rh-income, rh-transfer,
++ * bw-tray-confirm): its titles, the type switch and its name (the boards'
++ * ประเภทรายการ), the wallet chip, Tell Bun, income's name field and its budget
++ * note, a quick chip's spoken words and the keypad's delete key (P2-T14); the
++ * transfer step, the confirm step's rows and Bun's marks, and the pick steps
++ * (P2-T15). Data only: read through `useDraftCopy`, with COMMON_COPY where a
++ * part also says an amount. Default pending owner Q3: built as written; the
++ * English lines, and the Thai lines marked draft (no board shows them), are
++ * drafts for E2-B. P2-T16 adds its lines here.
+  */
+ export const COPY = {
+   'add.titleExpense': { th: 'จดรายจ่าย', en: 'Add spending' },
+@@ -28,4 +29,20 @@ export const COPY = {
+   'add.chip': { th: '{label} {amount}', en: '{label} {amount}' },
+   // Draft (the plan's): rh-income names the key ลบตัวเลข, bw-tray-amount ลบ.
+   'add.deleteKey': { th: 'ลบตัวเลข', en: 'Delete a digit' },
++  // P2-T15: the transfer step (rh-transfer), the confirm step (bw-tray-confirm) and the picks.
++  'add.after': { th: 'หลังโอน {amount}', en: 'After {amount}' },
++  'add.swap': { th: 'สลับกระเป๋าเงิน', en: 'Swap wallets' },
++  'add.moveAll': { th: 'ย้ายทั้งหมด {amount}', en: 'Move all {amount}' },
++  'add.transferNote': { th: 'โอนระหว่างกระเป๋าของคุณเอง ไม่นับเป็นรายจ่าย', en: 'A move between your own wallets is not spending' },
++  'add.bunReadFrom': { th: 'บันอ่านจาก “{sentence}”', en: 'Bun read this from “{sentence}”' },
++  'add.bunGuess': { th: 'บันเดา', en: "Bun's guess" },
++  'add.rowCategory': { th: 'หมวด', en: 'Category' },
++  'add.rowWallet': { th: 'กระเป๋า', en: 'Wallet' },
++  'add.rowFrom': { th: 'จาก', en: 'From' },
++  'add.rowTo': { th: 'ไป', en: 'To' },
++  'add.rowDate': { th: 'วันที่', en: 'Date' },
++  'add.rowNote': { th: 'โน้ต', en: 'Note' },
++  'add.today': { th: 'วันนี้', en: 'Today' },
++  // bw-tray-confirm's note row with nothing written.
++  'add.addNote': { th: 'เพิ่มโน้ต', en: 'Add a note' },
+ } as const satisfies DraftTable;

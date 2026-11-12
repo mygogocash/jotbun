@@ -1,0 +1,64 @@
+# P2-T32-fix: the month recap on the wallet's motion answer, the whole month, the wallet kit and real catalogue states
+
+- **Status:** built and verified locally on `p2/t32-month-recap` (`.claude/worktrees/p2-t32`): a sync merge of `origin/claude/p1a-vault-core` into PR #411's reviewed head `71b2255e`, then one fix commit. Not pushed. This is the fix round on PR #411 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T32.md`) said Needs fixes, for eight majors (M1 to M8) and seven minors;
+  - the second (`P2-T32-second.md`, money and privacy) approved, with one nit, which is the first review's m1.
+
+  The controller ruled R110: fix every major as the review proposes, and the minors m1 to m5. The planner's brief is `.claude/controller/briefs/P2-T32-fix.md`. Under R87 this receipt is its own file; `P2-T32.md` gains one line pointing here, and `premium-progress.md` is not edited. The independent review is the controller's, after this receipt.
+- **Base:** the merge of the integration head `a00fff7c` (#407, P2-T14, and #406, P2-T33, merged) into `71b2255e`. Its one conflict was `apps/app/src/dev/catalogue/wallet/index.ts`, where both sides added lists after the tray's. It keeps every list in plan order: ADD, RECAP, LOCK (the planner's P1). None of the round's other files changed on the integration branch since the PR's base `647cb4a0`.
+- **Files:**
+  - Rewritten: `apps/app/src/wallet/recap/WalletRecapScreen.tsx` (365 lines; 434 before), `Confetti.tsx` (61), `biggestDay.ts` (32), `copy.ts` (25), and the three tests: `WalletRecap.render.test.tsx` (25 cases; 11 before), `biggestDay.test.ts` (3; 2 before) and `recapShare.test.ts` (3; 2 before).
+  - `apps/app/src/screens/redesign/insights/recapData.ts`: `useRecapData` takes `{ withRecords }`, and reads every history page for the records only then.
+  - `apps/app/src/dev/catalogue/wallet/recapSections.tsx` (45 lines; 151 before): the four sections, now the real screen, loaded with `recapScreens.tsx` (created, 101 lines).
+  - Shared, additive:
+    - `apps/app/src/screens/redesign/insights/CashbackCard.tsx`: `useCatalogue` is exported as `useCashbackCatalogue` (two lines);
+    - `apps/app/src/dev/catalogue/companion/companionSections.tsx`: `catalogueAi` is exported (one word);
+    - `apps/app/src/dev/catalogue/wallet/index.ts`: the sync merge's resolution.
+  - Unchanged: `recapShare.ts`, `RecapScreen.tsx`, `app/spend/recap/[month].tsx`.
+  - This receipt, and one line in `P2-T32.md`.
+- **M1, one motion answer (W6, R66):** the celebration is decided from `useWalletReducedMotion()` through `motionFor('recap', …)`, once per month on a mount, when the month's facts first show. The phone is asked once, by the wallet root; the recap never asks it. Pending reads as reduced, so before the answer only the `celebration` haptic plays, and an answer arriving later decides nothing again.
+- **M2, a share that cannot open:** `shareText`'s rejection is caught and says the catalog's `เปิดการแชร์ไม่ได้ ลองอีกครั้ง` as an alert; the next press clears it. `recap_shared` is sent only after the sheet resolves.
+- **M3, the cashback card (A5, D42, R73):** the same rule as Insights' card. It shows only while the bridge answers (the shared catalogue read; a 404 means it is off), tips are on and seven days are logged (`cashbackView` says `tips`). It is a count that names the shops that matched (up to three), never baht, and it opens nothing: no link, no button, no chevron. P6B's X3 opens it.
+- **M4, the catalogue:** `bw-recap`, `bw-recap-over`, `bw-recap-private` and `bw-recap-cashback` draw the real `WalletRecapScreen` on the Bun diary recap's fakes (August 2026 on the catalogue's clock), in the 'Screens' group with `layout: 'screen'`. Private mode is the section's own, over a store in memory.
+- **M5, the whole month:** `biggestDay` and the cashback count read every history page of the month (`readAllPages`), beside the days read that stops once every day is seen. The Bun diary recap reads exactly as before.
+- **M6, the wallet kit:** every word is `WalletText` (Anuphan, with the kit's leading and AX5 caps) and every amount `WalletAmount` (DM Sans 700). Every colour is a `useWalletColors` token: what is left is `under` in each mode (dark `#4CC38A`, not light's `#1A7F4B`); the cashback card is `toast` with `onToast` words. The tests hold every visible word to a `WALLET_TEXT_PAIRS` pair at 4.5:1 or more in both modes. There is no colour literal in `src/wallet/recap`; Confetti takes the materials' colours.
+- **M7 and m4, every state:** loading (`กำลังโหลดบันทึกของคุณ`), a load problem (`recapProblem`, with Try again only when a retry can help), an empty month and a month that has not started (nothing read, nothing to share or celebrate), and the recap. The title is the heading and Close is there in every state.
+- **The minors:** m1, `topCategories` (with its tie rule), dateStep's `monthLabel` and `dayLabel`, and `shared.ts`'s `daysInMonth`; m2, a load problem or an empty month spends no celebration; m3, Close falls back to Insights; m5, the title and the top categories are headings, and every glyph is decorative SVG. m7: `biggestDay` takes the categories and has no `'salary'` fallback. This receipt corrects m6.
+- **RED to GREEN:**
+  - RED, on the planner's typed stubs of `WalletRecapScreen.tsx`, `Confetti.tsx`, `biggestDay.ts`, `recapShare.ts` and `recapSections.tsx`, with the round's three tests:
+    - `typecheck:app` exit 0;
+    - Node: 10 tests, 4 pass (the draft-copy checks), 6 fail, each an `AssertionError [ERR_ASSERTION]`;
+    - render: 25 of 25 fail, each on an asserting lookup or an assertion, with no module-load error.
+  - GREEN:
+    - `typecheck:app` exit 0;
+    - Node 10 of 10: `biggestDay.test.ts` 3, `recapShare.test.ts` 3, `draftText.test.ts` 4;
+    - `WalletRecap.render.test.tsx` 25 of 25;
+    - the neighbours 112 of 112, unchanged: `RecapScreen` 36, `InsightsScreen` 36, `CashbackCard` 4, `walletHarness` 9, `Tray` 27;
+    - the catalogue's wallet sections, both suites: 44, the same count as the base.
+- **Mutation check:** 91 mutants, all killed, every restore's SHA-256 checked (`tools/mutants.py`).
+  - Four are killed by an error rather than an assertion: C7 (Vitest's unhandled rejection), F8 and R6 (a TypeError), and M5 (the catalogue suites' first open).
+  - One more is equivalent and not run: F18, the over row given what is left. Over budget that figure is negative, and `WalletAmount`'s default sign draws and says only the magnitude.
+  - The first review's survivors O1 to O8 are B4, B3, R1, F14, F15, A1, CF1 and F1, each killed.
+- **Gate** (worktree root; R100):
+  - `typecheck:app` exit 0;
+  - `test:app` exit 0, `ℹ fail 0`;
+  - `test:unit` exit 0, `ℹ fail 0`;
+  - the focused Node files 10 of 10; the focused render files 137 of 137;
+  - the catalogue's wallet sections: 44;
+  - `git diff --check`: clean.
+- **CI** (R100): the full render suite, `export:web`, the iOS export, the database suites, `test:edge:workers` and `test:ops` run on the PR. No route, config or app entry changed, so `typecheck:routes` and `export:web` were not run locally.
+- **Merge proofs** (the planner's `merge/`): with #416 (P2-T20) and #412 (P2-T25), in every order, `index.ts` ends as the same plan-order file (ADD, LIST, RECORD, RECAP, LOCK); each conflict keeps both lists in plan order. With #416 the merged tree typechecks and its tests and this round's pass.
+- **Deviations** (the brief's planner rulings):
+  - P4: `useCashbackCatalogue` leaves `CashbackCard.tsx`, a shared file, so the bridge's off switch is one rule, not a copy.
+  - P5: the sections load the screen when opened, since the wallet harness's and the tray's tests import the list without expo-router.
+  - P6: `useRecapData` gains `{ withRecords }`; the plan's two-argument call is unchanged.
+  - P7: Close is the kit's `IconButton` and the cashback card is `toast`: the board's `#E9E7F1` and `#111014` are not palette tokens, and `#111014` vanishes on the dark ground.
+  - P9: the biggest day reads `dayLabel`'s weekday too ("อาทิตย์ 2 ส.ค."), the Time constraint's format; dateStep has no day-and-month label.
+  - P12: `biggestDay` takes the categories as a third argument, since record ids cannot name the built-in salary category.
+- **SKIPPED:** device checks (a phone's VoiceOver, Dynamic Type at AX5 and the haptic) until E2-C; Docker is stopped, so the database suites are CI's.
+- **For E2-C (owner, Q3):** the draft lines `recap.cashbackDetail`, `recap.sister` and `recap.and`; the still confetti (the first review's n4); the title with the year (n2); the days line in a month still going (n5).
+- **Notes for later tasks:**
+  - P2-T24: Home's cashback pill reads `useCashbackCatalogue` and `cashbackView` the same way.
+  - P2-T37: its sweep finds no colour literal in `src/wallet/recap`, and `tc()` is called only with catalog lines.
+  - P6B: the recap card's opening is X3's.
+  - The catalogue's first opening of `bw-recap` on a phone keeps August 2026's celebration mark there, as the app would.

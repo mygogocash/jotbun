@@ -94,6 +94,8 @@ export const transactions = sqliteTable('transactions', {
   walletAmountMinor: integer('wallet_amount_minor'),
   toAmountMinor: integer('to_amount_minor'),
   tripId: text('trip_id'),
+  // How the record was made (0005_transaction_source.sql, P3-T2): set only at create, null when none was named.
+  source: text('source'),
 })
 
 export const monthlyBudgets = sqliteTable('monthly_budgets', {

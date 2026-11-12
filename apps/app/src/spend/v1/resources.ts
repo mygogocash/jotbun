@@ -29,6 +29,7 @@ import type {
   MonthSummary,
   SetMonthlyBudgetRequest,
   TransactionDto,
+  TransactionSource,
   UpdateCategoryRequest,
   UpdateTransactionRequest,
   UpdateWalletRequest,
@@ -45,8 +46,9 @@ export const V1_COMMAND_SCHEMA = 1;
 /** Sync pages and chunks may carry entity types a newer server added; this build skips them instead of failing the page. */
 const SKIP_UNKNOWN_ENTITIES = { unknownEntities: 'skip' } as const;
 
-export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null };
-export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null };
+/** `source` is how the record was made (P3-T2): a create names one or leaves the key out. */
+export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
+export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
 
 /** The app's typed port to the v1 API: owned ids only, no name-based ownership, no legacy fallback. */
 export type SpendV1Resources = {

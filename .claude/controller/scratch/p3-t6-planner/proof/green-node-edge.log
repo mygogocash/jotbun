@@ -1,0 +1,12 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+ ✓ test/contracts-ai.test.ts > the AI contract and the two models > every phone timeout outwaits its route's deadline by 5 seconds, and a slip's by 15 1ms
+ ✓ test/contracts-ai.test.ts > the AI contract and the two models > the models are Haiku 5.5, Opus 5.5 and rules 0ms
+ ✓ test/contracts-ai.test.ts > the AI contract and the two models > Haiku's request base has no betas or fallbacks, and Opus's keeps the fallback beta and fallbacks: 'default' 0ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  08:31:58
+   Duration  238ms (transform 77ms, setup 0ms, import 99ms, tests 2ms, environment 0ms)
+
