@@ -1,0 +1,13 @@
+diff --git a/docs/implementation/receipts/1D-T7-fix.md b/docs/implementation/receipts/1D-T7-fix.md
+index 13cd13d657696249b33160df29c60479b1d8cb3d..64576487ab73f642a2c55a733510a1882dbb66b0 100644
+--- a/docs/implementation/receipts/1D-T7-fix.md
++++ b/docs/implementation/receipts/1D-T7-fix.md
+@@ -4,7 +4,7 @@
+ - **Why:** both reviews of #444 said Needs fixes, with the same major: `reviews/1D-T7.md` (Opus: M1, m1, m2, n1 to n3) and `reviews/1D-T7-second.md` (Sonnet: M1, m1, n1 to n4). The controller ruled R119.
+ - **What changed:**
+   - **M1, `controller.ts`.** The launch's first account answer keeps what is held, whether it says no one is signed in or names an account: `keepHeld = accountId === undefined || (accountId === null && id !== null)`. Before, a signed-out launch dropped the held events at `AnalyticsUpkeep`'s first `setAccount(null)`. Those include onboarding's first step, which the install hands over (1D-T6's review, m3), so on a first launch it never reached PostHog.
+-  - A sign-out (an account to null) and a switch (A to B) still drop what is held, so L4 and P14 hold. `reset()` and `stopSessionRecording()` still run at every change. Held events are still sent only after a yes.
++  - A sign-out and a switch (A to B) drop what is held whether or not the account was named, so L4 and P14 hold. As this round left it, an account `/v1/me` had not named yet (offline) kept it; the second fix round closed that (R120, `1D-T7-fix2.md`). `reset()` and `stopSessionRecording()` still run at every change. Held events are still sent only after a yes.
+   - **Sonnet's n2, `deviceSync.ts`.** The diary hears each outcome before its analytics, so its lock on `signed_out` never waits behind analytics code.
+   - **Pins (tests only):**
+     - a save without a track sends no `record_saved` (Opus m1);

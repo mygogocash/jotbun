@@ -1,0 +1,47 @@
+# 1D-T7-fix: The launch keeps what it held, the diary hears sync first, and the reviews' pins
+
+- **Status:** built and verified locally on `p1/1d-t7-app-events` (`.claude/worktrees/p1-1d-t7`): one commit on PR #444's reviewed head `78f91ca5`, with no merge (the controller merges the integration branch up afterwards). Not pushed. Under R87 this receipt is its own file; `1D-T7.md` gains one line pointing here, and `premium-progress.md` is not edited. Under R100 whole suites are CI's.
+- **Why:** both reviews of #444 said Needs fixes, with the same major: `reviews/1D-T7.md` (Opus: M1, m1, m2, n1 to n3) and `reviews/1D-T7-second.md` (Sonnet: M1, m1, n1 to n4). The controller ruled R119.
+- **What changed:**
+  - **M1, `controller.ts`.** The launch's first account answer keeps what is held, whether it says no one is signed in or names an account: `keepHeld = accountId === undefined || (accountId === null && id !== null)`. Before, a signed-out launch dropped the held events at `AnalyticsUpkeep`'s first `setAccount(null)`. Those include onboarding's first step, which the install hands over (1D-T6's review, m3), so on a first launch it never reached PostHog.
+  - A sign-out and a switch (A to B) drop what is held whether or not the account was named, so L4 and P14 hold. As this round left it, an account `/v1/me` had not named yet (offline) kept it; the second fix round closed that (R120, `1D-T7-fix2.md`). `reset()` and `stopSessionRecording()` still run at every change. Held events are still sent only after a yes.
+  - **Sonnet's n2, `deviceSync.ts`.** The diary hears each outcome before its analytics, so its lock on `signed_out` never waits behind analytics code.
+  - **Pins (tests only):**
+    - a save without a track sends no `record_saved` (Opus m1);
+    - "Use yours" reports the category of the server's copy (Opus m2);
+    - `kind` for an income and a move at Quick add's save, History's delete and undo, Recently deleted, and the record screen's Restore (Sonnet m1).
+- **Files:**
+  - `apps/app/src/analytics/controller.ts`: the held rule and its comment.
+  - `apps/app/src/sync/deviceSync.ts`: `report(outcome)` first.
+  - `apps/app/src/analytics/controller.test.ts`: 2 cases, the launch's first answer and a sign-out.
+  - `apps/app/src/analytics/appAnalytics.render.test.tsx`: 2 cases through `AnalyticsUpkeep`, a signed-out first launch and a session restored at launch.
+  - `apps/app/src/sync/deviceSync.render.test.tsx`: 1 case, the order.
+  - `apps/app/src/screens/redesign/entry/entrySave.render.test.tsx`: the track-less save's case gains a recorder and one assertion.
+  - `QuickAddScreen.render.test.tsx` 1 case, `RecordScreen.render.test.tsx` 2, `HistoryScreen.render.test.tsx` 1, `RecentlyDeletedScreen.render.test.tsx` 1.
+  - `docs/implementation/receipts/1D-T7.md`: one line; this receipt.
+- **RED to GREEN** (no stub: the round's tests over `78f91ca5`'s code; `typecheck:app` passes at RED):
+  - `controller.test.ts` (Node): RED `ℹ tests 38`, `ℹ pass 37`, `ℹ fail 1`; GREEN 38 of 38.
+  - The seven render files (`appAnalytics`, `deviceSync`, `entrySave`, Quick add, the record screen, History, Recently deleted): RED `Tests  2 failed | 218 passed (220)`; GREEN `Tests  220 passed (220)`.
+  - Every RED failure is an `AssertionError`:
+    - the launch case in `controller.test.ts`;
+    - `appAnalytics`' signed-out first launch (`expected [ 'private', 'first_coffee' ] to deeply equal [ 'coffee', 'private', 'first_coffee' ]`);
+    - `deviceSync`'s order.
+  - The other new cases pass at RED by design: they pin code that is already right (the sign-out, the restored session, the server copy, the kinds, the track-less save).
+- **Mutation check:** `mutants.py`, 76 mutants: 75 killed, every one by an assertion. QE, the plan's equivalent mutant, survives as before. Every file was restored byte for byte. The 76 are:
+  - the first round's 65, with D2 and D3 re-pointed at the new order;
+  - F1 and F1u (the first round's held rule, killed by the controller case and through `AnalyticsUpkeep`), F2 (only the very first answer keeps) and F3 (every change keeps);
+  - D5 (the first round's order);
+  - the reviews' survivors: OM2 and OM3 (Opus M2 and M3) and K1 to K4 (Sonnet's).
+  - The Sonnet form of M1's line (`accountId === undefined || accountId === null`) behaves the same, since `setAccount` returns before it when the account does not change, so it is not run.
+- **Fast local gate (R100):** `npm run typecheck:app`: passed. The four routes tests (`SpendRoutes`, `AccountRoutes`, `InsightsRoutes`, `PlanningRoutes`): passed. `npm run test:app` and `npm run test:unit`: passed. `git diff --check`: clean.
+- **CI (R100):** the full render suite and sections 1 to 3, `export:web` and the iOS export, the database suites, `test:ops`.
+- **Not in this round** (R119):
+  - the record screen's `deleted` keeping the kind (Opus n1, Sonnet n3) goes to P2-T26 and P2-T27;
+  - a 429 inside one failure episode counting it twice (Opus n2) and `offline` reading as "not yet synced" (Sonnet n4) go to the owner's dashboards (Q7);
+  - the stale comment in `spendMediaPermissionTelemetry.ts` (Opus n3) goes to the next task that edits it;
+  - Sonnet n1 (a development note when the bus guard swallows an error) is not taken.
+- **Notes for later tasks:**
+  - **1D-T15:** on a first launch, signed out and with a key, onboarding's `coffee` now arrives after the sign-in and a yes. Check it on a phone, besides P14's points.
+  - **P2-T35:** its steps before sign-in use the same held path, so an event tracked before the launch's first answer is kept.
+  - **P2-T28, P2-T30:** when History's and Budget's calls move, keep `kind` on `deleted` and keep the move cases.
+  - **P2-T16, P2-T17:** the tray host's saves reach `record_saved` through `finish`; a tray test that saves an income or a move pins their kind there.

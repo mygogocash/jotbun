@@ -1,0 +1,45 @@
+diff --git a/apps/app/src/screens/redesign/SpendRoutes.render.test.tsx b/apps/app/src/screens/redesign/SpendRoutes.render.test.tsx
+index 8606c93b8f701f5c7bb0e0680fc85ea444e448d4..5cb16d3288f66704471c1687179d0c2d40d90a28 100644
+--- a/apps/app/src/screens/redesign/SpendRoutes.render.test.tsx
++++ b/apps/app/src/screens/redesign/SpendRoutes.render.test.tsx
+@@ -35,8 +35,15 @@ vi.mock('@mobile/screens/v1/TransactionsScreen', stub('TransactionsScreen', () =
+ vi.mock('@mobile/screens/redesign/HistoryScreen', stub('HistoryScreen', (props) => `redesigned history from ${String(props.initialMonth)}`));
+ vi.mock('@mobile/screens/redesign/RecordScreen', stub('RecordScreen', (props) => `record ${String(props.id)} in ${String(props.mode)} mode`));
+ // The route imports the wallet screen too; stubbed like the others, since its real imports (the safe-area inset, the
+-// router's internals) cannot load here and this file tests only the route's rule.
+-vi.mock('@mobile/wallet/records/WalletDeletedScreen', stub('WalletDeletedScreen', () => 'wallet recently deleted'));
++// router's internals) cannot load here and this file tests only the route's rule. Like the old screen's stub, it reads
++// the resources the route provides (P2-T25's confirming review, m1).
++vi.mock('@mobile/wallet/records/WalletDeletedScreen', async () => {
++  const { createElement } = await import('react');
++  const { Text } = await import('react-native');
++  const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
++  const WalletDeletedScreen = () => createElement(Text, null, `wallet recently deleted on ${(useSpendV1() as unknown as { marker: string }).marker}`);
++  return { WalletDeletedScreen };
++});
+ vi.mock('@mobile/screens/redesign/RecentlyDeletedScreen', async () => {
+   const { createElement } = await import('react');
+   const { Text } = await import('react-native');
+@@ -135,3 +142,22 @@ test('Recently deleted: only under the flag; otherwise back to the list', () =>
+     cleanup();
+   }
+ });
++
++test('Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list', () => {
++  const cases: readonly (readonly [{ redesign?: string; legacy?: string }, string])[] = [
++    [{ redesign: 'wallet' }, 'wallet recently deleted on shared resources'],
++    [{ redesign: 'core,wallet' }, 'wallet recently deleted on shared resources'],
++    [{ redesign: 'all' }, 'wallet recently deleted on shared resources'],
++    [{}, 'recently deleted on shared resources'],
++    [{ redesign: 'wallet,-wallet' }, 'recently deleted on shared resources'],
++    [{ redesign: '-core,wallet' }, 'redirect to /spend/all'],
++    [{ redesign: 'wallet', legacy: '1' }, 'redirect to /spend/all'],
++  ];
++  for (const [flag, text] of cases) {
++    flags(flag);
++    // A screen drawn outside the route's provider throws while it renders.
++    expect(() => render(<SpendDeletedRoute />), JSON.stringify(flag)).not.toThrow();
++    expect(screen.queryAllByText(text), JSON.stringify(flag)).toHaveLength(1);
++    cleanup();
++  }
++});

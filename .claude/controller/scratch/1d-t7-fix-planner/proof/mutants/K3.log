@@ -1,0 +1,275 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx (19 tests | 1 failed | 18 skipped) 4055ms
+   × a restored move records record_restored with kind transfer (the fix round, R119) 4053ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a restored move records record_restored with kind transfer (the fix round, R119)
+AssertionError: expected [ { name: 'record_restored', …(1) } ] to deeply equal [ { name: 'record_restored', …(1) } ]
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"recently-deleted-screen"[39m
+        [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"padding-bottom: 32px; gap: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"stage-header"[39m
+              [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 16px 16px 24px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: center; justify-content: space-between; gap: 12px;"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33maria-label[39m=[32m"Back"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                  [33mrole[39m=[32m"button"[39m
+                  [33mstyle[39m=[32m"align-self: flex-start; min-height: 44px; min-width: 44px; flex-direction: row; align-items: center; gap: 4px; padding-right: 8px; border-radius: 999px;"[39m
+                  [33mtabindex[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0m‹[0m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mBack[0m
+                  [36m</div>[39m
+                [36m</button>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mRecently deleted[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"padding-right: 16px; padding-left: 16px; gap: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-text-146c3p1"[39m
+                [33mdata-testid[39m=[32m"recently-deleted-retention"[39m
+                [33mdir[39m=[32m"auto"[39m
+                [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+              [36m>[39m
+                [0mDeleted entries can be restored for 30 days. After that, they are gone for good.[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33maria-live[39m=[32m"polite"[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mrole[39m=[32m"status"[39m
+                [33mstyle[39m=[32m"gap: 8px; background-color: rgba(255, 248, 236, 1.00); padding: 12px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                [36m>[39m
+                  [0mTransfer ฿1,500.00 is back in History.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"align-items: center; gap: 12px; padding: 32px 16px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"empty-state-art"[39m
+                  [33mstyle[39m=[32m"margin-bottom: 8px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mdata-testid[39m=[32m"recently-deleted-empty-bun"[39m
+                    [33mstyle[39m=[32m"width: 96px; height: 96px;"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33mheight[39m=[32m"96"[39m
+                      [33mviewBox[39m=[32m"0 0 64 64"[39m
+                      [33mwidth[39m=[32m"96"[39m
+                    [36m>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"23"[39m
+                        [33mcy[39m=[32m"57.5"[39m
+                        [33mfill[39m=[32m"#FFF6E6"[39m
+                        [33mrx[39m=[32m"5.5"[39m
+                        [33mry[39m=[32m"3.5"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-width[39m=[32m"2.5"[39m
+                      [36m/>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"41"[39m
+                        [33mcy[39m=[32m"57.5"[39m
+                        [33mfill[39m=[32m"#FFF6E6"[39m
+                        [33mrx[39m=[32m"5.5"[39m
+                        [33mry[39m=[32m"3.5"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-width[39m=[32m"2.5"[39m
+                      [36m/>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"32"[39m
+                        [33mcy[39m=[32m"37"[39m
+                        [33mfill[39m=[32m"#FFF6E6"[39m
+                        [33mrx[39m=[32m"24.5"[39m
+                        [33mry[39m=[32m"21"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-width[39m=[32m"2.5"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M22.5 34.5 Q25 36.5 27.5 34.5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"1.8"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M36.5 34.5 Q39 36.5 41.5 34.5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"1.8"[39m
+                      [36m/>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"19.5"[39m
+                        [33mcy[39m=[32m"40"[39m
+                        [33mfill[39m=[32m"#F6B6CE"[39m
+                        [33mrx[39m=[32m"3.4"[39m
+                        [33mry[39m=[32m"2"[39m
+                      [36m/>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"44.5"[39m
+                        [33mcy[39m=[32m"40"[39m
+                        [33mfill[39m=[32m"#F6B6CE"[39m
+                        [33mrx[39m=[32m"3.4"[39m
+                        [33mry[39m=[32m"2"[39m
+                      [36m/>[39m
+                      [36m<ellipse[39m
+                        [33mcx[39m=[32m"32"[39m
+                        [33mcy[39m=[32m"41.5"[39m
+                        [33mfill[39m=[32m"#231B3A"[39m
+                        [33mrx[39m=[32m"1.2"[39m
+                        [33mry[39m=[32m"1.5"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M46 9 H51 L46 14 H51"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"1.5"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M53 3 H56.5 L53 6.5 H56.5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mstroke[39m=[32m"#231B3A"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"1.5"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); text-align: center;"[39m
+                [36m>[39m
+                  [0mNothing deleted in the last 30 days[0m
+                [36m</h1>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-text-146c3p1"[39m
+                  [33mdir[39m=[32m"auto"[39m
+                  [33mstyle[39m=[32m"font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); text-align: center;"[39m
+                [36m>[39m
+                  [0mEntries you delete show up here.[0m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+  [
+    {
+      "name": "record_restored",
+      "properties": {
+-       "kind": "transfer",
++       "kind": "expense",
+        "origin": "app",
+      },
+    },
+  ]
+
+ ❯ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx:293:44
+    291|     await waitFor(() => expect(fake.callsOf('restoreTransaction')).toH…
+    292|     const captures = () => recorded.sent.filter((event) => event.kind …
+    293|     await waitFor(() => expect(captures()).toEqual([{ name: 'record_re…
+       |                                            ^
+    294|     const json = JSON.stringify(recorded.sent);
+    295|     for (const secret of ['150000', '1,500', 'Cash', 'Daily account'])…
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  21:51:08
+   Duration  4.75s (transform 288ms, setup 45ms, import 452ms, tests 4.06s, environment 88ms)
+

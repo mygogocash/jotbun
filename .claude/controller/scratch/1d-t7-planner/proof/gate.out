@@ -1,0 +1,4 @@
+typecheck:app rc=0
+routes rc=0
+test:app rc=0
+test:unit rc=0

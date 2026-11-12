@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/SpendRoutes.render.test.tsx (4 tests | 1 failed | 3 skipped) 9ms
+   × Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list
+AssertionError: {"redesign":"wallet"}: expected [Function] to not throw an error but 'Error: useSpendV1 needs a SpendV1Prov…' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"Error: useSpendV1 needs a SpendV1Provider."
+
+ ❯ src/screens/redesign/SpendRoutes.render.test.tsx:159:75
+    157|     flags(flag);
+    158|     // A screen drawn outside the route's provider throws while it ren…
+    159|     expect(() => render(<SpendDeletedRoute />), JSON.stringify(flag)).…
+       |                                                                           ^
+    160|     expect(screen.queryAllByText(text), JSON.stringify(flag)).toHaveLe…
+    161|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  21:50:59
+   Duration  364ms (transform 30ms, setup 42ms, import 111ms, tests 9ms, environment 85ms)
+

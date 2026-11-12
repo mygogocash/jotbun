@@ -1,0 +1,19 @@
+--- a/apps/edge/src/vault/routes.ts
++++ b/apps/edge/src/vault/routes.ts
+@@ -27,6 +27,7 @@
+ import { AI_FEATURES, parseAiDate, parseAiLocale, parseAiPreferencesUpdate } from '@gogospend/contracts'
+ import type { AiFeature } from '@gogospend/contracts'
+ import { aiContext, aiDayFacts, aiPreferences, aiTool, consumeAi, refundAi, setAiPreferences } from './ai'
++import { analyticsConsent, weeksSinceSignup } from './analytics'
+ 
+ export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
+ 
+@@ -80,6 +81,8 @@
+     return okReply(call.route)
+   },
+   'me.privacy': (c, call) => okReply(call.route, setPrivacy(c, assertKnownFields(call.body, ['analytics']).analytics)),
++  // 1D-T11: the analytics answer's vault half; the Worker puts the analytics id first.
++  'me.analytics': (c, call) => okReply(call.route, { weeks_since_signup: weeksSinceSignup(c), consent: analyticsConsent(c) }),
+   'policies.accept': (c, call) => {
+     const input = assertKnownFields(call.body, ['kind', 'version'])
+     acceptPolicy(c, input.kind, input.version)

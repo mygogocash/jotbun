@@ -1,0 +1,699 @@
+diff --git a/apps/app/src/wallet/add/AddTray.render.test.tsx b/apps/app/src/wallet/add/AddTray.render.test.tsx
+index ae6ce411f3c901cd918c7d7cffc16072122b0b12..9d684f8705942f5ca50df7e336aa703a52c9ea06 100644
+--- a/apps/app/src/wallet/add/AddTray.render.test.tsx
++++ b/apps/app/src/wallet/add/AddTray.render.test.tsx
+@@ -19,12 +19,22 @@
+ // nothing out, so every element is given a box (the P2-T13 review's probe 1).
+ // Each haptic moment is recorded by name. react-native-web omits
+ // aria-disabled when it is false.
++//
++// The fix round (R117) adds the cases for #439's reviews: a conflict in private
++// mode (both reviews' M1 and m2, their probes PROBE-5 and P5), Bun's words on
++// confirm in private mode (the second review's m3, its probe P4a), the bound on
++// a tray whose Modal never says it has gone (both reviews' m1, their wedge
++// probes), the save's problem above Save (the first review's n1, its R8), and
++// the second review's six survivors (M3 to M6, M8 and M10, its probes P1, P2,
++// P8, P11, P12 and P13). For the bound the Modal holds its dismissals back when
++// a case asks (`dismissals.hold`), as UIKit may.
+ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { readFileSync } from 'node:fs';
+ import { dirname, join } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import type { ReactElement } from 'react';
+ import { AccessibilityInfo, Platform } from 'react-native';
++import type { ModalProps } from 'react-native';
+ import { afterEach, expect, test, vi } from 'vitest';
+ 
+ // The real safe-area package loads React Native itself, which vitest cannot run.
+@@ -47,6 +57,23 @@ vi.mock('@mobile/screens/redesign/ai/TellBunSheet', async (importOriginal) => {
+   return { ...actual, TellBunSheet: RecordedSheet };
+ });
+ 
++// The Modal, which says it has gone at once unless a case holds its dismissals back (`hold`): a held one keeps the
++// Modal's own onDismiss (the tray's), as UIKit does with a dismissal it never ends, so the case can send it late.
++const dismissals = vi.hoisted(() => ({ hold: false, held: [] as (() => void)[] }));
++vi.mock('react-native', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('react-native')>();
++  const { createElement, forwardRef } = await import('react');
++  const Modal = forwardRef<unknown, ModalProps>(({ onDismiss, ...props }, ref) => createElement(actual.Modal as never, {
++    ...props,
++    ref,
++    onDismiss: onDismiss && (() => {
++      if (dismissals.hold) dismissals.held.push(onDismiss);
++      else onDismiss();
++    }),
++  }));
++  return { ...actual, Modal };
++});
++
+ import type { AiDraft, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+ 
+ import { COMMON_RULES } from '@mobile/analytics/catalog';
+@@ -78,6 +105,8 @@ afterEach(() => {
+   vi.clearAllMocks();
+   bun.props = null;
+   probe.tray = null;
++  Object.assign(dismissals, { hold: false, held: [] });
++  delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
+ });
+ 
+ /** Lets the stores, the lists, the phone's answer and Bun's AI preferences arrive. */
+@@ -122,6 +151,19 @@ const chipLabels = () => [...found('quick-chips').querySelectorAll('[role="butto
+ const alertIn = (testID: string) => found(testID).querySelector('[role="alert"]')?.textContent ?? null;
+ const escape = () => act(() => { document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })); });
+ const source = (file: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), file), 'utf8');
++/** iOS for what follows (the conflict case's way), with a no-op for the focus call react-native-web has not; or the web. */
++function onIos(ios: boolean) {
++  Object.defineProperty(Platform, 'OS', { value: ios ? 'ios' : os, configurable: true, writable: true });
++  if (ios) Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', { value: () => undefined, configurable: true, writable: true });
++  else delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
++}
++
++/** A wallet's radio in a pick, named by the wallet and its balance: the one whose name starts with `name`. */
++function walletRadio(name: string): HTMLElement {
++  const element = screen.queryAllByRole('radio').find((each) => (each.getAttribute('aria-label') ?? '').startsWith(name));
++  expect(element, `a radio for ${name}`).toBeDefined();
++  return element as HTMLElement;
++}
+ 
+ /** Each record_started sent, without the properties every event carries. */
+ const starts = (sent: readonly Recorded[]) => sent
+@@ -131,8 +173,8 @@ const starts = (sent: readonly Recorded[]) => sent
+ const LOCALES = ['th', 'en'] as const;
+ const MODES = ['light', 'dark'] as const;
+ const WORDS = {
+-  th: { spending: 'จดรายจ่าย', expense: 'รายจ่าย', next: 'ถัดไป', save: 'บันทึก', back: 'กลับ', food: 'อาหาร' },
+-  en: { spending: 'Add spending', expense: 'Spending', next: 'Next', save: 'Save', back: 'Back', food: 'Food' },
++  th: { spending: 'จดรายจ่าย', expense: 'รายจ่าย', next: 'ถัดไป', save: 'บันทึก', back: 'กลับ', food: 'อาหาร', tryAgain: 'ลองอีกครั้ง', amountHidden: 'ซ่อนยอดเงินอยู่' },
++  en: { spending: 'Add spending', expense: 'Spending', next: 'Next', save: 'Save', back: 'Back', food: 'Food', tryAgain: 'Try again', amountHidden: 'Amount hidden' },
+ } as const;
+ const PRIVATE = { [PRIVATE_MODE_NAME]: '1' };
+ const TODAY = todayInBangkok(new Date());
+@@ -342,6 +384,36 @@ test('saving with a ready diary keeps the entry on the phone, closes the tray an
+   }
+ });
+ 
++test("the track names the category's key, income's own and none for a move, and a move keeps its amount and wallets exactly", async () => {
++  // Income, online: its own category's key, and the 000 key's satang (the second review's P2, its M4).
++  const fake = resources();
++  const onSaved = vi.fn();
++  await mount(<Host onSaved={onSaved} />, { resources: fake.resources, diary: null });
++  await openTray({ type: 'income' });
++  press('3', '000', '0');
++  expect(text('add-amount')).toBe('฿30,000');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect(onSaved).toHaveBeenCalledTimes(1);
++  const income = fake.callsOf('createTransaction')[0]?.args[0] as Record<string, unknown>;
++  expect([income.amount_minor, (onSaved.mock.calls[0] as [SavedEntry])[0].track?.categoryKey]).toEqual(['3000000', 'salary']);
++  cleanup();
++  // A move kept on the phone: from and to as chosen, the amount exact, and no category, so no key (P1, its M5).
++  const diary = readyDiary();
++  const moved = vi.fn();
++  await mount(<Host onSaved={moved} />, { diary: diary.diary });
++  await openTray({ type: 'transfer' });
++  press('5', '0', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(found('transfer-next'));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect(diary.saves).toEqual([expect.objectContaining({ type: 'transfer', amount_minor: '50000', source_wallet_id: MAIN.id, destination_wallet_id: CASH.id })]);
++  expect(moved).toHaveBeenCalledTimes(1);
++  expect((moved.mock.calls[0] as [SavedEntry])[0].track?.categoryKey).toBeNull();
++});
++
+ test('a tray that is saving cannot be closed by close, the backdrop, escape or a swipe, and the result still lands', async () => {
+   boxes();
+   const fake = resources();
+@@ -462,6 +534,41 @@ test("an unconfirmed online save keeps today's Try again, which resends the same
+   expect(named('button', 'บันทึก').getAttribute('aria-disabled')).toBe('true');
+ });
+ 
++test("in private mode a conflict draws and says no amount: today's words, with the amount Jotbun holds masked and said as hidden", async () => {
++  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
++  for (const locale of LOCALES) {
++    const words = WORDS[locale];
++    const other = resources();
++    other.fail('createTransaction', 'network');
++    await mount(<Host />, { locale, resources: other.resources, diary: null, device: PRIVATE });
++    await openTray();
++    press('5', '0');
++    tap(named('button', words.next));
++    tap(named('button', words.save));
++    await settle();
++    // Private mode changes no other words: an answer lost is said as it always is.
++    expect(text('add-save-problem'), locale).toBe(translateCopy('Not confirmed yet. Your entry is kept; try again.', locale));
++    // The resend finds the entry saved with ฿99.00 (both reviews' probe, PROBE-5 and P5), on iOS, which says it too.
++    const sent = other.callsOf('createTransaction')[0]?.args[0] as Record<string, unknown>;
++    other.fail('createTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT', current: { ...sent, amount_minor: '9900' } });
++    announce.mockClear();
++    onIos(true);
++    tap(named('button', words.tryAgain));
++    await settle();
++    onIos(false);
++    const line = 'This entry is already saved in Jotbun as {amount}. Check it in History.';
++    const said = translateCopy(line, locale, { amount: words.amountHidden });
++    expect([text('add-save-problem'), label('add-save-problem'), announce.mock.calls.map(([each]) => each)], locale).toEqual([
++      translateCopy(line, locale, { amount: '฿••••' }),
++      said,
++      [said],
++    ]);
++    // No digit of it anywhere: drawn, in its words, or said (Review Focus 2).
++    expect([text('add-save-problem'), label('add-save-problem'), ...announce.mock.calls.map(([each]) => each)].join(' '), locale).not.toMatch(/\p{Nd}/u);
++    cleanup();
++  }
++});
++
+ test('a draft from Tell Bun marks its fields guessed and saves with source tell_bun', async () => {
+   const diary = readyDiary();
+   const onSaved = vi.fn();
+@@ -509,6 +616,54 @@ test('a draft from Tell Bun marks its fields guessed and saves with source tell_
+   tap(named('button', 'ถัดไป'));
+   expect([text('confirm-amount'), screen.queryByTestId('confirm-bun')]).toEqual(['฿45', null]);
+   expect(rowLabels()[0]).toBe('หมวด การเดินทาง บันเดา');
++  cleanup();
++  // A note Bun wrote is one of its guesses too (the second review's P11, its M3).
++  await mount(<Host />, { ai: bunOn() });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, note: 'ค่าข้าวกับพี่' });
++  tap(named('button', 'ถัดไป'));
++  expect(rowLabels()[3]).toBe('โน้ต ค่าข้าวกับพี่ บันเดา');
++});
++
++test("in private mode confirm draws none of Bun's words: a title it would quote is the tray's own, a note it guessed reads as hidden, and what the person writes shows", async () => {
++  // Bun named no place, only a note: out of private mode that note would be the title (R117).
++  await mount(<Host />, { ai: bunOn(), device: PRIVATE });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, merchant: null, note: 'ข้าวมันไก่ 65 บาท' });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['จดรายจ่าย', 'โน้ต ซ่อนอยู่ บันเดา']);
++  // A note the person writes is theirs: it shows, and is the title.
++  tap(found('confirm-row-note'));
++  fireEvent.change(named('textbox', 'โน้ต'), { target: { value: 'ข้าวกลางวัน' } });
++  tap(found('pick-note-done'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['ข้าวกลางวัน', 'โน้ต ข้าวกลางวัน']);
++  cleanup();
++  // Bun named the place and wrote a note, each with the amount in it (the second review's P4a): confirm draws and
++  // says none of it, and no digit at all.
++  await mount(<Host />, { ai: bunOn(), device: PRIVATE });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, merchant: 'ข้าวมันไก่ 65', note: 'ข้าวมันไก่ 65 บาท' });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), text('confirm-amount')]).toEqual(['จดรายจ่าย', '฿••••']);
++  expect(rowLabels()).toEqual(['หมวด การเดินทาง บันเดา', 'กระเป๋า เงินสด บันเดา', 'วันที่ วันนี้ บันเดา', 'โน้ต ซ่อนอยู่ บันเดา']);
++  const step = found('confirm-step');
++  const spoken = [...step.querySelectorAll('[aria-label]')].map((element) => element.getAttribute('aria-label'));
++  expect([step.textContent, ...spoken].join(' ')).not.toMatch(/\p{Nd}/u);
++  // Told again, of the amount only: the place is still the one Bun named, and still not drawn.
++  tap(named('button', 'กลับ'));
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, amount_minor: '7000', merchant: null, note: null });
++  tap(named('button', 'ถัดไป'));
++  expect(text('confirm-title')).toBe('จดรายจ่าย');
++  // A name the person types (income's name field) is theirs: it shows.
++  tap(named('button', 'กลับ'));
++  tap(radio('รายรับ'));
++  fireEvent.change(named('textbox', 'ชื่อรายการ'), { target: { value: 'ค่าจ้าง' } });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['ค่าจ้าง', 'โน้ต ซ่อนอยู่ บันเดา']);
+ });
+ 
+ test("Tell Bun's sheet opens inside the tray", async () => {
+@@ -628,6 +783,27 @@ test('a transfer goes amount, transfer, confirm; back goes to the amount; a pick
+   found('add-amount');
+ });
+ 
++test("Save refuses a day before the wallet started tracking, in today's words, and keeps nothing", async () => {
++  // A day three days back, chosen for cash (tracked since January); then the main account, which started two days
++  // ago (the second review's P8, its M6).
++  const diary = readyDiary();
++  await mount(<Host />, { diary: diary.diary });
++  await openTray({ walletId: CASH.id });
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(found('confirm-row-date'));
++  const previous = named('button', translateCopy('Previous day', 'th'));
++  tap(previous);
++  tap(previous);
++  tap(previous);
++  tap(found('pick-date-done'));
++  tap(found('confirm-row-wallet'));
++  tap(walletRadio(MAIN.name));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect([text('add-save-problem'), diary.saves]).toEqual([translateCopy('This date is before the wallet started tracking.', 'th'), []]);
++});
++
+ test('open with a type and a wallet starts there: the wallet spent from or paid into, or the one a move leaves', async () => {
+   await mount(<Host />);
+   const closeTray = async () => {
+@@ -655,7 +831,7 @@ test('open with a type and a wallet starts there: the wallet spent from or paid
+ test("whenClosed runs once the tray's Modal has hidden, or at once with no tray; an open asked while a tray leaves waits for it (R69)", async () => {
+   const recorded = await recordAnalytics();
+   try {
+-    await mount(<Host />);
++    const view = await mount(<Host />);
+     // No tray: at once.
+     const first = vi.fn();
+     act(() => { tray().whenClosed(first); });
+@@ -685,11 +861,59 @@ test("whenClosed runs once the tray's Modal has hidden, or at once with no tray;
+     startAnimations();
+     named('dialog', 'จดรายรับ');
+     expect(starts(recorded.sent)).toEqual([...Array(3).fill({ kind: 'expense', source: 'typed' }), { kind: 'income', source: 'typed' }]);
++    // An open that waited asks again when it runs: blocked by then, nothing opens (the second review's P13, its M10).
++    fireEvent.click(named('button', 'ปิด'));
++    act(() => { tray().open(); });
++    view.rerender(<Host blocked />);
++    await wait(250);
++    startAnimations();
++    expect([screen.queryByTestId('tray'), starts(recorded.sent).length]).toEqual([null, 4]);
+   } finally {
+     recorded.restore();
+   }
+ });
+ 
++test('on iOS a tray whose Modal never says it has gone closes anyway once the bound has passed: what waited runs once, and a late word changes nothing', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const view = await mount(<Host />);
++    await openTray();
++    // iOS hears the close only from the Modal's onDismiss, and this dismissal never ends (both reviews' wedge probes).
++    // A run queued for after the close (P2-T30's) and the + wait for it, as R69 says.
++    dismissals.hold = true;
++    onIos(true);
++    fireEvent.click(named('button', 'ปิด'));
++    const later = vi.fn();
++    act(() => { tray().whenClosed(later); });
++    expect(later).not.toHaveBeenCalled();
++    act(() => { tray().open({ type: 'income' }); });
++    // The card's exit has ended and the Modal has hidden, but no word has come: nothing has run.
++    await wait(250);
++    onIos(false);
++    expect([dismissals.held.length, screen.queryByTestId('tray'), later.mock.calls.length, starts(recorded.sent).length]).toEqual([1, null, 0, 1]);
++    // Past the bound, 1.5 s from the close (R117), the entry goes: the income tray opens, and the run runs, once.
++    await wait(1500);
++    startAnimations();
++    named('dialog', 'จดรายรับ');
++    expect([tray().isOpen, later.mock.calls.length, starts(recorded.sent)]).toEqual([true, 1, [{ kind: 'expense', source: 'typed' }, { kind: 'income', source: 'typed' }]]);
++    // The first tray's word comes at last: it changes nothing, and the open tray stays open past another bound.
++    act(() => { dismissals.held[0]?.(); });
++    named('dialog', 'จดรายรับ');
++    await wait(1600);
++    startAnimations();
++    named('dialog', 'จดรายรับ');
++    expect([tray().isOpen, later.mock.calls.length, starts(recorded.sent).length]).toEqual([true, 1, 2]);
++    // A host that goes away (a sign-out, say) while its tray leaves runs nothing more, past the bound too.
++    fireEvent.click(named('button', 'ปิด'));
++    act(() => { tray().open(); });
++    view.unmount();
++    await wait(1600);
++    expect(starts(recorded.sent)).toHaveLength(2);
++  } finally {
++    recorded.restore();
++  }
++}, 20_000);
++
+ test("outside a host, open pushes today's Quick add with the request", async () => {
+   await mount(<Probe />);
+   act(() => { tray().open({ copyOf: '0000000b-0000-4000-8000-000000000001' }); });
+@@ -750,6 +974,17 @@ test('the tray says while its lists load, offers Try again on a load problem and
+   startAnimations();
+   expect(text('add-amount')).toBe('฿0');
+   cleanup();
++  // An opening that names its type is named for it while it loads (the second review's P12, its M8).
++  const slower = resources();
++  const income = slower.hold('wallets');
++  await mount(<Host />, { resources: slower.resources, diary: null });
++  await openTray({ type: 'income' });
++  named('dialog', 'จดรายรับ');
++  await act(async () => {
++    income();
++    await new Promise((resolve) => setTimeout(resolve, 0));
++  });
++  cleanup();
+   // A load that fails: what happened, in today's words, and Try again.
+   const failing = resources();
+   failing.fail('wallets', 'network');
+@@ -838,6 +1073,9 @@ test("a copy opens on the copied entry with its amount as a fill and today's dat
+     await settle();
+     expect(text('add-save-problem')).toBe(translateCopy('Choose a category', 'th'));
+     expect(diary.saves).toEqual([]);
++    // Above Save, in the tray's pinned footer (P9e; the first review's n1, its R8).
++    const [footer, problem, save] = [found('tray-footer'), found('add-save-problem'), named('button', 'บันทึก')];
++    expect([footer.contains(problem), footer.contains(save), Boolean(problem.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING)]).toEqual([true, true, true]);
+     // Back on the amount, the first key starts it over, and what is typed shows.
+     tap(named('button', 'กลับ'));
+     press('9');
+diff --git a/apps/app/src/wallet/add/AddTrayHost.tsx b/apps/app/src/wallet/add/AddTrayHost.tsx
+index b60e6c665d49aa95371b01673077523f9892c5e3..ea65b9e63aa4d19839199687cdc104a3efb1a8fa 100644
+--- a/apps/app/src/wallet/add/AddTrayHost.tsx
++++ b/apps/app/src/wallet/add/AddTrayHost.tsx
+@@ -24,7 +24,10 @@
+ //   content, so iOS presents it from the tray's window (R69). Its draft fills
+ //   the entry through applyDraft, its amount as a fill (R106), and the rows it
+ //   filled are Bun's guesses (บันเดา) until the person changes them. The sheet
+-//   hands back no sentence, so confirm quotes none (P3-T18's step does). The
++//   hands back no sentence, so confirm quotes none (P3-T18's step does). Nor,
++//   in private mode, any of Bun's words (R117, as R114 hides its sentence): a
++//   title that would be a merchant or a note Bun filled is the tray's own, and
++//   a note it guessed reads as hidden; what the person typed shows (R106). The
+ //   amount step's quick chips are the type's often-logged entries, named by
+ //   their place only (R106), so the sheet offers none of its own.
+ // - Saving is useEntrySave's save with the track (W27): Tell Bun's source while
+@@ -34,14 +37,18 @@
+ //   Focus 1); when it lands the host is told, with the lookups and whether it
+ //   stayed on the phone unsynced, and the tray closes. An unconfirmed online
+ //   save keeps today's frozen Try again, which resends the same command; a
+-//   conflict says today's words with Done; either can be closed. A refused save
+-//   says why above Save in today's words.
++//   conflict says today's words with Done; either can be closed. A conflict's
++//   words quote the amount Jotbun holds, so in private mode they mask it
++//   (฿••••) and say it is hidden (R117). A refused save says why above Save in
++//   today's words.
+ // - One tray at a time (R69): whenClosed runs once the tray's Modal has hidden
+ //   (onClosed), or at once with no tray; an open asked while a tray leaves
+-//   waits for it. On iOS onClosed can come twice for two hides, and a second
+-//   call finds nothing queued. It does not come at all for a Modal that never
+-//   presented (the tray-hardening review's R-f): the entry then stays, hidden,
+-//   and an open waits for it, which a device check is to settle.
++//   waits for it. Each entry closes once: an onClosed for an entry that has
++//   gone changes nothing. iOS hears onClosed only from the Modal's onDismiss,
++//   which never comes for a dismissal UIKit never ends (the tray-hardening
++//   review's R-f), so a hidden entry goes anyway once CLOSED_BOUND_MS has
++//   passed (R117). A present UIKit refused (shown, with nothing on screen) is
++//   still the tray follow-up's, with its device check before P2-T18.
+ import type { AiDraft, CategoryDto, WalletSnapshot } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+@@ -70,6 +77,8 @@ import { EMPTY_KEYPAD } from '@mobile/ui/keypadExpression';
+ import type { KeypadState } from '@mobile/ui/keypadExpression';
+ import { COMMON_COPY } from '../common/copy';
+ import { useDraftCopy } from '../copy/useDraftCopy';
++import { HIDDEN_AMOUNT } from '../money/walletMoney';
++import { usePrivateMode } from '../privacy/PrivateModeProvider';
+ import { PrimaryButton } from '../tray/PrimaryButton';
+ import { TextLink } from '../tray/TextLink';
+ import { Tray } from '../tray/Tray';
+@@ -100,6 +109,13 @@ const NONE: ReadonlySet<string> = new Set();
+ const NO_WALLETS: readonly WalletSnapshot[] = [];
+ const NO_CATEGORIES: readonly CategoryDto[] = [];
+ 
++/**
++ * How long a hidden tray waits for its Modal to say it has gone before its
++ * entry goes anyway (R117). iOS hears it only from UIKit's dismissal, which
++ * may never end; elsewhere the tray says so after its 220 ms exit.
++ */
++const CLOSED_BOUND_MS = 1500;
++
+ /** Outside a host: today's Quick add, with what the request names as its params. */
+ function quickAddParams(request: AddRequest): Record<string, string> {
+   return Object.fromEntries(Object.entries(request).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
+@@ -138,12 +154,12 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+   }, [blocked]);
+   const queue = useRef<(() => void)[]>([]);
+   const keys = useRef(0);
+-  const show = (next: Entry | null, shown: boolean) => {
++  const show = useCallback((next: Entry | null, shown: boolean) => {
+     now.current.entry = next;
+     now.current.visible = shown;
+     setEntry(next);
+     setVisible(shown);
+-  };
++  }, []);
+   const value = useMemo<AddTray>(() => {
+     const whenClosed = (run: () => void) => {
+       if (now.current.entry === null) run();
+@@ -170,11 +186,12 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+   const saving = useCallback((inFlight: boolean) => {
+     now.current.saving = inFlight;
+   }, []);
+-  /** The tray's Modal has hidden: the entry goes, and what waited for it runs, once. */
+-  const closed = () => {
++  /** The tray's Modal has hidden, or the bound ran out (R117): this entry goes, and what waited for it runs. Once per entry. */
++  const closed = useCallback((gone: Entry) => {
++    if (now.current.entry !== gone) return;
+     show(null, false);
+     for (const run of queue.current.splice(0)) run();
+-  };
++  }, [show]);
+   return (
+     <AddTrayContext.Provider value={value}>
+       {children}
+@@ -231,7 +248,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   entry: Entry;
+   visible: boolean;
+   onClose(): void;
+-  onClosed(): void;
++  onClosed(gone: Entry): void;
+   onSaving(inFlight: boolean): void;
+   onSaved(saved: SavedEntry, context: SavedContext): void;
+ }) {
+@@ -241,6 +258,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const diaryView = useDiaryView();
+   const canTellBun = useCanTellBun();
+   const inHeader = useSwitchInHeader();
++  const { hidden } = usePrivateMode();
+   const references = useEntryReferences({ copyOf: entry.request.copyOf ?? null });
+   const ready = references.state === 'ready' ? references : null;
+   const today = ready?.today ?? todayInBangkok(new Date());
+@@ -263,6 +281,8 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const [guessed, setGuessed] = useState<ReadonlySet<string>>(NONE);
+   const [naming, setNaming] = useState(false);
+   const [telling, setTelling] = useState(false);
++  // The place Bun last filled (R117): while the entry's merchant is still it, private mode does not draw it on confirm.
++  const [bunMerchant, setBunMerchant] = useState<string | null>(null);
+   // The entry starts once its lists are ready (a copy once it has loaded).
+   if (ready !== null && live !== null && draft === null) {
+     setDraft(startDraft(ready, entry.request, live));
+@@ -280,9 +300,21 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   useEffect(() => {
+     onSaving(inFlight);
+   }, [inFlight, onSaving]);
+-  // The save's problem in today's words: its message, else the first field the check refused.
+-  const problem = entrySave.message ?? Object.values(entrySave.errors)[0] ?? Object.values(entrySave.serverErrors)[0] ?? null;
+-  useAnnouncement(problem);
++  // This entry's close: the tray's onClosed, or the bound's (R117), whichever comes first; the host takes it once.
++  const leave = useCallback(() => onClosed(entry), [onClosed, entry]);
++  useEffect(() => {
++    if (visible) return undefined;
++    const timer = setTimeout(leave, CLOSED_BOUND_MS);
++    return () => clearTimeout(timer);
++  }, [visible, leave]);
++  // The save's problem in today's words: its message, else the first field the check refused. A conflict's words
++  // quote the amount Jotbun holds, so in private mode they mask it, and say it is hidden (R117).
++  const conflictMasked = hidden && status === 'conflict';
++  const problem = conflictMasked
++    ? tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount: HIDDEN_AMOUNT })
++    : entrySave.message ?? Object.values(entrySave.errors)[0] ?? Object.values(entrySave.serverErrors)[0] ?? null;
++  const said = conflictMasked ? tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount: t('common.amountHidden') }) : problem;
++  useAnnouncement(said);
+ 
+   /** The first touch fixes the category order and the draft's defaults (Quick add's rule). */
+   const touch = () => {
+@@ -301,7 +333,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     if (current === null) return;
+     const applied = applyDraft(current, filled);
+     edit({ ...current, ...applied.fields });
+-    if (bun) setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
++    if (bun) {
++      setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
++      // A draft that names no place keeps the one Bun named before, as applyDraft does.
++      setBunMerchant((was) => filled.merchant ?? was);
++    }
+     if (applied.amountMinor !== null) setKeypad(filledKeypad(applied.amountMinor));
+   };
+   const goTo = (next: AddStep) => {
+@@ -331,7 +367,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+ 
+   if (current === null || ready === null || live === null) {
+     return (
+-      <Tray visible={visible} onClose={onClose} onClosed={onClosed} title={t(trayTitleKey(entry.request.type ?? 'expense'))} step="amount">
++      <Tray visible={visible} onClose={onClose} onClosed={leave} title={t(trayTitleKey(entry.request.type ?? 'expense'))} step="amount">
+         <Waiting references={references} />
+       </Tray>
+     );
+@@ -354,6 +390,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     .filter((item) => item.draft.type === current.type)
+     .flatMap((item) => (item.draft.amount_minor === null ? [] : [{ label: item.draft.merchant ?? '', amountMinor: item.draft.amount_minor, apply: () => fill(item.draft, false) }]));
+   const rows = confirmRows(current, { lookups, today, dateLocale: locale, guessed, tc });
++  // Private mode draws none of Bun's words on confirm (R117, as R114 hides its sentence): a note it guessed reads as
++  // hidden, and a title that would be a merchant or a note it filled is the tray's own. What the person typed shows.
++  const shownRows = hidden ? rows.map((row) => (row.key === 'note' && row.guessed ? { ...row, value: t('add.noteHidden') } : row)) : rows;
++  const quotesBun = current.merchant.trim() !== '' ? current.merchant === bunMerchant : guessed.has('note');
++  const shownTitle = hidden && quotesBun ? t(trayTitleKey(current.type)) : confirmTitle(current, rows, t);
+ 
+   // Inside the tray's content, so iOS presents it from the tray's window (R69).
+   const tellBun = canTellBun ? (
+@@ -390,11 +431,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     middle = <TransferStep {...props} wallets={wallets} balances={ready.balances} />;
+     footer = <TransferFooter {...props} wallets={wallets} />;
+   } else if (step === 'confirm') {
+-    middle = <ConfirmStep {...props} rows={rows} title={confirmTitle(current, rows, t)} bunSentence={null} type={current.type} lookups={lookups} />;
++    middle = <ConfirmStep {...props} rows={shownRows} title={shownTitle} bunSentence={null} type={current.type} lookups={lookups} />;
+     footer = (
+       <View style={{ gap: 8 }}>
+         {problem === null ? null : (
+-          <WalletText testID="add-save-problem" role="label" accessibilityRole="alert" aria-live="polite" style={{ textAlign: 'center' }}>
++          <WalletText testID="add-save-problem" role="label" accessibilityRole="alert" aria-live="polite" accessibilityLabel={said ?? undefined} style={{ textAlign: 'center' }}>
+             {problem}
+           </WalletText>
+         )}
+@@ -421,7 +462,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     <Tray
+       visible={visible}
+       onClose={onClose}
+-      onClosed={onClosed}
++      onClosed={leave}
+       title={t(trayTitleKey(current.type))}
+       header={inHeader ? typeSwitch : undefined}
+       onBack={locked || step === 'amount' ? undefined : () => setStep(isPickStep(step) ? back : 'amount')}
+diff --git a/apps/app/src/wallet/add/copy.ts b/apps/app/src/wallet/add/copy.ts
+index cac4459b9d7b42996d8c2788482dc3882f3d97b6..046570eddccc3f461fd1129b88685d7aaa05199e 100644
+--- a/apps/app/src/wallet/add/copy.ts
++++ b/apps/app/src/wallet/add/copy.ts
+@@ -6,10 +6,11 @@ import type { DraftTable } from '../copy/draftText.ts';
+  * ประเภทรายการ), the wallet chip, Tell Bun, income's name field and its budget
+  * note, a quick chip's spoken words and the keypad's delete key (P2-T14); the
+  * transfer step, the confirm step's rows and Bun's marks, and the pick steps
+- * (P2-T15); Save's busy words (P2-T16). Data only: read through
+- * `useDraftCopy`, with COMMON_COPY where a part also says an amount. Default
+- * pending owner Q3: built as written; the English lines, and the Thai lines
+- * marked draft (no board shows them), are drafts for E2-B.
++ * (P2-T15); Save's busy words (P2-T16), and a hidden note's (its fix round,
++ * R117). Data only: read through `useDraftCopy`, with COMMON_COPY where a
++ * part also says an amount. Default pending owner Q3: built as written; the
++ * English lines, and the Thai lines marked draft (no board shows them), are
++ * drafts for E2-B.
+  */
+ export const COPY = {
+   'add.titleExpense': { th: 'จดรายจ่าย', en: 'Add spending' },
+@@ -47,6 +48,8 @@ export const COPY = {
+   'add.today': { th: 'วันนี้', en: 'Today' },
+   // bw-tray-confirm's note row with nothing written.
+   'add.addNote': { th: 'เพิ่มโน้ต', en: 'Add a note' },
++  // Draft (R117): in private mode a note Bun filled is not drawn, as its sentence is not (R114); one the person wrote shows.
++  'add.noteHidden': { th: 'ซ่อนอยู่', en: 'Hidden' },
+   // P2-T16: Save while the save is in flight.
+   'add.saving': { th: 'กำลังบันทึก…', en: 'Saving…' },
+ } as const satisfies DraftTable;
+diff --git a/docs/implementation/receipts/P2-T16-fix.md b/docs/implementation/receipts/P2-T16-fix.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c8712e22f8bbd8819b4fc71ec06ba46f087069d
+--- /dev/null
++++ b/docs/implementation/receipts/P2-T16-fix.md
+@@ -0,0 +1,82 @@
++# P2-T16-fix: a conflict and Bun's words in private mode, the bound on a tray that never says it has gone, and the reviews' pins
++
++- **Status:** built and verified locally on `p2/t16-add-tray-host` (`.claude/worktrees/p2-t16`), one commit on PR #439's reviewed head `81f66c0e`. Not pushed. This is the fix round on PR #439 after two reviews:
++  - the first (`.claude/controller/reviews/P2-T16.md`) said Needs fixes: one major (M1), two minors (m1, m2) and one nit (n1);
++  - the second (`P2-T16-second.md`, money, the wallet and privacy) approved, with four minors (m1 to m4). Its m2 is the first's M1, and its m1 is the first's m1.
++
++  The controller ruled R117, and the planner's brief is `.claude/controller/briefs/P2-T16-fix.md`. Under R87 this receipt is its own file; `P2-T16.md` is corrected and points here.
++- **Base:** `81f66c0e`, with no merge: the controller merges the integration branch up.
++- **Files:** modified `apps/app/src/wallet/add/AddTrayHost.tsx` (464 lines before, 505 after), `apps/app/src/wallet/add/copy.ts` (52, 55: one draft line), `apps/app/src/wallet/add/AddTray.render.test.tsx` (875, 1113; 17 cases before, 22 after) and `docs/implementation/receipts/P2-T16.md` (a line pointing here, and the lines R117 makes untrue); created this receipt. `entrySave.ts` is unchanged, since 1D-T7 edits it. No route, package or lockfile changes.
++- **M1, a conflict in private mode (R117.1):**
++  - A conflict's words quote the amount of the record Jotbun holds. `useEntrySave` builds them with `useAmountWords`, which does not know private mode.
++  - While private mode is on and the save's status is `conflict`, the host draws today's line with the amount masked (฿••••). The line has its own words, with `common.amountHidden` (ซ่อนยอดเงินอยู่) in the amount's place, and iOS is told those words.
++  - Today's line, masked, rather than a new draft line: it is R115's shape for the refused archive's ฿0 (P2-T21-fix), it adds nothing to E2-B's copy pass, and the sentence is the same in both modes with only the amount hidden, as every other amount in private mode is.
++  - Every other message `useEntrySave` can hand the host was checked, and none holds an amount of the person's:
++    - `saveProblem`'s and `localSaveProblem`'s messages are fixed words.
++    - The check's own amount lines are dropped whenever the keypad refuses the amount, and the keypad refuses whatever they would. Its other lines name a field, a date or a length.
++    - The server's field errors hold constants only: the cap (฿999,999,999.99) and an example amount (65 or 65.50). Neither can reach this host: the keypad caps the amount and sends a plain satang string.
++  - The case runs in Thai and English, on both reviews' probe (PROBE-5 and P5). An answer lost says its usual words in private mode. The resend finds the entry saved as ฿99.00, and the case checks the line drawn, its words and what iOS is told: today's words, masked, with no digit in any of them.
++- **The second review's m3, Bun's words on confirm in private mode (R117.2):**
++  - R114's reasoning applies: no mask keeps up with every form of an amount, and Bun's merchant and note come from the same sentence.
++  - In private mode a title that would quote Bun is the tray's own (จดรายจ่าย, จดรายรับ or โอนเงิน). That is a merchant Bun filled, or with no merchant, a note Bun filled. A note Bun guessed reads as ซ่อนอยู่ (`add.noteHidden`, a draft line for E2-B) and keeps its บันเดา.
++  - What the person typed shows (R106): a name typed in income's name field, and a note written in the note pick. The host keeps the place Bun last named (`bunMerchant`), so a later draft of Bun's that names none still leaves the place Bun's, as `applyDraft` keeps it.
++  - The case, on the second review's probe P4a: a note alone from Bun, which out of private mode would be the title; a merchant and a note, each holding the amount, with no digit left in confirm's text or its words; Bun told again of the amount only; and what the person writes and types, which shows.
++- **m1, the bound on a tray that never says it has gone (R117.3):**
++  - Once a tray is hidden, its entry goes when the Modal says so (`onClosed`), or after 1.5 s (`CLOSED_BOUND_MS`), whichever comes first. iOS hears `onClosed` only from the Modal's `onDismiss`, which never comes for a dismissal UIKit never ends, so a later open and a `whenClosed` run no longer wait for ever.
++  - It stays idempotent per entry: the host's `closed` takes the entry and does nothing once that entry has gone. A dismissal that comes after the bound, or after a new tray has opened, changes nothing.
++  - The bound is armed on every platform. Off iOS the tray reports its close after its 220 ms exit, which ends the entry and clears the bound first, so a platform check would be a guard no case could see.
++  - The bound lives in the entry, so it ends with it, and a host that goes away (a sign-out) runs nothing queued. `show` and `closed` keep one identity across renders, so a parent that draws again cannot restart the bound.
++  - The case uses a Modal that holds its dismissal back, as the reviews' wedge probes do. It checks that the queued run and the open wait, then that the bound lets both through once; that a late dismissal and another 1.6 s leave the new tray open; and that a host unmounted while its tray leaves sends nothing more.
++- **n1, the save's problem above Save (R117.4):** the copy case now checks that, in the tray's pinned footer, `add-save-problem` comes before the button. The first review's R8 is killed.
++- **The second review's m4, its six survivors (R117.5),** each pinned on its own probe. The code was already right:
++  - M3 (P11): a note Bun wrote is one of its guesses, `โน้ต ค่าข้าวกับพี่ บันเดา`. This is in the Tell Bun case.
++  - M4 and M5 (P2, P1): income's track has its own category's key (`salary`), and a move's has none. The move is kept exactly: `50000` from the main account to cash. This is a new case.
++  - M6 (P8): a day chosen for cash, then the main account, which started later, is refused on Save with today's words, and nothing is kept. This is a new case.
++  - M8 (P12): an opening that names income is named จดรายรับ while its lists load. This is in the waiting case.
++  - M10 (P13): an open that waited for a leaving tray asks again when it runs, so a host blocked by then opens nothing. This is in the `whenClosed` case.
++- **The first review's m2 (R117.6, no code):** the lock's cover loses what the person typed into Tell Bun, and this host is the first of the "later Sheet hosts". Both receipts' Risks say so.
++- **RED to GREEN:**
++  - RED is `81f66c0e`'s code with the round's suite. No stub is needed: the new cases use nothing the code does not already export.
++    - `npm run typecheck:app`: exit 0.
++    - The suite: `Tests 3 failed | 19 passed (22)`. Each failure is an `AssertionError`, with no load or lookup error and no `stderr |` block:
++      - the conflict in private mode (`th: expected [ …(3) ] to deeply equal [ …(3) ]`);
++      - Bun's words on confirm (`expected [ 'ข้าวมันไก่ 65 บาท', …(1) ] to deeply equal [ 'จดรายจ่าย', 'โน้ต ซ่อนอยู่ บันเดา' ]`);
++      - the bound (`a dialog named จดรายรับ: expected null not to be null`).
++    - The 19 that pass are the first round's 17 cases, with their new parts, and the two new cases that pin code that was already right (the track's keys, and the day before a wallet started).
++  - GREEN:
++    - `typecheck:app`: exit 0.
++    - The suite: `Tests 22 passed (22)`, with no `stderr |` block.
++    - The add flow's and the tray's Node files with the draft check: 19 of 19.
++    - The eight kit render files: 142 of 142. The four routes tests: 15 of 15. The first round's other render files (AddSteps, entrySave, QuickAddScreen, catalogueRoute): 110 of 110. Each is the same as at `81f66c0e`.
++    - The catalogue's wallet sections (`-t "bw-"`, both suites): 96 passed. The registry rule: 1 passed.
++- **Mutation check:** 126 mutants: 126 killed, 0 survived. Each file was restored, with its SHA-256 checked, and every failing case in every mutant's run fails on an `AssertionError`.
++  - The first round's 86 (H1 to H77, K1, S1 to S6, T1, C1). H28, H30 and H41 are re-pointed at the lines this round moves.
++  - The first review's R1 to R8, R8 being its n1. The second review's M2 to M8, M10, M11 and M13, with M3 to M6, M8 and M10 being its m4. Some are re-pointed where the code moved. Not run: M1, M9 and M12, which are the same edits as R1, R2 and H68; and M14, which the second review found equivalent.
++  - This round's F1 to F21 and K2: the conflict's mask (F1 to F7), Bun's words on confirm (F8 to F17, K2), and the bound (F18 to F21).
++- **Gate (R100, with R117's files, each named):**
++  - `npm run typecheck:app`: exit 0.
++  - `npm run test:app`: exit 0, `ℹ fail 0`.
++  - `npm run test:unit`: exit 0, `ℹ fail 0`, the Hermes guards included.
++  - The add flow's and the tray's Node files with the draft check (`addFlow`, `amountStepNative`, `addStepsNative`, `trayGesture`, `draftText`): 19 of 19.
++  - The round's suite: 22 of 22.
++  - The eight kit render files that import the wallet catalogue index (CardStack, WalletLooks, PrivateMode, walletHarness, Tray, Lock, AmountStep, WalletsList): 142 of 142.
++  - The four routes tests (SpendRoutes, AccountRoutes, InsightsRoutes, PlanningRoutes): 15 of 15.
++  - The first round's other render files (AddSteps, entrySave, QuickAddScreen, catalogueRoute): 110 of 110.
++  - `git diff --check`: clean before the commit, and against `origin/claude/p1a-vault-core...HEAD` after it.
++- **Deviations:** none from the brief's rulings.
++- **SKIPPED and CI:**
++  - In CI on the PR (R100): the full render suite, whose per-section jobs open `bw-tray-saving`, `bw-tray-unconfirmed` and `bw-tray-add-large`; `export:web` and the iOS export; the database, edge and image jobs; and `test:ops`.
++  - Not needed: `typecheck:routes` (no route changes), and the API and edge suites, since nothing outside `apps/app` and the receipts changes.
++  - SKIPPED until a device: a close and a quick reopen on an iPhone with the bound in place; a present that UIKit refuses (the tray follow-up's check, before P2-T18); VoiceOver hearing the masked conflict line in private mode; and the first round's list.
++- **Risks:**
++  - A present that UIKit refuses stays a risk (R117.3): the tray is open in the host with nothing on screen, so later opens are ignored and nothing on screen closes it. It is the tray follow-up's, with its device check before P2-T18.
++  - The bound's 1.5 s is a judgment, and no device has measured it. If UIKit's dismissal ever takes longer (a slow phone, or the app sent away mid-close), the entry goes while the Modal is still leaving, and the next present may be refused: the risk above.
++  - The lock's cover loses what the person typed into Tell Bun (the first review's m2, R117.6). Today's sheet keeps its sentence, its phase and Bun's result in its own state, inside the tray's content, which the cover unmounts; the cover also comes when the app goes inactive. This host is the first of the "later Sheet hosts" in `followups.md`. The controller carries it to P2-T34, P3-T18 and E2-B.
++  - In private mode Bun's words still show where the person edits them: the open sheet (P10d), income's name field on the amount step, and the note pick's field.
++- **Notes for later tasks:**
++  - **P2-T18:** the bound frees a tray whose Modal never says it has gone, but not one whose present was refused (Risks). That device check comes before the + and Magic Tap reach the host.
++  - **P2-T26 and P2-T30:** open another Modal from the add tray's `whenClosed`, or from its own tray's `onClosed`, as both reviews say. The bound orders only this host's trays.
++  - **1D-T7:** `entrySave.ts` is unchanged. Two saves in one React batch both write (the first review's PROBE-4); a ref guard in `save` would hold that for any caller.
++  - **P2-T37:** in private mode the conflict line is masked and confirm draws none of Bun's words. The sweep's exemptions must know the constant figures in the save's words (the cap, the example amount 65 or 65.50, and the 120- and 500-character limits) and the editable fields under Risks.
++  - **E2-B (the owner):** in private mode, the tray's own title in place of Bun's merchant, and ซ่อนอยู่ for its note (R117.2, which the owner may overrule); the masked conflict line's words, which read "as Amount hidden" in English.
++  - **Not in R117,** left as the second review recorded them: its n1 (a refused save's words stay until the next Save), n2 (`fill()` has no guard where `keypadOf()` has one) and n3 (an `onSaved` that throws leaves the tray open with a dead Save), and its notes for P2-T17, P2-T26, P3-T13 and closing from `unconfirmed`.
+diff --git a/docs/implementation/receipts/P2-T16.md b/docs/implementation/receipts/P2-T16.md
+index 03fa58960fc652def8244f2ae84ab28659df28cf..75a6f4a39caa2a0627e10b3def7238e1ae50a845 100644
+--- a/docs/implementation/receipts/P2-T16.md
++++ b/docs/implementation/receipts/P2-T16.md
+@@ -1,6 +1,7 @@
+ # P2-T16: The add tray host: open, Tell Bun, save
+ 
+ - **Status:** built and verified locally on `p2/t16-add-tray-host` (`.claude/worktrees/p2-t16`), from `afab7fd5`. Committed locally, not pushed. The independent review is the controller's, after this receipt. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited.
++- **Fix round:** PR #439's first review said Needs fixes (M1, m1, m2, n1), and the second approved (m1 to m4). The controller ruled R117, and `receipts/P2-T16-fix.md` records the round: in private mode a conflict draws and says no amount, and confirm draws none of Bun's words; a hidden tray whose Modal never says it has gone closes anyway after 1.5 s; and the reviews' survivors are pinned. The lines below that R117 makes untrue are corrected.
+ - **Base:** `afab7fd5`. The brief was proven at `f034185e`. The branch was fast-forwarded from `7a29bc70` to `afab7fd5`, which brought only controller state under `.claude/controller/` (this brief, the planner's folder, and two state files) and no app or package code. `git log --oneline f034185e..HEAD` lists one merged pull request since the proof: #435 (P3-T7, merge `bfce84ed`, commit `088b346a`). Its change under `packages/` is a comment in `packages/contracts/src/v1/ai.ts` (5 insertions and 3 deletions, all inside the JSDoc of `AI_ROUTE_DEADLINE_MS`), as the brief's Step 0.3 expects. Step 0.4 found the five shared files at their `orig/` checksums, so each was copied from `real/` and no `git apply --3way` was needed.
+ - **Files:** created `apps/app/src/wallet/add/AddTrayHost.tsx` (464 lines), `apps/app/src/wallet/add/AddTray.render.test.tsx` (875 lines, 17 cases), `apps/app/src/dev/catalogue/wallet/addHostSection.tsx` (45 lines) and this receipt. Modified `apps/app/src/wallet/add/copy.ts` (50 lines before, 52 after: `add.saving`), `apps/app/src/dev/catalogue/wallet/addSections.tsx` (208 before, 273 after: the three sections), `apps/app/src/wallet/wallets/WalletsList.render.test.tsx` (562 before and after: one line, the sections case's first id is now `bw-tray-add-large`), `apps/app/src/wallet/add/AddSteps.render.test.tsx` (759 before, 764 after: one mount in its private-mode case, P2-T15's confirm m1) and `apps/app/src/wallet/tray/Tray.render.test.tsx` (850 before, 870 after: one case, tray-hardening's c-n1; 27 cases before, 28 after).
+ - **What changed:**
+@@ -38,7 +39,7 @@
+   - Step 1.1 (`npm ci`) was skipped, as the controller's note directs, since the worktree's `node_modules` was ready: 439 top-level entries, with `tsc` and `vitest` present. The brief's Expected line "added 1416 packages" therefore does not appear. `typecheck:app` passed on that install.
+   - Step 0.3's diff lists `packages/contracts/src/v1/ai.ts` alone; I read it, and it is a comment.
+ - **SKIPPED:** `npm ci` (see Deviations). `typecheck:routes` and `export:web` (no route, config or app-entry change; CI runs `export:web`). The full render suite (CI's `render` and `sections-1` to `sections-3` jobs; the catalogue's every-section and screen-reader suites pick up the three sections there, and the large-text suite does not open them). The iOS export (CI). `test:ops` (no package or lockfile change). The API, edge and database suites (nothing outside `apps/app` changes; Docker is stopped). Device and simulator checks, from P19's list: Tell Bun's sheet over the tray on iOS and its keyboard; a swipe during a save, and Android's back, on a phone; a quick reopen while UIKit's dismissal ends; whether UIKit sends a dismissal for a present it refused; VoiceOver hearing the save's problem. E2-B's screenshots are the controller's, after P2-T28.
+-- **Risks:** on iOS a tray whose present was refused gets no `onClosed`, so a later open waits for it (P5d; the device check asks). In private mode the open Tell Bun sheet still shows the person's own words and Bun's reading of them (P10d), a note for E2-B and P2-T37.
++- **Risks:** on iOS a tray whose present UIKit refused stays open in the host with nothing on screen, so a later open is ignored and nothing on screen can close it (P5d; the device check asks, before P2-T18). A tray whose dismissal never ends no longer holds later opens: since the fix round its entry goes after 1.5 s (R117). In private mode the open Tell Bun sheet still shows the person's own words and Bun's reading of them (P10d), a note for E2-B and P2-T37. The lock's cover loses what the person typed into Tell Bun, since the sheet keeps it in its own state and the cover unmounts the tray's content; this host is the first of the "later Sheet hosts" (`followups.md`), which the controller carries to P2-T34, P3-T18 and E2-B (R117).
+ - **Notes for later tasks** (ruling P19):
+   - **P2-T17 (the saved moment):** `SavedContext` is `{ lookups, offline }`, and `onSaved` fires once per landed save, before the tray closes. Open a toast from it, never a second tray, or wait with `whenClosed`.
+   - **P2-T18 (the wallet shell):** mount `AddTrayHost` inside `SavedToastHost`, pass `blocked`, and give Magic Tap and the + `useAddTray().open`. `isOpen` is true from the opening until close is asked.
+@@ -46,6 +47,6 @@
+   - **P2-T24 and P2-T26:** `open({ walletId })` starts on that wallet; `open({ copyOf })` copies as Quick add copies.
+   - **P3-T13:** this host decides `track.source` from Bun's standing guesses (P9a), as the plan says. P3-T13 replaces that with the draft's origin and wires `useDraftReview`.
+   - **P3-T18:** the tell step brings the sentence for confirm's line (P10b).
+-  - **P2-T37 (the sweep):** the open Tell Bun sheet shows what the person types and Bun's reading of it (P10d). Confirm's title and note row are the model's text when Bun filled them (P2-T15's note).
++  - **P2-T37 (the sweep):** the open Tell Bun sheet shows what the person types and Bun's reading of it (P10d). Out of private mode, confirm's title and note row are the model's text when Bun filled them (P2-T15's note); in private mode, since the fix round, neither is drawn (R117).
+   - **A tray follow-up:** at AX5, scroll the middle to its top when the type changes, or give the tray a pinned place under its header (P2-T14's P10 and its confirm review's P1; P7d).
+   - **Device checks (SKIPPED):** as listed under SKIPPED.

@@ -1,0 +1,37 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+{"level":"error","request_id":"27552241-f2bd-4dc4-9cb3-417da639fc18","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"RangeError"}
+
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 445ms
+     × an unexpected exception in the Worker is counted as the Worker's, by its class name only 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:428:20
+    426|     }
+    427|     await r.settled()
+    428|     expect(r.sent).toHaveLength(1)
+       |                    ^
+    429|     expect(r.sent[0]).toMatchObject({ event: '$exception', properties:…
+    430|     expect(JSON.stringify(r.sent)).not.toContain('ร้านป้าแดง')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:57:06
+   Duration  2.66s (transform 851ms, setup 1.67s, import 42ms, tests 445ms, environment 0ms)
+

@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: no such table: consents: SQLITE_ERROR
+    at analyticsConsent (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/analytics.ts:24:23)
+    at analyticsAfterCall (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/analytics.ts:74:90)
+    at UserVault.callWithAnalytics (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/src/vault/user-vault.ts:251:39)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+stdout | test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only
+{"level":"error","request_id":"6013dbc1-b700-4edb-aec1-ab1c7216f1aa","route":"GET /v1/wallets","status":500,"error":"Error"}
+
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 656ms
+     × a failed analytics read never changes the reply, and is logged by its class name only 32ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ test/workers/server-events.test.ts:482:65
+    480|     await sqlExec(user, 'DROP TABLE consents')
+    481|     const lines = await quietly(async () => {
+    482|       expect((await client.as(user).get('/v1/wallets')).status).toBe(2…
+       |                                                                 ^
+    483|     })
+    484|     expect(lines.filter((line) => line.includes('"event":"vault_analyt…
+ ❯ quietly test/workers/server-events.test.ts:144:5
+ ❯ test/workers/server-events.test.ts:481:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:55:50
+   Duration  3.83s (transform 1.30s, setup 2.46s, import 45ms, tests 656ms, environment 0ms)
+

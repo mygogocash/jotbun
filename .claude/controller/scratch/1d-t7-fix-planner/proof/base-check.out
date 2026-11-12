@@ -1,0 +1,11 @@
+apps/app/src/analytics/controller.ts: OK
+apps/app/src/sync/deviceSync.ts: OK
+apps/app/src/analytics/controller.test.ts: OK
+apps/app/src/analytics/appAnalytics.render.test.tsx: OK
+apps/app/src/sync/deviceSync.render.test.tsx: OK
+apps/app/src/screens/redesign/entry/entrySave.render.test.tsx: OK
+apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx: OK
+apps/app/src/screens/redesign/RecordScreen.render.test.tsx: OK
+apps/app/src/screens/redesign/HistoryScreen.render.test.tsx: OK
+apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx: OK
+docs/implementation/receipts/1D-T7.md: OK

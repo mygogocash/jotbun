@@ -25,8 +25,13 @@ export type AnalyticsDeps = {
   server: { read(): Promise<ServerAnalyticsState>; setConsent(analytics: boolean): Promise<void> };
 };
 export interface Analytics {
-  /** Rejects when the store or the server fails while loading the answer: callers catch it. */
-  setAccount(accountId: string | null): Promise<void>;
+  /**
+   * Rejects when the store or the server fails while loading the answer: callers catch it.
+   * `signedOut`: the session seen before has ended (a sign-out, or another session in its
+   * place), whether or not its account was ever named here, so what is held is dropped
+   * (R120). A plain null is "no one is signed in", which at the launch keeps what is held (R119).
+   */
+  setAccount(accountId: string | null, options?: { signedOut?: boolean }): Promise<void>;
   /**
    * A no is in force at once and stored at once, and reaches the server after any
    * call still on its way. Rejects when the queue's store write of a no fails (the
@@ -73,6 +78,10 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   let undelivered = false;
   let identifiedId: string | null = null;
   let common: Partial<CommonProps> = {};
+  // The screen on display: its pattern, or null when it cannot be named. Sent
+  // when the answer turns yes, so the first screen of a launch or a sign-in is
+  // not missing (1D-T6's review, m3).
+  let onDisplay: string | null = null;
   const held: Held[] = [];
   const listeners = new Set<() => void>();
   let generation = 0;
@@ -126,6 +135,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     if (entering && deps.replay) client?.startSessionRecording(false);
     const queued = held.splice(0, held.length);
     for (const item of queued) client?.capture(item.name, payload(item.properties));
+    if (entering && onDisplay !== null) client?.screen(onDisplay, payload({}));
   }
 
   function openQuestion(): void {
@@ -198,9 +208,16 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   }
 
   return {
-    async setAccount(id) {
-      if (id === accountId) return;
-      const keepHeld = (accountId === undefined || accountId === null) && id !== null;
+    async setAccount(id, options) {
+      // A session that ended is never "no change": what it held is dropped even when its
+      // account was never named here, or the controller already holds no one (R120).
+      const signedOut = options?.signedOut === true;
+      if (id === accountId && !signedOut) return;
+      // What is held comes from the onboarding and the sign-in that led here (L4). The
+      // launch's first answer keeps it, also when no one is signed in yet, and so does
+      // signing in; a sign-out drops it whether or not its account was named, and so does
+      // a switch (A to B) (R119, R120).
+      const keepHeld = !signedOut && (accountId === undefined || (accountId === null && id !== null));
       accountId = id;
       generation += 1;
       const token = generation;
@@ -290,10 +307,9 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     },
 
     screen(segments) {
-      if (current !== 'yes') return;
-      const pattern = screenPattern(segments);
-      if (pattern === null) return;
-      client?.screen(pattern, payload({}));
+      onDisplay = screenPattern(segments);
+      if (current !== 'yes' || onDisplay === null) return;
+      client?.screen(onDisplay, payload({}));
     },
 
     async refresh() {

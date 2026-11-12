@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 523ms
+     × callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal
+AssertionError: expected { Object (reply, analytics) } to deeply equal { reply: { ok: false, …(3) }, …(1) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "analytics": {
+      "consent": "yes",
+      "events": [],
+-     "failure": null,
++     "failure": "ContractValidationError",
+    },
+    "reply": {
+      "code": "VALIDATION_FAILED",
+      "ok": false,
+      "problem": {
+
+ ❯ test/workers/server-events.test.ts:504:22
+    502|     }
+    503|     const answered = await vaultOf(user).callWithAnalytics(refused)
+    504|     expect(answered).toEqual({
+       |                      ^
+    505|       reply: { ok: false, status: 422, code: 'VALIDATION_FAILED', prob…
+    506|       analytics: { consent: 'yes', events: [], failure: null },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:56:02
+   Duration  2.97s (transform 930ms, setup 1.85s, import 39ms, tests 523ms, environment 0ms)
+

@@ -1,0 +1,287 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the receipt shows the amount, type, category, wallet, date and note, with Edit, Copy and Delete 59ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a move reads From → To, and a merchant gets its own row 29ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > saves an expense as one exact command and shows it saved only after the acknowledgement 143ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses nothing typed without sending anything 46ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Copy opens quick add with copyOf; Back returns to the list 20ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > edits with the version you saw and its own command key, then shows the server record after the acknowledgement 75ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses zero without sending anything 50ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses zero from 000 without sending anything 46ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Edit on the receipt opens the edit mode; Cancel leaves it without sending 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a third decimal is refused as it is typed, and the amount stays exact 67ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an amount above the cap is refused as it is typed 62ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the keypad sends an exact amount_minor: 0.1 + 0.2 is 30 satang, 100 ÷ 3 is ฿33.33 122ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > only the fields you changed are sent: note, merchant and date 38ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unchanged edit sends nothing; an amount the keypad cannot save says why 69ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a conflict shows yours and the server side by side, and Apply my change resends on the server version with a new key 54ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a future date can never be chosen: the chip stops at today and the calendar shuts tomorrow 55ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save freezes the whole entry and offers only Try again, which resends the same command 66ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Reload after a conflict shows the other device’s version and drops the edit 57ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a conflict without a usable current record reloads instead of looping 45ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > records a move between two different wallets, with no category 79ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a move can swap its wallets and move a whole balance 49ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an entry deleted on another device says so, drops the edit and can be restored within 30 days 52ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed edit is frozen and retried as the same command 57ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an upgrade requirement blocks saving but keeps the draft 53ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a changed session blocks saving too 56ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a failed reload after an acknowledged edit is a load problem, not an unconfirmed save 50ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Delete shows the undo bar; Undo restores with the new version and its own key 27ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed undo keeps the bar and resends the same restore 29ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an undo Jotbun definitely refuses reloads the entry, which then reads as deleted 24ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a refused entry shows the field problem, and the corrected entry is a new command for the same record 70ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > with a device diary, an entry is saved on the device first, shown saved only once that commit succeeds, and never sent directly 65ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a second Save while the first is still on its way sends nothing 50ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed delete is frozen and resent with the same key 22ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a draft on this device opens from the diary with its state, and can be copied or removed 10ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a draft that needs a look can be discarded; one being checked can only wait 19ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 15ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > in Vietnamese the receipt date uses the same words as the day headers, never Intl English 7ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'en', 'light': paper slip, translated rows, the long date and Thai leading 10ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'en', 'dark': paper slip, translated rows, the long date and Thai leading 8ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a failed local save shows a save error and never claims the entry was saved 40ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > offline, Quick add works from the wallets and categories synced to the device 65ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'th', 'light': paper slip, translated rows, the long date and Thai leading 9ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'th', 'dark': paper slip, translated rows, the long date and Thai leading 10ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'vi', 'light': paper slip, translated rows, the long date and Thai leading 8ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'vi', 'dark': paper slip, translated rows, the long date and Thai leading 9ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > while editing, the message and Save changes with Cancel are pinned under the scrolling form 40ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the receipt view has no pinned footer 8ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > offline, a move uses the kit wallet picker by name: From and To cards, swap, and no move all without a balance 69ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed online save stays online when the diary opens: Try again resends the same command 66ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the amount being edited shows exactly, as Quick add does, with what was typed above it 32ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a refused edit is kept as a choice and both versions are shown, yours chosen 61ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a device save that fails says why, and every attempt of one draft keeps its record id and command id 89ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > decide later keeps the choice, and reopening the record shows it again 68ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours sends the same changes on the server's version once, then drops the choice 59ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an acknowledgement that arrives garbled is unconfirmed, and retrying the same command finishes 63ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a lost response after the save committed resolves by replay, with no duplicate 60ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours meeting yet another change keeps the choice with the newer record and shows it again 74ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > once use yours is acknowledged the choice is gone, even when the next read fails 63ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > if this entry already exists under an earlier command, it counts as saved (isOwnCreate) 66ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save stays frozen with its key when the retry is refused before processing; the saved moment shows what the server holds 70ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed "use yours" is frozen with Try again, resent with the same key, and the choice stays until it is confirmed 61ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's version sends nothing and drops the choice 74ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as policy_required on retry stays frozen with its key 78ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as session_changed on retry stays frozen with its key 74ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours refused without a usable record reads the record again, and choosing the server's then clears the notice 83ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > offline, the choice compares with the kept record and cannot send yours 10ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the server already holds clears itself 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a deleted record offers Restore and Discard my change 9ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as upgrade_required on retry stays frozen with its key 65ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a create that meets this draft's own record with other details is never shown as saved 71ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a phone that cannot keep the choice asks for it now 105ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > conflict_shown is sent once, from the edit rule, with the class name and the route pattern only 68ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a create refused because another record has the id is not mistaken for this one 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > note and merchant sit behind More details and are normalized the way the API does 67ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > with the conflict area off, today's comparison stays and nothing is kept 62ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's version never shows today's comparison while the diary drops the choice 75ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a merchant over 120 characters is refused once, and a note problem reopens More details 88ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a date before the chosen wallet's tracking start is refused before anything is sent 73ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" never shows today's comparison while the diary drops the choice 65ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the diary finds after the record has loaded is offered, against the fresh record 27ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the diary finds while an edit is open never replaces the edit in progress 41ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > with the conflict area off, a diary that opens with a kept choice changes nothing 15ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 12.50 + 7.25 84ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 10 ÷ 3 62ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's when the diary cannot drop the choice shows the record, and the next open offers the choice again 85ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a reopened choice this phone cannot keep again still leaves the diary when the server's is chosen 29ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 10 ÷ 3 × 3 71ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 65 + (dangling) 45ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 1 then 000 45ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours meeting a record deleted elsewhere offers Restore and Discard my change, and keeps the choice until one is used 60ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice for a record that is no longer there offers Discard my change 7ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > conflict_shown is sent again when "use yours" meets yet another change 59ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a server that is unavailable counts as offline: the choice compares with the kept record and cannot send yours 9ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > History's Edit on a record with a choice opens the choice first, and choosing the server's lands on the record 25ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 0.1 + 0.2 57ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an edit refused for a record deleted elsewhere keeps no choice (R94) 51ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged edit records record_edited, and an unconfirmed one nothing until it is 51ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount is live and spoken while a sum is typed 96ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > category chips are the top three by recent use, the first chosen, and deleted or archived ones never count 27ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a delete records record_deleted and its undo records undo_used, each once Jotbun has it 31ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Restore records record_restored, never undo_used 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" records one record_edited; the refused edit before it records none 60ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" reports the category of the server's copy when another phone moved the entry 68ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Restore of an income records record_restored with kind income 15ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the order may follow the recent-use load until the first touch, and never moves after it 75ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > drafts waiting on the device count toward the ranking 19ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > More opens every category in a sheet; a pick closes it and stays in view 63ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy (copyOf) prefills a new draft from the record, dated today, with a new id 40ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy of a move prefills From → To and the amount 33ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy of a draft still on the device works from the device 37ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a copied record whose wallet is closed asks for a wallet instead of guessing one 58ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a record that cannot be copied says so and offers a blank entry 20ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a deleted record cannot be copied through the URL 4ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount line is a polite live region that says the live result 33ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > move all is the balance less what drafts waiting on this device take from the wallet 42ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another starts a fresh draft with a new record id and a new command id, keeping the choices 100ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another online uses a new record and a new command key 75ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > lists the month's entries in day groups with signed exact amounts and the month's totals 74ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the saved moment is a polite live region with the exact amount 60ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > save problems are announced as alerts 57ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > filters by type and moves between months; the filter stays on 115ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the cheer bun shows at most once a day, and only at full intensity 117ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > at quiet intensity the saved moment has no bun 48ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > at off intensity the saved moment has no bun 42ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > loading, then the form 21ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a load problem that a retry can fix offers Try again 30ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a upgrade_required load is blocked: it says what to do and offers no retry 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a signed_out load is blocked: it says what to do and offers no retry 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a policy_required load is blocked: it says what to do and offers no retry 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > with no wallet it says to add one on the home screen, with the bun 9ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the empty state bun at quiet intensity: shown true 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the empty state bun at off intensity: shown false 4ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Close leaves without saving 31ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > targets are at least 44 points, keypad keys at least 56 25ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > pages through every entry with Load more, with no hidden cap 236ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > delete hides the entry after the acknowledgement; Undo restores it with the new version and its own key 58ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount never opens the system keyboard: no text field until More details 29ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the screen draws with palette tokens only, and keeps money out of floating point 0ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'en' in 'light', in palette colours 46ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'en' in 'dark', in palette colours 42ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > an unconfirmed delete is frozen and resent with the same key, even after the list refreshes 57ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > an unconfirmed undo keeps the bar and resends the same restore 60ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'th' in 'light', in palette colours 45ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'th' in 'dark', in palette colours 42ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > deleting an entry another device already deleted reloads with a clear notice 40ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a delete that meets a newer version elsewhere reloads instead of overwriting 39ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > Recently deleted opens from History, whatever the month, filter or load state 51ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'vi' in 'light', in palette colours 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'vi' in 'dark', in palette colours 44ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Thai: the screen speaks Thai and the amount stays in exact baht 51ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > suggests a refresh when entries changed since the list opened 30ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > load problems: a failed load can be tried again; blocked ones say what to do 63ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the route opens Quick add unless the core redesign is switched off 56ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Save and any save problem are pinned under the scrolling form, within thumb reach 59ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the form opens on the type switch with Close beside it; the title is a heading for screen readers only 23ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Tell Bun fills Quick add from a Thai sentence, and nothing is sent until Save 61ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > returning to the list refreshes it in place and keeps every loaded page 230ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Tell Bun is not offered for a move between wallets, or with the companion area off 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > saving an expense records record_started then one record_saved with its kind and category, and never the amount or the note 80ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > the oldest day on a page that continues shows its whole confirmed total, not the loaded part 153ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a row opens its record; long-press offers Edit, Copy and Delete 31ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > on the web a row's actions are reachable by keyboard through its More button 31ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > drafts on the device join their days with their state, and never count in the day's total 50ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a draft that resolves refreshes the list in place 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a save that Tell Bun filled records source tell_bun, without its sentence; the next entry is typed again 116ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a record waiting for a choice says so under its row, and a tap opens the record as usual 45ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a change pulled from another phone refreshes the list in place 32ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a save kept on this phone is offline unless the last sync ended synced 130ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > offline, the month still shows what this device holds, under an offline banner 50ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a draft waiting for an app update never looks confirmed and says why it waits 27ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another starts a new entry: one more record_started, and its seconds count from there 108ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an income records kind income with its category key, and a move kind transfer with none (the fix round, R119) 131ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > search matches the category, merchant and note, with a summary of what matched 76ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a search over part of the month says so until every page is loaded 195ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > Thai search folds combining marks the same way and never strips them 50ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > wallet and category chips scope the month, with exact totals from the server 76ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > each chip row runs out to the screen edge, past the 16 pt gutter, so a chip that does not fit is cut at the edge 22ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > an empty month shows the thinking bun, which follows the bun setting 23ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > the bun stays off a list that has entries 20ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'en', 'light': palette ground, the stage, the month, ink amounts and Thai leading 38ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'en', 'dark': palette ground, the stage, the month, ink amounts and Thai leading 28ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > lists what was deleted in the last 30 days, newest deletion first, under the retention notice 43ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > Restore sends the entry's own version under its own key, takes it off the list and says where it went 34ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'th', 'light': palette ground, the stage, the month, ink amounts and Thai leading 28ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'th', 'dark': palette ground, the stage, the month, ink amounts and Thai leading 27ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'vi', 'light': palette ground, the stage, the month, ink amounts and Thai leading 28ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > reads in 'vi', 'dark': palette ground, the stage, the month, ink amounts and Thai leading 28ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > an unconfirmed restore is frozen: only Try again, which resends the same command 27ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > an unconfirmed restore that did commit stops holding the other Restores once a reload no longer lists it 28ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > the same after a failed reload and its Try again 31ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a delete from History records record_deleted, and its undo undo_used, each once Jotbun has it 71ms
+ ✓ src/screens/redesign/HistoryScreen.render.test.tsx > a move deleted from History, and its undo, record kind transfer with no category (the fix round, R119) 50ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a refused restore says why in plain words and reads the list again 42ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > with nothing deleted it says so, and still says how long deleted entries are kept 9ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > pages through every deleted entry with Load more 167ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > load problems as in History: offline under the banner with Try again; blocked ones say what to do 27ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > suggests a refresh when entries changed since the list opened 11ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > Back returns to History, or opens it when there is nothing to go back to 8ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'en', 'light': palette ground, the stage, the notice and Thai leading 9ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'en', 'dark': palette ground, the stage, the notice and Thai leading 10ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'th', 'light': palette ground, the stage, the notice and Thai leading 10ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'th', 'dark': palette ground, the stage, the notice and Thai leading 18ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'vi', 'light': palette ground, the stage, the notice and Thai leading 12ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > reads in 'vi', 'dark': palette ground, the stage, the notice and Thai leading 10ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a restore records record_restored once Jotbun has it, with the kind only 19ms
+ ✓ src/screens/redesign/RecentlyDeletedScreen.render.test.tsx > a restored move records record_restored with kind transfer (the fix round, R119) 10ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > a device save calls onSaved once, after the diary kept it 34ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > an online save that may have committed is frozen, and saving again resends the same command key 7ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > a create refused because the record already exists with other details is a conflict, never saved 4ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > the track a caller passes reaches onSaved, and a resend keeps the first attempt's track 6ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > savedHaptic success plays success for a phone-kept save; Quick add's default stays light 6ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > the attempt hands back the keypad as Save leaves it: a sum worked out, a plain amount as typed 6ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > Quick add shows a sum worked out the moment Save is pressed, while the save is still on its way 118ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > the moved rules keep money out of floating point 0ms
+ ✓ src/screens/redesign/entry/entrySave.render.test.tsx > Quick add still offers Tell Bun's often-logged chips from the records it loaded 49ms
+ ✓ src/analytics/appAnalytics.render.test.tsx > an event tracked before the app's controller installs is held by it, and sent only after a yes 2ms
+ × src/analytics/appAnalytics.render.test.tsx > a signed-out first launch keeps the step tracked before the install, and sends it after the sign-in and a yes 125ms
+   → expected [ 'private', 'first_coffee' ] to deeply equal [ 'coffee', 'private', 'first_coffee' ]
+ ✓ src/analytics/appAnalytics.render.test.tsx > with a session already restored at launch, the step tracked before the install is sent after the yes 54ms
+ ✓ src/sync/deviceSync.render.test.tsx > a device sync hands every outcome to the diary, and reports a failing run once and a resync once 1ms
+ × src/sync/deviceSync.render.test.tsx > the diary hears each outcome before that outcome's events go out 3ms
+   → expected [ [ 'waiting', 1 ], …(1) ] to deeply equal [ [ 'waiting', +0 ], …(1) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/analytics/appAnalytics.render.test.tsx > a signed-out first launch keeps the step tracked before the install, and sends it after the sign-in and a yes
+AssertionError: expected [ 'private', 'first_coffee' ] to deeply equal [ 'coffee', 'private', 'first_coffee' ]
+
+- Expected
++ Received
+
+  [
+-   "coffee",
+    "private",
+    "first_coffee",
+  ]
+
+ ❯ src/analytics/appAnalytics.render.test.tsx:104:19
+    102|   setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'ses…
+    103|   await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+    104|   expect(steps()).toEqual(['coffee', 'private', 'first_coffee']);
+       |                   ^
+    105| });
+    106|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/sync/deviceSync.render.test.tsx > the diary hears each outcome before that outcome's events go out
+AssertionError: expected [ [ 'waiting', 1 ], …(1) ] to deeply equal [ [ 'waiting', +0 ], …(1) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    [
+      "waiting",
+-     0,
++     1,
+    ],
+    [
+      "signed_out",
+      1,
+    ],
+
+ ❯ src/sync/deviceSync.render.test.tsx:52:19
+     50|     await scheduler.manual();
+     51|     scheduler.stop();
+     52|     expect(heard).toEqual([['waiting', 0], ['signed_out', 1]]);
+       |                   ^
+     53|     expect(recorded.sent.map(({ name }) => name)).toEqual(['sync_faile…
+     54|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 5 passed (7)
+      Tests  2 failed | 218 passed (220)
+   Start at  21:49:23
+   Duration  7.21s (transform 795ms, setup 324ms, import 1.83s, tests 10.71s, environment 733ms)
+

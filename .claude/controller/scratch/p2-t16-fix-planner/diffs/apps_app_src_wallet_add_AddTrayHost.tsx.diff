@@ -1,0 +1,203 @@
+diff --git a/apps/app/src/wallet/add/AddTrayHost.tsx b/apps/app/src/wallet/add/AddTrayHost.tsx
+index b60e6c665d49aa95371b01673077523f9892c5e3..ea65b9e63aa4d19839199687cdc104a3efb1a8fa 100644
+--- a/apps/app/src/wallet/add/AddTrayHost.tsx
++++ b/apps/app/src/wallet/add/AddTrayHost.tsx
+@@ -24,7 +24,10 @@
+ //   content, so iOS presents it from the tray's window (R69). Its draft fills
+ //   the entry through applyDraft, its amount as a fill (R106), and the rows it
+ //   filled are Bun's guesses (บันเดา) until the person changes them. The sheet
+-//   hands back no sentence, so confirm quotes none (P3-T18's step does). The
++//   hands back no sentence, so confirm quotes none (P3-T18's step does). Nor,
++//   in private mode, any of Bun's words (R117, as R114 hides its sentence): a
++//   title that would be a merchant or a note Bun filled is the tray's own, and
++//   a note it guessed reads as hidden; what the person typed shows (R106). The
+ //   amount step's quick chips are the type's often-logged entries, named by
+ //   their place only (R106), so the sheet offers none of its own.
+ // - Saving is useEntrySave's save with the track (W27): Tell Bun's source while
+@@ -34,14 +37,18 @@
+ //   Focus 1); when it lands the host is told, with the lookups and whether it
+ //   stayed on the phone unsynced, and the tray closes. An unconfirmed online
+ //   save keeps today's frozen Try again, which resends the same command; a
+-//   conflict says today's words with Done; either can be closed. A refused save
+-//   says why above Save in today's words.
++//   conflict says today's words with Done; either can be closed. A conflict's
++//   words quote the amount Jotbun holds, so in private mode they mask it
++//   (฿••••) and say it is hidden (R117). A refused save says why above Save in
++//   today's words.
+ // - One tray at a time (R69): whenClosed runs once the tray's Modal has hidden
+ //   (onClosed), or at once with no tray; an open asked while a tray leaves
+-//   waits for it. On iOS onClosed can come twice for two hides, and a second
+-//   call finds nothing queued. It does not come at all for a Modal that never
+-//   presented (the tray-hardening review's R-f): the entry then stays, hidden,
+-//   and an open waits for it, which a device check is to settle.
++//   waits for it. Each entry closes once: an onClosed for an entry that has
++//   gone changes nothing. iOS hears onClosed only from the Modal's onDismiss,
++//   which never comes for a dismissal UIKit never ends (the tray-hardening
++//   review's R-f), so a hidden entry goes anyway once CLOSED_BOUND_MS has
++//   passed (R117). A present UIKit refused (shown, with nothing on screen) is
++//   still the tray follow-up's, with its device check before P2-T18.
+ import type { AiDraft, CategoryDto, WalletSnapshot } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+@@ -70,6 +77,8 @@ import { EMPTY_KEYPAD } from '@mobile/ui/keypadExpression';
+ import type { KeypadState } from '@mobile/ui/keypadExpression';
+ import { COMMON_COPY } from '../common/copy';
+ import { useDraftCopy } from '../copy/useDraftCopy';
++import { HIDDEN_AMOUNT } from '../money/walletMoney';
++import { usePrivateMode } from '../privacy/PrivateModeProvider';
+ import { PrimaryButton } from '../tray/PrimaryButton';
+ import { TextLink } from '../tray/TextLink';
+ import { Tray } from '../tray/Tray';
+@@ -100,6 +109,13 @@ const NONE: ReadonlySet<string> = new Set();
+ const NO_WALLETS: readonly WalletSnapshot[] = [];
+ const NO_CATEGORIES: readonly CategoryDto[] = [];
+ 
++/**
++ * How long a hidden tray waits for its Modal to say it has gone before its
++ * entry goes anyway (R117). iOS hears it only from UIKit's dismissal, which
++ * may never end; elsewhere the tray says so after its 220 ms exit.
++ */
++const CLOSED_BOUND_MS = 1500;
++
+ /** Outside a host: today's Quick add, with what the request names as its params. */
+ function quickAddParams(request: AddRequest): Record<string, string> {
+   return Object.fromEntries(Object.entries(request).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
+@@ -138,12 +154,12 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+   }, [blocked]);
+   const queue = useRef<(() => void)[]>([]);
+   const keys = useRef(0);
+-  const show = (next: Entry | null, shown: boolean) => {
++  const show = useCallback((next: Entry | null, shown: boolean) => {
+     now.current.entry = next;
+     now.current.visible = shown;
+     setEntry(next);
+     setVisible(shown);
+-  };
++  }, []);
+   const value = useMemo<AddTray>(() => {
+     const whenClosed = (run: () => void) => {
+       if (now.current.entry === null) run();
+@@ -170,11 +186,12 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+   const saving = useCallback((inFlight: boolean) => {
+     now.current.saving = inFlight;
+   }, []);
+-  /** The tray's Modal has hidden: the entry goes, and what waited for it runs, once. */
+-  const closed = () => {
++  /** The tray's Modal has hidden, or the bound ran out (R117): this entry goes, and what waited for it runs. Once per entry. */
++  const closed = useCallback((gone: Entry) => {
++    if (now.current.entry !== gone) return;
+     show(null, false);
+     for (const run of queue.current.splice(0)) run();
+-  };
++  }, [show]);
+   return (
+     <AddTrayContext.Provider value={value}>
+       {children}
+@@ -231,7 +248,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   entry: Entry;
+   visible: boolean;
+   onClose(): void;
+-  onClosed(): void;
++  onClosed(gone: Entry): void;
+   onSaving(inFlight: boolean): void;
+   onSaved(saved: SavedEntry, context: SavedContext): void;
+ }) {
+@@ -241,6 +258,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const diaryView = useDiaryView();
+   const canTellBun = useCanTellBun();
+   const inHeader = useSwitchInHeader();
++  const { hidden } = usePrivateMode();
+   const references = useEntryReferences({ copyOf: entry.request.copyOf ?? null });
+   const ready = references.state === 'ready' ? references : null;
+   const today = ready?.today ?? todayInBangkok(new Date());
+@@ -263,6 +281,8 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const [guessed, setGuessed] = useState<ReadonlySet<string>>(NONE);
+   const [naming, setNaming] = useState(false);
+   const [telling, setTelling] = useState(false);
++  // The place Bun last filled (R117): while the entry's merchant is still it, private mode does not draw it on confirm.
++  const [bunMerchant, setBunMerchant] = useState<string | null>(null);
+   // The entry starts once its lists are ready (a copy once it has loaded).
+   if (ready !== null && live !== null && draft === null) {
+     setDraft(startDraft(ready, entry.request, live));
+@@ -280,9 +300,21 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   useEffect(() => {
+     onSaving(inFlight);
+   }, [inFlight, onSaving]);
+-  // The save's problem in today's words: its message, else the first field the check refused.
+-  const problem = entrySave.message ?? Object.values(entrySave.errors)[0] ?? Object.values(entrySave.serverErrors)[0] ?? null;
+-  useAnnouncement(problem);
++  // This entry's close: the tray's onClosed, or the bound's (R117), whichever comes first; the host takes it once.
++  const leave = useCallback(() => onClosed(entry), [onClosed, entry]);
++  useEffect(() => {
++    if (visible) return undefined;
++    const timer = setTimeout(leave, CLOSED_BOUND_MS);
++    return () => clearTimeout(timer);
++  }, [visible, leave]);
++  // The save's problem in today's words: its message, else the first field the check refused. A conflict's words
++  // quote the amount Jotbun holds, so in private mode they mask it, and say it is hidden (R117).
++  const conflictMasked = hidden && status === 'conflict';
++  const problem = conflictMasked
++    ? tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount: HIDDEN_AMOUNT })
++    : entrySave.message ?? Object.values(entrySave.errors)[0] ?? Object.values(entrySave.serverErrors)[0] ?? null;
++  const said = conflictMasked ? tc('This entry is already saved in Jotbun as {amount}. Check it in History.', { amount: t('common.amountHidden') }) : problem;
++  useAnnouncement(said);
+ 
+   /** The first touch fixes the category order and the draft's defaults (Quick add's rule). */
+   const touch = () => {
+@@ -301,7 +333,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     if (current === null) return;
+     const applied = applyDraft(current, filled);
+     edit({ ...current, ...applied.fields });
+-    if (bun) setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
++    if (bun) {
++      setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
++      // A draft that names no place keeps the one Bun named before, as applyDraft does.
++      setBunMerchant((was) => filled.merchant ?? was);
++    }
+     if (applied.amountMinor !== null) setKeypad(filledKeypad(applied.amountMinor));
+   };
+   const goTo = (next: AddStep) => {
+@@ -331,7 +367,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+ 
+   if (current === null || ready === null || live === null) {
+     return (
+-      <Tray visible={visible} onClose={onClose} onClosed={onClosed} title={t(trayTitleKey(entry.request.type ?? 'expense'))} step="amount">
++      <Tray visible={visible} onClose={onClose} onClosed={leave} title={t(trayTitleKey(entry.request.type ?? 'expense'))} step="amount">
+         <Waiting references={references} />
+       </Tray>
+     );
+@@ -354,6 +390,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     .filter((item) => item.draft.type === current.type)
+     .flatMap((item) => (item.draft.amount_minor === null ? [] : [{ label: item.draft.merchant ?? '', amountMinor: item.draft.amount_minor, apply: () => fill(item.draft, false) }]));
+   const rows = confirmRows(current, { lookups, today, dateLocale: locale, guessed, tc });
++  // Private mode draws none of Bun's words on confirm (R117, as R114 hides its sentence): a note it guessed reads as
++  // hidden, and a title that would be a merchant or a note it filled is the tray's own. What the person typed shows.
++  const shownRows = hidden ? rows.map((row) => (row.key === 'note' && row.guessed ? { ...row, value: t('add.noteHidden') } : row)) : rows;
++  const quotesBun = current.merchant.trim() !== '' ? current.merchant === bunMerchant : guessed.has('note');
++  const shownTitle = hidden && quotesBun ? t(trayTitleKey(current.type)) : confirmTitle(current, rows, t);
+ 
+   // Inside the tray's content, so iOS presents it from the tray's window (R69).
+   const tellBun = canTellBun ? (
+@@ -390,11 +431,11 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     middle = <TransferStep {...props} wallets={wallets} balances={ready.balances} />;
+     footer = <TransferFooter {...props} wallets={wallets} />;
+   } else if (step === 'confirm') {
+-    middle = <ConfirmStep {...props} rows={rows} title={confirmTitle(current, rows, t)} bunSentence={null} type={current.type} lookups={lookups} />;
++    middle = <ConfirmStep {...props} rows={shownRows} title={shownTitle} bunSentence={null} type={current.type} lookups={lookups} />;
+     footer = (
+       <View style={{ gap: 8 }}>
+         {problem === null ? null : (
+-          <WalletText testID="add-save-problem" role="label" accessibilityRole="alert" aria-live="polite" style={{ textAlign: 'center' }}>
++          <WalletText testID="add-save-problem" role="label" accessibilityRole="alert" aria-live="polite" accessibilityLabel={said ?? undefined} style={{ textAlign: 'center' }}>
+             {problem}
+           </WalletText>
+         )}
+@@ -421,7 +462,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     <Tray
+       visible={visible}
+       onClose={onClose}
+-      onClosed={onClosed}
++      onClosed={leave}
+       title={t(trayTitleKey(current.type))}
+       header={inHeader ? typeSwitch : undefined}
+       onBack={locked || step === 'amount' ? undefined : () => setStep(isPickStep(step) ? back : 'amount')}

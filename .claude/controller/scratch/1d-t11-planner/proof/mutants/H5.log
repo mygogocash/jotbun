@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 1342ms
+     × a stale cursor sends resync_required 50ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a stale cursor sends resync_required
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "ab97357522349cceb7a539caf0ff4e5dd6b31688a618232dd0c4721198b619bd",
+-     "event": "resync_required",
+-     "properties": {
+-       "origin": "server",
+-       "reason_code": "RESYNC_REQUIRED",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:306:20
+    304|     expect(stale).toMatchObject({ status: 410, body: { code: 'RESYNC_R…
+    305|     await r.settled()
+    306|     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), even…
+       |                    ^
+    307|   })
+    308|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:56:29
+   Duration  5.40s (transform 1.85s, setup 3.25s, import 166ms, tests 1.34s, environment 0ms)
+

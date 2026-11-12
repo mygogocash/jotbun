@@ -1,0 +1,13 @@
+green: real/apps/edge/src/v1/protocol.ts
+green: real/apps/edge/src/v1/env.ts
+green: real/apps/edge/src/v1/routes.ts
+green: real/apps/edge/src/v1/handler.ts
+green: real/apps/edge/src/vault/analytics.ts
+green: real/apps/edge/src/vault/user-vault.ts
+green: real/apps/edge/src/vault/routes.ts
+green: real/apps/edge/test/workers/support/v1-client.ts
+green: real/apps/edge/test/workers/server-events.test.ts
+green: real/apps/edge/test/workers/live.test.ts
+green: real/apps/edge/test/route-coverage.test.ts
+green: real/apps/edge/README.md
+green: 12 files placed

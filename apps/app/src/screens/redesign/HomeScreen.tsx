@@ -25,6 +25,7 @@ import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
+import { trackWalletAdded } from '@mobile/analytics/events';
 import { V1Error } from '@mobile/api/client';
 import { isRedesignEnabled } from '@mobile/config/featureFlags';
 import { BunNote } from './ai/BunNote';
@@ -461,6 +462,8 @@ function Field({ label, value, onChangeText, error, editable, keyboardType, auto
  * mapping as the current Home's form: a definite refusal settles the key, an
  * unconfirmed save freezes the form and resends the same command, and a
  * refusal because this wallet's id already exists means it was created.
+ * Either way the wallet is made, and it sends one wallet_added with no look,
+ * never its name or opening balance (1D-T7: Home's form keeps its own call).
  */
 function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () => void }) {
   const resources = useSpendV1();
@@ -500,10 +503,12 @@ function FirstWalletForm({ today, onCreated }: { today: string; onCreated: () =>
     try {
       await resources.createWallet(input, keys.keyFor('create', input));
       keys.settle('create');
+      trackWalletAdded({});
       onCreated();
     } catch (error) {
       if (isOwnCreate(error, walletId)) {
         keys.settle('create');
+        trackWalletAdded({});
         onCreated();
         return;
       }

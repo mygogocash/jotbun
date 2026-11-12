@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 493ms
+     × nothing is sent for a person who said no, or while their phone says off 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [ { …(3) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "distinctId": "8a18fb6995faa86a6199d5d56e5ffe4abc5aafa09a70cc390b3136836dde19c6",
++     "event": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++       "origin": "server",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:270:20
+    268|     await saved(client, user, wallet, { 'x-gogospend-analytics': 'OFF'…
+    269|     await r.settled()
+    270|     expect(r.sent).toEqual([])
+       |                    ^
+    271|     // The same person, once a request is not marked off: one record_s…
+    272|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:56:17
+   Duration  3.16s (transform 979ms, setup 1.93s, import 40ms, tests 493ms, environment 0ms)
+

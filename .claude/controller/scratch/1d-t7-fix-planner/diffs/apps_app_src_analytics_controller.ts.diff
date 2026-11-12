@@ -1,0 +1,16 @@
+diff --git a/apps/app/src/analytics/controller.ts b/apps/app/src/analytics/controller.ts
+index d8d9a32ae74425654f48d9c132cafc82fe1b82ec..bcd2ef94dd42e92230091e654ba9dc42d24cade8 100644
+--- a/apps/app/src/analytics/controller.ts
++++ b/apps/app/src/analytics/controller.ts
+@@ -205,7 +205,10 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
+   return {
+     async setAccount(id) {
+       if (id === accountId) return;
+-      const keepHeld = (accountId === undefined || accountId === null) && id !== null;
++      // What is held comes from the onboarding and the sign-in that led here (L4). The
++      // launch's first answer keeps it, also when no one is signed in yet, and so does
++      // signing in; a sign-out (an account to null) and a switch (A to B) drop it (R119).
++      const keepHeld = accountId === undefined || (accountId === null && id !== null);
+       accountId = id;
+       generation += 1;
+       const token = generation;

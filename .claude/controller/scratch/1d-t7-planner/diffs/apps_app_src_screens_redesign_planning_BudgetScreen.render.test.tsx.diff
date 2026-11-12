@@ -1,0 +1,58 @@
+diff --git a/apps/app/src/screens/redesign/planning/BudgetScreen.render.test.tsx b/apps/app/src/screens/redesign/planning/BudgetScreen.render.test.tsx
+index 29d56487ce55d7364947e42dca394657cd9ebd2a..0ab86824ef97be03e9bd9a26c4db81fa07e5089b 100644
+--- a/apps/app/src/screens/redesign/planning/BudgetScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/planning/BudgetScreen.render.test.tsx
+@@ -14,6 +14,7 @@ vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+ vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
+ 
+ import type { BudgetDto, CategoryDto, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
++import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import { BUDGET_SECTIONS } from '@mobile/dev/catalogue/planning/budgetSections';
+ import { router } from '@mobile/dev/catalogue/routerTestStub';
+ import type { Locale } from '@mobile/i18n/locales';
+@@ -581,3 +582,45 @@ test('every Budget catalogue section reaches its state on the fakes', async () =
+     view.unmount();
+   }
+ }, 120_000);
++
++// ---------------------------------------------------------------------------
++// Analytics (1D-T7, R61)
++
++test("saving the month's budget records one budget_set, without the amount", async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const fake = await toLimits('18000');
++    fake.loseResponse('setBudget');
++    save();
++    expect(await screen.findByText(UNCONFIRMED)).toBeTruthy();
++    const captured = () => recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
++    expect(captured()).toEqual([]);
++    click('Try again');
++    expect(await screen.findByText('Budget saved')).toBeTruthy();
++    expect(captured()).toEqual([{ name: 'budget_set', properties: { budget: 'set', origin: 'app' } }]);
++    const json = JSON.stringify(recorded.sent);
++    for (const secret of ['1800000', '18000', '18,000']) expect(json).not.toContain(secret);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('a budget Jotbun already holds with exactly these figures records one budget_set; different figures record none', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const captured = () => recorded.sent.filter((event) => event.kind === 'capture').map(({ name }) => name);
++    const theirs = await toLimits('18000');
++    theirs.budgets.set(SEPT, septBudget('1500000', []));
++    save();
++    await screen.findByTestId('budget-conflict');
++    expect(captured()).toEqual([]);
++    cleanup();
++    const same = await toLimits('18000');
++    same.budgets.set(SEPT, { ...septBudget('1800000', []), id: '0000000d-0000-4000-8000-0000000000b2' });
++    save();
++    expect(await screen.findByText('Budget saved')).toBeTruthy();
++    expect(captured()).toEqual(['budget_set']);
++  } finally {
++    recorded.restore();
++  }
++});

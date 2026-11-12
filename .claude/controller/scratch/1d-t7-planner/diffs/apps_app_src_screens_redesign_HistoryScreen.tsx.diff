@@ -1,0 +1,54 @@
+diff --git a/apps/app/src/screens/redesign/HistoryScreen.tsx b/apps/app/src/screens/redesign/HistoryScreen.tsx
+index aea1018ce4e22de2fe87f144a5af7110dc8e2ea4..a8713f367e4e1f6db3888fc155f1a3e50d749e94 100644
+--- a/apps/app/src/screens/redesign/HistoryScreen.tsx
++++ b/apps/app/src/screens/redesign/HistoryScreen.tsx
+@@ -15,6 +15,10 @@
+ // In the `conflict` area (C16, 1D-T9) a record whose refused edit waits on
+ // this phone says so under its row; a tap opens the record as usual.
+ //
++// Analytics (1D-T7, R61): Delete sends one record_deleted and the undo bar's
++// Undo one undo_used, each once Jotbun has acknowledged it, with the record's
++// kind and category key only.
++//
+ // Rows open the record screen; long-press and the screen reader's actions
+ // menu offer Edit (the record screen in edit mode), Copy (quick add with
+ // `copyOf`) and Delete (with an undo bar). The bun appears only on an empty
+@@ -40,6 +44,9 @@ import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useSta
+ import { FlatList, View } from 'react-native';
+ import type { ListRenderItemInfo } from 'react-native';
+ 
++import { trackRecordDeleted, trackUndoUsed } from '@mobile/analytics/events';
++import type { RecordKind } from '@mobile/analytics/events';
++import { recordEventOf } from '@mobile/analytics/recordProps';
+ import { V1Error } from '@mobile/api/client';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { useCopy } from '@mobile/i18n/useCopy';
+@@ -210,7 +217,8 @@ export function HistoryScreen({ now, initialMonth, onMonthChange, conflictArea }
+   const [lists, setLists] = useState<Lists | null>(null);
+   const [refs, setRefs] = useState<References | null>(null);
+   const [error, setError] = useState<unknown>(null);
+-  const [deleted, setDeleted] = useState<{ id: string; version: number } | null>(null);
++  // The undo bar restores this version; `kind` is its undo_used's (1D-T7).
++  const [deleted, setDeleted] = useState<{ id: string; version: number; kind: RecordKind } | null>(null);
+   const [pendingDelete, setPendingDelete] = useState<TransactionDto | null>(null);
+   const [notice, setNotice] = useState<string | null>(null);
+   const [busy, setBusy] = useState(false);
+@@ -340,8 +348,9 @@ export function HistoryScreen({ now, initialMonth, onMonthChange, conflictArea }
+     try {
+       const ack = await resources.deleteTransaction(record.id, record.version, key);
+       keys.settle(slot);
++      trackRecordDeleted(recordEventOf(record, refs?.categories ?? diaryView.categories));
+       setPendingDelete(null);
+-      setDeleted({ id: record.id, version: ack.version });
++      setDeleted({ id: record.id, version: ack.version, kind: record.type });
+       setNotice(null);
+     } catch (problem) {
+       const outcome = problem instanceof V1Error ? problem.outcome : undefined;
+@@ -369,6 +378,7 @@ export function HistoryScreen({ now, initialMonth, onMonthChange, conflictArea }
+     try {
+       await resources.restoreTransaction(deleted.id, deleted.version, key);
+       keys.settle(slot);
++      trackUndoUsed({ kind: deleted.kind });
+       setDeleted(null);
+       setNotice(null);
+     } catch (problem) {

@@ -1,0 +1,35 @@
+--- a/apps/edge/README.md
++++ b/apps/edge/README.md
+@@ -12,7 +12,7 @@
+ 
+ | Worker | Config | What it runs | Secrets |
+ | --- | --- | --- | --- |
+-| `jotbun-edge` | `wrangler.jsonc` | The TanStack Start pages; every `/v1` route on the UserVault, the live socket (`GET /v1/sync/live`) and the cashback catalogue included; Better Auth at `/api/auth/*`; the PostHog proxy at `/ingest/*`; `ExportWorkflow` and `SnapshotWorkflow`; the statement-parse queue's consumer; the parser container (`StatementParser`) | `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, and for AI `ANTHROPIC_API_KEY`, `AI_GATEWAY_TOKEN` |
++| `jotbun-edge` | `wrangler.jsonc` | The TanStack Start pages; every `/v1` route on the UserVault, the live socket (`GET /v1/sync/live`) and the cashback catalogue included; Better Auth at `/api/auth/*`; the PostHog proxy at `/ingest/*`; `ExportWorkflow` and `SnapshotWorkflow`; the statement-parse queue's consumer; the parser container (`StatementParser`) | `COMMAND_DIGEST_KEY`, `BETTER_AUTH_SECRET`, `ERASURE_KEY`, for AI `ANTHROPIC_API_KEY`, `AI_GATEWAY_TOKEN`, and for PostHog EU `POSTHOG_PROJECT_TOKEN`, `ANALYTICS_ID_KEY` (never rotated), `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID` |
+ 
+ The vault's classes and the queue handler live in `src/vault-worker.ts`, and `src/server.ts` re-exports them beside TanStack Start's entry (C1). `/live` answers without reading anything. `/ready` answers 200 once the token settings and `COMMAND_DIGEST_KEY` are set and `config:v1` can be read from KV (`src/v1/ready.ts`).
+ 
+@@ -34,8 +34,12 @@
+   - `GET /v1/ai/note`
+   - `POST /v1/ai/ask`
+   - `GET /v1/bridge/gogocash/catalogue`
+-- **Added** (`VAULT_ADDED_ROUTES`): `GET /v1/sync/live`, the live socket (1D).
++- **Added** (`VAULT_ADDED_ROUTES`), both 1D's:
++  - `GET /v1/sync/live`, the live socket;
++  - `GET /v1/me/analytics`, the analytics answer: `{ analytics_id, weeks_since_signup, consent }`. The analytics id is the HMAC-SHA256 of the account id under `ANALYTICS_ID_KEY`, or null while that key is unset.
+ 
++Server events (1D-T11): after a vault call the Worker sends PostHog EU a `record_saved` (kind and category key only) for each record a `POST /v1/transactions` committed, `resync_required` for a 410 `RESYNC_REQUIRED` and `sync_failed` for a 500 on the outbox's routes, only when the person said yes, the phone did not send `X-GoGoSpend-Analytics: off` and `ANALYTICS_ID_KEY` is set. A 500 `INTERNAL_ERROR` is also counted as an anonymous `$exception` carrying its class name only, whatever the consent; a deliberate refusal never is. Without `POSTHOG_PROJECT_TOKEN` nothing is sent.
++
+ `test/route-coverage.test.ts` reads every NestJS controller and fails if a route is not placed exactly once, or if a served route's access, gates or status drift.
+ 
+ A route that starts background work (`starts`) hands the vault's pending work to `startPendingWork` after a 2xx answer, through `waitUntil`. A start that did not happen is made by the vault's alarm.
+@@ -95,7 +99,8 @@
+ 2. Set the secrets with `npx wrangler secret put <NAME>`:
+    - `COMMAND_DIGEST_KEY` (the API's value, so replays stay valid);
+    - `BETTER_AUTH_SECRET` and `ERASURE_KEY`;
+-   - optionally `ANTHROPIC_API_KEY` and `AI_GATEWAY_TOKEN`, with `AI_ENABLED=true` and `ANTHROPIC_BASE_URL` set to the gateway URL.
++   - optionally `ANTHROPIC_API_KEY` and `AI_GATEWAY_TOKEN`, with `AI_ENABLED=true` and `ANTHROPIC_BASE_URL` set to the gateway URL;
++   - for PostHog EU, once its project exists (Q5): `POSTHOG_PROJECT_TOKEN` (server events), `ANALYTICS_ID_KEY` (the analytics id's HMAC key) and, for person deletion, `POSTHOG_PERSONAL_API_KEY` and `POSTHOG_PROJECT_ID`. **`ANALYTICS_ID_KEY` is set once and never rotated:** a new key gives every person a new analytics id, and deletion would then miss the persons made under the old one. Until these are set nothing is sent.
+ 
+    Set `IMPORT_UPLOADS_ENABLED` once the hosted R2 gate has passed, and `GOGOCASH_BRIDGE_ENABLED` with `GOGOCASH_CATALOGUE_URL` for the bridge.
+ 3. Run `npm run deploy --prefix apps/edge`. It builds, then deploys the one Worker; the parser image is built from `apps/api/Dockerfile` (Docker needed).

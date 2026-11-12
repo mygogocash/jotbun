@@ -137,6 +137,28 @@ test('429 is pacing (Retry-After, no failure count); a 5xx may have committed, s
   assert.deepEqual(await states(b), ['uncertain']);
 });
 
+test("an outcome names its run's failure code as its reason, and a run without a failure names none (1D-T7)", async () => {
+  b = await bench();
+  await b.save();
+  b.server.scriptSends({ kind: 'network_before' });
+  const offline = await b.flush('timer');
+  assert.equal(offline.status, 'waiting');
+  assert.equal(offline.reason, 'NETWORK_ERROR');
+  // Before the backoff ends nothing runs, so nothing failed.
+  const early = await b.flush('timer');
+  assert.equal(early.status, 'waiting');
+  assert.equal(early.reason, null);
+  b.clock.now = offline.nextAttemptAt as number;
+  b.server.scriptSends(PROBLEMS.unavailable());
+  const down = await b.flush('timer');
+  assert.equal(down.status, 'waiting');
+  assert.equal(down.reason, 'SERVICE_UNAVAILABLE');
+  b.clock.now = down.nextAttemptAt as number;
+  const synced = await b.flush('timer');
+  assert.equal(synced.status, 'synced');
+  assert.equal(synced.reason, null);
+});
+
 test('five transport failures in a row pause the engine until the app comes to the foreground or the user retries', async () => {
   b = await bench();
   await b.save();

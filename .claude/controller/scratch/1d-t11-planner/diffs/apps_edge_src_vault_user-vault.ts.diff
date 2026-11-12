@@ -1,0 +1,107 @@
+--- a/apps/edge/src/vault/user-vault.ts
++++ b/apps/edge/src/vault/user-vault.ts
+@@ -7,10 +7,12 @@
+ import type { CommandRegistry } from '@api/commands/command-registry'
+ import { commandDigesterFromEnv } from '@api/commands/command-digest'
+ import type { CommandDigester } from '@api/commands/command-digest'
++import { failureName } from '@api/common/operational-metrics'
+ 
+ import { logFailure } from '../v1/log'
+-import type { VaultCall, VaultReply } from '../v1/protocol'
++import type { VaultAnalytics, VaultCall, VaultReply } from '../v1/protocol'
+ import { stepRouteOf, vaultRouteOf } from '../v1/routes'
++import { analyticsAfterCall } from './analytics'
+ import { buildVaultRegistry } from './commands/registry'
+ import type { VaultContext } from './context'
+ import { LIVE_CLOSE, acceptLive, afterVaultWork, closeSocket, currentRevision, isLiveRequest, liveClaimsOf, liveRefusal } from './live'
+@@ -183,6 +185,11 @@
+     }
+   }
+ 
++  /** One call from the Worker: callWithAnalytics's reply (1D-T11), so every caller of call() sees what it saw before. */
++  call(call: VaultCall): VaultReply {
++    return this.callWithAnalytics(call).reply
++  }
++
+   /**
+    * One call from the Worker, under the vault's checks in this order: the
+    * account (an owner mismatch is refused), the principal's budget, the session,
+@@ -190,12 +197,19 @@
+    * it, then the route's handler. A step of a request already in progress
+    * (`charge: 'step'`) skips both budgets. `recent_proof` is policy-exempt,
+    * like `bound_session`. A step-only id has no HTTP route; it resolves through
+-   * the step table. Every error becomes a reply.
++   * the step table. Every error becomes a reply. Beside the reply it answers
++   * what it read after the block (1D-T11, L6): the caller's consent, the
++   * record_saved events of what the call committed, and the class name of a 500
++   * INTERNAL_ERROR. The Worker never sends them to the phone.
+    */
+-  call(call: VaultCall): VaultReply {
+-    if (this.erased) return { ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE', problem: {} }
++  callWithAnalytics(call: VaultCall): { reply: VaultReply; analytics: VaultAnalytics } {
++    if (this.erased) return { reply: { ok: false, status: 403, code: 'ACCOUNT_UNAVAILABLE', problem: {} }, analytics: { consent: 'unasked', events: [], failure: null } }
+     // Live pokes (1D-T10): the revision before the block, compared after it whatever the outcome.
+     const before = currentRevision(this.ctx.storage.sql)
++    // Server events (1D-T11): the call's context, read again after the block, and the class name of a 500.
++    let read: VaultContext | undefined
++    let reply: VaultReply
++    let failure: string | null = null
+     try {
+       const route = vaultRouteOf(call.route) ?? stepRouteOf(call.route)
+       const handler = VAULT_HANDLERS[call.route]
+@@ -203,35 +217,38 @@
+       // A step marked anySession runs after its request's session ended or its policy changed (1B-T5).
+       const anySession = stepRouteOf(call.route)?.anySession === true
+       const services = this.built()
+-      const { reply, touched } = this.ctx.storage.transactionSync(() => {
+-        const c: VaultContext = {
+-          db: this.db,
+-          sql: this.ctx.storage.sql,
+-          storage: this.ctx.storage,
+-          registry: services.registry,
+-          digester: services.digester,
+-          claims: call.claims,
+-          policies: call.policies,
+-          now: this.clock(),
+-          vaultId: this.vaultId,
+-        }
++      const c: VaultContext = {
++        db: this.db,
++        sql: this.ctx.storage.sql,
++        storage: this.ctx.storage,
++        registry: services.registry,
++        digester: services.digester,
++        claims: call.claims,
++        policies: call.policies,
++        now: this.clock(),
++        vaultId: this.vaultId,
++      }
++      read = c
++      reply = this.ctx.storage.transactionSync(() => {
+         ensureAccount(c)
+         if (call.charge !== 'step') this.rates.charge('principal', call.claims.accountId)
+         if (!anySession) assertSession(c)
+         if (call.charge !== 'step') this.rates.charge(call.charge, call.claims.sessionId)
+         if (call.access === 'current_policy' && !anySession) assertPolicyAccepted(c)
+-        const result = handler(c, call)
+-        return { reply: result, touched: c.touched === true ? c : undefined }
++        return handler(c, call)
+       })
+       // A call that wrote moves the alarm, outside the block (1B-T11): a command touches when it commits (1A-T8b's
+       // "after each call that committed a command"), and so does every file write, an upload step's included.
+-      if (touched) this.rearm(touched)
+-      return reply
++      if (c.touched === true) this.rearm(c)
+     } catch (error) {
+-      return toProblemReply(error)
++      reply = toProblemReply(error)
++      // The class name toProblemReply logs for a 500 INTERNAL_ERROR (L6): the Worker counts it, anonymously.
++      if (!reply.ok && reply.code === 'INTERNAL_ERROR') failure = failureName(error)
+     } finally {
+       this.afterCall(before, call.claims.sessionId)
+     }
++    // Read after the block: a refusal committed nothing, so these reads see the state before it.
++    return { reply, analytics: read ? analyticsAfterCall(read, call.route, before, failure) : { consent: 'unasked', events: [], failure } }
+   }
+ 
+   /** The registry and digester, built on the first call and kept for this instance. */

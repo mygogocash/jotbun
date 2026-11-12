@@ -1,0 +1,47 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 525ms
+     × a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 30ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count
+AssertionError: expected [ { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+@@ -5,14 +5,6 @@
+      "properties": {
+        "origin": "server",
+        "reason_code": "INTERNAL_ERROR",
+      },
+    },
+-   {
+-     "distinctId": "8e76b09260062840b53096747c95216c25348b72fa3a050361b49d0e378ed227",
+-     "event": "sync_failed",
+-     "properties": {
+-       "origin": "server",
+-       "reason_code": "INTERNAL_ERROR",
+-     },
+-   },
+  ]
+
+ ❯ test/workers/server-events.test.ts:331:73
+    329|     await r.settled()
+    330|     const id = await hmacOf(user.sub)
+    331|     expect(r.sent.filter((message) => message.event === 'sync_failed')…
+       |                                                                         ^
+    332|       { distinctId: id, event: 'sync_failed', properties: { reason_cod…
+    333|       { distinctId: id, event: 'sync_failed', properties: { reason_cod…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:56:45
+   Duration  3.47s (transform 1.20s, setup 2.24s, import 37ms, tests 525ms, environment 0ms)
+

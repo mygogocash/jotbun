@@ -1,0 +1,46 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 1 failed) 525ms
+     × the change log counts a create once, by its first version, inside the revision range only 39ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: expected [ Array(2) ] to deeply equal [ { name: 'record_saved', …(1) } ]
+
+- Expected
++ Received
+
+@@ -4,6 +4,13 @@
+      "properties": {
+        "category_key": "food",
+        "kind": "expense",
+      },
+    },
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
+  ]
+
+ ❯ test/workers/server-events.test.ts:523:65
+    521|     const food = { name: 'record_saved', properties: { kind: 'expense'…
+    522|     // From 0: the categories' and the wallet's changes are not record…
+    523|     await expect(events('transactions.create', '0', afterFirst)).resol…
+       |                                                                 ^
+    524|     // After the first record: the second record only, not the edit's …
+    525|     await expect(events('transactions.create', afterFirst, afterEdit))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+   Start at  01:55:33
+   Duration  3.43s (transform 1.18s, setup 2.25s, import 52ms, tests 525ms, environment 0ms)
+

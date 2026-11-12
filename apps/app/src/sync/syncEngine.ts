@@ -168,7 +168,8 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     }
   }
 
-  async function summarize(status: SyncStatus, progress: { sent: number; total: number }): Promise<SyncOutcome> {
+  /** `reason`: the code of the run's failure, or null when it had none (1D-T7). */
+  async function summarize(status: SyncStatus, progress: { sent: number; total: number }, reason: string | null = null): Promise<SyncOutcome> {
     const outbox = await store.readOutbox().catch(() => [] as OutboxCommand[]);
     const nextAttemptAt = status === 'rate_limited' ? retry.paceUntil : status === 'waiting' ? retry.notBefore : null;
     return {
@@ -177,6 +178,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
       nextAttemptAt: status === 'waiting' && retry.paused ? null : nextAttemptAt,
       uncertain: outbox.filter((command) => command.state === 'uncertain' || command.state === 'sending').length,
       needsReview: outbox.filter((command) => command.state === 'needs_review').length,
+      reason,
     };
   }
 
@@ -265,7 +267,7 @@ export function createSyncEngine(deps: SyncEngineDeps): SyncEngine {
     else if (status === 'synced' || progress.sent > 0) retry = afterSuccess(retry);
     if (run.paced) retry = afterPacing(retry, deps.now(), run.paced.retryAfterSeconds);
     if (run.failed && status !== 'session_changed' && status !== 'signed_out' && status !== 'policy_required' && status !== 'upgrade_required') status = 'waiting';
-    return summarize(status, progress);
+    return summarize(status, progress, run.failed?.code ?? null);
   }
 
   function flushNow(session: SyncSession, trigger: FlushTrigger = 'timer'): Promise<SyncOutcome> {

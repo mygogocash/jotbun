@@ -1,0 +1,16 @@
+equal to the worktree: src/analytics/bus.ts
+equal to the worktree: src/analytics/appAnalytics.ts
+equal to the worktree: src/analytics/recordProps.ts
+equal to the worktree: src/sync/syncTelemetry.ts
+equal to the worktree: src/sync/syncEngine.ts
+equal to the worktree: src/sync/deviceSync.ts
+equal to the worktree: src/consent/systemPermissionTelemetry.ts
+equal to the worktree: src/screens/redesign/entry/entrySave.ts
+equal to the worktree: src/screens/redesign/QuickAddScreen.tsx
+equal to the worktree: src/screens/redesign/record/recordActions.ts
+equal to the worktree: src/screens/redesign/deleted/deletedData.ts
+equal to the worktree: src/screens/redesign/HistoryScreen.tsx
+equal to the worktree: src/screens/redesign/HomeScreen.tsx
+equal to the worktree: src/screens/redesign/planning/BudgetScreen.tsx
+equal to the worktree: src/screens/redesign/account/OnboardingScreen.tsx
+equal to the worktree: app/spend/deleted.tsx

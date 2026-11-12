@@ -1,0 +1,155 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (19 tests | 5 failed) 531ms
+     × without the key the analytics id is null, and nothing is sent under the person 38ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 30ms
+     × a resent command sends no second event 27ms
+     × nothing is sent for a person who said no, or while their phone says off 40ms
+     × the change log counts a create once, by its first version, inside the revision range only 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected [ [ 'record_saved', …(1) ], …(1) ] to deeply equal [ [ 'record_saved', …(1) ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "record_saved",
+      "dae1e1a507d785beb0253b9d59e121e5918c39c46f48bf8f17c3523667bd3b36",
+    ],
++   [
++     "record_saved",
++     "dae1e1a507d785beb0253b9d59e121e5918c39c46f48bf8f17c3523667bd3b36",
++   ],
+  ]
+
+ ❯ test/workers/server-events.test.ts:183:74
+    181|     await saved(keyed, user, wallet)
+    182|     await r.settled()
+    183|     expect(r.sent.map((message) => [message.event, message.distinctId]…
+       |                                                                          ^
+    184|   })
+    185|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+@@ -9,10 +9,18 @@
+    },
+    {
+      "distinctId": "a81ada3ced89f488c1c5042df6db68d734ba197140dfe1ce7e6a0ae1e6ddf57b",
+      "event": "record_saved",
+      "properties": {
++       "kind": "transfer",
++       "origin": "server",
++     },
++   },
++   {
++     "distinctId": "a81ada3ced89f488c1c5042df6db68d734ba197140dfe1ce7e6a0ae1e6ddf57b",
++     "event": "record_saved",
++     "properties": {
+        "category_key": "custom",
+        "kind": "expense",
+        "origin": "server",
+      },
+    },
+
+ ❯ test/workers/server-events.test.ts:236:20
+    234|     await r.settled()
+    235|     const id = await hmacOf(user.sub)
+    236|     expect(r.sent).toEqual([
+       |                    ^
+    237|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    238|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected [ 'record_saved', 'record_saved' ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:255:52
+    253|     expect(again).toEqual(first)
+    254|     await r.settled()
+    255|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    256|   })
+    257|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [ 'record_saved', 'record_saved' ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:274:52
+    272|     await saved(client, user, wallet)
+    273|     await r.settled()
+    274|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    275|   })
+    276|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: expected [ Array(2) ] to deeply equal [ { name: 'record_saved', …(1) } ]
+
+- Expected
++ Received
+
+@@ -4,6 +4,13 @@
+      "properties": {
+        "category_key": "food",
+        "kind": "expense",
+      },
+    },
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
+  ]
+
+ ❯ test/workers/server-events.test.ts:525:71
+    523|     await expect(events('transactions.create', '0', afterFirst)).resol…
+    524|     // After the first record: the second record only, not the edit's …
+    525|     await expect(events('transactions.create', afterFirst, afterEdit))…
+       |                                                                       ^
+    526|     // Any other route reads nothing (Q16).
+    527|     await expect(events('transactions.update', '0', afterEdit)).resolv…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 14 passed (19)
+   Start at  01:55:29
+   Duration  3.38s (transform 1.19s, setup 2.21s, import 48ms, tests 531ms, environment 0ms)
+

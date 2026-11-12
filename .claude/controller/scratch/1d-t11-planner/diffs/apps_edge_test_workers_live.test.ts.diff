@@ -1,0 +1,40 @@
+--- a/apps/edge/test/workers/live.test.ts
++++ b/apps/edge/test/workers/live.test.ts
+@@ -8,7 +8,7 @@
+ // close is awaited. The 2-second limits in next() and closeCode() only turn a
+ // failure into a quick, named one.
+ import { evictDurableObject, runDurableObjectAlarm, runInDurableObject } from 'cloudflare:test'
+-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ 
+ import type { CommandAck } from '@gogospend/contracts'
+ 
+@@ -158,6 +158,28 @@
+     expect(sent).toBe(2)
+     expect(await socketB.next()).toBe('{"revision":"7"}')
+     expect(await socketC.next()).toBe('{"revision":"7"}')
++  })
++
++  it('a commit whose pokes fail still answers, and its revision moves: the work after a call never throws', async () => {
++    // The 1D-T10 review's probe P6b: the sockets cannot be listed while a write commits.
++    const a = await member(client)
++    const before = await revisionOf(a)
++    const fanOut = await runInDurableObject(vaultOf(a), (_v, state) =>
++      vi.spyOn(state, 'getWebSockets').mockImplementation(() => {
++        throw new Error('the sockets cannot be listed')
++      }),
++    )
++    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
++    let lines: string[] = []
++    try {
++      await createWallet(a)
++      lines = errors.mock.calls.map(([line]) => String(line))
++    } finally {
++      fanOut.mockRestore()
++      errors.mockRestore()
++    }
++    expect(BigInt(await revisionOf(a))).toBe(BigInt(before) + 1n)
++    expect(lines).toContain('{"level":"error","event":"live_after_call_failed","failure":"Error"}')
+   })
+ })
+ 

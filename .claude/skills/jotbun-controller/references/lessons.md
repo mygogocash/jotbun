@@ -182,3 +182,15 @@
 ## Check the head's code diff before telling a planner it need not re-prove (12 Nov, 20:10)
 - The head moves every few minutes by controller-state syncs (`.claude/` only), but task merges land between them. The controller told the P3-T14 planner its proof held at a newer head, when #436 and #435 had merged in between (27 files under apps, packages and docs), and had to correct itself.
 - Before any such note, run `git diff --stat <its base> <head> -- apps packages docs`. Only an empty diff means the proof holds.
+
+## The disk filled up with kit installs (13 Nov, 02:00)
+- Planner and reviewer kits keep proof trees (`tree/`, `red/`, `work/`) with fresh `npm ci` installs, 1.2 to 3.6 GB each. After two days, `.claude/controller/scratch` held 66 GB, and the disk ran out ("No space left on device"): a worktree could not be created, and live agents' writes could fail.
+- The fix: delete the `node_modules` folders in finished tasks' scratch folders (sources, probes and logs stay; followups cite probe files). That freed 47 GB of installs and 20 GB of disk.
+- `merge_task_pr.sh` now prunes `node_modules` under `scratch/<task>*` after each merge. Planner prompts should ask for the same once a kit is READY.
+- Check `df -h /System/Volumes/Data` when an agent reports ENOSPC, and tell live agents to redo any step that failed on it.
+
+## A second fix round needs its prompt paths fixed by hand (13 Nov)
+- `make_prompt.py fixer <T>` always names `briefs/<T>-fix.md`, `reviews/<T>.md` and `scratch/<t>-fix/`. For a second round (`briefs/<T>-fix2.md`, answering `reviews/<T>-confirm.md`), sed those three paths in the generated prompt before dispatch, and grep the prompt for `-fix` to check.
+
+## Never start a watcher with `&` inside a foreground Bash call (13 Nov)
+- A watcher started as `cmd &` inside a normal Bash call is detached: the harness never reports its exit, so the controller is not woken. Twice tonight the controller did this and had to kill it. Always start `watch_agents.sh` and `ci_watch.sh` with the tool's `run_in_background` (and `timeout: 7200000`), then `t3_background_wait`.

@@ -1,0 +1,35 @@
+# 1D-T7-fix2: A session that ends drops what it held, whether or not its account was named
+
+- **Status:** built and verified locally on `p1/1d-t7-app-events` (`.claude/worktrees/p1-1d-t7`): one commit on `d8d7364a`, PR #444's head after the controller's merge, with no merge. Not pushed. Under R87 this receipt is its own file; line 7 of `1D-T7-fix.md` now points here, and `premium-progress.md` is not edited. Under R100 whole suites are CI's.
+- **Why:** the confirming review of #444 (`reviews/1D-T7-confirm.md`, Opus) said Needs fixes: CM1 (major) and n1. The controller ruled R120.
+- **What changed:**
+  - **CM1, `controller.ts`.** `setAccount(null, { signedOut: true })` says that the session seen before has ended. It drops what is held and resets, also when the account was never named (the launch's `undefined`) and when the controller already holds no one (`null` to `null`). The flag is optional, so 1D-T1's interface only gains it. A plain `setAccount(null)` is unchanged: the launch's first answer still keeps what is held (R119).
+  - **CM1, `AnalyticsUpkeep.tsx`.** At no session, the follower passes the flag when it has seen a session since the last null; with none seen yet, as at the launch, it calls a plain `setAccount(null)`. When another session takes the place of the one seen, with no null between, it passes the flag too. A sign-in beside a session does that: `credentialProvider.ts:213-214` runs it beside the active session, and `sessionMachine.ts:36` takes its `bootstrapped` from `active`.
+  - Before, someone whose account `/v1/me` had not named (offline) kept what they tracked when they signed out, or when another account signed in in their place. The next account's yes then sent it, even over their stored no: U1 (opened by the fix round), U2 (older) and U3 (the same through a switch).
+  - For an account already named nothing changes: a sign-out, a switch, a lock and a server-ended session dropped what was held before as well. A lock and a server-ended session read as no session here (`session.ts:34`), so they now drop it for an unnamed account too.
+  - **n1, `QuickAddScreen.render.test.tsx`.** The income-and-move case's privacy scan also checks the amounts as typed, `28000` and `1500`.
+- **Files:**
+  - `apps/app/src/analytics/controller.ts`: the flag and its note, the no-change guard, the held rule and its comment.
+  - `apps/app/src/analytics/AnalyticsUpkeep.tsx`: the flag after a session seen, at a null and at another session in its place.
+  - `apps/app/src/analytics/controller.test.ts`: 2 cases, L1 and L2.
+  - `apps/app/src/analytics/appAnalytics.render.test.tsx`: 3 cases through `AnalyticsUpkeep` and the install, U1 to U3, and an offline switch for `/v1/me` and the server's answer.
+  - `apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx`: 2 strings in one scan.
+  - `docs/implementation/receipts/1D-T7-fix.md`: line 7; this receipt.
+- **RED to GREEN** (RED: the round's tests over `d8d7364a`'s code, with only `controller.ts`'s interface taking the flag, so they typecheck; `typecheck:app` passes at RED):
+  - `controller.test.ts` (Node): RED `ℹ tests 40`, `ℹ pass 38`, `ℹ fail 2`; GREEN 40 of 40.
+  - The three render files (`appAnalytics`, `AnalyticsUpkeep`, Quick add): RED `Tests  3 failed | 96 passed (99)`; GREEN `Tests  99 passed (99)`.
+  - Every RED failure is an `AssertionError`:
+    - L1 and L2: A's `record_saved` among the captures;
+    - U1, U2 and U3: `expected [ 'record_saved' ] to deeply equal []`.
+  - Quick add's scan passes at RED by design: no rule sends an amount.
+- **Mutation check:** `mutants.py`, 90 mutants: 89 killed, and in every killing run each failing case fails on an `AssertionError`. QE, the plan's equivalent mutant, survives as before. Every file was restored byte for byte. The 90 are:
+  - the fix round's 76, with F1, F1u, F2 and F3 re-pointed at the new held rule;
+  - CS1 to CS4 in the controller: the flag ignored, a sign-out from `null` still "no change", the held rule ignoring the flag, and a drop without the reset; CS1u, CS1s, CS2u and CS3u run the same through `AnalyticsUpkeep`;
+  - UP1 to UP5 in `AnalyticsUpkeep`: never the flag, the flag at the launch too, "named" in place of "seen", the seen session forgotten before it is asked, and a plain null when another session takes the place of the one seen;
+  - QN1, the review's OWN-E: `record_saved` carries the amount as `seconds_to_save`. `d8d7364a`'s case alone lets it through; the new `1500` stops it.
+- **Fast local gate (R100):** `npm run typecheck:app`: passed. The four routes tests (`SpendRoutes`, `AccountRoutes`, `InsightsRoutes`, `PlanningRoutes`): passed. `npm run test:app` and `npm run test:unit`: passed. The analytics files (`controller.test.ts`, `appAnalytics.render.test.tsx`, `AnalyticsUpkeep.render.test.tsx`): passed. `git diff --check`: clean.
+- **CI (R100):** the full render suite and sections 1 to 3, `export:web` and the iOS export, the database suites, `test:ops`.
+- **Not in this round** (R120.3): when `/v1/me` cannot be reached, recall the account the server verified earlier for this binding, as `diarySession.ts:49-56` does. It goes to 1D-T15 or a 1D follow-up. Until then an account unread at launch stays unread until the next session change or foreground.
+- **Notes for later tasks:**
+  - **1D-T15:** besides the first launch's `coffee`, check an offline second launch on a phone: A saves and signs out, then B signs in and says yes; and the same with B signing in in A's place. None of A's events should reach PostHog.
+  - **1D-T14:** its `signed_out` tests should include the sign-out of an account the app had not named (the confirming review's note).

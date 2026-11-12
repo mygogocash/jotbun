@@ -1,0 +1,69 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+ ❯ src/sync/deviceSync.render.test.tsx (1 test | 1 failed) 5ms
+   × a device sync hands every outcome to the diary, and reports a failing run once and a resync once 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sync/deviceSync.render.test.tsx > a device sync hands every outcome to the diary, and reports a failing run once and a resync once
+AssertionError: expected [ …(5) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -7,10 +7,34 @@
+        "reason_code": "NETWORK_ERROR",
+      },
+    ],
+    [
+      "capture",
++     "sync_failed",
++     {
++       "origin": "app",
++       "reason_code": "NETWORK_ERROR",
++     },
++   ],
++   [
++     "capture",
++     "sync_failed",
++     {
++       "origin": "app",
++       "reason_code": "NETWORK_ERROR",
++     },
++   ],
++   [
++     "capture",
++     "resync_required",
++     {
++       "origin": "app",
++       "reason_code": "RESYNC_REQUIRED",
++     },
++   ],
++   [
++     "capture",
+      "resync_required",
+      {
+        "origin": "app",
+        "reason_code": "RESYNC_REQUIRED",
+      },
+
+ ❯ src/sync/deviceSync.render.test.tsx:33:89
+     31|     scheduler.stop();
+     32|     expect(seen).toEqual(['synced', 'waiting', 'waiting', 'paused', 's…
+     33|     expect(recorded.sent.map(({ kind, name, properties }) => [kind, na…
+       |                                                                                         ^
+     34|       ['capture', 'sync_failed', { reason_code: 'NETWORK_ERROR', origi…
+     35|       ['capture', 'resync_required', { reason_code: 'RESYNC_REQUIRED',…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  20:51:17
+   Duration  416ms (transform 106ms, setup 53ms, import 122ms, tests 5ms, environment 110ms)
+

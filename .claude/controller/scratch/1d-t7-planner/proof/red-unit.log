@@ -1,0 +1,413 @@
+(node:47755) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:47755) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/package.json.
+✖ what is tracked while no controller is installed is kept cleaned, at most 50 with the oldest out first, and taken once (1.431417ms)
+✔ with a controller installed, every event goes to it and none is kept for later (0.2805ms)
+✖ an emitter never throws into the rule that calls it, even when the client does (0.280375ms)
+(node:47756) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:47756) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.89875ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.62175ms)
+✔ held events are dropped when another account signs in, and on no (0.270125ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.251958ms)
+✔ replay never starts when it is not allowed (0.166292ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.13ms)
+✔ a no read at launch after an earlier yes resets the identity (0.135167ms)
+✔ a no given on another phone stops this phone at its next foreground (0.099541ms)
+✔ a pending no is kept until the server has it (0.19325ms)
+✔ saying no stops replay and resets the identity (0.144708ms)
+✔ a no from another phone is not asked again on this one (0.104667ms)
+✔ a yes the server could not save rejects and changes nothing (0.221458ms)
+✔ offline with nothing known waits, then asks (0.115125ms)
+✔ the held events stop at 50, oldest first out (0.513584ms)
+✖ screens are sent only as patterns and only after yes (0.507792ms)
+✖ the screen on display when the answer turns yes is sent then, once, and only when it has a pattern (0.374ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.085375ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.074417ms)
+✔ without a client, nothing is sent and consent still resolves (0.11025ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.134084ms)
+✔ a no from the server stops capture before this phone stores it (0.0795ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.060041ms)
+✔ a yes still on its way cannot outlast a later no at the server (6.704792ms)
+✔ a yes being stored when the person says no cannot replace the no (4.0505ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (5.281791ms)
+✔ a yes waiting behind another call is refused once another account has signed in (4.195042ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (3.87875ms)
+✔ a yes still waiting when the person says no is never sent (3.783041ms)
+✔ a refresh after a yes does not keep the yes from the server (2.911708ms)
+✔ a no given while a refresh is on its way is stored at once (4.939583ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.423167ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (3.764667ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.218458ms)
+✔ a no the server takes at once is pending only while its call is on its way (3.772875ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.26975ms)
+✔ a yes, or a sign-out, ends a pending no (0.091334ms)
+(node:47757) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/recordProps.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ a category is its built-in key, its pack key or custom; no category is null (0.811708ms)
+✖ a record event carries the record's kind and category key, an edit's new category, and never a name (0.624667ms)
+(node:47759) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/consent/systemPermissionTelemetry.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:47759) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/package.json.
+✖ a camera or photos denial records permission_denied with its class name; a grant or Open Settings records nothing (1.376291ms)
+(node:47761) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncEngine.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:47761) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/packages/contracts/package.json.
+✔ sends drafts once, in order, and resolves them only from the confirmed state (17.610958ms)
+✔ airplane mode: an unreachable server leaves the command uncertain and frozen; the retry checks status, then resends the same command (16.338583ms)
+✔ a timeout after the commit resolves through command status, without a resend (13.770334ms)
+✔ an app killed after the commit but before the local acknowledgement recovers on the next launch (10.530708ms)
+✔ a response that arrives after a session change is dropped; the next session resolves the command (13.003709ms)
+✔ an expired token is refreshed once and the same command resent; a second refusal stops with drafts kept (16.438292ms)
+✔ a denied account stops the flush without losing drafts (7.711792ms)
+✔ 429 is pacing (Retry-After, no failure count); a 5xx may have committed, so it is uncertain and counts (31.98625ms)
+✖ an outcome names its run's failure code as its reason, and a run without a failure names none (1D-T7) (7.902333ms)
+✔ five transport failures in a row pause the engine until the app comes to the foreground or the user retries (17.467208ms)
+✔ validation refusals need review instead of retrying forever; others still go (14.384666ms)
+✔ 426 pauses unsent commands for an upgrade, keeps uncertain ones uncertain, and stops all sending (9.379167ms)
+✔ an unsupported command schema needs review and keeps its draft; the rest are sent (9.665667ms)
+✔ a 200-draft backlog drains at the write limit with progress, never pausing and never sending twice at once (327.955042ms)
+✔ one flush at a time per account: a call during a run waits and runs once after it (19.7095ms)
+✔ archived or deleted references, and drafts older than 30 days, need review without data loss (5.980958ms)
+✔ a flush for another account or session does nothing (6.078333ms)
+✔ retry delays start at 1 s, double with jitter to 60 s, honour Retry-After, and pause after five failures (0.101209ms)
+✔ the scheduler keeps at most one 60-second foreground timer and tears it down on background or switch (0.184917ms)
+✔ a live flush lifts the failure pause but waits out the server's pacing (20.847917ms)
+✔ a poke that joins a queued follow-up still lifts the pause (18.889375ms)
+✔ a follow-up keeps the strongest trigger asked for, whatever order the calls came in (16.052541ms)
+✔ twenty pokes during a flush run one follow-up (6.000125ms)
+✔ the scheduler starts the live channel with the foreground, stops it in the background, and runs a live flush for a poke (0.173417ms)
+✔ a pending choice is never sent by the sync engine (8.185833ms)
+(node:47763) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncTelemetry.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ a failing run is counted once, not on every retry (1.228083ms)
+✖ a failure after a recovery is counted again, and the first failure can be the first outcome or a pause (0.215333ms)
+✖ pacing is not a failure, an outcome without a code is LOCAL_ERROR, and nothing else is counted (0.274583ms)
+ℹ tests 70
+ℹ suites 0
+ℹ pass 59
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 814.818208
+
+✖ failing tests:
+
+test at src/analytics/bus.test.ts:15:1
+✖ what is tracked while no controller is installed is kept cleaned, at most 50 with the oldest out first, and taken once (1.431417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     name: 'onboarding_step_viewed',
+  -     properties: {
+  -       step: 'coffee'
+  -     }
+  -   },
+  -   {
+  -     name: 'record_started',
+  -     properties: {
+  -       source: 'typed'
+  -     }
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts:23:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { name: 'onboarding_step_viewed', properties: [Object] }, { name: 'record_started', properties: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/bus.test.ts:54:1
+✖ an emitter never throws into the rule that calls it, even when the client does (0.280375ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "the PostHog client failed"
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts:58:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: the PostHog client failed
+        at Object.track (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts:56:44)
+        at trackClientEvent (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.ts:34:19)
+        at emit (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/events.ts:10:3)
+        at trackRecordSaved (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/events.ts:28:3)
+        at file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts:58:31
+        at getActual (node:assert:580:5)
+        at strict.doesNotThrow (node:assert:748:32)
+        at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/bus.test.ts:58:12)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1402:25),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }
+
+test at src/analytics/controller.test.ts:351:1
+✖ screens are sent only as patterns and only after yes (0.507792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/controller.test.ts:358:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/controller.test.ts:380:1
+✖ the screen on display when the answer turns yes is sent then, once, and only when it has a pattern (0.374ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '/settings/privacy'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/controller.test.ts:387:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '/settings/privacy' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/recordProps.test.ts:18:1
+✖ a category is its built-in key, its pack key or custom; no category is null (0.811708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  null !== 'food'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/recordProps.test.ts:19:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'food',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/analytics/recordProps.test.ts:29:1
+✖ a record event carries the record's kind and category key, an edit's new category, and never a name (0.624667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   categoryKey: null,
+  -   categoryKey: 'food',
+      kind: 'expense'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/analytics/recordProps.test.ts:34:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { kind: 'expense', categoryKey: null },
+    expected: { kind: 'expense', categoryKey: 'food' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/consent/systemPermissionTelemetry.test.ts:8:1
+✖ a camera or photos denial records permission_denied with its class name; a grant or Open Settings records nothing (1.376291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     kind: 'capture',
+  -     name: 'permission_denied',
+  -     properties: {
+  -       origin: 'app',
+  -       reason_code: 'CAMERA_DENIED'
+  -     }
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/consent/systemPermissionTelemetry.test.ts:12:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { kind: 'capture', name: 'permission_denied', properties: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/sync/syncEngine.test.ts:140:1
+✖ an outcome names its run's failure code as its reason, and a run without a failure names none (1D-T7) (7.902333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'NETWORK_ERROR'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncEngine.test.ts:146:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'NETWORK_ERROR',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/sync/syncTelemetry.test.ts:26:1
+✖ a failing run is counted once, not on every retry (1.228083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     name: 'sync_failed',
+  -     properties: {
+  -       reason_code: 'NETWORK_ERROR'
+  -     }
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncTelemetry.test.ts:27:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { name: 'sync_failed', properties: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/sync/syncTelemetry.test.ts:35:1
+✖ a failure after a recovery is counted again, and the first failure can be the first outcome or a pause (0.215333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     name: 'sync_failed',
+  -     properties: {
+  -       reason_code: 'HTTP_502'
+  -     }
+  -   },
+  -   {
+  -     name: 'sync_failed',
+  -     properties: {
+  -       reason_code: 'INTERNAL_ERROR'
+  -     }
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncTelemetry.test.ts:36:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { name: 'sync_failed', properties: [Object] }, { name: 'sync_failed', properties: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/sync/syncTelemetry.test.ts:41:1
+✖ pacing is not a failure, an outcome without a code is LOCAL_ERROR, and nothing else is counted (0.274583ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   {
+  -     name: 'sync_failed',
+  -     properties: {
+  -       reason_code: 'SERVICE_UNAVAILABLE'
+  -     }
+  -   }
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app/src/sync/syncTelemetry.test.ts:43:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ { name: 'sync_failed', properties: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
