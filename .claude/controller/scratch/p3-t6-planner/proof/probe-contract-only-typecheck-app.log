@@ -1,0 +1,67 @@
+
+> gogospend@0.0.0 typecheck:app
+> npm run typecheck -w gogospend-app
+
+
+> gogospend-app@0.1.0 typecheck
+> tsc --noEmit
+
+src/dev/catalogue/companion/companionSections.tsx(34,5): error TS2322: Type '() => Promise<{ drafts: never[]; source: "rules"; }>' is not assignable to type '(request: AiParseRequest) => Promise<AiParseResult>'.
+  Type 'Promise<{ drafts: never[]; source: "rules"; }>' is not assignable to type 'Promise<AiParseResult>'.
+    Type '{ drafts: never[]; source: "rules"; }' is missing the following properties from type 'AiParseResult': model, escalated
+src/dev/catalogue/companion/companionSections.tsx(35,5): error TS2322: Type '() => Promise<{ drafts: never[]; bank: null; source: "ai"; }>' is not assignable to type '(request: AiSlipRequest) => Promise<AiSlipResult>'.
+  Type 'Promise<{ drafts: never[]; bank: null; source: "ai"; }>' is not assignable to type 'Promise<AiSlipResult>'.
+    Type '{ drafts: never[]; bank: null; source: "ai"; }' is missing the following properties from type 'AiSlipResult': model, escalated
+src/dev/catalogue/companion/companionSections.tsx(37,5): error TS2322: Type '(date: string, locale: "th" | "en" | "vi") => Promise<{ date: string; facts: { kind: "top_category"; amount_minor: string; percent: number; category_key: string; category_label: null; }[]; text: string; source: "facts"; }>' is not assignable to type '(date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>'.
+  Type 'Promise<{ date: string; facts: { kind: "top_category"; amount_minor: string; percent: number; category_key: string; category_label: null; }[]; text: string; source: "facts"; }>' is not assignable to type 'Promise<AiNoteResult>'.
+    Type '{ date: string; facts: { kind: "top_category"; amount_minor: string; percent: number; category_key: string; category_label: null; }[]; text: string; source: "facts"; }' is missing the following properties from type 'AiNoteResult': model, escalated
+src/dev/catalogue/companion/companionSections.tsx(44,5): error TS2322: Type '({ locale }: AiAskRequest) => Promise<{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }>' is not assignable to type '(request: AiAskRequest) => Promise<AiAskResult>'.
+  Type 'Promise<{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }>' is not assignable to type 'Promise<AiAskResult>'.
+    Type '{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }' is missing the following properties from type 'AiAskResult': model, escalated
+src/screens/redesign/ai/AskBunScreen.render.test.tsx(33,5): error TS2322: Type 'Mock<() => Promise<{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }>>' is not assignable to type '((request: AiAskRequest) => Promise<AiAskResult>) | undefined'.
+  Type 'Mock<() => Promise<{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }>>' is not assignable to type '(request: AiAskRequest) => Promise<AiAskResult>'.
+    Type 'Promise<{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }>' is not assignable to type 'Promise<AiAskResult>'.
+      Type '{ answer: string; figures: { label: string; amount_minor: string; }[]; source: "ai"; }' is missing the following properties from type 'AiAskResult': model, escalated
+src/screens/redesign/ai/AskBunScreen.render.test.tsx(62,5): error TS2322: Type 'Mock<() => Promise<{ answer: string; figures: never[]; source: "ai"; }>>' is not assignable to type '((request: AiAskRequest) => Promise<AiAskResult>) | undefined'.
+  Type 'Mock<() => Promise<{ answer: string; figures: never[]; source: "ai"; }>>' is not assignable to type '(request: AiAskRequest) => Promise<AiAskResult>'.
+    Type 'Promise<{ answer: string; figures: never[]; source: "ai"; }>' is not assignable to type 'Promise<AiAskResult>'.
+      Type '{ answer: string; figures: never[]; source: "ai"; }' is missing the following properties from type 'AiAskResult': model, escalated
+src/screens/redesign/ai/BunNote.render.test.tsx(17,32): error TS2322: Type 'Mock<(date: string) => Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>>' is not assignable to type '((date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>) | undefined'.
+  Type 'Mock<(date: string) => Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>>' is not assignable to type '(date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>'.
+    Type 'Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>' is not assignable to type 'Promise<AiNoteResult>'.
+      Type '{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }' is missing the following properties from type 'AiNoteResult': model, escalated
+src/screens/redesign/ai/BunNote.render.test.tsx(24,32): error TS2322: Type 'Mock<(date: string) => Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>>' is not assignable to type '((date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>) | undefined'.
+  Type 'Mock<(date: string) => Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>>' is not assignable to type '(date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>'.
+    Type 'Promise<{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }>' is not assignable to type 'Promise<AiNoteResult>'.
+      Type '{ date: string; facts: { kind: "spent_today"; amount_minor: string; count: number; }[]; text: string; source: "facts"; }' is missing the following properties from type 'AiNoteResult': model, escalated
+src/screens/redesign/ai/TellBunSheet.render.test.tsx(54,32): error TS2322: Type 'Mock<() => Promise<{ drafts: AiDraft[]; source: "ai"; }>>' is not assignable to type '((request: AiParseRequest) => Promise<AiParseResult>) | undefined'.
+  Type 'Mock<() => Promise<{ drafts: AiDraft[]; source: "ai"; }>>' is not assignable to type '(request: AiParseRequest) => Promise<AiParseResult>'.
+    Type 'Promise<{ drafts: AiDraft[]; source: "ai"; }>' is not assignable to type 'Promise<AiParseResult>'.
+      Type '{ drafts: AiDraft[]; source: "ai"; }' is missing the following properties from type 'AiParseResult': model, escalated
+src/screens/redesign/ai/TellBunSheet.render.test.tsx(85,32): error TS2322: Type 'Mock<() => Promise<{ drafts: AiDraft[]; bank: string; source: "ai"; }>>' is not assignable to type '((request: AiSlipRequest) => Promise<AiSlipResult>) | undefined'.
+  Type 'Mock<() => Promise<{ drafts: AiDraft[]; bank: string; source: "ai"; }>>' is not assignable to type '(request: AiSlipRequest) => Promise<AiSlipResult>'.
+    Type 'Promise<{ drafts: AiDraft[]; bank: string; source: "ai"; }>' is not assignable to type 'Promise<AiSlipResult>'.
+      Type '{ drafts: AiDraft[]; bank: string; source: "ai"; }' is missing the following properties from type 'AiSlipResult': model, escalated
+src/screens/redesign/ai/TellBunSheet.render.test.tsx(187,32): error TS2322: Type 'Mock<() => Promise<{ drafts: AiDraft[]; source: "ai"; }>>' is not assignable to type '((request: AiParseRequest) => Promise<AiParseResult>) | undefined'.
+  Type 'Mock<() => Promise<{ drafts: AiDraft[]; source: "ai"; }>>' is not assignable to type '(request: AiParseRequest) => Promise<AiParseResult>'.
+    Type 'Promise<{ drafts: AiDraft[]; source: "ai"; }>' is not assignable to type 'Promise<AiParseResult>'.
+      Type '{ drafts: AiDraft[]; source: "ai"; }' is missing the following properties from type 'AiParseResult': model, escalated
+src/spend/v1/ai/testing/fakeAiResources.ts(21,5): error TS2322: Type 'Mock<() => Promise<{ drafts: never[]; source: "ai"; }>>' is not assignable to type '(request: AiParseRequest) => Promise<AiParseResult>'.
+  Type 'Promise<{ drafts: never[]; source: "ai"; }>' is not assignable to type 'Promise<AiParseResult>'.
+    Type '{ drafts: never[]; source: "ai"; }' is missing the following properties from type 'AiParseResult': model, escalated
+src/spend/v1/ai/testing/fakeAiResources.ts(22,5): error TS2322: Type 'Mock<() => Promise<{ drafts: never[]; bank: null; source: "ai"; }>>' is not assignable to type '(request: AiSlipRequest) => Promise<AiSlipResult>'.
+  Type 'Promise<{ drafts: never[]; bank: null; source: "ai"; }>' is not assignable to type 'Promise<AiSlipResult>'.
+    Type '{ drafts: never[]; bank: null; source: "ai"; }' is missing the following properties from type 'AiSlipResult': model, escalated
+src/spend/v1/ai/testing/fakeAiResources.ts(23,5): error TS2322: Type 'Mock<(date: any) => Promise<{ date: any; facts: { kind: "no_records_today"; }[]; text: string; source: "facts"; }>>' is not assignable to type '(date: string, locale: "th" | "en" | "vi") => Promise<AiNoteResult>'.
+  Type 'Promise<{ date: any; facts: { kind: "no_records_today"; }[]; text: string; source: "facts"; }>' is not assignable to type 'Promise<AiNoteResult>'.
+    Type '{ date: any; facts: { kind: "no_records_today"; }[]; text: string; source: "facts"; }' is missing the following properties from type 'AiNoteResult': model, escalated
+src/spend/v1/ai/testing/fakeAiResources.ts(24,5): error TS2322: Type 'Mock<() => Promise<{ answer: string; figures: never[]; source: "ai"; }>>' is not assignable to type '(request: AiAskRequest) => Promise<AiAskResult>'.
+  Type 'Promise<{ answer: string; figures: never[]; source: "ai"; }>' is not assignable to type 'Promise<AiAskResult>'.
+    Type '{ answer: string; figures: never[]; source: "ai"; }' is missing the following properties from type 'AiAskResult': model, escalated
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/app
+npm error command failed
+npm error command sh -c tsc --noEmit

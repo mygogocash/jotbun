@@ -1,0 +1,113 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"DeadlinePassed"}
+
+ ❯ test/workers/ai-routing.test.ts (7 tests | 3 failed) 5176ms
+     × the results name the model 46ms
+     × each route answers inside its deadline when the model hangs 5034ms
+     × a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+AssertionError: expected { date: '2026-11-12', …(5) } to match object { source: 'facts', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "escalated": false,
+-   "model": "rules",
++   "model": "claude-haiku-5-5",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ai-routing.test.ts:107:94
+    105|     // A note whose words stray from the facts is the plain facts.
+    106|     model.push(json({ text: 'วันนี้ใช้ไป ฿65 แล้วนะ' }))
+    107|     expect(await body(await client.as(who.user).get(`/v1/ai/note?date=…
+       |                                                                                              ^
+    108|     // A question cut short by an outage after a tool read its figures…
+    109|     model.push(toolUse('spending_total', { from: monthStart, through: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+AssertionError: expected { status: 200, body: { …(6) }, …(1) } to match object { status: 200, body: { …(3) } }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "escalated": false,
+-     "model": "rules",
++     "model": "claude-haiku-5-5",
+      "source": "facts",
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/ai-routing.test.ts:143:18
+    141|     const note = await timed(() => client.as(user).get(`/v1/ai/note?da…
+    142|     expect(note.ms, 'note').toBeLessThan(4_000)
+    143|     expect(note).toMatchObject({ status: 200, body: { source: 'facts',…
+       |                  ^
+    144|     const slip = await timed(() => client.as(user).post('/v1/ai/slip',…
+    145|     expect(slip.ms, 'slip').toBeLessThan(4_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+AssertionError: expected { status: 200, body: { …(6) } } to match object { status: 200, body: { …(3) } }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "escalated": false,
+-     "model": "rules",
++     "model": "claude-haiku-5-5",
+      "source": "facts",
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/ai-routing.test.ts:265:44
+    263|       expect(model.calls, route).toEqual([])
+    264|       if (route === 'parse') expect(answer).toMatchObject({ status: 20…
+    265|       if (route === 'note') expect(answer).toMatchObject({ status: 200…
+       |                                            ^
+    266|       if (route === 'slip') expect(answer.status).toBe(503)
+    267|       // Ask Bun's answer here changes with P3-T9 (a turn that cannot …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+   Start at  08:33:19
+   Duration  7.85s (transform 998ms, setup 2.06s, import 28ms, tests 5.18s, environment 0ms)
+

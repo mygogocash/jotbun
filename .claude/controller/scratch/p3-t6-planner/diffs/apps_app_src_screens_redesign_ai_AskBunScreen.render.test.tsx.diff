@@ -1,0 +1,22 @@
+diff --git a/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx b/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+index 9bd8046..a1e75c0 100644
+--- a/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+@@ -30,7 +30,7 @@ test('with AI help off, Ask Bun explains itself and offers to turn it on', async
+ 
+ test('a suggested question is answered, with the figures the answer used', async () => {
+   const ai = fakeAiResources({
+-    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [{ label: 'expense 2026-10-01…2026-10-24 (food)', amount_minor: '10500' }], source: 'ai' as const })),
++    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [{ label: 'expense 2026-10-01…2026-10-24 (food)', amount_minor: '10500' }], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+   }, { companion: true, notice_version: 1 });
+   mount(ai);
+   fireEvent.click(await screen.findByRole('button', { name: 'How much did I spend on food this month?' }));
+@@ -59,7 +59,7 @@ test('the day’s questions left are shown under the question field', async () =
+ 
+ test('after an answer, two questions not asked yet are one tap away', async () => {
+   const ai = fakeAiResources({
+-    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [], source: 'ai' as const })),
++    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+   }, { companion: true, notice_version: 1 });
+   mount(ai);
+   fireEvent.click(await screen.findByRole('button', { name: 'How much did I spend on food this month?' }));

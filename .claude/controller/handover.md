@@ -49,6 +49,20 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **09:20: #420 (P3-T2) MERGED as `25ce266`; the head is `25ce266`.**
+  - Opus approved, the second review (Claude Sonnet 5.5) approved, and CI was 9 of 9.
+  - Issue #186 is closed and it is promoted as **#426** (stack #379 holds 26). The release rule (client minimum 0.2.0) is in followups.md for the owner and P6C.
+  - **P3-T6 is building (Haiku 5.5 max, `--lock`).** Worktree `p3-t6` on `p3/t6-haiku-first` at `25ce2661`, with `install-edge`. The kit holds there (72 of 72 sums, 16 of 16 originals). P1 to P13 accepted.
+- **09:10: P2-T15 brief READY (Opus) and building on Haiku.**
+  - Kit sums 25 of 25, 104 of 104 mutants. Its sections join `addSections.tsx`, and `index.ts` is untouched.
+  - **The controller's pre-flight:** the kit's `real/` laid over the head gave the eight catalogue-index kit files plus `AddSteps` 152 of 152, and `test:unit` 1035 of 1035. Then the worktree was reset clean.
+  - Worktree `p2-t15` (`p2/t15-transfer-confirm-pick`) is new at `9a7b767e`, installed. P1 to P19 accepted.
+  - Implementer (Haiku 5.5 max): see the thread titled "P2-T15 implementer".
+- **09:00: GEMINI FLASH IS OUT OF QUOTA TOO** ("Error 429, Individual quota reached", from 07:46 until about 14 Nov 09:58 Bangkok, per T3's snooze of 2026-11-14T02:57:58Z). With Argon and Antigravity's Claude also out, **every lane runs on Claude Code**: `make_prompt.py --claude-code`, which means Haiku 5.5 max builds and fixes, Opus plans and reviews, and Sonnet 5.5 confirms.
+  - The failed Flash threads were archived so they do not resume on 14 Nov: P3-T2's second review, P2-T29's second review, and P2-T31's second review, which had already approved.
+  - **#420 (P3-T2):** CI is now 9 of 9 at `182f3054` (the R-B rerun passed), and Opus approved. The second review was moved to Claude Sonnet 5.5 high to keep two reviews on the vault migration: `mcp:launch:79573ece84af1bbfd409afb9d5ed95afa3d9284c922d090333949b8195a242d1`, writing `reviews/P3-T2-second.md`. **It merges when that approves.**
+  - **P3-T6 brief READY** (Opus; kit `scratch/p3-t6-planner`, 72 sums; 30 of 30 mutants; built on `964f6c0e` plus #420's `182f3054`). Its builder (Haiku) starts once #420 merges, from a new worktree `p3-t6` on `p3/t6-haiku-first`.
+    - Rulings P2 to P5 go beyond the plan: type-only fixture edits in `companionSections.tsx` and three render tests; `ai.test.ts`'s env case; the deadline clock; and fake-clock carries.
 - **08:50: #412 (P2-T25) MERGED as `82b9669`; the head is `82b9669`.**
   - The confirming review approved, and CI was 9 of 9 at `6e2541a2`.
   - Issue #171 is closed and it is promoted as **#425** (stack #379 holds 25).

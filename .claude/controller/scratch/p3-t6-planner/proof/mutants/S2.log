@@ -1,0 +1,39 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10173ms
+     × the results name the model 36ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+AssertionError: parse: expected { drafts: [ { …(9) } ], …(3) } to match object { source: 'ai', …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "escalated": false,
+-   "model": "claude-haiku-5-5",
++   "model": "claude-opus-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ai-routing.test.ts:100:38
+     98|     // Every reply names claude-opus-5-5, yet the words are Haiku's: a…
+     99|     for (const [route, res] of Object.entries(await askEveryRoute(clie…
+    100|       expect(await body(res), route).toMatchObject({ source: 'ai', mod…
+       |                                      ^
+    101|     }
+    102|     // A parse Haiku refuses is answered by the rules.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:33:05
+   Duration  12.67s (transform 929ms, setup 1.92s, import 24ms, tests 10.17s, environment 0ms)
+

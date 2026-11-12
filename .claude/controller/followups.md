@@ -632,3 +632,13 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - record analytics in the load-problem case, and expect `['recap_opened']` only after Try again succeeds (kills O3).
   - **n2 (efficiency only):** with `withRecords`, the first history page is read twice (`recapData.ts:44-51`), and the days logged could come from the records.
   - **n1 (housekeeping):** the fix receipt omits `9add4415` and the routes gate.
+- P3-T2 (#420, merged 12 Nov as 25ce266 at 182f3054; promotion #426). The first review is `reviews/P3-T2.md` (Opus, approved: m1, m2, n1 to n3) and the second is `reviews/P3-T2-second.md` (Claude Sonnet 5.5, approved: m1, n1 to n3; Gemini was out of quota). Carried:
+  - **The owner and P6C (release), m2: raise the server's client minimum before any build sends a source.** That is `MIN_CLIENT_VERSION_IOS` and `MIN_CLIENT_VERSION_ANDROID`, or the KV config's `client_versions`, to at least `0.2.0`. A 0.1.0 build's `isTransactionSnapshot` refuses a snapshot carrying `source`. The deploy is the owner's call.
+  - **P3-T13 (the first task that sets a source from the add tray), or the next task that edits `transaction-source.test.ts`, m1 (both reviews):** pin source preservation on the write paths that never name it.
+    - Restore (`transactions.ts:334`; the review's R4).
+    - A receipt's retain, replace and remove (`attachments.ts:222`; R5).
+    - An import confirmation (`confirmation.ts:473`). P4-T11 owns `statement` there.
+    - The reviews' probes pass today; only the pins are missing.
+  - **n1:** a transfer twin of the outbox's unknown-source case (`diaryRepository.test.ts:126`; kills R9).
+  - **n3:** `events.ts:6`'s inline `import('@gogospend/contracts').TransactionSource` can become an `import type`, now that #418 has merged.
+  - **Housekeeping:** the receipt's gate counts are the planner's, not the implementer's (1012 and 248 ms). `resources.ts` has no `| null`. `transaction-source.test.ts` has 9 cases. Fix them in the next receipt touch.

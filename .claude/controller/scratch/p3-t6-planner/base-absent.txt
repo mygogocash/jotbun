@@ -1,0 +1,5 @@
+apps/edge/src/v1/ai/models.ts
+apps/edge/test/contracts-ai.test.ts
+apps/edge/test/workers/ai-routing.test.ts
+apps/app/src/spend/v1/ai/aiResources.test.ts
+docs/implementation/receipts/P3-T6.md
