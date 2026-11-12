@@ -669,3 +669,4 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n3: an income-only day says "0 รายการ ฿0";
     - n4: a past month keeps the early state;
     - n5: on a 360 dp Android phone the calendar is 8 dp wider than the page (7 × 44 + 6 × 4 > 324).
+- **Owner, at E2-B, from #429's review (P2-T21 m3, 12 Nov):** in the wallet area a wallet's tracking start (เริ่มจด) cannot be changed anywhere. The new-wallet flow shows it as text, and today's screen with its date chip is not reachable while the `wallet` area is on. So a wallet made through the flow starts today, and earlier dates cannot be logged to it (the server refuses with `DATE_BEFORE_TRACKING_START`). The board (`wc-wallet-edit.dc.html:69`) draws it as a link. Decide: a date tray under today's `validateTrackingStart` rules, or text with the consequence stated (R115 keeps it as text for now).

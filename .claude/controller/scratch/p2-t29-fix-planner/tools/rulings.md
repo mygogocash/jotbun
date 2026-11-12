@@ -1,0 +1,101 @@
+- **P1. No sync merge; `index.ts` unchanged.**
+  The controller's notes: the fix commit goes on `cee7eff5`, whose `index.ts` is the proven `911e4ce0…` (KIT, STACK, TRAY, ADD, LIST, CATEGORY, LOCK). #411 has since merged RECAP at the same lines, so #423 conflicts there. The controller resolves `index.ts` in plan order at merge time (LIST, RECORD, CATEGORY, RECAP, LOCK, with every import). This round proves no permutations.
+- **P2. The moved rule keeps today's screen as it was (M1, W2).**
+  - `useCategoryCommands(host)` holds today's `sendCommand`, `send`, `refused` and `tryAgain` word for word, with today's state (status, message, resendBlocked, blocked, conflict, done, unarchiving, the pending commands and the running ref).
+  - The five places where today's `send` changed the screen's own state are host callbacks, each called exactly where today's line ran:
+    - `rebase(draft)`: `setForm(… draft …)`;
+    - `stopped()`: `setConfirming(false)`, in every catch path;
+    - `saved(origin)`: the success branch's `setConfirming(false)`, `setForm(null)`, `setType` and `loaded.refresh()`;
+    - `changedElsewhere()`: `setForm(null)` and `loaded.reload()`;
+    - `fieldErrors(errors)`: `setForm(… errors …)`.
+  - All five are required, so no caller can leave a sheet open after a failure (the review's note for later tasks).
+  - `CategoriesScreen.tsx` is `2ff43b0e`'s file with the move and the host wiring only: `diffs/…CategoriesScreen.tsx.base.diff`. Its 56 cases run unchanged.
+  - `categoryCommands.render.test.tsx` adds the review's A1 and A2 (a failed archive closes the sheet), and the two paths today's suite does not cover: a category changed elsewhere closes the form and reads again (mutant S4), and a refused budget after an accepted category rebases the form (S6).
+  - Why: the plan says "moved unchanged" and "no behaviour change".
+- **P3. One read, told when it fails (M3).**
+  - The screen reads the categories through `ensureBuiltinCategories()` (as every category screen does), this month's budget and this month's summary together (`useLoad`, one `Promise.all`).
+  - Loading says today's `กำลังโหลดบันทึกของคุณ`. A problem says `classifyLoadProblem`'s words, with Try again only when a retry can help.
+  - Nothing of a failed read is drawn: no tiles, no ฿0, no pack card, no new button.
+  - Why: M3 and checklist points 2 and 4.
+- **P4. The grid reads again whenever a tray closes (M2).**
+  - The plan's tray props carry no `onSaved`. A tray closes itself after every save, and the person closes it after an unconfirmed send that may have landed.
+  - So `onClose` closes the tray and refreshes the screen's read in place: the grid stays while it reads, as after today's save.
+  - The next opening then edits the version just saved.
+- **P5. `CategoryTray` takes this month's `budget` from the screen (a deviation from the plan's props).**
+  - The plan's interface (`visible`, `onClose`, `category`, `type`) has no budget, but the limit needs it. The first round read it inside the tray and added a `now` prop, which made a second copy that went stale after a save (M2 for the budget) and that reset the person's edits when it landed (m9).
+  - With the screen's one read: the tiles and the tray agree; a tray opens only once the budget is known; Save checks against the latest budget, as today's `submit(form, seen)` does.
+  - The session (the draft, the picked glyph, the switch) is made once when the tray opens, so a later read never resets what was typed (m9).
+- **P6. The frozen Try again (B4, B1, m3; P2-T16's rule).**
+  - A new category's id is made once when the tray opens, with `newId` (expo-crypto; B1). So every resend is the same category, under the same key (`useCommandKeys`).
+  - Unconfirmed, a tray says today's words and offers only Try again (`tryAgain`: the same commands under the same keys), with every field disabled. There is no Save or Add.
+  - The tray can be closed then (P2-T16: "the tray can be closed"), and the screen reads again. A tray opened again while its send is unconfirmed keeps its frozen draft or picks and Try again until the outcome is known; it never makes a second category or pack item.
+  - Every other opening starts afresh, with no failure from the last one (m3).
+- **P7. Locked only while sending (M8, Review Focus 1).**
+  - Both trays pass `Tray`'s `locked` while the hook's status is `saving`.
+  - Unconfirmed or refused, they can be closed.
+- **P8. Tiles read 4.5:1 in both modes (M4; Global Constraints).**
+  - The tile is the category's hue tinted for the mode (`tileTint(color, colors.isDark)`, the kit's rule), or `raised` with no colour. Names and amounts are `ink`: 14.14:1 or more by day, 9.70:1 or more at night (`tools/contrast.mjs`).
+  - The limit line is `quietOnGround`, at 6.74:1 and 4.52:1. `quiet` measures 4.04:1 on some tints.
+  - `เกิน {amount}` stays `over` (budget state, §2) on a small `card` chip, at 5.86:1 and 6.77:1. On the tints `over` measures 4.18 to 4.38:1 for six hues (#4E93D9, #9B7EDB by day; #F2CE5C, #9CD4F5, #D3C2F2, #D6EE8A at night).
+  - The test computes every tile word's contrast against what it sits on, in both modes.
+  - The trays' preview, swatches and the pack's glyph tiles take the mode's tint too.
+- **P9. The tile composes the kit's parts, not `WalletCategoryIcon` (m4).**
+  - The kit's icon draws its glyph at half its square: the board's 22 pt glyph needs a 44 pt square, and with the three lines that passes the plan's 104 pt tile. So the tile draws the same parts on its own tint: `iconOf`, `CategoryGlyph` at 22 pt, else `categoryInitial` (which skips a leading Thai vowel).
+  - `WalletCategoryIcon` is used where the boards draw a square tile: the pack tray's rows (42 pt) and the archived rows (36 pt).
+- **P10. Private mode leaks nothing in the trays (M9, W10, R106).**
+  - The budget in the hint, the total and the over-total refusal (as typed and when saving) read `฿••••`.
+  - A stored limit is masked in its field (empty, with `••••`) until a key is pressed, as R106 masks an amount the person did not type. What the person types shows.
+  - Each tile says only that its amount is hidden.
+- **P11. Problems in words (M10, m1).**
+  - Today's catalog lines, through `tc()`: the over-total refusal (`categoriesModel`'s `overTotalText` wording, with the tray's own amounts so private mode can mask them), `LIMIT_PROBLEM_TEXT` and `LABEL_PROBLEM_TEXT`.
+  - When, as today's screen does: a name too long or not one line, and a limit over the budget, as they are typed; an empty name and a mistyped amount when saving. A field's problem goes as it is edited.
+  - The refusal differs from the total line in words, not only colour (m1).
+  - Problem lines are `ink` with an alert role: red and green are only for budget state (§2).
+- **P12. Archive and unarchive (m6, required by R113).**
+  - The tray's edit offers today's `เก็บหมวดหมู่ถาวร`, which asks first as the tray's second step: today's question and consequence, `tc()` lines, with Back.
+  - The grid lists the archived categories of the type shown, each with today's `นำกลับมาใช้` (named `นำ {name} กลับมาใช้`), through the same hook.
+  - Why: the plan's Consumes lists `archiveCommand` (both kinds) and `groupCategories`, whose `archived` group is there to show. `categories.packNote` promises archiving, and today's consequence line says "you can unarchive it here any time".
+  - No board draws either, so both are drafts for E2-C.
+- **P13. The catalogue (B2, M11).**
+  - One file, as `walletListSections.tsx` (P2-T20) does: the screen module loads when a section opens (`lazy()`), so the wallet catalogue's list never loads `screens/v1/parts.tsx` (expo-crypto) or expo-router. The eight render files that read the list load again (B2).
+  - `screenSection` stages each section in the catalogue's own language and theme: no `LanguageProvider` or `ThemeProvider` of its own (M11).
+  - The fixture is the board's month: per-category totals on top of the fakes, whose summary keeps none (the shared fake is not changed); one tile ฿310 over; ครอบครัว's heart kept for a catalogue account of its own; ทำบุญ held, so the pack card names the rest.
+  - Scripts open the trays by test id, so they work in every language.
+- **P14. The route and its test.**
+  - `categories.tsx` imports the wallet screen directly, as `wallets.tsx` (P2-T20) does.
+  - `PlanningRoutes.render.test.tsx` stubs it, as it stubs its other screens, and adds the wallet-area case (the controller's rule 1). Unstubbed, the file fails to load ("SyntaxError: Unexpected token 'typeof'"; seen in the planner's run).
+  - The route changed, so `typecheck:routes` and `export:web` are in the gate.
+- **P15. Names, never keys (M5, M6, m8).**
+  - The swatches are named สีส้มพีช, สีฟ้า, สีม่วงอ่อน, สีชมพู, สีเหลือง, สีเทาฟ้า, สีเทาม่วง, and the glyphs by the board's twelve names, all in the draft table.
+  - A built-in's tray is titled and its field placeheld with `draftName`'s name (อาหาร), never its key.
+- **P16. Back (M7).** `useGoBack('/spend/budget')`, today's: back, or Budget when there is nothing to go back to. The screen's props stay the plan's `{ now?: Date }`.
+- **P17. Fields are named (B3).** The name and limit fields carry `accessibilityLabel` (ชื่อหมวด, วงเงินต่อเดือน). Their visible captions are decorative, as P2-T14's merchant field does.
+- **P18. AX5 (m5).**
+  - Tiles have a minimum height of 104 pt and grow with their words. At the largest text sizes each tile takes a row of its own.
+  - Fields have a minimum height of 44 pt and no fixed height. Nothing sets `numberOfLines`.
+- **P19. The pack card (m7) and the pack tray (n1, R2, R3).**
+  - The card follows the plan's binding: it shows on either tab while any of C3's nine is missing.
+  - The names are joined as the board joins them (a space in Thai; a comma in the English drafts), with `categories.packMore` only when more remain.
+  - The tray's picks start empty (the first round's accepted P5). A row the person has is disabled and says มีแล้ว. Add creates only the picked, still missing items, in C3's order and the person's language.
+  - After a refusal the tray offers Reload, not Add: a refused send may have added some items, and the read after closing marks them มีแล้ว, so none is added twice.
+- **P20. Icons (m10, followups).**
+  - An icon is kept only once Jotbun has accepted the category, and only when the picked glyph differs from what the category already shows. An icon-only change sends nothing and is kept at once.
+  - With no account open (the web, opening, locked or signed out) nothing could be kept, so the icon picker is not offered. This is P2-T20's rule for จัดเรียง and settles the followup for P2-T21 and P2-T29. A setter's promise resolves either way; nothing waits on it.
+- **P21. Income tiles (m11).** Money in: `categories.tileIncome` ({name} ได้รับ {amount}), with no limit line, since limits are spending only. It is a draft for E2-C.
+- **P22. Money (m2).** Satang strings through BigInt only: spending against a limit (`BigInt`), `editCategoryDraft`'s `minorToInputText` for a stored limit, and `walletMoneyText` and `spokenMoney` for words. No `Number(...)` touches an amount. Spending equal to its limit is not over (R4; budgetPace's rule).
+- **P23. Copy (m7, n3).**
+  - The draft table holds the plan's lines and the board's names. Lines already in the catalogs are read through `tc()`: เพิ่มหมวดนี้, บันทึกการแก้ไข, เก็บหมวดหมู่ถาวร, the archive question and consequence, นำกลับมาใช้, เก็บถาวรแล้ว, the load, save and refusal words, and the no-budget line.
+  - The first round's unused keys are gone. `categories.packAddOne` fixes "Add 1 categories"; "Built-ins" is now "Built-in categories".
+- **P24. Guards and mutants (M12, m12).**
+  - Each guard has a mutant: 119 in `tools/mutants.py`, every one killed in the planner's final run (`logs/mutants.out`). The review's R1 to R6 are W10, P1, P2, W3, T14 and the R5 and R6 case.
+  - The planner's first full run left four alive, each a gap in the tests, not the code: S4 and S6 (paths of today's screen that its own suite never reaches; now the hook file's two extra cases), P3 (the pack's first picks, seen only when a host mounts the tray already open) and P9 (the singular Add line, which only English tells apart). Each gained its case. `logs/subset.out` shows them killed, with C3 (whose first form did not parse) and the 29 mutants added after an audit of every remaining guard.
+  - Guards that the controls' `disabled` and `busy`, and the hook's `running` ref, already enforce are not repeated in handlers, so no guard is untestable.
+  - The four P2-T11 cases (followups: its m2 and n5; RV1, RV2, RV3, RV4 and RV4s) are carried and counted apart. They hold the kit's glyph and initial, not this round's screens.
+- **P25. Nits.**
+  - n2: the unused names go with the rewrite.
+  - n4: text uses the kit's roles only (h1, h2, label, caption) and amounts `WalletAmount`'s sizes (13). The board's 14 pt name and 12 pt line take the nearest roles, label (15) and caption (13).
+- **P26. The receipts (m13, R87).**
+  - `P2-T29-fix.md` is new. It records what the first round's receipt missed: the routes' 12 against an Expected 11; that the first round's gate skipped `test:unit` and the eight render files, which is how B1 and B2 reached CI; and the risks.
+  - `P2-T29.md` gains one line pointing to it.
+- **P27. Flash's second review** (`reviews/P2-T29-second.md`) had not landed when this brief was written, so nothing is folded in.
+- **P28. Commit summary:** `Rebuild the Bun Wallet categories on today's rules and the wallet kit`.

@@ -1,0 +1,22 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+
+ Test Files  2 failed (2)
+      Tests  no tests
+   Start at  09:52:04
+   Duration  1.12s (transform 1.17s, setup 85ms, import 0ms, tests 0ms, environment 164ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t29/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t29/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/testing/walletHarness.render.test.tsx [ src/wallet/testing/walletHarness.render.test.tsx ]
+ FAIL  src/wallet/tray/Tray.render.test.tsx [ src/wallet/tray/Tray.render.test.tsx ]
+SyntaxError: Unexpected token 'typeof'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

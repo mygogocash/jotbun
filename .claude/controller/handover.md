@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13:55: P2-T15 fix brief READY (Opus, R114); its fixer is building (Haiku).**
+  - Private mode quotes none of Bun's sentence. Next waits on archived or unknown wallets (`inUse`; `TransferFooter` takes `wallets`, which P2-T16 must pass). Every gap is pinned, and the sections are lazy.
+  - 120 of 120 mutants. Kit sums 32 of 32.
+  - Fixer on worktree `p2-t15` at `fd41909c`, with no sync merge. P1 to P33 accepted.
+- **13:50: #429 (P2-T21): Opus says NEEDS FIXES** (Sonnet approved; CI 9 of 9).
+  - **M1:** after an unconfirmed create, especially with a blocked resend, every control on step 2 is held, and on iOS in the wallet area nothing leaves the screen.
+  - The minors: m1 (a late save goes back twice), m2 (six unheld guards, Y7 on money), m3 (the tracking start cannot be changed in the wallet area, an owner call at E2-B), n1 (the card drop) and n2 (a ฿0 in private mode).
+  - **R115:** back is held only while saving and leaves the flow while unconfirmed or blocked; one navigation; the pins PR1, PR4, PR7, PR8, Y6, Y8 and Y9; m3 stays text with the consequence stated (owner); n1 and n2 fixed.
+  - The fix round went back to the original Opus planner `a35bacd7…` (run 4), writing `briefs/P2-T21-fix.md` with the kit at `scratch/p2-t21-fix-planner/`, on `2411001e`.
 - **13:45: #421 (P2-T31) MERGED as `ce165ed`; the head is `ce165ed`.**
   - The confirming review (Opus) approved after the R112 round, and CI was 9 of 9 at `f72ad233`.
   - Issue #177 is closed, and it is promoted as **#431** (stack #379 holds 28). The insights follow-ups (m1 before E2-C, and 14 pins) are in followups.md.

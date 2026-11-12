@@ -1,0 +1,9 @@
+59f61d71b1a4f6b4a4bc2471c4a8740dcff5127cda8824b61d7cba9ce83d406a  apps/app/src/wallet/add/ConfirmStep.tsx
+bd468a8565f2194f92fbb39b1f5a592b61b529033be5b328000301ff78e0f1f9  apps/app/src/wallet/add/TransferStep.tsx
+29c3854fb302210f86788a8dc70769b0f1bfa378c25610eb16cc0baba4fae299  apps/app/src/wallet/add/PickSteps.tsx
+750c4fd89e86b9580118e5b1ff50ab1498a79a8efa997396e9ef3d66b9ba91c6  apps/app/src/wallet/add/copy.ts
+4a6bd7d1ab1b7cf6b2fe0c85e2e50f460e7c078922c3ed57f1a883e292a5e840  apps/app/src/wallet/add/AddSteps.render.test.tsx
+14fb8c85ad8cd8f64d661afc17a12596cd3e063ee7411beb05af6951e64af4a6  apps/app/src/dev/catalogue/wallet/addSections.tsx
+bdbbe40a2b84ea083adef2c2a2d1fc65051f73c9a3c59a5331e07f6f8f4372a6  docs/implementation/receipts/P2-T15.md
+acdfc3e7d3c91c96ee9298078a473963f52242803819fc32bada9759b2b01b3a  apps/app/src/wallet/add/addStepsNative.test.ts
+ddfe82a810eae40c3ed2538dfc85e3cc9793712e26b1961519f2f6afcdd47ba7  apps/app/src/dev/catalogue/wallet/addStepsSection.tsx

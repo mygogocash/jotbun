@@ -1,0 +1,74 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 0: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 8ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 1: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 2ms
+ × src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 2: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 3ms
+   → Unable to find an element with the text: redirect to /spend. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="css-text-146c3p1"
+      dir="auto"
+    >
+      categories with shared resources
+    </div>
+  </div>
+</body>
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area wallets.tsx shows the Bun Wallet list with the shared resources, ?reorder=1 opens its reorder tray, and the legacy build still goes back to Home 1ms
+ × src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home 1ms
+   → expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  09:52:02
+   Duration  320ms (transform 25ms, setup 38ms, import 92ms, tests 16ms, environment 71ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 2: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources
+TestingLibraryElementError: Unable to find an element with the text: redirect to /spend. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="css-text-146c3p1"
+      dir="auto"
+    >
+      categories with shared resources
+    </div>
+  </div>
+</body>
+ ❯ Object.getElementError ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/screens/redesign/planning/PlanningRoutes.render.test.tsx:76:17
+     74|   flags({ redesign: 'planning', legacy: '1' });
+     75|   render(<Route />);
+     76|   expect(screen.getByText('redirect to /spend')).toBeTruthy();
+       |                 ^
+     77| });
+     78|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home
+AssertionError: expected null not to be null
+ ❯ src/screens/redesign/planning/PlanningRoutes.render.test.tsx:114:56
+    112|   flags({ redesign: 'wallet', legacy: '1' });
+    113|   render(<SpendCategoriesRoute />);
+    114|   expect(screen.queryByText('redirect to /spend')).not.toBeNull();
+       |                                                        ^
+    115| });
+    116|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

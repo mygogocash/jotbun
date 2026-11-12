@@ -1,0 +1,72 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > loading: a spinner until the categories and this month's budget arrive 80ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again 157ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a load problem says so, and Try again loads again; offline is the same retryable problem 53ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: expense categories, built-in then your own, each with its icon or initial in its colour; Back goes back 34ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why 89ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > a category changed on another device closes the form, says so, and reads the grid again 82ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: income categories on the switch, with nothing of your own yet 58ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > no categories of your own yet: the built-ins, and a line that says what New category is for 28ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > once the category is accepted and the budget refused, saving again sends only the budget 116ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating: a name, a colour from the palette and a limit, with a live chip preview; Add this category sends one create, then the limit 128ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating an income category: the type is chosen in the form, and income has no limit 92ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Cancel leaves the form without sending anything 59ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing a built-in: its default name as the placeholder, and "Use the default name" sends label null 90ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing your own category sends only what changed, at the version read 116ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > this month's limit shows when the budget has one, and a change replaces the budget with the overall limit unchanged 115ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > saving: the action is busy and the form is locked until the answer 79ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed: the form freezes, offers only Try again, and Try again resends the same command under the same key 85ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed after the category saved: Try again resends only the budget command, with its own key 86ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a definite refusal unfreezes the form, and the corrected save is a new command with a new key 102ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a changed session blocks saving but keeps the draft; nothing is resent under another identity 63ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a conflict shows the category as it now is beside yours, and Reload shows theirs 88ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a budget changed elsewhere shows this month's limit and budget as they now are, and Reload 86ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archive asks first, saying what archiving does; then the category moves to Archived 132ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archived: the section opens to each archived category, and Unarchive brings it back 52ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > an unconfirmed unarchive freezes the grid; Try again resends the same command and key 71ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit with no monthly budget: it says a budget comes first and links to Budget, and creates none 76ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit over the total is said inline as it is typed, and nothing is sent 89ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit must be an exact amount above zero 61ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a label problem: an empty name is refused before sending, a long one as it is typed 87ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the name field is one line 37ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai: built-in names are translated and the text keeps Thai leading 40ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'light', in palette colours 23ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'dark', in palette colours 25ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'light', in palette colours 21ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'dark', in palette colours 23ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'light', in palette colours 21ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'dark', in palette colours 25ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > every control is at least 44 pt and has a role and a name; a swatch is a radio named for its colour 52ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > decorative art is hidden from screen readers: icons, initials and the preview 38ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reduced motion: switching type, choosing a colour and the archive sheet move without a spring 85ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the screen draws with palette tokens only, and keeps money out of floating point 1ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the catalogue has one section per state, with categories-… ids and Categories: … titles 0ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-loading reaches its state in English and Thai, without errors 14ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-load-problem reaches its state in English and Thai, without errors 52ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-expense reaches its state in English and Thai, without errors 52ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-income reaches its state in English and Thai, without errors 669ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-no-custom reaches its state in English and Thai, without errors 52ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-create reaches its state in English and Thai, without errors 801ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-edit-builtin reaches its state in English and Thai, without errors 94ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-saving reaches its state in English and Thai, without errors 183ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-unconfirmed reaches its state in English and Thai, without errors 192ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-conflict reaches its state in English and Thai, without errors 802ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archived reaches its state in English and Thai, without errors 98ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archive-confirm reaches its state in English and Thai, without errors 718ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-no-budget reaches its state in English and Thai, without errors 96ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-over reaches its state in English and Thai, without errors 148ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-label-error reaches its state in English and Thai, without errors 159ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Back goes back, or to Budget with nothing to go back to 26ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday adds the missing categories in Thai (an English "Pets" already counts), then is no longer offered 46ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday is off with the companion area off 22ms
+
+ Test Files  2 passed (2)
+      Tests  60 passed (60)
+   Start at  09:35:54
+   Duration  7.61s (transform 698ms, setup 127ms, import 1.23s, tests 7.08s, environment 270ms)
+
