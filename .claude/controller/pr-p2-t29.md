@@ -40,8 +40,27 @@
   - the 56 × 44 switch;
   - the pack tray's error.
 - [x] R100's fast gate: `typecheck:app`, the focused files, the routes tests, `export:web` (the route changed) and `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review: limits, spending and private mode.
+- [x] Independent review (Opus): **Needs fixes** on `cee7eff5`, with 4 blockers (`.claude/controller/reviews/P2-T29.md`):
+  - B1: a Web Crypto global, caught by the Hermes guard in `test:unit`;
+  - B2: five kit render files could not load the catalogue's eager import of `expo-crypto`;
+  - B3: unnamed text fields;
+  - B4: an unconfirmed save made a duplicate category.
+  - There were also 12 majors (private mode in the tray, Back doing nothing, dark contrast, today's screen changed, among others) and 13 minors. CI at `cee7eff5` was red, and the run was cancelled.
+- [x] **Fix round** (`ed1da2aa`, brief `.claude/controller/briefs/P2-T29-fix.md`; ruling R113 with the planner's P1 to P28). Every blocker, major and minor is fixed:
+  - the moved hook leaves today's screen unchanged (56 of 56 as before);
+  - an unconfirmed save or pack add keeps the frozen Try again, with the same ids and keys;
+  - the trays lock while sending;
+  - private mode in the tray;
+  - names, not raw keys;
+  - dark-mode contrast on a card chip;
+  - Back works;
+  - Archive and Unarchive;
+  - the sections load their screens lazily.
+  - The proofs: RED 33 of 38 and 3 of 9, all assertions; GREEN wallet 38, hook 4 plus today's 56, routes 5; **119 of 119 mutants killed**. The gate covered the eight kit files (138), the catalogue (10), the routes (13), `test:unit` and `export:web`. All 12 fix-kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #412, #411, #420, #428, #421) as `f7f47fa4`. `index.ts` is in plan order: ADD, LIST, RECORD, CATEGORY, INSIGHTS, RECAP, LOCK. On the merged tree: `typecheck:app` 0; 17 focused, kit and routes files 312 of 312; `test:unit` 1044 of 1044.
+- [ ] CI on this pull request is green at `f7f47fa4`.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (AX5 by hand and VoiceOver on the tray, for E2-B).
 
 Closes #175 once merged (closed by hand, since the base is not the default branch).

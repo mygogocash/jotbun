@@ -49,6 +49,16 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14:15: #427 (P2-T15) fix round DONE and merged up.**
+  - Fix `a4947e62` (Haiku, R114; amended once for the receipt line): all 9 `real/` files byte-identical, 120 of 120 mutants.
+  - The controller merged the head as `334847d3`, with no conflicts. On the merged tree: tsc 0, 168 of 168, and `test:unit` 1047 of 1047.
+  - Pushed, and the body is updated. CI is running.
+  - Opus confirming review (Opus high): thread "P2-T15 confirming review (#427 fix)". It writes `reviews/P2-T15-confirm.md`.
+- **14:05: #423 (P2-T29) fix round DONE and merged up.**
+  - Fix `ed1da2aa` (Haiku, R113): all 12 `real/` files byte-identical, 119 of 119 mutants; gate kit 138, routes 13, `export:web`.
+  - The controller merged the head as `f7f47fa4`. `index.ts` goes ADD, LIST, RECORD, CATEGORY, INSIGHTS, RECAP, LOCK. On the merged tree: tsc 0, 312 of 312, and `test:unit` 1044 of 1044.
+  - Pushed, and the body is updated. CI is running.
+  - Opus confirming review (Opus high): thread "P2-T29 confirming review (#423 fix)". It writes `reviews/P2-T29-confirm.md`.
 - **13:55: P2-T15 fix brief READY (Opus, R114); its fixer is building (Haiku).**
   - Private mode quotes none of Bun's sentence. Next waits on archived or unknown wallets (`inUse`; `TransferFooter` takes `wallets`, which P2-T16 must pass). Every gap is pinned, and the sections are lazy.
   - 120 of 120 mutants. Kit sums 32 of 32.
