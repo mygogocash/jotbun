@@ -60,6 +60,10 @@
   - #412 went red in CI; the controller caught #411 before the push by running all four routes tests.
   - The fix is a stub for the screen, the way the file stubs its other screens (the routes tests check only the routes' rules).
   - make_prompt's RULES now put the four routes tests in the fast gate whenever a screen a route imports changes. In zsh, name each file: an unquoted `$VAR` holding several paths is not split, and vitest then runs none of them.
+- **Two local runners become the bottleneck when five PRs are in flight (12 Nov).** Six runs of 9 jobs queued for over an hour.
+  - `runners.sh up 3` adds runner-3 only; it skips runners already running, so no busy job is lost. The VM (10 CPUs, 32 GiB) took it with memory to spare.
+  - Watch for memory-pressure crashes, such as hermesc's SIGSEGV in the iOS export, and drop back to 2 if they come.
+  - A promotion PR's run can be cancelled to let task PRs go first, and rerun when the queue is idle.
 - **The Mac sleeps after one minute idle, which takes the local CI and the agents down (11 to 12 Nov, 23:08 to 00:31).**
   - **Signs:**
     - both runners are `offline` on GitHub while their containers say `Up`;
