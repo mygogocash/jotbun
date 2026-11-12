@@ -6,7 +6,7 @@
 // button between them, the amount being moved, and move all. TransferFooter is
 // its footer, which the host passes to the tray's pinned `footer`: the note
 // that a move is not spending, and Next, which waits for two different
-// wallets. Both are controlled (StepProps), as every step is.
+// wallets in use. Both are controlled (StepProps), as every step is.
 //
 // - A card opens its wallet step (`from` or `to`), which comes back here
 //   (WalletPick's `back`). Swap exchanges the two wallets in the draft, so
@@ -14,7 +14,10 @@
 // - Balances are the server's (the host's `balances`, less waiting drafts).
 //   Offline there are none: the cards show names only, with no after line and
 //   no move all, since a guessed balance would be a wrong number on screen
-//   (today's WalletPicker). Archived wallets are never shown, as today.
+//   (today's WalletPicker). Archived wallets are never shown, as today: a
+//   side whose wallet is archived or not listed asks for one, and Next waits
+//   for it as for a side with none. The cards and Next read one rule
+//   (`inUse`), so they never disagree (R114; the reviews' m1).
 // - Move all fills the amount with the from wallet's whole balance, as a fill
 //   (filledKeypad). It is offered only when that balance is known, above zero
 //   (moveAllMinor) and within the amount cap: keypadFromMinor refuses more,
@@ -82,6 +85,11 @@ function around(template: string): [string, string] {
   return [template.slice(0, at).trim(), template.slice(at + '{amount}'.length).trim()];
 }
 
+/** A side's wallet while it is in use; null for none, an archived wallet or one not listed. The cards ask for a wallet, and Next waits, by this one rule. */
+function inUse(wallets: readonly WalletSnapshot[], id: string | null): WalletSnapshot | null {
+  return id === null ? null : wallets.find((wallet) => wallet.id === id && !wallet.archived) ?? null;
+}
+
 export function TransferStep({ draft, keypad, onDraft, onKeypad, onStep, wallets, balances }: StepProps & {
   wallets: readonly WalletSnapshot[];
   /** Each wallet's available balance from the server; null offline. */
@@ -93,10 +101,8 @@ export function TransferStep({ draft, keypad, onDraft, onKeypad, onStep, wallets
   const { hidden } = usePrivateMode();
   const typed = evaluateKeypad(keypad, { allowZero: true });
   const after = balancesAfter(balances, draft.fromWalletId, draft.toWalletId, typed.ok ? typed.minor : '0');
-  // Wallets in use only: a copied record's archived wallet asks for another, as today's picker does.
-  const listed = (id: string | null) => (id === null ? null : wallets.find((wallet) => wallet.id === id && !wallet.archived) ?? null);
-  const from = listed(draft.fromWalletId);
-  const to = listed(draft.toWalletId);
+  const from = inUse(wallets, draft.fromWalletId);
+  const to = inUse(wallets, draft.toWalletId);
   const balanceOf = (wallet: WalletSnapshot | null) => (wallet === null || balances === null ? null : balances.get(wallet.id) ?? null);
   const moveAll = moveAllOffer(balances, from?.id ?? null);
   // A fill is masked as a stored amount is; what the person typed shows (R106).
@@ -166,13 +172,22 @@ export function TransferStep({ draft, keypad, onDraft, onKeypad, onStep, wallets
   );
 }
 
-/** The step's footer, for the tray's pinned `footer`: the note that a move is not spending, and Next. */
-export function TransferFooter({ draft, onStep }: StepProps) {
+/**
+ * The step's footer, for the tray's pinned `footer`: the note that a move is
+ * not spending, and Next. Next reads the sides by the cards' rule (`inUse`).
+ * It does not read the amount: the amount is the amount step's, whose Next
+ * waits for one the keypad can save, and this step has no keys to change it
+ * (the second review's n2).
+ */
+export function TransferFooter({ draft, onStep, wallets }: StepProps & {
+  /** TransferStep's wallets: a side whose wallet is not in use keeps Next waiting, as its card asks for one. */
+  wallets: readonly WalletSnapshot[];
+}) {
   const colors = useWalletColors();
   const tc = useCopy();
   const t = useDraftCopy(LINES);
-  const { fromWalletId: from, toWalletId: to } = draft;
-  // One wallet on both sides cannot be a move: today's words say so (as WalletPicker does), and Next waits.
+  const [from, to] = [inUse(wallets, draft.fromWalletId), inUse(wallets, draft.toWalletId)];
+  // One wallet in use on both sides cannot be a move: today's words say so (as WalletPicker does), and Next waits.
   const problem = from !== null && from === to ? tc('Choose two different wallets') : null;
   useAnnouncement(problem);
   return (

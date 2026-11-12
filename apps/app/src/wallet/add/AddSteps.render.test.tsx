@@ -3,10 +3,13 @@
 // cases mount the steps as P2-T16's host and the catalogue do: inside a Tray,
 // through a probe that holds the draft, the keypad, the step shown, where a
 // pick goes back to (isPickStep) and Bun's guesses (P2-T14's stillGuessed),
-// and switches steps as onStep asks. The tray's back leaves a pick for the
-// step that opened it; the back from the transfer and confirm steps to the
-// amount is the host's (P2-T16), so the probe draws none there. Each case
-// mounts through mountWallet, in Thai and by day unless it says otherwise.
+// and switches steps as onStep asks; at the amount step it draws P2-T14's real
+// AmountStep, whose wallet chip opens the wallet pick. The tray's back leaves
+// a pick for the step that opened it; the back from the transfer and confirm
+// steps to the amount is the host's (P2-T16), so the probe draws none there.
+// Each case mounts through mountWallet, in Thai and by day unless it says
+// otherwise. The steps' catalogue sections load lazily, so openSection waits
+// until a section stops reading `catalogue-screen-running`.
 //
 // The traps, as AmountStep.render.test.tsx meets them: Reanimated keeps the
 // tray's card, and each new step's content, unseen (visibility: hidden) until
@@ -17,7 +20,7 @@
 // that reach the app's Text are recorded, as WalletCard.render.test.tsx does.
 // Each haptic moment is recorded by name. react-native-web omits
 // aria-disabled when it is false, so an enabled button has none.
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
 
@@ -38,7 +41,6 @@ vi.mock('@mobile/theme/AppText', async (importOriginal) => {
 vi.mock('@mobile/lib/hapticMoment', () => ({ playHaptic: vi.fn() }));
 
 import type { CategoryDto, Minor, WalletSnapshot } from '@gogospend/contracts';
-import { Text } from 'react-native';
 
 import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
 import { WALLET_SECTIONS } from '@mobile/dev/catalogue/wallet';
@@ -59,6 +61,7 @@ import { AX5, mountWallet } from '../testing/walletHarness';
 import { Tray } from '../tray/Tray';
 import { confirmRows, filledKeypad, stillGuessed, trayTitleKey } from './addFlow';
 import type { AddStep, StepProps } from './addFlow';
+import { AmountStep } from './AmountStep';
 import { ConfirmStep, confirmTitle } from './ConfirmStep';
 import { COPY } from './copy';
 import { CategoryPick, DatePick, isPickStep, NotePick, WalletPick } from './PickSteps';
@@ -196,7 +199,7 @@ function Probe({ step: first = 'confirm', draft: change = {}, minor = '5000', fi
     : step === 'wallet' || step === 'from' || step === 'to' ? <WalletPick {...props} wallets={WALLETS} balances={balances} role={step} back={back} />
     : step === 'date' ? <DatePick {...props} today={TODAY} earliest={earliest} />
     : step === 'note' ? <NotePick {...props} />
-    : <Text testID="probe-amount">amount</Text>;
+    : <AmountStep {...props} type={draft.type} lookups={LOOKUPS} chips={[]} canTellBun={false} onTellBun={() => undefined} problem={null} typeSwitch={null} onNaming={() => undefined} />;
   return (
     <Tray
       visible
@@ -204,7 +207,7 @@ function Probe({ step: first = 'confirm', draft: change = {}, minor = '5000', fi
       title={t(trayTitleKey(draft.type))}
       step={step}
       onBack={isPickStep(step) ? () => setStep(back) : undefined}
-      footer={step === 'transfer' ? <TransferFooter {...props} /> : undefined}
+      footer={step === 'transfer' ? <TransferFooter {...props} wallets={WALLETS} /> : undefined}
     >
       {middle}
     </Tray>
@@ -218,6 +221,15 @@ async function mount(element: Parameters<typeof mountWallet>[0], options: Parame
   return view;
 }
 
+/** Mounts a catalogue section; the steps' sections load lazily, so this waits until the section stops reading `catalogue-screen-running`. */
+async function openSection(id: string, options: Parameters<typeof mountWallet>[1] = {}) {
+  const view = mountWallet(<>{WALLET_SECTIONS.find((each) => each.id === id)?.render()}</>, options);
+  await waitFor(() => expect(screen.queryByTestId('catalogue-screen-running')).toBeNull(), { timeout: 15_000 });
+  await settle();
+  startAnimations();
+  return view;
+}
+
 const WORDS = {
   th: {
     food: 'อาหาร', travel: 'การเดินทาง', category: 'หมวด', wallet: 'กระเป๋า', from: 'จาก', to: 'ไป', date: 'วันที่', note: 'โน้ต',
@@ -225,6 +237,7 @@ const WORDS = {
     baht: (amount: string) => `${amount} บาท`, after: (amount: string) => `หลังโอน ${amount}`, moveAll: (amount: string) => `ย้ายทั้งหมด ${amount}`,
     bunRead: (sentence: string) => `บันอ่านจาก “${sentence}”`, two: 'เลือกกระเป๋าเงินสองใบที่ต่างกัน', choose: 'เลือกกระเป๋า',
     transferNote: 'โอนระหว่างกระเป๋าของคุณเอง ไม่นับเป็นรายจ่าย', previous: 'วันก่อนหน้า', following: 'วันถัดไป', hidden: 'ซ่อนยอดเงินอยู่',
+    bunHidden: 'บันอ่านจากที่คุณบอก',
   },
   en: {
     food: 'Food', travel: 'Travel', category: 'Category', wallet: 'Wallet', from: 'From', to: 'To', date: 'Date', note: 'Note',
@@ -232,6 +245,7 @@ const WORDS = {
     baht: (amount: string) => `${amount} baht`, after: (amount: string) => `After ${amount}`, moveAll: (amount: string) => `Move all ${amount}`,
     bunRead: (sentence: string) => `Bun read this from “${sentence}”`, two: 'Choose two different wallets', choose: 'Choose a wallet',
     transferNote: 'A move between your own wallets is not spending', previous: 'Previous day', following: 'Next day', hidden: 'Amount hidden',
+    bunHidden: 'Bun read this from what you told it',
   },
 } as const;
 
@@ -263,6 +277,11 @@ test('confirm shows ฿50, the category, the wallet and วันนี้, each
       cleanup();
     }
   }
+  // The wallet row draws the entry's own wallet, never the move's from wallet, which a draft keeps beside it.
+  await mount(<Probe draft={{ walletId: 'w-cash' }} />);
+  expect([rowLabels()[1], found('confirm-row-wallet').querySelector('linearGradient')?.getAttribute('id')]).toEqual([
+    'กระเป๋า เงินสด', `wallet-material-${derivedLook('w-cash').material}-light`,
+  ]);
 });
 
 test('a guessed row says บันเดา', async () => {
@@ -321,11 +340,49 @@ test("a transfer shows each wallet's balance after the move, swaps, and fills mo
     await mount(<Probe step="transfer" draft={{ type: 'transfer' }} minor="50000" balances={null} />, { locale });
     expect([label('transfer-from'), label('transfer-to')], locale).toEqual([`${words.from} บัญชีหลัก`, `${words.to} เงินสด`]);
     expect(['transfer-from-balance', 'transfer-from-after', 'transfer-to-after', 'transfer-move-all'].map((id) => screen.queryByTestId(id)), locale).toEqual([null, null, null, null]);
+    // Offline the wallet pick names each wallet, with no balance.
+    tap(found('transfer-from'));
+    expect(radios(words.from).map((radio) => radio.getAttribute('aria-label')), locale).toEqual(['บัญชีหลัก', 'เงินสด', LONG_NAME]);
+    expect(within(found('pick-wallet')).queryAllByText(/฿/), locale).toEqual([]);
     cleanup();
   }
   // Exact past 2^53: ฿500 from ฿90,071,992,547,409.93, which is above the cap, so it offers no move all.
   await mount(<Probe step="transfer" draft={{ type: 'transfer' }} minor="50000" balances={new Map([['w-main', '9007199254740993'], ['w-cash', '124000']])} />);
   expect([text('transfer-from-balance'), text('transfer-from-after'), screen.queryByTestId('transfer-move-all')]).toEqual(['฿90,071,992,547,409.93', '฿90,071,992,546,909.93', null]);
+});
+
+test('a balance below zero, and a move larger than the balance, keep their minus on the card and in its words', async () => {
+  // ฿500 from ฿300 leaves −฿200; a card that owes ฿1,240 owes ฿740 once ฿500 comes in.
+  await mount(<Probe step="transfer" draft={{ type: 'transfer' }} minor="50000" balances={new Map([['w-main', '30000'], ['w-cash', '-124000']])} />);
+  expect([text('transfer-from-balance'), text('transfer-from-after'), text('transfer-to-balance'), text('transfer-to-after')]).toEqual(['฿300', '\u2212฿200', '\u2212฿1,240', '\u2212฿740']);
+  expect([label('transfer-from'), label('transfer-to')]).toEqual([
+    'จาก บัญชีหลัก 300 บาท หลังโอน ติดลบ 200 บาท', 'ไป เงินสด ติดลบ 1,240 บาท หลังโอน ติดลบ 740 บาท',
+  ]);
+});
+
+test("isPickStep names the six picks; the amount chip's wallet pick goes back to the amount step, by a choice and by the tray's back", async () => {
+  expect((['amount', 'transfer', 'confirm', 'category', 'wallet', 'from', 'to', 'date', 'note'] as const).map(isPickStep)).toEqual([
+    false, false, false, true, true, true, true, true, true,
+  ]);
+  await mount(<Probe step="amount" />);
+  tap(found('add-wallet'));
+  expect(radios('กระเป๋า').map((radio) => radio.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
+  tap(named('radio', 'เงินสด 1,240 บาท'));
+  expect([screen.queryByTestId('add-amount') !== null, found('add-wallet').getAttribute('aria-label')]).toEqual([true, 'จากเงินสด']);
+  // The tray's back leaves the pick for the amount step too, with nothing changed.
+  tap(found('add-wallet'));
+  tap(named('button', 'กลับ'));
+  expect([screen.queryByTestId('add-amount') !== null, found('add-wallet').getAttribute('aria-label')]).toEqual([true, 'จากเงินสด']);
+});
+
+test('the amount being moved and the day being picked are polite live regions', async () => {
+  await mount(<Probe step="transfer" draft={{ type: 'transfer' }} minor="50000" />);
+  const amount = found('transfer-amount').parentElement as HTMLElement;
+  expect([amount.getAttribute('role'), amount.getAttribute('aria-live')]).toEqual(['status', 'polite']);
+  cleanup();
+  await mount(<Probe step="date" />);
+  const day = found('pick-date-day').parentElement as HTMLElement;
+  expect([day.getAttribute('role'), day.getAttribute('aria-live')]).toEqual(['status', 'polite']);
 });
 
 test('a pick returns to confirm with the choice', async () => {
@@ -339,6 +396,8 @@ test('a pick returns to confirm with the choice', async () => {
   expect(radios('กระเป๋า').map((radio) => [radio.getAttribute('aria-label'), radio.getAttribute('aria-checked')])).toEqual([
     ['บัญชีหลัก 24,860 บาท', 'true'], ['เงินสด 1,240 บาท', 'false'], [`${LONG_NAME} 999,999,999 บาท 99 สตางค์`, 'false'],
   ]);
+  // The chosen wallet's radio also holds its dot, so the choice never rests on the ring's colour alone.
+  expect(radios('กระเป๋า').map((radio) => within(radio).queryByTestId('pick-wallet-dot') !== null)).toEqual([true, false, false]);
   tap(named('radio', 'เงินสด 1,240 บาท'));
   expect(rowLabels()[1]).toBe('กระเป๋า เงินสด');
   // The day: one back, kept with เสร็จ.
@@ -387,6 +446,12 @@ test("the date cannot pass today or go before the wallet's start", async () => {
   expect([day(), earlier().getAttribute('aria-disabled')]).toEqual(['พฤหัส 22 ต.ค.', 'true']);
   tap(named('button', 'เสร็จ'));
   expect(rowLabels()[2]).toBe('วันที่ พฤหัส 22 ต.ค.');
+  cleanup();
+  // A draft dated after today (no add path makes one) opens on today, and keeps it.
+  await mount(<Probe step="date" draft={{ occurredOn: '2026-10-30' }} />);
+  expect([day(), later().getAttribute('aria-disabled')]).toEqual(['วันนี้', 'true']);
+  tap(named('button', 'เสร็จ'));
+  expect(rowLabels()[2]).toBe('วันที่ วันนี้');
   cleanup();
   // With no start, a day steps back freely, and forward to today only.
   await mount(<Probe step="date" draft={{ occurredOn: '2026-10-23' }} />);
@@ -446,14 +511,22 @@ test('the same wallet on both sides says so and Next waits; with two wallets Nex
       `${words.from} ${words.choose}`, `${words.to} ${words.choose}`, null, 'true',
     ]);
     cleanup();
-    // An archived wallet is never shown: the side asks for another.
+    // An archived wallet is never shown: the side asks for another, says nothing, and Next waits, as for a side with none (R114).
     await mount(<Probe step="transfer" draft={{ type: 'transfer', fromWalletId: 'w-old' }} minor="50000" />, { locale });
-    expect([label('transfer-from'), screen.queryByTestId('transfer-move-all')], locale).toEqual([`${words.from} ${words.choose}`, null]);
+    expect([label('transfer-from'), screen.queryByTestId('transfer-move-all'), screen.queryByTestId('transfer-problem'), named('button', words.next).getAttribute('aria-disabled')], locale).toEqual([
+      `${words.from} ${words.choose}`, null, null, 'true',
+    ]);
+    fireEvent.click(named('button', words.next));
+    expect(screen.queryByTestId('transfer-step'), locale).not.toBeNull();
+    cleanup();
+    // So does a wallet no longer listed, on the to side.
+    await mount(<Probe step="transfer" draft={{ type: 'transfer', toWalletId: 'w-gone' }} minor="50000" />, { locale });
+    expect([label('transfer-to'), named('button', words.next).getAttribute('aria-disabled')], locale).toEqual([`${words.to} ${words.choose}`, 'true']);
     cleanup();
   }
 });
 
-test('private mode hides every balance, after line and move all, a fill on the amount line, and the numbers in what Bun read; a typed amount shows', async () => {
+test('private mode hides every balance, after line and move all and a fill on the amount line, and draws none of what the person told Bun; a typed amount shows', async () => {
   const device = { [PRIVATE_MODE_NAME]: '1' };
   /** Every word and name inside the tray but the amount line the person typed. */
   const said = (except: string | null) => [...found('tray').querySelectorAll<HTMLElement>('*')]
@@ -479,11 +552,29 @@ test('private mode hides every balance, after line and move all, a fill on the a
   expect(radios('จาก').map((radio) => radio.getAttribute('aria-label'))).toEqual(['บัญชีหลัก ซ่อนยอดเงินอยู่', 'เงินสด ซ่อนยอดเงินอยู่', `${LONG_NAME} ซ่อนยอดเงินอยู่`]);
   expect(said(null)).not.toMatch(/[0-9]/);
   cleanup();
-  // Confirm as Bun filled it: the amount is masked, and so is every number Bun read.
-  await mount(<Probe draft={{ merchant: 'ข้าวมันไก่' }} filled guessed={['category']} bunSentence="ข้าวมันไก่ ฿50 กับน้ำ 1,250.50 และ ๒๐" />, { device });
-  expect([text('confirm-amount'), label('confirm-amount')]).toEqual(['฿••••', 'ซ่อนยอดเงินอยู่']);
-  expect(text('confirm-bun')).toBe('บันอ่านจาก “ข้าวมันไก่ ฿•••• กับน้ำ ฿•••• และ ฿••••”');
-  expect(said(null)).not.toMatch(/[0-9๐-๙]/);
+  // Confirm as Bun filled it: the amount is masked, and none of what the person told Bun is drawn (R114), in any
+  // form Bun reads an amount from: digits, Thai digits, Thai number and scale words, k, full-width and Arabic-Indic digits.
+  const told = [
+    'ข้าวมันไก่ 50', 'ข้าวมันไก่ ฿50 กับน้ำ 1,250.50 และ ๒๐', 'ข้าวมันไก่ห้าสิบบาท', 'ข้าวมันไก่ ห้าสิบ', 'กาแฟ ร้อยห้าสิบ',
+    'ค่าเช่า สองพันห้าร้อยบาท', 'เงินเดือน สามหมื่น', 'โอนค่าเทอม หนึ่งแสนสองหมื่นบาท', 'ค่าเช่า 2 พัน', 'ค่าเช่า 1.5k',
+    'ข้าว 50.-', 'ข้าวมันไก่ ５０', 'ข้าว ٥٠',
+  ];
+  for (const sentence of told) {
+    await mount(<Probe draft={{ merchant: 'ร้านป้า' }} filled guessed={['category']} bunSentence={sentence} />, { device });
+    expect([text('confirm-amount'), label('confirm-amount'), text('confirm-bun')], sentence).toEqual(['฿••••', 'ซ่อนยอดเงินอยู่', WORDS.th.bunHidden]);
+    // Gone, not masked: no word of it is anywhere in the tray.
+    for (const word of sentence.split(' ')) expect(said(null), `${sentence}: ${word}`).not.toContain(word);
+    cleanup();
+  }
+  // In English too, and in the violet of what Bun read.
+  await mount(<Probe draft={{ merchant: 'Corner shop' }} filled bunSentence="chicken rice fifty baht" />, { device, locale: 'en' });
+  expect([text('confirm-bun'), found('confirm-bun').style.color]).toEqual([WORDS.en.bunHidden, rgba(walletLight.violet)]);
+  expect(said(null)).not.toMatch(/chicken|fifty/);
+  cleanup();
+  // The catalogue's section as Tell Bun filled it, in private mode.
+  await openSection('bw-tray-confirm-bun', { device });
+  expect([text('confirm-amount'), text('confirm-bun')]).toEqual(['฿••••', WORDS.th.bunHidden]);
+  expect(said(null)).not.toMatch(/[0-9]/);
   cleanup();
   // A typed amount shows on confirm too, as the person typed it.
   await mount(<Probe />, { device });
@@ -616,15 +707,21 @@ test("confirm for a move shows its two wallets and the move's mark, and income i
   // An expense with no category chosen: an empty tile, the tray's title, and the row asks for one.
   await mount(<Probe draft={{ categoryByType: { expense: null, income: null } }} />);
   expect([found('confirm-tile').querySelector('svg'), text('confirm-title'), rowLabels()[0]]).toEqual([null, 'จดรายจ่าย', 'หมวด เลือกหมวดหมู่']);
+  cleanup();
+  // A merchant or a note of spaces alone is no title: the next one in line is.
+  await mount(<Probe draft={{ merchant: '   ', note: 'ข้าวเที่ยง' }} />);
+  expect(text('confirm-title')).toBe('ข้าวเที่ยง');
+  cleanup();
+  await mount(<Probe draft={{ merchant: '   ', note: '   ' }} />);
+  expect(text('confirm-title')).toBe('อาหาร');
 });
 
 test("the steps' sections come right after the amount step's, and each opens at its step on its board's words", async () => {
   const ids = WALLET_SECTIONS.map((section) => section.id);
   const at = ids.indexOf('bw-tray-transfer');
   expect(ids.slice(at - 2, at + 4)).toEqual(['bw-tray-amount', 'bw-tray-income', 'bw-tray-transfer', 'bw-tray-confirm', 'bw-tray-confirm-bun', 'bw-tray-pick-category']);
-  const section = (id: string) => WALLET_SECTIONS.find((each) => each.id === id)?.render();
   // rh-transfer's move, and its Next goes on to confirm.
-  await mount(<>{section('bw-tray-transfer')}</>);
+  await openSection('bw-tray-transfer');
   expect(screen.queryAllByRole('dialog', { name: 'โอนเงิน' })).toHaveLength(1);
   expect([label('transfer-from'), label('transfer-to'), text('transfer-amount')]).toEqual([
     'จาก บัญชีหลัก 24,860 บาท หลังโอน 24,360 บาท', 'ไป เงินสด 1,240 บาท หลังโอน 1,740 บาท', '฿500',
@@ -639,7 +736,7 @@ test("the steps' sections come right after the amount step's, and each opens at 
   expect(rowLabels().slice(0, 2)).toEqual(['จาก เงินสด', 'ไป บัญชีหลัก']);
   cleanup();
   // bw-tray-confirm typed: food from the main account today, and a row opens its pick and comes back.
-  await mount(<>{section('bw-tray-confirm')}</>);
+  await openSection('bw-tray-confirm');
   expect([text('confirm-title'), text('confirm-amount'), rowLabels()]).toEqual(['อาหาร', '฿50', ['หมวด อาหาร', 'กระเป๋า บัญชีหลัก', 'วันที่ วันนี้', 'โน้ต เพิ่มโน้ต']]);
   expect(named('button', 'บันทึก')).not.toBeNull();
   tap(found('confirm-row-date'));
@@ -648,14 +745,14 @@ test("the steps' sections come right after the amount step's, and each opens at 
   expect(rowLabels()[2]).toBe('วันที่ เมื่อวาน');
   cleanup();
   // bw-tray-confirm as Tell Bun filled it.
-  await mount(<>{section('bw-tray-confirm-bun')}</>);
+  await openSection('bw-tray-confirm-bun');
   expect([text('confirm-title'), text('confirm-bun'), text('confirm-amount'), rowLabels()[0]]).toEqual(['ข้าวมันไก่', 'บันอ่านจาก “ข้าวมันไก่ 50”', '฿50', 'หมวด อาหาร บันเดา']);
   tap(found('confirm-row-category'));
   tap(named('radio', 'การเดินทาง'));
   expect([rowLabels()[0], screen.queryByTestId('confirm-guess-category')]).toEqual(['หมวด การเดินทาง', null]);
   cleanup();
   // The category pick: food chosen, and a tap goes back to confirm with the choice.
-  await mount(<>{section('bw-tray-pick-category')}</>);
+  await openSection('bw-tray-pick-category');
   expect(radios('หมวด').map((radio) => radio.getAttribute('aria-checked'))[0]).toBe('true');
   tap(named('radio', 'การเดินทาง'));
   expect(rowLabels()[0]).toBe('หมวด การเดินทาง');

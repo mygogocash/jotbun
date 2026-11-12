@@ -35,6 +35,8 @@ export const COPY = {
   'add.moveAll': { th: 'ย้ายทั้งหมด {amount}', en: 'Move all {amount}' },
   'add.transferNote': { th: 'โอนระหว่างกระเป๋าของคุณเอง ไม่นับเป็นรายจ่าย', en: 'A move between your own wallets is not spending' },
   'add.bunReadFrom': { th: 'บันอ่านจาก “{sentence}”', en: 'Bun read this from “{sentence}”' },
+  // Draft (R114): in private mode the line quotes none of what the person told Bun, which can hold the amount in any form.
+  'add.bunReadHidden': { th: 'บันอ่านจากที่คุณบอก', en: 'Bun read this from what you told it' },
   'add.bunGuess': { th: 'บันเดา', en: "Bun's guess" },
   'add.rowCategory': { th: 'หมวด', en: 'Category' },
   'add.rowWallet': { th: 'กระเป๋า', en: 'Wallet' },
