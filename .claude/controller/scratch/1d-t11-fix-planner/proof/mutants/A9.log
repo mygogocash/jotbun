@@ -1,0 +1,33 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 1 failed) 519ms
+     × the change log counts a create once, by its first version, inside the revision range only 36ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: promise rejected "Error: Cannot read properties of null (re… { …(2) }" instead of resolving
+ ❯ test/workers/server-events.test.ts:694:69
+    692|     )
+    693|     const purgedAt = await revisionOf(user)
+    694|     await expect(events('transactions.create', afterEdit, purgedAt)).r…
+       |                                                                     ^
+    695|   })
+    696| })
+
+Caused by: Error: Cannot read properties of null (reading 'type')
+ ❯ inVault test/workers/support/command-fixtures.ts:110:40
+ ❯ test/workers/server-events.test.ts:694:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { status: undefined, code: undefined }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:04:24
+   Duration  2.67s (transform 799ms, setup 1.57s, import 36ms, tests 519ms, environment 0ms)
+

@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 1 failed) 719ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 38ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [ { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,11 @@
+  [
+    {
+      "distinctId": "caef6a4bf8093f57e945c9eee89922c80f79a65caeaf080ac01758a55739c1f0",
+      "event": "record_saved",
+      "properties": {
++       "category_key": "custom",
+        "kind": "transfer",
+        "origin": "server",
+      },
+    },
+    {
+
+ ❯ test/workers/server-events.test.ts:241:20
+    239|     await r.settled()
+    240|     const id = await hmacOf(user.sub)
+    241|     expect(r.sent).toEqual([
+       |                    ^
+    242|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    243|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:04:39
+   Duration  3.60s (transform 1.24s, setup 2.27s, import 37ms, tests 719ms, environment 0ms)
+

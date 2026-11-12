@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+{"level":"error","request_id":"94a72c0e-c463-49ec-ba12-de904a931082","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"RangeError"}
+
+stdout | test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > an analytics client that cannot be built never changes the Worker's own 500 problem
+{"level":"error","request_id":"84b7e78e-86c5-41b1-a988-1ba97769e3ad","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"TypeError"}
+
+ ❯ test/workers/server-events.test.ts (26 tests | 2 failed) 513ms
+     × an unexpected exception in the Worker is counted as the Worker's, by its class name only 5ms
+     × an analytics client that cannot be built never changes the Worker's own 500 problem 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:500:20
+    498|     }
+    499|     await r.settled()
+    500|     expect(r.sent).toHaveLength(1)
+       |                    ^
+    501|     expect(r.sent[0]).toMatchObject({ event: '$exception', properties:…
+    502|     expect(JSON.stringify(r.sent)).not.toContain('ร้านป้าแดง')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > an analytics client that cannot be built never changes the Worker's own 500 problem
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "{\"level\":\"error\",\"event\":\"server_events_failed\",\"failure\":\"RangeError\"}",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:591:85
+    589|     }
+    590|     expect(outcome).toEqual({ status: 500, code: 'INTERNAL_ERROR' })
+    591|     expect(lines.filter((line) => line.includes('"event":"server_event…
+       |                                                                                     ^
+    592|     expect(lines.join('\n')).not.toContain('ร้านป้าแดง')
+    593|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  03:06:14
+   Duration  2.57s (transform 776ms, setup 1.53s, import 33ms, tests 513ms, environment 0ms)
+

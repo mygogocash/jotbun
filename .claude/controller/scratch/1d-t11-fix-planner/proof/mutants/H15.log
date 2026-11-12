@@ -1,0 +1,65 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 2 failed) 625ms
+     × a resent command sends no second event 33ms
+     × the reply sent to the phone never carries analytics fields 37ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected { status: 201, body: { …(7) } } to deeply equal { status: 201, body: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,18 +1,10 @@
+  {
+    "body": {
+      "analytics": {
+        "consent": "yes",
+-       "events": [
+-         {
+-           "name": "record_saved",
+-           "properties": {
+-             "category_key": "food",
+-             "kind": "expense",
+-           },
+-         },
+-       ],
++       "events": [],
+        "failure": null,
+      },
+      "command_id": "41df5355-736c-4aa0-a4e2-e2ca562eb3fb",
+      "committed_revision": "3",
+      "entity_id": "d51be076-7fee-48f8-aaed-4bc1878fdab4",
+
+ ❯ test/workers/server-events.test.ts:258:19
+    256|     const again = await json(await record(client, user, body, {}, key))
+    257|     expect(first.status).toBe(201)
+    258|     expect(again).toEqual(first)
+       |                   ^
+    259|     await r.settled()
+    260|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > the reply sent to the phone never carries analytics fields
+AssertionError: 201: analytics: expected [ 'command_id', 'entity_id', …(5) ] to not include 'analytics'
+ ❯ test/workers/server-events.test.ts:541:128
+    539|     for (const reply of [...replies, analytics]) {
+    540|       for (const body of Array.isArray(reply.body) ? reply.body : [rep…
+    541|         for (const key of ['analytics', 'events', 'failure']) expect(O…
+       |                                                                                                                                ^
+    542|       }
+    543|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  03:06:17
+   Duration  3.24s (transform 1.03s, setup 1.97s, import 45ms, tests 625ms, environment 0ms)
+

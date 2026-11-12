@@ -1,0 +1,177 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 6 failed) 785ms
+     × without the key the analytics id is null, and nothing is sent under the person 42ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 43ms
+     × a resent command sends no second event 30ms
+     × nothing is sent for a person who said no, or while their phone says off 40ms
+     × an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3) 39ms
+     × the change log counts a create once, by its first version, inside the revision range only 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected [ [ 'record_saved', …(1) ], …(1) ] to deeply equal [ [ 'record_saved', …(1) ] ]
+
+- Expected
++ Received
+
+  [
+    [
+      "record_saved",
+      "d5756e6feda59b221fd36b394847fe53df0594bdf6f11538c159ae9785fc942b",
+    ],
++   [
++     "record_saved",
++     "d5756e6feda59b221fd36b394847fe53df0594bdf6f11538c159ae9785fc942b",
++   ],
+  ]
+
+ ❯ test/workers/server-events.test.ts:188:74
+    186|     await saved(keyed, user, wallet)
+    187|     await r.settled()
+    188|     expect(r.sent.map((message) => [message.event, message.distinctId]…
+       |                                                                          ^
+    189|   })
+    190|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+@@ -9,10 +9,18 @@
+    },
+    {
+      "distinctId": "e8d13fcce4b7fa71afd64c7a9d36fff64c4454b8ab450868f9ccf8a2dde4d92d",
+      "event": "record_saved",
+      "properties": {
++       "kind": "transfer",
++       "origin": "server",
++     },
++   },
++   {
++     "distinctId": "e8d13fcce4b7fa71afd64c7a9d36fff64c4454b8ab450868f9ccf8a2dde4d92d",
++     "event": "record_saved",
++     "properties": {
+        "category_key": "custom",
+        "kind": "expense",
+        "origin": "server",
+      },
+    },
+
+ ❯ test/workers/server-events.test.ts:241:20
+    239|     await r.settled()
+    240|     const id = await hmacOf(user.sub)
+    241|     expect(r.sent).toEqual([
+       |                    ^
+    242|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    243|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected [ 'record_saved', 'record_saved' ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:260:52
+    258|     expect(again).toEqual(first)
+    259|     await r.settled()
+    260|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    261|   })
+    262|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [ 'record_saved', 'record_saved' ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:279:52
+    277|     await saved(client, user, wallet)
+    278|     await r.settled()
+    279|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    280|   })
+    281|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3)
+AssertionError: expected [ 'record_saved', 'record_saved' ] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+  [
+    "record_saved",
++   "record_saved",
+  ]
+
+ ❯ test/workers/server-events.test.ts:299:52
+    297|     await saved(client, user, wallet, { 'x-gogospend-analytics': 'on, …
+    298|     await r.settled()
+    299|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    300|   })
+    301|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: expected [ Array(2) ] to deeply equal [ { name: 'record_saved', …(1) } ]
+
+- Expected
++ Received
+
+@@ -4,6 +4,13 @@
+      "properties": {
+        "category_key": "food",
+        "kind": "expense",
+      },
+    },
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
+  ]
+
+ ❯ test/workers/server-events.test.ts:681:71
+    679|     await expect(events('transactions.create', '0', afterFirst)).resol…
+    680|     // After the first record: the second record only, not the edit's …
+    681|     await expect(events('transactions.create', afterFirst, afterEdit))…
+       |                                                                       ^
+    682|     // Any other route reads nothing (Q16).
+    683|     await expect(events('transactions.update', '0', afterEdit)).resolv…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 20 passed (26)
+   Start at  03:04:31
+   Duration  3.49s (transform 1.15s, setup 2.15s, import 47ms, tests 785ms, environment 0ms)
+

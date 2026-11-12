@@ -1,0 +1,89 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 3 failed) 542ms
+     × the analytics id is the HMAC of the caller's id, with the weeks and the consent 22ms
+     × without the key the analytics id is null, and nothing is sent under the person 20ms
+     × the reply sent to the phone never carries analytics fields 24ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the analytics id is the HMAC of the caller's id, with the weeks and the consent
+AssertionError: expected { status: 200, body: { …(2) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+-     "analytics_id": "588a4bd4afc6437a58f0dc0de49a79d2d87798af36eed129e16b57d31bfa4fcb",
+      "consent": "unasked",
+      "weeks_since_signup": 0,
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/server-events.test.ts:163:19
+    161|     const read = async () => json(await client.as(user).get('/v1/me/an…
+    162|     const first = await read()
+    163|     expect(first).toEqual({ status: 200, body: { analytics_id: id, wee…
+       |                   ^
+    164|     expect(Object.keys(first.body)).toEqual(['analytics_id', 'weeks_si…
+    165|     await answer(client, user, true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected { status: 200, body: { …(2) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+-     "analytics_id": null,
+      "consent": "unasked",
+      "weeks_since_signup": 0,
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/server-events.test.ts:178:71
+    176|     const client = await frontDoor(r, CONFIG, { POSTHOG_PROJECT_TOKEN:…
+    177|     const { user, wallet } = await ledger(client)
+    178|     expect(await json(await client.as(user).get('/v1/me/analytics'))).…
+       |                                                                       ^
+    179|     await answer(client, user, true)
+    180|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > the reply sent to the phone never carries analytics fields
+AssertionError: expected [ 'weeks_since_signup', 'consent' ] to deeply equal [ 'analytics_id', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "analytics_id",
+    "weeks_since_signup",
+    "consent",
+  ]
+
+ ❯ test/workers/server-events.test.ts:544:41
+    542|       }
+    543|     }
+    544|     expect(Object.keys(analytics.body)).toEqual(['analytics_id', 'week…
+       |                                         ^
+    545|   })
+    546| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 23 passed (26)
+   Start at  03:06:21
+   Duration  2.77s (transform 860ms, setup 1.68s, import 37ms, tests 542ms, environment 0ms)
+

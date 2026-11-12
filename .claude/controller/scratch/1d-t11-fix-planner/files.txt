@@ -1,0 +1,11 @@
+# The 1D-T11 fix round's files (R121). Column 1: M (modified) or A (added).
+# Column 2: what RED holds (real = real/, base = left as 6390b20a has it,
+# later = a receipt, copied at the end). GREEN holds real/ for every line but
+# the receipts. RED needs no stub: the new cases use nothing 6390b20a lacks.
+M base apps/edge/src/v1/handler.ts
+M real apps/edge/test/workers/server-events.test.ts
+M real apps/edge/test/workers/ai.test.ts
+M real apps/edge/test/workers/attachments.test.ts
+M real apps/edge/test/workers/download-aborts.test.ts
+M later docs/implementation/receipts/1D-T11.md
+A later docs/implementation/receipts/1D-T11-fix.md

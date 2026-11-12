@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 1 failed) 591ms
+     × a 410 that is not RESYNC_REQUIRED (a create of a purged id) sends no resync_required 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a 410 that is not RESYNC_REQUIRED (a create of a purged id) sends no resync_required
+AssertionError: expected [ { …(3) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "distinctId": "48906f85a371efafea4a4def73e1aa44200519d5a721d251575265907b26f326",
++     "event": "resync_required",
++     "properties": {
++       "origin": "server",
++       "reason_code": "RESYNC_REQUIRED",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:373:20
+    371|     expect(await json(await record(client, user, lunch(user, wallet, {…
+    372|     await r.settled()
+    373|     expect(r.sent).toEqual([])
+       |                    ^
+    374|     // A stale cursor's 410 on the same front door is a resync_require…
+    375|     await sqlExec(user, 'UPDATE sync_state SET pruned_through = revisi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:06:40
+   Duration  3.12s (transform 1.04s, setup 1.95s, import 42ms, tests 591ms, environment 0ms)
+

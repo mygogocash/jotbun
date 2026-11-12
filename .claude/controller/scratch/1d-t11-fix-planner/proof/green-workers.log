@@ -1,0 +1,205 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/live.test.ts > pokes > the other phone hears the new revision, and the saving phone hears nothing 30ms
+ ✓ test/workers/live.test.ts > pokes > the revision is compared as a whole number, so 9 to 10 is a poke 21ms
+ ✓ test/workers/live.test.ts > pokes > a poke reaches a phone whose socket hibernated 23ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the analytics id is the HMAC of the caller's id, with the weeks and the consent 28ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person 33ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > an ended session cannot read it 17ms
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 25ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 23ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 29ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > foreign_attachment_grant_is_denied 66ms
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ✓ test/workers/live.test.ts > pokes > sockets never carry record data 28ms
+ ✓ test/workers/live.test.ts > pokes > a retention purge pokes every phone 31ms
+ ✓ test/workers/live.test.ts > pokes > a send to a socket that is already closing is skipped, and the others still get the poke 19ms
+ ✓ test/workers/live.test.ts > pokes > a commit whose pokes fail still answers, and its revision moves: the work after a call never throws 18ms
+ ✓ test/workers/live.test.ts > keepalive and messages > ping is answered, even after the vault sleeps, without waking it 17ms
+ ✓ test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the weeks since sign-up are whole weeks on the vault clock, from 0 to 1040 24ms
+ ✓ test/workers/server-events.test.ts > server events > a record saved by a person who said yes sends one record_saved with kind and category only 22ms
+ ✓ test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom 28ms
+ ✓ test/workers/server-events.test.ts > server events > a resent command sends no second event 25ms
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 26ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 23ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 27ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > cross-owner association is denied with 404 and no existence leak, and copies nothing 71ms
+ ✓ test/workers/attachments.test.ts > ownership: another account can neither use nor learn of a receipt > a preview image nobody retained, a quarantined upload and an import id never get a grant 25ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > needs explicit consent and the record version, and makes the receipt part of the record 41ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an export download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 274ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a phone's own close is answered, and the vault no longer holds its socket 18ms
+ ✓ test/workers/live.test.ts > keepalive and messages > a message other than ping closes the socket with 1008 17ms
+ ✓ test/workers/live.test.ts > sessions > signing out closes that phone's socket with 4401 and leaves the other open 19ms
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: a raised not_before 19ms
+ ✓ test/workers/live.test.ts > sessions > a refused call still closes the sockets it ended: an account being deleted 21ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault closes every socket when asked (closeEndedSessions with erased) 22ms
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 21ms
+ ✓ test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 20ms
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 16ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 40ms
+ ✓ test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off 38ms
+ ✓ test/workers/server-events.test.ts > server events > an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3) 28ms
+ ✓ test/workers/server-events.test.ts > server events > the off header also stops what a reply says: a stale cursor and a failing sync read send nothing under the person 32ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > copies inside the store, registered before the copy, and the receipt outlives the import image and the preview 44ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > is versioned and idempotent: a stale version keeps nothing, a resend replays, a second receipt needs replace 56ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > never publishes a copy that differs from the import image 38ms
+ ✓ test/workers/live.test.ts > sessions > an ended session cannot open a socket 24ms
+ ✓ test/workers/live.test.ts > sessions > an erased vault cannot open a socket, and nothing is re-created 31ms
+ ✓ test/workers/live.test.ts > sessions > a session's second socket replaces its first 15ms
+ ✓ test/workers/live.test.ts > the front door and the vault > without a token it is 401, an outdated client 426, and a plain GET 400 20ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 36ms
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 24ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 15ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 29ms
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 21ms
+ ✓ test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved 48ms
+ ✓ test/workers/server-events.test.ts > server events > a stale cursor sends resync_required 22ms
+ ✓ test/workers/server-events.test.ts > server events > a 410 that is not RESYNC_REQUIRED (a create of a purged id) sends no resync_required 23ms
+ ✓ test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 22ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > the retain routine publishes only this account's own unexpired copy at its generation, matching the image 41ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > an account has at most four copies in flight; a fifth retain is told when to retry 42ms
+stdout | test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only
+{"level":"error","request_id":"7b13b463-b42e-4614-854f-a971d4bf6bed","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"RangeError"}
+
+ ✓ test/workers/live.test.ts > the front door and the vault > the vault answers only the Worker's live request, and checks every claim 17ms
+ ✓ test/workers/live.test.ts > limits > only open sockets count toward 20 47ms
+ ✓ test/workers/live.test.ts > limits > a socket that is closing does not count toward 20 47ms
+stdout | test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > an analytics client that cannot be built never changes the Worker's own 500 problem
+{"level":"error","request_id":"450abb10-6da0-41d0-956e-52897f5229e9","route":"GET /v1/bridge/gogocash/catalogue","status":500,"error":"TypeError"}
+
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 22ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 32ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 18ms
+ ✓ test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count 37ms
+ ✓ test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person 20ms
+ ✓ test/workers/server-events.test.ts > server events > an unexpected exception in the Worker is counted as the Worker's, by its class name only 2ms
+ ✓ test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 22ms
+ ✓ test/workers/server-events.test.ts > server events > the reply sent to the phone never carries analytics fields 26ms
+ ✓ test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > a port that throws while sending never changes a committed create, and is logged by its class name only 20ms
+ ✓ test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > an analytics client that cannot be built never changes the Worker's own 500 problem 1ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a snapshot chunk download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 264ms
+ ✓ test/workers/attachments.test.ts > retaining a receipt > refuses an image past its window, and a deleted record 33ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > replace moves the record to its next version and queues the image it dropped 50ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 40ms
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 28ms
+ ✓ test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 26ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 18ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 17ms
+ ✓ test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > a call with nothing to send builds no client (P8) 25ms
+ ✓ test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only 21ms
+ ✓ test/workers/server-events.test.ts > the vault half > a failed consent read fails closed: the failed create is counted, and nothing is sent under the person 22ms
+ ✓ test/workers/server-events.test.ts > the vault half > callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal 14ms
+ ✓ test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only 29ms
+ ✓ test/workers/live.test.ts > limits > opening a socket spends the session's read budget: past 120 a minute it is 429 and nothing upgrades 170ms
+ ✓ test/workers/attachments.test.ts > replace and remove are versioned against the record > remove is versioned, deletes the image with no undo, and cannot be repeated 59ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > a receipt two records hold is one object, deleted only after both let go 42ms
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 24ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 19ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 17ms
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 23ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 23ms
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a receipt download hands waitUntil a promise that is pending while its body is unread and ends once the body is read, cancelled, answered to a HEAD or refused after it took its slot 252ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key 22ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 22ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 15ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 51ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 18ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 22ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 19ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 19ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 18ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > two records retaining one image at once keep one receipt, made by one copy 347ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 18ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 20ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step 19ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call 15ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent 17ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain hands waitUntil a promise that is pending while it holds a copy slot and ends once the slot is back; a retain turned away for want of a slot hands over nothing 165ms
+ ✓ test/workers/attachments.test.ts > shared references prevent premature deletion > the 30-day purge of a deleted record releases its receipt only when no other record holds it 41ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > grants wait until the record is restored; the object is never queued meanwhile 39ms
+ ✓ test/workers/attachments.test.ts > a deleted record keeps its receipt for the undo window > a grant issued before the record was deleted no longer downloads 26ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > account erasure deletes every retained receipt object 44ms
+ ✓ test/workers/attachments.test.ts > retention and erasure (P5) > the retention step releases a receipt nothing holds and drops released rows 30 days on, once their object is gone 38ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > serializes reservations: five at once from one account reserve exactly four 23ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload hands waitUntil a promise that is pending while it holds its place among the isolate's uploads and ends once it gives the place back 141ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a busy process answers 503 with when to retry, before it reserves anything 37ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > a retain that waited on another request's copy hands waitUntil a promise on its later attempt too, pending while that attempt copies 208ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a process never has more copies running than its limit 204ms
+ ✓ test/workers/download-aborts.test.ts > R97: a slot keeps its request alive until it is back (fix-download-aborts) > an upload turned away at the isolate's limit (503) hands waitUntil nothing 184ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > refused retains, replaces and removals copy nothing 54ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a receipt that already exists is attached without another copy 29ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > an account has a copy budget; past it, retaining is told when the oldest copy leaves the window 43ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > gives one deadline to the whole copy: the HEAD that checks it runs on the same signal 426ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > a copy the store cannot make is a 503 with no reservation left live, and never leaks the failure 33ms
+ ✓ test/workers/attachments.test.ts > copying is bounded (P2c review fixes M1, M2) > the copy is checked as stored by the database too: a copy that is not the registered image is not published 26ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > serves the image whole, with its length, as it always did 31ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > one account cannot take every download slot: its third waits while another account is served 58ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > the process-wide cap still holds across accounts 59ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download that stops making progress, and frees its slot 234ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > cuts off a download still running at the total limit even though it keeps trickling 488ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a download that never starts is a 503 problem, not an image-typed body 239ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > unavailable storage is a 503 with when to retry, and never sends the failure text 29ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a body that fails before its first byte is a 503 problem, with no error text 28ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a HEAD on a receipt download answers its headers, reads its image to the end and gives its slot back (ruling R96) 260ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > downloads refused after they took a slot give the slot back 50ms
+ ✓ test/workers/attachments.test.ts > receipt downloads (P2c review fixes M3, minor 1) > a corrupted object is never served as a complete download 37ms
+ ✓ test/workers/attachments.test.ts > grants are bound to the session (P2c review fix, minor 2) > a grant verifies only for the session it was issued to 46ms
+ ✓ test/workers/attachments.test.ts > ownership holds for replace and remove too (P2c review fix, minor 6) > another account gets the same 404 as for an unknown record, and nothing changes 58ms
+ ✓ test/workers/attachments.test.ts > privileges and schema > only the routines write receipts or the registry; logins see only what they should 14ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a receipt grant is bound to the session that asked 26ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a retained receipt shows as attachment_id wherever the record is read 29ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > purging a deleted record releases its receipt, stamps the release from the vault clock, and deletes its object 29ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > a copy that is never published is due three minutes after its reservation 18ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > copying is bounded: four in flight and a hundred a day per vault, each answered with when to retry 29ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the plan > after pruneAttachments at attachmentsDueAt, the next attachmentsDueAt is later or null 38ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a second prepare waits for a copy in flight, and needs none once the receipt exists: both checks run in one block 23ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose session ends during its copy commits nothing, and its copy is given back at once 23ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a copy whose import image is gone by then keeps nothing and is refused as expired 22ms
+ ✓ test/workers/attachments.test.ts > 1B-T9: the planner > a retain whose copy outlived its own reservation is refused as expired, even when a failed delete moved its deadline on 21ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a signed-out session is refused at the prepare step, and nothing is reserved or copied 21ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a session without the current terms is refused at the prepare step of a retain and a replace, and at a removal, and nothing is reserved or copied 25ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: prepare checks the session, the policy and the account before it reserves or copies (m-1) > a deleting account refuses retain, replace, remove, the grant and the download without reserving or copying, and the release step still runs 31ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a stamped release whose object is still live is not due yet; once the object is gone, the row is due 30 days after its release 25ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: attachmentsDueAt keeps both of its guards (m-3, R37) > a retained receipt that nothing holds makes attachmentsDueAt now, so the safety net is scheduled 27ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a request waiting on another copy of the same image gives up at copyDeadlineMs with 503 505ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > an unknown body field is refused before anything is reserved or copied, as the API controller reads the body 22ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > the image of a preview that is no longer ready is not copied, though its image is still published 20ms
+ ✓ test/workers/attachments.test.ts > the 1B-T9 review: the copy path (n-1 to n-4) > a second request for an image whose copy is held only waits, until the first attaches the receipt both then hold 180ms
+
+ Test Files  5 passed (5)
+      Tests  159 passed (159)
+   Start at  03:02:09
+   Duration  7.60s (transform 5.21s, setup 10.78s, import 313ms, tests 8.57s, environment 1ms)
+

@@ -1,0 +1,22 @@
+
+> gogospend@0.0.0 test:edge
+> npm test --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":503}
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"TypeError"}
+
+ Test Files  20 passed (20)
+      Tests  206 passed (206)
+   Start at  03:07:30
+   Duration  4.52s (transform 2.41s, setup 0ms, import 4.65s, tests 4.88s, environment 1ms)
+

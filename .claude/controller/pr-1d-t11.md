@@ -27,8 +27,19 @@
   - `test:edge` (20 files, 206);
   - `build:edge` (`eu.i.posthog.com` is in the bundle);
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full workers suite.
-- [ ] Independent review (Opus), and a second review: privacy (consent, what each server event carries) and the failure counting.
+- [x] CI at `6390b20a`: **8 of 9**. `test:edge:workers` failed 3 of 825 cases, all at `member()`'s terms acceptance (500), in `ai.test.ts` and `attachments.test.ts`.
+- [x] Independent review (Opus) and second review (Sonnet): **both Needs fixes** on `6390b20a` (`.claude/controller/reviews/1D-T11.md`, `reviews/1D-T11-second.md`).
+  - Both found the cause of the red CI: three test doubles wrap the vault stub in a `Proxy` that intercepts only `call` and binds every other member. The handler now calls `stub.callWithAnalytics`, and binding an RPC stub's method sends `.bind` as a remote call.
+  - Also unpinned privacy guards: the Worker's never-throws guards, the `RESYNC_REQUIRED` code check, the off header on a reply's events, and a failed consent read failing closed. A repeated off header was not read as off.
+- [x] **Fix round** (`e25af43f`, brief `.claude/controller/briefs/1D-T11-fix.md`; ruling R121 with the planner's P14 to P24):
+  - the scope widens to three test files: `recordingVault` (`ai.test.ts`) records and forwards `callWithAnalytics`, and both `preparesSeen` doubles (`attachments.test.ts`, `download-aborts.test.ts`) forward it unbound; no production change there;
+  - seven new cases pin the privacy guards and P8;
+  - the one production change: `analyticsOff` reads the off header as a list, so any `off` token turns analytics off (fail closed).
+  - The proofs: CI's failure reproduced in the kit (3 of 111), then RED 1 of 159, an assertion; GREEN 159; **51 of 51 mutants killed**; `typecheck:edge`, `test:edge` 206 and `build:edge`. All 6 kit code files are byte-identical; the receipt adds the accepted calls.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #444 and #439, app only) as `1f306864`. Nothing under `apps/edge` or `packages` changed in the merge.
+- [ ] CI on this pull request is green at `1f306864`, the whole workers suite included.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: a live capture to PostHog EU (no project or keys, Q5).
 
 Closes #142 once merged (closed by hand, since the base is not the default branch).

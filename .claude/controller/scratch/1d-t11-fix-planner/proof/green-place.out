@@ -1,0 +1,6 @@
+green: real/apps/edge/src/v1/handler.ts
+green: real/apps/edge/test/workers/server-events.test.ts
+green: real/apps/edge/test/workers/ai.test.ts
+green: real/apps/edge/test/workers/attachments.test.ts
+green: real/apps/edge/test/workers/download-aborts.test.ts
+green: 5 files placed

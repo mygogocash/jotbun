@@ -1,0 +1,72 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: no such table: consents: SQLITE_ERROR
+    at analyticsConsent (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/analytics.ts:24:23)
+    at analyticsAfterCall (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/analytics.ts:74:90)
+    at UserVault.callWithAnalytics (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/user-vault.ts:251:39)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+uncaught exception; source = Uncaught (in promise); stack = Error: no such table: consents: SQLITE_ERROR
+    at analyticsConsent (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/analytics.ts:24:23)
+    at analyticsAfterCall (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/analytics.ts:74:90)
+    at UserVault.callWithAnalytics (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/src/vault/user-vault.ts:251:39)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+stdout | test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only
+{"level":"error","request_id":"c9dded68-228c-46de-9641-282a3225b416","route":"GET /v1/wallets","status":500,"error":"Error"}
+
+stdout | test/workers/server-events.test.ts > the vault half > a failed consent read fails closed: the failed create is counted, and nothing is sent under the person
+{"level":"error","request_id":"7cf62ccd-a3aa-47ab-bd79-a7eb6fcd4ba8","route":"POST /v1/transactions","status":500,"error":"Error"}
+
+ ❯ test/workers/server-events.test.ts (26 tests | 2 failed) 726ms
+     × a failed analytics read never changes the reply, and is logged by its class name only 27ms
+     × a failed consent read fails closed: the failed create is counted, and nothing is sent under the person 37ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > a failed analytics read never changes the reply, and is logged by its class name only
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ test/workers/server-events.test.ts:623:65
+    621|     await sqlExec(user, 'DROP TABLE consents')
+    622|     const lines = await quietly(async () => {
+    623|       expect((await client.as(user).get('/v1/wallets')).status).toBe(2…
+       |                                                                 ^
+    624|     })
+    625|     expect(lines.filter((line) => line.includes('"event":"vault_analyt…
+ ❯ quietly test/workers/server-events.test.ts:149:5
+ ❯ test/workers/server-events.test.ts:622:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > a failed consent read fails closed: the failed create is counted, and nothing is sent under the person
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:641:87
+    639|     await r.settled()
+    640|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+    641|     expect(lines.filter((line) => line.includes('"event":"vault_analyt…
+       |                                                                                       ^
+    642|   })
+    643|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  03:04:52
+   Duration  3.84s (transform 1.29s, setup 2.37s, import 51ms, tests 726ms, environment 0ms)
+

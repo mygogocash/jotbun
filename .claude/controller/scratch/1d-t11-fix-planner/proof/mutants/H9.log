@@ -1,0 +1,55 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 1 failed) 728ms
+     × a deliberate refusal is never an error count 46ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count
+AssertionError: expected [ { …(3) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "distinctId": "8d4cf2e5-b171-4a18-9a98-fba33e4e3c7b",
++     "event": "$exception",
++     "properties": {
++       "$exception_fingerprint": "Error:wallets.create",
++       "$exception_list": [
++         {
++           "mechanism": {
++             "handled": true,
++             "synthetic": true,
++           },
++           "type": "Error",
++           "value": "Error",
++         },
++       ],
++       "$process_person_profile": false,
++       "origin": "server",
++       "route": "wallets.create",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:439:20
+    437|     expect(refusals.filter((line) => line.includes('_failed'))).toEqua…
+    438|     await r.settled()
+    439|     expect(r.sent).toEqual([])
+       |                    ^
+    440|     // A real failure, with the policies published again, is counted o…
+    441|     const again = await frontDoor(r)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:05:53
+   Duration  3.95s (transform 1.38s, setup 2.56s, import 41ms, tests 728ms, environment 0ms)
+
