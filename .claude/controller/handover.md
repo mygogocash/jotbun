@@ -49,7 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
-- **14:45: three Opus planners started** (notes: `scratch/dispatch/planner-common-notes-20261112c.md` plus each task's own):
+- **18:20: the 5-hour window reset; work resumed.** The 13:20 window ran out at 14:36, two minutes after the planners started, and every Claude thread paused until 18:20.
+  - At the reset T3 sent "Continue where you left off." to every thread the limit had paused, finished ones included. The controller stopped and archived the 8 finished ones (the P2-T15 planner, fixer and confirming review; the P2-T29 and P2-T31 confirming reviews; the P2-T21 planner, reviewer and second reviewer), and archived the two finished P3-T6 reviewers.
+  - Live now: the P2-T21 fixer (Haiku, writing its gate logs in `scratch/p2-t21-fix`), and the P2-T16, P3-T7 and P5-T2 planners (Opus xhigh, their kits still empty).
+  - Reran the cancelled promotion run for #422 (`43127891515`); the three runners were idle.
+  - Watcher `b9amnxm2o`: the fixer's commit on `p2-t21` (from 2411001e) or any planner's `SHA256SUMS`.
+  - **Pace:** the window 18:20 to 23:20 carries three Opus planners at once. Add no more Opus until one of them finishes; reviews of their builds will fall in the next window.
+- **14:34: three Opus planners started** (notes: `scratch/dispatch/planner-common-notes-20261112c.md` plus each task's own):
   - P2-T16, the add tray host (critical path, depth 15): `mcp:launch:31e4a93d4ac5f5fc0a9af51e4d3a3e38ff01e4ba1d766921cf35ac613dd10c41`, WT `p2-t16` on `p2/t16-add-tray-host`.
   - P3-T7, the AI use refund: `mcp:launch:4e18771db0cf98dece123a9c66694aece9ef83fc57dbb4027900d1265737e8ba`, WT `p3-t7` on `p3/t7-ai-use-refund`.
   - P5-T2, the currency fields: `mcp:launch:442d08c63e00481b35fe57a412ce92640a0cc2e1bc10ace358bb14cade39887f`, WT `p5-t2` on `p5/t2-currency-fields`.
