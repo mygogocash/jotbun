@@ -10,6 +10,7 @@ import { WALLET_TRAY_SECTIONS } from './traySections';
 import { WALLET_ADD_SECTIONS } from './addSections';
 import { WALLET_LIST_SECTIONS } from './walletListSections';
 import { WALLET_RECORD_SECTIONS } from './recordSections';
+import { WALLET_INSIGHTS_SECTIONS } from './insightsSections';
 import { WALLET_RECAP_SECTIONS } from './recapSections';
 
 export const WALLET_SECTIONS: readonly CatalogueSection[] = [
@@ -19,6 +20,7 @@ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
   ...WALLET_ADD_SECTIONS,
   ...WALLET_LIST_SECTIONS,
   ...WALLET_RECORD_SECTIONS,
+  ...WALLET_INSIGHTS_SECTIONS,
   ...WALLET_RECAP_SECTIONS,
   ...WALLET_LOCK_SECTIONS,
 ];
