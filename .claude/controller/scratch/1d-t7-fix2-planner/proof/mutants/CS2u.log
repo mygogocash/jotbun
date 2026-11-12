@@ -1,0 +1,38 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/analytics/appAnalytics.render.test.tsx (6 tests | 1 failed | 5 skipped) 131ms
+   × U2: a signed-out launch, then A's session with A's account unread offline; A saves and signs out, and B's yes does not send A's save 130ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/analytics/appAnalytics.render.test.tsx > U2: a signed-out launch, then A's session with A's account unread offline; A saves and signs out, and B's yes does not send A's save
+AssertionError: expected [ 'record_saved' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "record_saved",
++ ]
+
+ ❯ src/analytics/appAnalytics.render.test.tsx:176:19
+    174|   setSession({ access_token: 'token-b', userId: ACCOUNT_B, binding: 's…
+    175|   await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+    176|   expect(names()).toEqual([]);
+       |                   ^
+    177| });
+    178|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  02:17:10
+   Duration  890ms (transform 221ms, setup 69ms, import 401ms, tests 131ms, environment 138ms)
+

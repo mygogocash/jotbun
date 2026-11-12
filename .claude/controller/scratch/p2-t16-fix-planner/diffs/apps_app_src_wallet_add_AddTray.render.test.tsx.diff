@@ -1,0 +1,350 @@
+diff --git a/apps/app/src/wallet/add/AddTray.render.test.tsx b/apps/app/src/wallet/add/AddTray.render.test.tsx
+index ae6ce411f3c901cd918c7d7cffc16072122b0b12..9d684f8705942f5ca50df7e336aa703a52c9ea06 100644
+--- a/apps/app/src/wallet/add/AddTray.render.test.tsx
++++ b/apps/app/src/wallet/add/AddTray.render.test.tsx
+@@ -19,12 +19,22 @@
+ // nothing out, so every element is given a box (the P2-T13 review's probe 1).
+ // Each haptic moment is recorded by name. react-native-web omits
+ // aria-disabled when it is false.
++//
++// The fix round (R117) adds the cases for #439's reviews: a conflict in private
++// mode (both reviews' M1 and m2, their probes PROBE-5 and P5), Bun's words on
++// confirm in private mode (the second review's m3, its probe P4a), the bound on
++// a tray whose Modal never says it has gone (both reviews' m1, their wedge
++// probes), the save's problem above Save (the first review's n1, its R8), and
++// the second review's six survivors (M3 to M6, M8 and M10, its probes P1, P2,
++// P8, P11, P12 and P13). For the bound the Modal holds its dismissals back when
++// a case asks (`dismissals.hold`), as UIKit may.
+ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { readFileSync } from 'node:fs';
+ import { dirname, join } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import type { ReactElement } from 'react';
+ import { AccessibilityInfo, Platform } from 'react-native';
++import type { ModalProps } from 'react-native';
+ import { afterEach, expect, test, vi } from 'vitest';
+ 
+ // The real safe-area package loads React Native itself, which vitest cannot run.
+@@ -47,6 +57,23 @@ vi.mock('@mobile/screens/redesign/ai/TellBunSheet', async (importOriginal) => {
+   return { ...actual, TellBunSheet: RecordedSheet };
+ });
+ 
++// The Modal, which says it has gone at once unless a case holds its dismissals back (`hold`): a held one keeps the
++// Modal's own onDismiss (the tray's), as UIKit does with a dismissal it never ends, so the case can send it late.
++const dismissals = vi.hoisted(() => ({ hold: false, held: [] as (() => void)[] }));
++vi.mock('react-native', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('react-native')>();
++  const { createElement, forwardRef } = await import('react');
++  const Modal = forwardRef<unknown, ModalProps>(({ onDismiss, ...props }, ref) => createElement(actual.Modal as never, {
++    ...props,
++    ref,
++    onDismiss: onDismiss && (() => {
++      if (dismissals.hold) dismissals.held.push(onDismiss);
++      else onDismiss();
++    }),
++  }));
++  return { ...actual, Modal };
++});
++
+ import type { AiDraft, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+ 
+ import { COMMON_RULES } from '@mobile/analytics/catalog';
+@@ -78,6 +105,8 @@ afterEach(() => {
+   vi.clearAllMocks();
+   bun.props = null;
+   probe.tray = null;
++  Object.assign(dismissals, { hold: false, held: [] });
++  delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
+ });
+ 
+ /** Lets the stores, the lists, the phone's answer and Bun's AI preferences arrive. */
+@@ -122,6 +151,19 @@ const chipLabels = () => [...found('quick-chips').querySelectorAll('[role="butto
+ const alertIn = (testID: string) => found(testID).querySelector('[role="alert"]')?.textContent ?? null;
+ const escape = () => act(() => { document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Escape' })); });
+ const source = (file: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), file), 'utf8');
++/** iOS for what follows (the conflict case's way), with a no-op for the focus call react-native-web has not; or the web. */
++function onIos(ios: boolean) {
++  Object.defineProperty(Platform, 'OS', { value: ios ? 'ios' : os, configurable: true, writable: true });
++  if (ios) Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', { value: () => undefined, configurable: true, writable: true });
++  else delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
++}
++
++/** A wallet's radio in a pick, named by the wallet and its balance: the one whose name starts with `name`. */
++function walletRadio(name: string): HTMLElement {
++  const element = screen.queryAllByRole('radio').find((each) => (each.getAttribute('aria-label') ?? '').startsWith(name));
++  expect(element, `a radio for ${name}`).toBeDefined();
++  return element as HTMLElement;
++}
+ 
+ /** Each record_started sent, without the properties every event carries. */
+ const starts = (sent: readonly Recorded[]) => sent
+@@ -131,8 +173,8 @@ const starts = (sent: readonly Recorded[]) => sent
+ const LOCALES = ['th', 'en'] as const;
+ const MODES = ['light', 'dark'] as const;
+ const WORDS = {
+-  th: { spending: 'จดรายจ่าย', expense: 'รายจ่าย', next: 'ถัดไป', save: 'บันทึก', back: 'กลับ', food: 'อาหาร' },
+-  en: { spending: 'Add spending', expense: 'Spending', next: 'Next', save: 'Save', back: 'Back', food: 'Food' },
++  th: { spending: 'จดรายจ่าย', expense: 'รายจ่าย', next: 'ถัดไป', save: 'บันทึก', back: 'กลับ', food: 'อาหาร', tryAgain: 'ลองอีกครั้ง', amountHidden: 'ซ่อนยอดเงินอยู่' },
++  en: { spending: 'Add spending', expense: 'Spending', next: 'Next', save: 'Save', back: 'Back', food: 'Food', tryAgain: 'Try again', amountHidden: 'Amount hidden' },
+ } as const;
+ const PRIVATE = { [PRIVATE_MODE_NAME]: '1' };
+ const TODAY = todayInBangkok(new Date());
+@@ -342,6 +384,36 @@ test('saving with a ready diary keeps the entry on the phone, closes the tray an
+   }
+ });
+ 
++test("the track names the category's key, income's own and none for a move, and a move keeps its amount and wallets exactly", async () => {
++  // Income, online: its own category's key, and the 000 key's satang (the second review's P2, its M4).
++  const fake = resources();
++  const onSaved = vi.fn();
++  await mount(<Host onSaved={onSaved} />, { resources: fake.resources, diary: null });
++  await openTray({ type: 'income' });
++  press('3', '000', '0');
++  expect(text('add-amount')).toBe('฿30,000');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect(onSaved).toHaveBeenCalledTimes(1);
++  const income = fake.callsOf('createTransaction')[0]?.args[0] as Record<string, unknown>;
++  expect([income.amount_minor, (onSaved.mock.calls[0] as [SavedEntry])[0].track?.categoryKey]).toEqual(['3000000', 'salary']);
++  cleanup();
++  // A move kept on the phone: from and to as chosen, the amount exact, and no category, so no key (P1, its M5).
++  const diary = readyDiary();
++  const moved = vi.fn();
++  await mount(<Host onSaved={moved} />, { diary: diary.diary });
++  await openTray({ type: 'transfer' });
++  press('5', '0', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(found('transfer-next'));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect(diary.saves).toEqual([expect.objectContaining({ type: 'transfer', amount_minor: '50000', source_wallet_id: MAIN.id, destination_wallet_id: CASH.id })]);
++  expect(moved).toHaveBeenCalledTimes(1);
++  expect((moved.mock.calls[0] as [SavedEntry])[0].track?.categoryKey).toBeNull();
++});
++
+ test('a tray that is saving cannot be closed by close, the backdrop, escape or a swipe, and the result still lands', async () => {
+   boxes();
+   const fake = resources();
+@@ -462,6 +534,41 @@ test("an unconfirmed online save keeps today's Try again, which resends the same
+   expect(named('button', 'บันทึก').getAttribute('aria-disabled')).toBe('true');
+ });
+ 
++test("in private mode a conflict draws and says no amount: today's words, with the amount Jotbun holds masked and said as hidden", async () => {
++  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
++  for (const locale of LOCALES) {
++    const words = WORDS[locale];
++    const other = resources();
++    other.fail('createTransaction', 'network');
++    await mount(<Host />, { locale, resources: other.resources, diary: null, device: PRIVATE });
++    await openTray();
++    press('5', '0');
++    tap(named('button', words.next));
++    tap(named('button', words.save));
++    await settle();
++    // Private mode changes no other words: an answer lost is said as it always is.
++    expect(text('add-save-problem'), locale).toBe(translateCopy('Not confirmed yet. Your entry is kept; try again.', locale));
++    // The resend finds the entry saved with ฿99.00 (both reviews' probe, PROBE-5 and P5), on iOS, which says it too.
++    const sent = other.callsOf('createTransaction')[0]?.args[0] as Record<string, unknown>;
++    other.fail('createTransaction', 'conflict', { status: 409, code: 'VERSION_CONFLICT', current: { ...sent, amount_minor: '9900' } });
++    announce.mockClear();
++    onIos(true);
++    tap(named('button', words.tryAgain));
++    await settle();
++    onIos(false);
++    const line = 'This entry is already saved in Jotbun as {amount}. Check it in History.';
++    const said = translateCopy(line, locale, { amount: words.amountHidden });
++    expect([text('add-save-problem'), label('add-save-problem'), announce.mock.calls.map(([each]) => each)], locale).toEqual([
++      translateCopy(line, locale, { amount: '฿••••' }),
++      said,
++      [said],
++    ]);
++    // No digit of it anywhere: drawn, in its words, or said (Review Focus 2).
++    expect([text('add-save-problem'), label('add-save-problem'), ...announce.mock.calls.map(([each]) => each)].join(' '), locale).not.toMatch(/\p{Nd}/u);
++    cleanup();
++  }
++});
++
+ test('a draft from Tell Bun marks its fields guessed and saves with source tell_bun', async () => {
+   const diary = readyDiary();
+   const onSaved = vi.fn();
+@@ -509,6 +616,54 @@ test('a draft from Tell Bun marks its fields guessed and saves with source tell_
+   tap(named('button', 'ถัดไป'));
+   expect([text('confirm-amount'), screen.queryByTestId('confirm-bun')]).toEqual(['฿45', null]);
+   expect(rowLabels()[0]).toBe('หมวด การเดินทาง บันเดา');
++  cleanup();
++  // A note Bun wrote is one of its guesses too (the second review's P11, its M3).
++  await mount(<Host />, { ai: bunOn() });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, note: 'ค่าข้าวกับพี่' });
++  tap(named('button', 'ถัดไป'));
++  expect(rowLabels()[3]).toBe('โน้ต ค่าข้าวกับพี่ บันเดา');
++});
++
++test("in private mode confirm draws none of Bun's words: a title it would quote is the tray's own, a note it guessed reads as hidden, and what the person writes shows", async () => {
++  // Bun named no place, only a note: out of private mode that note would be the title (R117).
++  await mount(<Host />, { ai: bunOn(), device: PRIVATE });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, merchant: null, note: 'ข้าวมันไก่ 65 บาท' });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['จดรายจ่าย', 'โน้ต ซ่อนอยู่ บันเดา']);
++  // A note the person writes is theirs: it shows, and is the title.
++  tap(found('confirm-row-note'));
++  fireEvent.change(named('textbox', 'โน้ต'), { target: { value: 'ข้าวกลางวัน' } });
++  tap(found('pick-note-done'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['ข้าวกลางวัน', 'โน้ต ข้าวกลางวัน']);
++  cleanup();
++  // Bun named the place and wrote a note, each with the amount in it (the second review's P4a): confirm draws and
++  // says none of it, and no digit at all.
++  await mount(<Host />, { ai: bunOn(), device: PRIVATE });
++  await openTray();
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, merchant: 'ข้าวมันไก่ 65', note: 'ข้าวมันไก่ 65 บาท' });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), text('confirm-amount')]).toEqual(['จดรายจ่าย', '฿••••']);
++  expect(rowLabels()).toEqual(['หมวด การเดินทาง บันเดา', 'กระเป๋า เงินสด บันเดา', 'วันที่ วันนี้ บันเดา', 'โน้ต ซ่อนอยู่ บันเดา']);
++  const step = found('confirm-step');
++  const spoken = [...step.querySelectorAll('[aria-label]')].map((element) => element.getAttribute('aria-label'));
++  expect([step.textContent, ...spoken].join(' ')).not.toMatch(/\p{Nd}/u);
++  // Told again, of the amount only: the place is still the one Bun named, and still not drawn.
++  tap(named('button', 'กลับ'));
++  tap(named('button', 'บอกบัน'));
++  useBun({ ...BUN_DRAFT, amount_minor: '7000', merchant: null, note: null });
++  tap(named('button', 'ถัดไป'));
++  expect(text('confirm-title')).toBe('จดรายจ่าย');
++  // A name the person types (income's name field) is theirs: it shows.
++  tap(named('button', 'กลับ'));
++  tap(radio('รายรับ'));
++  fireEvent.change(named('textbox', 'ชื่อรายการ'), { target: { value: 'ค่าจ้าง' } });
++  tap(named('button', 'ถัดไป'));
++  expect([text('confirm-title'), rowLabels()[3]]).toEqual(['ค่าจ้าง', 'โน้ต ซ่อนอยู่ บันเดา']);
+ });
+ 
+ test("Tell Bun's sheet opens inside the tray", async () => {
+@@ -628,6 +783,27 @@ test('a transfer goes amount, transfer, confirm; back goes to the amount; a pick
+   found('add-amount');
+ });
+ 
++test("Save refuses a day before the wallet started tracking, in today's words, and keeps nothing", async () => {
++  // A day three days back, chosen for cash (tracked since January); then the main account, which started two days
++  // ago (the second review's P8, its M6).
++  const diary = readyDiary();
++  await mount(<Host />, { diary: diary.diary });
++  await openTray({ walletId: CASH.id });
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(found('confirm-row-date'));
++  const previous = named('button', translateCopy('Previous day', 'th'));
++  tap(previous);
++  tap(previous);
++  tap(previous);
++  tap(found('pick-date-done'));
++  tap(found('confirm-row-wallet'));
++  tap(walletRadio(MAIN.name));
++  tap(named('button', 'บันทึก'));
++  await settle();
++  expect([text('add-save-problem'), diary.saves]).toEqual([translateCopy('This date is before the wallet started tracking.', 'th'), []]);
++});
++
+ test('open with a type and a wallet starts there: the wallet spent from or paid into, or the one a move leaves', async () => {
+   await mount(<Host />);
+   const closeTray = async () => {
+@@ -655,7 +831,7 @@ test('open with a type and a wallet starts there: the wallet spent from or paid
+ test("whenClosed runs once the tray's Modal has hidden, or at once with no tray; an open asked while a tray leaves waits for it (R69)", async () => {
+   const recorded = await recordAnalytics();
+   try {
+-    await mount(<Host />);
++    const view = await mount(<Host />);
+     // No tray: at once.
+     const first = vi.fn();
+     act(() => { tray().whenClosed(first); });
+@@ -685,11 +861,59 @@ test("whenClosed runs once the tray's Modal has hidden, or at once with no tray;
+     startAnimations();
+     named('dialog', 'จดรายรับ');
+     expect(starts(recorded.sent)).toEqual([...Array(3).fill({ kind: 'expense', source: 'typed' }), { kind: 'income', source: 'typed' }]);
++    // An open that waited asks again when it runs: blocked by then, nothing opens (the second review's P13, its M10).
++    fireEvent.click(named('button', 'ปิด'));
++    act(() => { tray().open(); });
++    view.rerender(<Host blocked />);
++    await wait(250);
++    startAnimations();
++    expect([screen.queryByTestId('tray'), starts(recorded.sent).length]).toEqual([null, 4]);
+   } finally {
+     recorded.restore();
+   }
+ });
+ 
++test('on iOS a tray whose Modal never says it has gone closes anyway once the bound has passed: what waited runs once, and a late word changes nothing', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const view = await mount(<Host />);
++    await openTray();
++    // iOS hears the close only from the Modal's onDismiss, and this dismissal never ends (both reviews' wedge probes).
++    // A run queued for after the close (P2-T30's) and the + wait for it, as R69 says.
++    dismissals.hold = true;
++    onIos(true);
++    fireEvent.click(named('button', 'ปิด'));
++    const later = vi.fn();
++    act(() => { tray().whenClosed(later); });
++    expect(later).not.toHaveBeenCalled();
++    act(() => { tray().open({ type: 'income' }); });
++    // The card's exit has ended and the Modal has hidden, but no word has come: nothing has run.
++    await wait(250);
++    onIos(false);
++    expect([dismissals.held.length, screen.queryByTestId('tray'), later.mock.calls.length, starts(recorded.sent).length]).toEqual([1, null, 0, 1]);
++    // Past the bound, 1.5 s from the close (R117), the entry goes: the income tray opens, and the run runs, once.
++    await wait(1500);
++    startAnimations();
++    named('dialog', 'จดรายรับ');
++    expect([tray().isOpen, later.mock.calls.length, starts(recorded.sent)]).toEqual([true, 1, [{ kind: 'expense', source: 'typed' }, { kind: 'income', source: 'typed' }]]);
++    // The first tray's word comes at last: it changes nothing, and the open tray stays open past another bound.
++    act(() => { dismissals.held[0]?.(); });
++    named('dialog', 'จดรายรับ');
++    await wait(1600);
++    startAnimations();
++    named('dialog', 'จดรายรับ');
++    expect([tray().isOpen, later.mock.calls.length, starts(recorded.sent).length]).toEqual([true, 1, 2]);
++    // A host that goes away (a sign-out, say) while its tray leaves runs nothing more, past the bound too.
++    fireEvent.click(named('button', 'ปิด'));
++    act(() => { tray().open(); });
++    view.unmount();
++    await wait(1600);
++    expect(starts(recorded.sent)).toHaveLength(2);
++  } finally {
++    recorded.restore();
++  }
++}, 20_000);
++
+ test("outside a host, open pushes today's Quick add with the request", async () => {
+   await mount(<Probe />);
+   act(() => { tray().open({ copyOf: '0000000b-0000-4000-8000-000000000001' }); });
+@@ -750,6 +974,17 @@ test('the tray says while its lists load, offers Try again on a load problem and
+   startAnimations();
+   expect(text('add-amount')).toBe('฿0');
+   cleanup();
++  // An opening that names its type is named for it while it loads (the second review's P12, its M8).
++  const slower = resources();
++  const income = slower.hold('wallets');
++  await mount(<Host />, { resources: slower.resources, diary: null });
++  await openTray({ type: 'income' });
++  named('dialog', 'จดรายรับ');
++  await act(async () => {
++    income();
++    await new Promise((resolve) => setTimeout(resolve, 0));
++  });
++  cleanup();
+   // A load that fails: what happened, in today's words, and Try again.
+   const failing = resources();
+   failing.fail('wallets', 'network');
+@@ -838,6 +1073,9 @@ test("a copy opens on the copied entry with its amount as a fill and today's dat
+     await settle();
+     expect(text('add-save-problem')).toBe(translateCopy('Choose a category', 'th'));
+     expect(diary.saves).toEqual([]);
++    // Above Save, in the tray's pinned footer (P9e; the first review's n1, its R8).
++    const [footer, problem, save] = [found('tray-footer'), found('add-save-problem'), named('button', 'บันทึก')];
++    expect([footer.contains(problem), footer.contains(save), Boolean(problem.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING)]).toEqual([true, true, true]);
+     // Back on the amount, the first key starts it over, and what is typed shows.
+     tap(named('button', 'กลับ'));
+     press('9');

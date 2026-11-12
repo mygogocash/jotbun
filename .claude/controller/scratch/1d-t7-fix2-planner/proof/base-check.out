@@ -1,0 +1,7 @@
+apps/app/src/analytics/controller.ts: OK
+apps/app/src/analytics/AnalyticsUpkeep.tsx: OK
+apps/app/src/analytics/controller.test.ts: OK
+apps/app/src/analytics/appAnalytics.render.test.tsx: OK
+apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx: OK
+docs/implementation/receipts/1D-T7-fix.md: OK
+absent: docs/implementation/receipts/1D-T7-fix2.md

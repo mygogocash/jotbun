@@ -1,0 +1,33 @@
+--- a/apps/edge/src/v1/protocol.ts
++++ b/apps/edge/src/v1/protocol.ts
+@@ -5,6 +5,8 @@
+ 
+ import type { ProblemOptions } from '@api/common/api-problem.filter'
+ 
++import type { ServerEvent } from '../analytics/server-analytics'
++
+ /** A token lives at most this long (exp - iat), §6.4. */
+ export const MAX_TOKEN_LIFETIME_SECONDS = 900
+ 
+@@ -61,6 +63,8 @@
+   | 'ai.preferences' | 'ai.setPreferences' | 'ai.context' | 'ai.consume' | 'ai.facts' | 'ai.tool'
+   // P3-T7: the use a failed model call gives back.
+   | 'ai.refund'
++  // 1D-T11: the analytics answer's vault half (the Worker adds the analytics id).
++  | 'me.analytics'
+ 
+ export type VaultCall = {
+   route: VaultRouteId
+@@ -82,3 +86,12 @@
+ export type VaultReply =
+   | { ok: true; status: number; body?: unknown; headers?: Record<string, string> }
+   | { ok: false; status: number; code: ApiErrorCode; problem: ProblemOptions }
++
++/**
++ * What a vault call read after its block, beside the reply (1D-T11, plan 1D's
++ * L6), for the Worker's server events; never sent to the phone. `consent` is
++ * the caller's own answer ('unasked' whenever the vault did not hold the
++ * caller's account), `events` the record_saved events of what the call
++ * committed, and `failure` the class name of a 500 INTERNAL_ERROR, else null.
++ */
++export type VaultAnalytics = { consent: 'yes' | 'no' | 'unasked'; events: ServerEvent[]; failure: string | null }

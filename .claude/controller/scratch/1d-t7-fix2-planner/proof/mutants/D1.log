@@ -1,0 +1,81 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix2-planner/tree/apps/app
+
+ ❯ src/sync/deviceSync.render.test.tsx (2 tests | 2 failed) 5ms
+   × a device sync hands every outcome to the diary, and reports a failing run once and a resync once 4ms
+   × the diary hears each outcome before that outcome's events go out 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/sync/deviceSync.render.test.tsx > a device sync hands every outcome to the diary, and reports a failing run once and a resync once
+AssertionError: expected [] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "capture",
+-     "sync_failed",
+-     {
+-       "origin": "app",
+-       "reason_code": "NETWORK_ERROR",
+-     },
+-   ],
+-   [
+-     "capture",
+-     "resync_required",
+-     {
+-       "origin": "app",
+-       "reason_code": "RESYNC_REQUIRED",
+-     },
+-   ],
+- ]
++ []
+
+ ❯ src/sync/deviceSync.render.test.tsx:33:89
+     31|     scheduler.stop();
+     32|     expect(seen).toEqual(['synced', 'waiting', 'waiting', 'paused', 's…
+     33|     expect(recorded.sent.map(({ kind, name, properties }) => [kind, na…
+       |                                                                                         ^
+     34|       ['capture', 'sync_failed', { reason_code: 'NETWORK_ERROR', origi…
+     35|       ['capture', 'resync_required', { reason_code: 'RESYNC_REQUIRED',…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/sync/deviceSync.render.test.tsx > the diary hears each outcome before that outcome's events go out
+AssertionError: expected [ [ 'waiting', +0 ], …(1) ] to deeply equal [ [ 'waiting', +0 ], …(1) ]
+
+- Expected
++ Received
+
+@@ -3,8 +3,8 @@
+      "waiting",
+      0,
+    ],
+    [
+      "signed_out",
+-     1,
++     0,
+    ],
+  ]
+
+ ❯ src/sync/deviceSync.render.test.tsx:52:19
+     50|     await scheduler.manual();
+     51|     scheduler.stop();
+     52|     expect(heard).toEqual([['waiting', 0], ['signed_out', 1]]);
+       |                   ^
+     53|     expect(recorded.sent.map(({ name }) => name)).toEqual(['sync_faile…
+     54|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  02:15:41
+   Duration  459ms (transform 119ms, setup 62ms, import 132ms, tests 5ms, environment 121ms)
+
