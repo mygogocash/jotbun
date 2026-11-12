@@ -579,6 +579,11 @@ test('private mode hides every balance, after line and move all and a fill on th
   // A typed amount shows on confirm too, as the person typed it.
   await mount(<Probe />, { device });
   expect([text('confirm-amount'), label('confirm-amount')]).toEqual(['฿50', '50 บาท']);
+  cleanup();
+  // Bun read no amount (amount_unclear) and the person typed it: the amount shows, and Bun's line still quotes none of the sentence.
+  await mount(<Probe guessed={['category']} bunSentence="ข้าวมันไก่ ห้าสิบ" />, { device });
+  expect([text('confirm-amount'), text('confirm-bun')]).toEqual(['฿50', WORDS.th.bunHidden]);
+  expect(said(null)).not.toContain('ห้าสิบ');
 });
 
 test('move all is offered only for a known balance above zero and within the amount cap', async () => {
