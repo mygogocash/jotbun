@@ -1,0 +1,183 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > loading: a spinner until the categories and this month's budget arrive 75ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a load problem says so, and Try again loads again; offline is the same retryable problem 56ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: expense categories, built-in then your own, each with its icon or initial in its colour; Back goes back 35ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the grid: income categories on the switch, with nothing of your own yet 67ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > no categories of your own yet: the built-ins, and a line that says what New category is for 26ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating: a name, a colour from the palette and a limit, with a live chip preview; Add this category sends one create, then the limit 121ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > creating an income category: the type is chosen in the form, and income has no limit 81ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Cancel leaves the form without sending anything 54ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing a built-in: its default name as the placeholder, and "Use the default name" sends label null 76ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > editing your own category sends only what changed, at the version read 97ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > this month's limit shows when the budget has one, and a change replaces the budget with the overall limit unchanged 104ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > saving: the action is busy and the form is locked until the answer 62ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed: the form freezes, offers only Try again, and Try again resends the same command under the same key 71ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > unconfirmed after the category saved: Try again resends only the budget command, with its own key 66ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a definite refusal unfreezes the form, and the corrected save is a new command with a new key 70ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a changed session blocks saving but keeps the draft; nothing is resent under another identity 42ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a conflict shows the category as it now is beside yours, and Reload shows theirs 73ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a budget changed elsewhere shows this month's limit and budget as they now are, and Reload 83ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archive asks first, saying what archiving does; then the category moves to Archived 133ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > archived: the section opens to each archived category, and Unarchive brings it back 54ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > an unconfirmed unarchive freezes the grid; Try again resends the same command and key 58ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit with no monthly budget: it says a budget comes first and links to Budget, and creates none 61ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit over the total is said inline as it is typed, and nothing is sent 61ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a limit must be an exact amount above zero 44ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 161ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > a label problem: an empty name is refused before sending, a long one as it is typed 63ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the name field is one line 28ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai: built-in names are translated and the text keeps Thai leading 31ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'light', in palette colours 18ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 142ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'en', 'dark', in palette colours 20ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'light', in palette colours 17ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'th', 'dark', in palette colours 19ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'light', in palette colours 17ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reads in 'vi', 'dark', in palette colours 18ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > every control is at least 44 pt and has a role and a name; a swatch is a radio named for its colour 38ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > decorative art is hidden from screen readers: icons, initials and the preview 26ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > reduced motion: switching type, choosing a colour and the archive sheet move without a spring 58ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the screen draws with palette tokens only, and keeps money out of floating point 1ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > the catalogue has one section per state, with categories-… ids and Categories: … titles 0ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-loading reaches its state in English and Thai, without errors 10ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-load-problem reaches its state in English and Thai, without errors 48ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-expense reaches its state in English and Thai, without errors 52ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 313ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 372ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 226ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 44ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-income reaches its state in English and Thai, without errors 675ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-no-custom reaches its state in English and Thai, without errors 52ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 249ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 144ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 140ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 198ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 182ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-create reaches its state in English and Thai, without errors 825ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-edit-builtin reaches its state in English and Thai, without errors 95ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 76ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 104ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 103ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 44ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-saving reaches its state in English and Thai, without errors 193ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-unconfirmed reaches its state in English and Thai, without errors 190ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 177ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 412ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 28ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 154ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-conflict reaches its state in English and Thai, without errors 804ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 202ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archived reaches its state in English and Thai, without errors 101ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 187ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 324ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 46ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 137ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 110ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-archive-confirm reaches its state in English and Thai, without errors 736ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-no-budget reaches its state in English and Thai, without errors 99ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 122ms
+   → no Save on a stale draft: expected [ <button …(8)>…(1)</button> ] to deeply equal []
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-limit-over reaches its state in English and Thai, without errors 142ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 154ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > catalogue section categories-label-error reaches its state in English and Thai, without errors 144ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Back goes back, or to Budget with nothing to go back to 25ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday adds the missing categories in Thai (an English "Pets" already counts), then is no longer offered 42ms
+ ✓ src/screens/redesign/planning/CategoriesScreen.render.test.tsx > Thai everyday is off with the companion area off 20ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 179ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 127ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 338ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 162ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 113ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again 161ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why 84ms
+ × src/screens/redesign/planning/categoryCommands.render.test.tsx > a category changed on another device closes the form, says so, and reads the grid again 68ms
+   → the form closes: expected [ <h1 dir="auto" …(3)></h1> ] to deeply equal []
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > once the category is accepted and the budget refused, saving again sends only the budget 99ms
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  2 failed | 96 passed (98)
+   Start at  09:39:10
+   Duration  8.48s (transform 2.18s, setup 288ms, import 3.29s, tests 12.17s, environment 473ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:88579) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again
+AssertionError: no Save on a stale draft: expected [ <button …(8)>…(1)</button> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <button
++     aria-busy="false"
++     aria-label="บันทึกการแก้ไข"
++     class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++     data-testid="category-tray-save"
++     role="button"
++     style="min-height: 54px; background-color: rgba(17, 16, 20, 1.00); align-items: center; justify-content: center; opacity: 1; padding: 12px 18px; border-radius: 16px;"
++     tabindex="0"
++     type="button"
++   >
++     <div
++       class="css-text-146c3p1"
++       dir="auto"
++       style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(255, 255, 255, 1.00); text-align: center;"
++     >
++       บันทึกการแก้ไข
++     </div>
++   </button>,
++ ]
+
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:865:101
+    863|   await press(named('button', tc('Save changes')));
+    864|   expect(found('category-tray-problem').textContent).toBe(tc('This cat…
+    865|   expect(screen.queryAllByRole('button', { name: tc('Save changes') })…
+       |                                                                                                     ^
+    866|   expect(screen.queryAllByRole('button', { name: tc('Archive category'…
+    867|   const reads = fake.callsOf('ensureBuiltinCategories').length;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/screens/redesign/planning/categoryCommands.render.test.tsx > a category changed on another device closes the form, says so, and reads the grid again
+AssertionError: the form closes: expected [ <h1 dir="auto" …(3)></h1> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <h1
++     class="css-text-146c3p1"
++     dir="auto"
++     role="heading"
++     style="font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
++   >
++     Edit category
++   </h1>,
++ ]
+
+ ❯ src/screens/redesign/planning/categoryCommands.render.test.tsx:96:90
+     94|   fireEvent.click(await named('button', 'Save changes'));
+     95|   await waitFor(() => expect(within(screen.getByTestId('categories-foo…
+     96|   expect(screen.queryAllByRole('heading', { name: 'Edit category' }), …
+       |                                                                                          ^
+     97|   expect(fake.callsOf('ensureBuiltinCategories').length, 'read again')…
+     98| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

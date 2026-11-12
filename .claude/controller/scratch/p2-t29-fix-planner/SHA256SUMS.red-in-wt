@@ -1,0 +1,7 @@
+d40ab54c48d294189157bf459f58698f46c8ec69a2884ee25213946475eb26b8  apps/app/src/dev/catalogue/wallet/categorySections.tsx
+15fb594a9969c927edd5b136c285d03815acef5b7b9fbbe3803c6ba6f8970251  apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx
+4b52f113bca4941c29d3bb21094d2bc63117b374462ef946f1f0ed57e59d0b42  apps/app/src/screens/redesign/planning/categoryCommands.render.test.tsx
+bbf48796aeb8bbdf09bebd4b0a4020038a945e8cab3fd327cf444e0f4be5e592  apps/app/src/wallet/categories/CategoryTray.tsx
+4dc2e45170e325db002dfb4cbac666e047603c7fb9763dd9c2b97a82ef10945a  apps/app/src/wallet/categories/ThaiPackTray.tsx
+0ab455021b3e9008511674daf0e15a427aba0e876960ef9cc90baa946c2de89b  apps/app/src/wallet/categories/WalletCategories.render.test.tsx
+3fa8040c427487cceabedd04c9c0ab1d807b6360ad5d8f30d3556d7ec21d3d61  apps/app/src/wallet/categories/WalletCategoriesScreen.tsx

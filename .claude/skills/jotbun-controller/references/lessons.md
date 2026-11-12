@@ -156,6 +156,12 @@
   - `t3_thread_interrupt stop:true` on such a thread returns `no_active_run`, so archive the old thread (`t3_thread_organize archive`), and at the reset check that none resumed. A resumed duplicate would overwrite the new agent's brief.
   - Find an old agent's jsonl by grepping `~/.claude/projects/-Users-kunanonjarat-Developer-jotbun/*.jsonl` for a line from its last message.
   - Money and privacy PRs still wait for their Opus review (owner's 10 Nov routing); Gemini plans, builds and gives the first look meanwhile.
+- **Background Bash dies at 30 minutes unless given a timeout (12 Nov).** The harness stops a `run_in_background` command at its default 30-minute limit, so a `watch_agents.sh ... 120` or a `wait_ci.sh` died long before its own cap.
+  - Start every watcher with `timeout: 7200000` and a cap under 120 minutes (`watch_agents.sh unused 30 115 ...`, `ci_watch.sh 115 ...`).
+  - `C/ci_watch.sh` reports each PR head once (`scratch/ci_watch.seen`), so overlapping watchers never report twice.
+- **The 5-hour window hit again on 12 Nov (09:41 to 13:20)** with five Opus and two Sonnet agents plus the controller.
+  - At the reset T3 resumed every paused thread again, finished implementers included. Stop each finished one at once, before it reruns steps in a worktree whose commit is already pushed.
+  - Then check the heavy lock, the runners and the PRs' checks.
 - **When agents look stalled, check for thermal sleep first.** On 10 Nov, from 03:11 to 06:05, the owner's Mac slept about 15 minutes in every 20 (`pmset -g log`: "Entering Sleep state due to 'Dark Wake Thermal Emergency'"), with the display off and five or six agents running.
   - Everything slowed down: a two-lens review took about 3 hours, and a six-minute whole-file render run never finished cleanly (R103).
   - `pmset -g log | grep -i thermal` shows it at once.
@@ -167,3 +173,8 @@
 - **Close issues by hand.** PRs into `claude/p1a-vault-core` (not the default branch) do not close their issues, so close each one after merge. The task-to-issue map is `docs/implementation/backlog-map.json` under `tasks`.
 - **Approved with minors: merge first, follow up after.** Record the minors in `followups.md` under the task that should carry them, or open a small follow-up task. Example: the parser-regex test follow-up for six surviving mutants.
 - **Never merge into `main`**: that is the owner's call. Never delete `claude/premium-ai-edge`: the main checkout has it checked out with another session's uncommitted work.
+
+## T3 resumes every paused thread at a usage reset (12 Nov, 18:20)
+- When a usage limit pauses Claude threads, T3 arms a resume for each one and sends "Continue where you left off." at the reset. It does this for threads whose work had already finished, too (a confirming review, a planner whose brief was done).
+- Stopping such a thread with `t3_thread_interrupt stop:true` ends that run, but it can be armed again at the next limit. **Archive a thread (`t3_thread_organize archive`) as soon as its result is used.** At each reset, list the project's running and starting threads and stop and archive anything finished.
+- The 13:20 window ran out at 14:36: three confirming reviews, a fix planner, two Haiku fixers and the controller used it up in 76 minutes. With three Opus planners running, expect a window to last about one to two hours. Start Opus work early in a window and put Haiku builds between.

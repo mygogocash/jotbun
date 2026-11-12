@@ -1,7 +1,8 @@
 // The R4 Planning routes (app/spend/budget.tsx, wallets.tsx, categories.tsx):
 // each shows its screen only under the `planning` area, never in the legacy
 // build, and otherwise goes back to Home. While the `wallet` area is on,
-// wallets.tsx shows the Bun Wallet's list instead (P2-T20), and the Bun
+// wallets.tsx shows the Bun Wallet's list instead (P2-T20),
+// categories.tsx the Bun Wallet's categories (P2-T29), and the Bun
 // Wallet's new-wallet and edit routes (P2-T21: wallet/new.tsx and
 // wallet/[id]/edit.tsx) show its screens; otherwise they go to the list.
 import { cleanup, render, screen } from '@testing-library/react';
@@ -34,6 +35,8 @@ function stub(name: string, text: string) {
 vi.mock('@mobile/screens/redesign/planning/BudgetScreen', stub('BudgetScreen', 'budget'));
 vi.mock('@mobile/screens/redesign/planning/WalletsScreen', stub('WalletsScreen', 'wallets'));
 vi.mock('@mobile/screens/redesign/planning/CategoriesScreen', stub('CategoriesScreen', 'categories'));
+// The Bun Wallet's categories (P2-T29).
+vi.mock('@mobile/wallet/categories/WalletCategoriesScreen', stub('WalletCategoriesScreen', 'wallet categories'));
 // The Bun Wallet's list (P2-T20), which says whether it opens its reorder tray.
 vi.mock('@mobile/wallet/wallets/WalletsListScreen', async () => {
   const { createElement } = await import('react');
@@ -145,4 +148,19 @@ test('in the wallet area the new-wallet and edit routes show the Bun Wallet scre
       cleanup();
     }
   }
+});
+
+test('in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home', () => {
+  flags({ redesign: 'wallet' });
+  render(<SpendCategoriesRoute />);
+  expect(screen.queryByText('wallet categories with shared resources')).not.toBeNull();
+  cleanup();
+  // The wallet area is its own (W1): it does not need the planning area.
+  flags({ redesign: '-planning,wallet' });
+  render(<SpendCategoriesRoute />);
+  expect(screen.queryByText('wallet categories with shared resources')).not.toBeNull();
+  cleanup();
+  flags({ redesign: 'wallet', legacy: '1' });
+  render(<SpendCategoriesRoute />);
+  expect(screen.queryByText('redirect to /spend')).not.toBeNull();
 });

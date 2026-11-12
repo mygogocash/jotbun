@@ -1,0 +1,33 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 0: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 8ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 1: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 2ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 2: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 1ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area wallets.tsx shows the Bun Wallet list with the shared resources, ?reorder=1 opens its reorder tray, and the legacy build still goes back to Home 1ms
+ × src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home 2ms
+   → expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  09:52:03
+   Duration  325ms (transform 25ms, setup 38ms, import 96ms, tests 15ms, environment 72ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home
+AssertionError: expected null not to be null
+ ❯ src/screens/redesign/planning/PlanningRoutes.render.test.tsx:110:77
+    108|   flags({ redesign: '-planning,wallet' });
+    109|   render(<SpendCategoriesRoute />);
+    110|   expect(screen.queryByText('wallet categories with shared resources')…
+       |                                                                             ^
+    111|   cleanup();
+    112|   flags({ redesign: 'wallet', legacy: '1' });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

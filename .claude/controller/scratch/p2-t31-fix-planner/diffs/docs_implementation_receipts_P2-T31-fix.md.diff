@@ -1,0 +1,60 @@
+diff --git a/docs/implementation/receipts/P2-T31-fix.md b/docs/implementation/receipts/P2-T31-fix.md
+new file mode 100644
+--- /dev/null
++++ b/docs/implementation/receipts/P2-T31-fix.md
+@@ -0,0 +1,55 @@
++# P2-T31-fix: insights on one quiet load, one scale, private calendar days alike, exact money, the boards' dates and words, and the real screen in the catalogue
++
++- **Status:** built and verified locally on `p2/t31-insights` (`.claude/worktrees/p2-t31`): one fix commit on top of PR #421's reviewed head `afc19276`. Not pushed. This is the fix round on PR #421 after its first review (`.claude/controller/reviews/P2-T31.md`, Opus), which said Needs fixes for eight majors (M1 to M8), eleven minors and seven nits; the second (`P2-T31-second.md`, Flash) approved and added nothing. The controller ruled R112: fix every major and minor as the review proposes, unless the plan says otherwise. The planner's brief is `.claude/controller/briefs/P2-T31-fix.md`. Under R87 this receipt is its own file; `P2-T31.md` gains one line pointing here, and `premium-progress.md` is not edited. The independent review is the controller's, after this receipt.
++- **Base:** `afc19276`, with no sync merge (the controller merges the head again once the round lands, INSIGHTS after CATEGORY and before RECAP). None of the round's files, nor the modules it builds on, changed on the integration head since `afc19276`; #411 and #412 merged meanwhile. At the base, the catalogue's screen-reader pass fails one case, `bw-insights-in-out` (the first round's unnamed in-and-out chart, m4); it passes after this round.
++- **Files:**
++  - Rewritten: `apps/app/src/wallet/insights/insightsData.ts`, `WalletInsightsScreen.tsx`, `SpendingTab.tsx`, `MonthBars.tsx`, `InOutTab.tsx`, `CalendarTab.tsx`, and `WalletInsights.render.test.tsx` (26 cases; 11 before).
++  - Changed: `calendarShade.ts` (reads `CALENDAR_STEP_LIMITS_BAHT`, by relative path), `copy.ts` (the draft table), `InfoTray.tsx` (a role).
++  - The catalogue: `apps/app/src/dev/catalogue/wallet/insightsSections.tsx` (six section descriptors) and `insightsScreens.tsx` (created: the real screen on fakes, loaded lazily).
++  - Shared, additive: `apps/app/src/ui/dateStep.ts` gains `monthShortLabel` and `shortDateLabel`, and `dateStep.test.ts` their two cases.
++  - Unchanged: the route `app/spend/insights.tsx`, `InsightsRoutes.render.test.tsx` (it stubs the screen), `calendarShade.test.ts` and the catalogue's `index.ts`.
++  - This receipt, and one line in `P2-T31.md`.
++- **M1, one quiet load:** the load is keyed by the month, today and the resources only. The phone's drafts are read at render time, and a draft that resolves refreshes the month quietly, in place: a sync run never blanks the screen, never closes the info tray, never moves the chosen day and, with the same drafts, reads nothing. Data read for another month is never handed over as this one's.
++- **M2, one scale:** the bars and the dashed budget line stand on one baseline, scaled by the taller of the largest month and the budget, in exact integer maths. October's ฿3,972.50 against a ฿18,000 budget stands 24 of the line's 110 units.
++- **M3, private mode (R65):** every day is one neutral fill with ink numbers, no amount and no border but today's frame, and says its date alone. The legend keeps its swatches with no values, no unit, and says only that the framed day is today.
++- **M4 and m7, dates:** the early state names each logged day by its own date, the chosen day reads `เสาร์ 24 ต.ค. · วันนี้`, and the bars' months are `พ.ค.` to `ต.ค.`, all through `src/ui/dateStep.ts`.
++- **M5, money:** every drawn amount is the wallet's money text, keeping satang that are not zero (`฿3,972.50`, `งบ ฿18,000`); a calendar day shows whole baht by BigInt, rounded down (`3,240`). No `Number()`, `Math.round` or `toLocaleString` touches money.
++- **M6, a compare month that cannot be read:** it fails the load, which says so in Thai first with Try again; it is never drawn or said as ฿0. This month's own summary is its bar's, so it is read once (n6).
++- **M7, words:** the weekdays, วันนี้, the per-day unit and a record's name come from dateStep, the draft table or the catalogs; the English screen has no Thai.
++- **M8, guards and analytics:** 127 mutants, the review's fifteen among them, each killed; the analytics case installs `recordAnalytics()` and asserts one `insights_viewed` per tab shown, and no amount, note or name in what is sent.
++- **The minors:** m1, the offline banner only for a `V1Error` with outcome `network` where a diary is open, the problem's title as a heading, Try again only when a retry helps, and Refresh when a later page says the diary changed; m2, the days left with today counted (8 on 24 October), none for a month gone by; m3, each day button says `calendarModel`'s label; m4, the in-and-out chart is a named image that reads each month's money in and out; m5, built-in categories named on the chosen day, with the wallet; m6, the catalogue draws the real screen on fakes, the private calendar and the largest amount included; m8, the summary's totals with true counts, no fallback; m9, `เก็บได้ ฿21,027.50`; m10, `งบ ฿18,000`; m11, days at least 44 pt wide and 50 pt tall on a 375 pt phone, the grid's numbers capped at the largest standard size while the cells grow.
++- **The nits:** n1 `HIDDEN_AMOUNT`; n2 the kit's `IconButton`; n3 `insights.today` used, `insights.sample` dropped, draft lines marked; n4 the legend in private mode and in dark mode; n5 DM Sans for the grid; n6 one read of this month; n7 the counts here are the logs'.
++- **RED to GREEN:**
++  - RED, on the planner's typed stubs of `WalletInsightsScreen.tsx`, `insightsSections.tsx` and `src/ui/dateStep.ts`, with the round's two tests:
++    - `typecheck:app` exit 0;
++    - Node: `ℹ tests 19`, `ℹ pass 17`, `ℹ fail 2`; the two failures are the new dateStep cases, each an `AssertionError [ERR_ASSERTION]`;
++    - render: `Test Files  1 failed (1)`, `Tests  26 failed (26)`, each on an `AssertionError` from an asserting lookup, with no lookup or module error.
++  - GREEN:
++    - `typecheck:app` exit 0;
++    - Node: `ℹ tests 19`, `ℹ pass 19`, `ℹ fail 0` (`dateStep.test.ts`, `calendarShade.test.ts`, `draftText.test.ts`);
++    - `WalletInsights.render.test.tsx`: `Test Files  1 passed (1)`, `Tests  26 passed (26)`;
++    - the four routes tests: `Test Files  4 passed (4)`, `Tests  13 passed (13)`;
++    - the eight kit files that import the wallet catalogue index, and the Bun diary insights and recap: `Test Files  10 passed (10)`, `Tests  210 passed (210)`;
++    - the catalogue's wallet sections, both suites: `Test Files  2 passed (2)`, `Tests  54 passed | 572 skipped (626)`.
++- **Mutation check:** 127 mutants, all killed, every restore's SHA-256 checked (`tools/mutants.py`). The review's survivors are R1 to R15; the plan's three are H1 (฿200 as step 2), C8 (the shades kept in private mode) and S2 (`tab: 'inOut'`). Two are killed by an error rather than an assertion, by design: P19 (a category with no tile) and C34 (a wallet that is not listed), each a `TypeError`. One more is equivalent and not run: S13, the calendar drawn for the data's month, which the month guard (D9) makes the month shown.
++- **Gate** (worktree root; R100 and the 12 November rule):
++  - `typecheck:app` exit 0;
++  - `test:app` exit 0, `ℹ fail 0`;
++  - `test:unit` exit 0, `ℹ fail 0`;
++  - the focused files above;
++  - `git diff --check`: clean.
++- **CI** (R100): the full render suite, `export:web`, the iOS export, the database suites, `test:edge:workers` and `test:ops` run on the PR. No route, config or app entry changed, so `typecheck:routes` and `export:web` were not run locally.
++- **Deviations** (the brief's planner rulings):
++  - P3: the load reads `wallets()` once more, for the chosen day's "category · wallet".
++  - P6: `src/ui/dateStep.ts`, a shared file, gains two exports; the early state reads `ศุกร์ 23 ต.ค.` (the plan's short form), where es-empty-insights draws `ศ. 23 ต.ค.`.
++  - P8: `insights.sample` is dropped and six draft lines are added.
++  - P11: a month gone by has no days-left line.
++  - P13: the in-and-out pairs draw money out in ink, as W21 names it, rather than in the spending bars' colours.
++  - P17: the grid's numbers stop at the largest standard size; the chosen day's list carries the facts at every size.
++  - P18: the monthly badge is on `card`, the screen's month row is left off the calendar tab, and the page keeps clear of the safe area, as the wallets list does.
++- **SKIPPED:** device checks (VoiceOver over the bars, the pairs and the days; the calendar at AX5 on a 375 pt phone) until E2-C and P2-T37; Docker is stopped, so the database suites are CI's.
++- **For E2-C (owner, Q3):** the English lines and the Thai lines marked draft in `wallet/insights/copy.ts`; `ศุกร์ 23 ต.ค.` against the board's `ศ. 23 ต.ค.`; `กรอบคือวันนี้` against the board's `กรอบดำคือวันนี้`; a private day's `raised` fill, which equals the page's `ground` in light mode (the review's note).
++- **Notes for later tasks:**
++  - P2-T37: the calendar at AX5 on a 375 pt phone, and VoiceOver on the day buttons.
++  - P2-T38: every insights line is in `wallet/insights/copy.ts` or the catalogs; the move takes the table whole.
++  - R71: the category link carries only `category`, as the plan writes it; from a month gone by, History opens on this month (the review's note).

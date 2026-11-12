@@ -199,3 +199,23 @@ export function monthLabel(month: string, locale: DateLocale): string {
 export function weekdayInitials(locale: DateLocale): readonly string[] {
   return WORDS[locale].weekdaysNarrow;
 }
+
+/** A month's short name, without its year, under a chart's bar: "Oct", "ต.ค.", "thg 10" (bw-insights). */
+export function monthShortLabel(month: string, locale: DateLocale): string {
+  const match = ISO_MONTH.exec(month);
+  const number = match ? Number(match[2]) : 0;
+  if (!match || Number(match[1]) < 1 || number < 1 || number > 12) throw new TypeError(`Expected a YYYY-MM month, got ${month}.`);
+  return WORDS[locale].monthsShort[number - 1];
+}
+
+/**
+ * The day written out even when it is today or yesterday: "Sat 24 Oct",
+ * "เสาร์ 24 ต.ค.", with the year only when it is not today's year. For a
+ * heading that says Today beside the date (wc-calendar: "เสาร์ 24 ต.ค. ·
+ * วันนี้") and for a row of dates (es-empty-insights); chips and day headers
+ * keep `dayLabel`.
+ */
+export function shortDateLabel(date: string, today: string, locale: DateLocale): string {
+  const day = partsOf(date);
+  return shortDate(day, locale, day.year !== partsOf(today).year);
+}

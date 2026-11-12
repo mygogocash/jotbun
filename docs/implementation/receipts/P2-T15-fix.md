@@ -1,0 +1,68 @@
+# P2-T15-fix: none of Bun's sentence in private mode, Next by the cards' rule, the reviews' pins, and lazy step sections
+
+- **Status:** built and verified locally on `p2/t15-transfer-confirm-pick` (`.claude/worktrees/p2-t15`), one commit on PR #427's reviewed head `fd41909c`. Not pushed. This is the fix round on PR #427 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T15.md`) said Needs fixes: M1, m1 to m3, n1 to n4;
+  - the second (`P2-T15-second.md`, money and privacy) said Needs fixes: M1, m1, m2, n1, n2. Its M1 and m1 are the first review's M1 and m1.
+
+  The controller ruled R114, and the planner's brief is `.claude/controller/briefs/P2-T15-fix.md`. Under R87 this receipt is its own file. `P2-T15.md` is corrected and points here. The logs are in `.claude/controller/scratch/p2-t15-fix/`.
+- **Base:** `fd41909c`, with no merge (the brief's P20). The controller merges the head afterwards.
+- **Files:** the nine of the brief's Scope, and this receipt. Line counts, before to after:
+  - modified: `ConfirmStep.tsx` (187 to 188), `TransferStep.tsx` (261 to 276), `PickSteps.tsx` (288 to 289), `copy.ts` (48 to 50), `AddSteps.render.test.tsx` (662 to 759; 17 cases, 14 before), `addSections.tsx` (351 to 208), `P2-T15.md` (45 to 46);
+  - new: `addStepsNative.test.ts` (35 lines; Node; three source pins), `addStepsSection.tsx` (176 lines; development only), and this receipt.
+- **What changed:**
+  - **P21, private mode draws none of Bun's sentence.** `ConfirmStep.tsx` draws `add.bunReadHidden` in private mode (`บันอ่านจากที่คุณบอก`, "Bun read this from what you told it", Thai first; a draft for E2-B) and the quoted sentence with `add.bunReadFrom` otherwise. The first round's mask (`NUMBER`, P8c) and its five mutants (C7 to C11) are removed. No mask keeps up with every number form the parser reads: Thai number words without spaces, scale words such as พัน and k, and whatever the server's model reads. `copy.ts` holds the one new draft line.
+  - **P21, the proof.** The private-mode case feeds the reviews' thirteen sentences (digits; ฿, ๒๐ and 1,250.50; ห้าสิบ with and without a space; ร้อยห้าสิบ; สองพันห้าร้อยบาท; สามหมื่น; หนึ่งแสนสองหมื่นบาท; 2 พัน; 1.5k; 50.-; full-width ５０; Arabic-Indic ٥٠), each with its amount masked as a fill. The line is exactly the hidden words, and no word of the sentence is anywhere in the tray. It then feeds the English sentence "chicken rice fifty baht" and checks the catalogue's `bw-tray-confirm-bun` in private mode, with no digit in the tray.
+  - **P22, Next by the cards' rule.** One module function, `inUse(wallets, id)` in `TransferStep.tsx`, returns a side's wallet while it is in use, and null for none, an archived wallet or one not listed. The cards read it, and so does `TransferFooter`, which now takes `wallets` as a required prop: the same wallets as `TransferStep`. Next is enabled only with two different wallets in use. An archived or unknown side keeps Next waiting and says nothing, since its card already asks (เลือกกระเป๋า). One wallet on both sides still says today's words above Next.
+  - **P23, the amount is the amount step's.** `TransferFooter` does not look at the amount (the second review's n2). A comment in `TransferStep.tsx` (line 178) says so: the amount step's Next waits for the keypad, the transfer step has no keys, and every way in comes after that Next. The save still refuses a zero amount.
+  - **P24, the pins.** Each has its case and its mutant:
+    - `isPickStep` is pinned by a table: the six picks are true; amount, transfer and confirm are false (P36 to P38);
+    - the amount chip's way back: the probe draws P2-T14's real `AmountStep`; its wallet chip opens the wallet pick, a choice comes back to the amount step (the chip reads จากเงินสด), and so does the tray's back (P36);
+    - the two polite live regions, read from the DOM: the transfer amount's (X26) and the day's (P42);
+    - the one-wallet problem's `useAnnouncement`, read from source in `addStepsNative.test.ts` (F8);
+    - minus signs: a balance below zero keeps its minus on the card and in its words (ติดลบ), and so does an after line (X24, X25);
+    - the offline wallet pick, with no balances, names each wallet with no amount (P41);
+    - the confirm wallet row draws the entry wallet's material (C31).
+  - **P25, the nits.** n1: a merchant of spaces gives way to the note, and a note of spaces to the category (C32, C33). n2: the seam's `zIndex` is pinned in `addStepsNative.test.ts` (X23), since happy-dom paints nothing. n3: the chosen wallet's radio dot carries `pick-wallet-dot`, and the pick case asserts it is on the chosen radio only (P40). The second review's n1: `DatePick` opens a draft dated after today on today, as it already did for a draft before `earliest` (P39).
+  - **P25, the lazy sections (n4).** `addSections.tsx` keeps P2-T14's two sections as they are and lists the four step sections. Each renders `<Suspense>` with a `catalogue-screen-running` fallback around `lazy(() => import('./addStepsSection'))`. `addStepsSection.tsx` (new, development only) holds the step sections' host, `StepsTray`, its samples, and `TransferFooter`'s `wallets`. A source pin holds that the list loads the steps lazily, never imports them, and shows the running mark (S8, S9).
+  - **P26, the test file, 17 cases (14 before).** Three new: the minus signs; `isPickStep` and the amount chip's way back; the two live regions. Eight changed: confirm (the entry wallet's material); the transfer (the offline wallet pick); a pick returns (the radio dot); the date (a draft after today); one wallet on both sides (Next for an archived and for an unknown side); private mode; confirm for a move and for income (the trims); and the sections, each opened with `openSection`, which waits for the lazy load.
+- **RED to GREEN:**
+  - RED, on the stub (P27: `fd41909c`'s `TransferStep.tsx`, with `TransferFooter` taking `wallets` as an optional, unread prop) and the round's tests. `typecheck:app` exit 0.
+    - The Node files (`addFlow`, `amountStepNative`, `addStepsNative`, `draftText`): 15 tests, 14 pass, 1 fails, on `AssertionError [ERR_ASSERTION]`: "the wallet's section list loads the steps lazily, never imports them, and reads the catalogue's running mark while they load".
+    - `AddSteps.render.test.tsx`: 17 cases, 13 pass, 4 fail, each on an `AssertionError`, with no load or lookup error and no unhandled section:
+      - `a pick returns to confirm with the choice`: `expected [ false, false, false ] to deeply equal [ true, false, false ]`;
+      - `the date cannot pass today or go before the wallet's start`: `expected [ 'ศุกร์ 30 ต.ค.', 'true' ] to deeply equal [ 'วันนี้', 'true' ]`;
+      - `the same wallet on both sides says so and Next waits; with two wallets Next goes to confirm`: `th: expected [ Array(4) ] to deeply equal [ Array(4) ]`;
+      - `private mode hides every balance, ...`: `ข้าวมันไก่ 50: expected [ '฿••••', 'ซ่อนยอดเงินอยู่', …(1) ] to deeply equal [ '฿••••', 'ซ่อนยอดเงินอยู่', …(1) ]`.
+  - GREEN, on the round's files:
+    - `typecheck:app` exit 0;
+    - the four Node files: 15 of 15 pass;
+    - `AddSteps.render.test.tsx`: 17 of 17 pass, each case marked, and no `stderr |` line;
+    - the focused set (`focused.sh`): unit 15 of 15; the eight kit files 138 of 138, unchanged; the catalogue's wallet sections 60, unchanged, with `bw-tray-transfer`, `bw-tray-confirm`, `bw-tray-confirm-bun` and `bw-tray-pick-category` each marked in both suites (8 marks); the registry rule 1 of 1; the routes 15 of 15, unchanged.
+- **Mutation check:** 120 mutants, all killed, none survived, none marked equivalent. `mutants.py` applied each alone, ran its suite and restored the file with its SHA-256 checked (120 of 120 restored equal). Its output matches the planner's `logs/mutants.out` line for line.
+  - By group: X1 to X26 (26), F1 to F8 (8), C1 to C6 and C12 to C33 (28; C7 to C11 are retired with the mask), P1 to P42 (42), K1 to K7 (7), S1 to S9 (9).
+  - Four run against the Node pins: X23, F8, S8 and S9. The rest run against the render file.
+  - Every kill but one is an `AssertionError`. P41 (the offline guard removed) dies of the crash it causes, `TypeError: Cannot read properties of null (reading 'get')` in the offline wallet pick, which is the failure the second review's M8 named.
+  - X1 and P22 are the plan's two mutants.
+- **Gate (R100):** each command, with its result:
+  - `npm run typecheck:app`: exit 0.
+  - `npm run test:app`: exit 0, 0 failed.
+  - `npm run test:unit`: exit 0, 0 failed.
+  - The round's render file and the eight kit render files (`AddSteps`, `AmountStep`, `WalletsList`, `Tray`, `CardStack`, `Lock`, `WalletLooks`, `PrivateMode`, `walletHarness`): exit 0; 9 files and 155 tests passed.
+  - The four routes tests and the catalogue's route test (`SpendRoutes`, `AccountRoutes`, `InsightsRoutes`, `PlanningRoutes`, `catalogueRoute`): exit 0; 5 files and 15 tests passed.
+  - `git diff --check`: clean before the commit.
+- **SKIPPED:**
+  - `typecheck:routes`, `export:web` and the iOS export: no route, config, app-entry or package change. CI runs the exports (the iOS export is CI's, per the protocol's layout note).
+  - The full render suite: CI (R100). Its per-section jobs run the four sections in both catalogue suites, which now load them lazily.
+  - `test:ops`: no package or lockfile change. CI runs it.
+  - The API, edge and database suites: nothing outside `apps/app` and the receipts changes, and Docker is stopped. CI runs them.
+  - Device checks, not run: the first round's, and P32's swap tap (below).
+- **Deviations:** none from the brief's calls. The controller accepted the planner's calls P1 to P33 as written (the dispatch note), and they are recorded here as accepted by the controller: P1 to P19 (the first round's, which stand) and P20 to P33 (this round's). This round follows each of them and changes none. Three process steps the brief does not list:
+  - the 120-mutant run held the heavy lock (`/private/tmp/claude-501/jotbun-heavy.lock`), as the controller's dispatch note asks, though the brief says no lock is needed; the run released it when it finished;
+  - before the run I ran the mutant runner with `--check`, which only reads: each of the 120 anchors matched exactly once;
+  - before the commit I check the staged diff with `git diff --cached --check`, since `git diff --check` does not see the two new files.
+- **Notes for later tasks:**
+  - **P2-T16 (the host):** pass `wallets` to `TransferFooter`, the same as `TransferStep`'s. Never enter the transfer step without an amount the keypad can save (P23). `bunSentence` is the text the person told Bun (null for a slip); in private mode the step draws none of it, so the host needs no masking. Tell Bun's own sheet draws the typed sentence and its draft's amount with no private-mode masking (the second review's note), so decide whether the sheet masks too. The merchant typed for income stays in the draft across a type change (the first review's note).
+  - **P2-T37 (the sweep):** for Bun's sentence, check that it is absent in private mode, not that it has no digit. A sweep for digits cannot catch an amount written in words (ห้าสิบ, สามหมื่น, 2 พัน, 1.5k). The title and the note row are the model's text (the first review's note), so a number can reach the title in private mode.
+  - **P2-T27 (the edit tray):** a record keeps an archived wallet it already references (the vault's `newlyReferenced`), but the cards and Next treat it as none (P22). Decide what the edit tray does.
+  - **E2-B:** in private mode the confirm step's violet line says บันอ่านจากที่คุณบอก, and its English is a draft too (P31).
+  - **Device check (SKIPPED):** with the swap on the seam, confirm on iOS and Android that the button's whole 44 pt takes the tap, including the 11 pt over each card, and that neither card takes it (P32).

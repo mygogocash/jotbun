@@ -1,0 +1,123 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 86ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 57ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 43ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 39ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 67ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 66ms
+   → expected 'เสาร์ 24 ต.ค. · วันนี้' to be 'ศุกร์ 2 ต.ค.' // Object.is equality
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 79ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 57ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 52ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 112ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 91ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 57ms
+   → expected 'เสาร์ 24 ต.ค. · วันนี้1 รายการ฿132Cof…' to be 'พฤหัส 1 ต.ค.1 รายการ฿3,240.50Dinnerอา…' // Object.is equality
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 50ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 199ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 51ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 73ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 113ms
+   → expected [ 'เสาร์ 24 ต.ค. · วันนี้', null ] to deeply equal [ 'ศุกร์ 2 ต.ค.', null ]
+ × src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 75ms
+   → expected [ 'เสาร์ 24 ต.ค. · วันนี้', null ] to deeply equal [ 'ศุกร์ 2 ต.ค.', null ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 22ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 34ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 26ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 90ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 78ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 71ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 45ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 542ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 22 passed (26)
+   Start at  08:46:43
+   Duration  4.80s (transform 1.64s, setup 67ms, import 2.18s, tests 2.27s, environment 133ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:52092) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong
+AssertionError: expected 'เสาร์ 24 ต.ค. · วันนี้' to be 'ศุกร์ 2 ต.ค.' // Object.is equality
+
+Expected: "ศุกร์ 2 ต.ค."
+Received: "เสาร์ 24 ต.ค. · วันนี้"
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:279:41
+    277|   await openTab('ปฏิทิน');
+    278|   await press(day(2));
+    279|   expect(textOf('calendar-chosen-day')).toBe('ศุกร์ 2 ต.ค.');
+       |                                         ^
+    280|   // In history's order; the money in and the deleted record are not a…
+    281|   expect(wordsOf(found('calendar-chosen-day-section'))).toBe('ศุกร์ 2 …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact
+AssertionError: expected 'เสาร์ 24 ต.ค. · วันนี้1 รายการ฿132Cof…' to be 'พฤหัส 1 ต.ค.1 รายการ฿3,240.50Dinnerอา…' // Object.is equality
+
+Expected: "พฤหัส 1 ต.ค.1 รายการ฿3,240.50Dinnerอาหาร · Cash฿3,240.50"
+Received: "เสาร์ 24 ต.ค. · วันนี้1 รายการ฿132Coffee Shopอาหาร · Cash฿132"
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:421:57
+    419|   expect(day(24).getAttribute('aria-selected')).toBe('true');
+    420|   await press(day(1));
+    421|   expect(wordsOf(found('calendar-chosen-day-section'))).toBe('พฤหัส 1 …
+       |                                                         ^
+    422|   expect([day(1).getAttribute('aria-selected'), day(24).getAttribute('…
+    423|   await press(day(5));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again
+AssertionError: expected [ 'เสาร์ 24 ต.ค. · วันนี้', null ] to deeply equal [ 'ศุกร์ 2 ต.ค.', null ]
+
+- Expected
++ Received
+
+  [
+-   "ศุกร์ 2 ต.ค.",
++   "เสาร์ 24 ต.ค. · วันนี้",
+    null,
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:538:85
+    536|   await act(async () => diary.set({ outbox: [] }));
+    537|   await settle();
+    538|   expect([textOf('calendar-chosen-day'), screen.queryByTestId('insight…
+       |                                                                                     ^
+    539|   expect(reads(fake)).toEqual(counted);
+    540|   expect(before).toEqual([6, 1, 1, 1]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place
+AssertionError: expected [ 'เสาร์ 24 ต.ค. · วันนี้', null ] to deeply equal [ 'ศุกร์ 2 ต.ค.', null ]
+
+- Expected
++ Received
+
+  [
+-   "ศุกร์ 2 ต.ค.",
++   "เสาร์ 24 ต.ค. · วันนี้",
+    null,
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:560:85
+    558|   await act(async () => diary.set({ outbox: [{ ...draft, state: 'ackno…
+    559|   await settle();
+    560|   expect([textOf('calendar-chosen-day'), screen.queryByTestId('insight…
+       |                                                                                     ^
+    561|   await act(async () => release());
+    562|   await settle();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

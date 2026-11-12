@@ -642,3 +642,57 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **n1:** a transfer twin of the outbox's unknown-source case (`diaryRepository.test.ts:126`; kills R9).
   - **n3:** `events.ts:6`'s inline `import('@gogospend/contracts').TransactionSource` can become an `import type`, now that #418 has merged.
   - **Housekeeping:** the receipt's gate counts are the planner's, not the implementer's (1012 and 248 ms). `resources.ts` has no `| null`. `transaction-source.test.ts` has 9 cases. Fix them in the next receipt touch.
+- **P2-T37 (the private-mode sweep), from #427's reviews (12 Nov):** a "no digit in private mode" sweep cannot catch amounts written in words. Bun's parser reads Thai number words (`ห้าสิบ`, `สองพันห้าร้อย`) and scale words (`พัน`, `k`). The sweep must check that free text quoting the person, such as Bun's sentence, is not drawn at all in private mode (R114), not merely that it holds no digits.
+- P3-T6 (#428, merged 12 Nov as d0f1897 at 8b528df1; promotion #430). The first review is `reviews/P3-T6.md` (Opus, approved: m1, m2, n1, n2) and the second is `reviews/P3-T6-second.md` (Claude Sonnet 5.5, approved). CI took three attempts; the R-B flake hit twice. Carried:
+  - **P3-T8 (must carry, m1): fake-clock case 1's slip row breaks when P3-T8 lands.** `ai-routing.test.ts:244` scripts `json({ drafts: [] })` for every row, the slip row (`:238`) included. P3-T8's `slipNeedsOpus` is true for that reply, so Opus re-reads and the row records `[15000, 15000]`.
+    - The fix is one test line: script the slip row as a complete slip read (`kind: 'slip'`, one high-confidence draft). The review's FIX and T8F probes give 7 of 7 before and after.
+    - Also correct `receipts/P3-T6.md:37`.
+    - P3-T8's brief must list `ai-routing.test.ts` in its files.
+  - **P3-T8, n2:** the explicit `output_config: { effort, format }` at `service.ts:118-119`, `:143-144` and `:188-189` overwrites the base's effort, so `haikuRequest`'s effort does nothing on parse, slip and note. Spread the base's `output_config` and add `format`, or give the bases a `format` parameter.
+  - **P3-T7 (or the next task that edits `ai-routing.test.ts`), m2 part 1:** pin X4. In "the results name the model", add a parse whose Haiku reply is `json({ drafts: [] })`, answered `{ source: 'rules', model: 'rules', escalated: false }`. It passes today and kills X4.
+  - **P3-T9, m2 part 2:** `askWithEscalation`'s cases assert `model: 'rules'` on every facts answer, the five-turn path included (kills X1 and X2).
+  - **P3-T7, n1:** reword `AI_ROUTE_DEADLINE_MS`'s comment (`packages/contracts/src/v1/ai.ts:33-38`). The deadline bounds the model calls, and the vault steps count against it but are never cut. From P3-T7 the refund step runs after a timed-out call.
+- P2-T31 (#421, merged 12 Nov as ce165ed at f72ad233, after the R112 fix round; promotion #431). The confirming review is `reviews/P2-T31-confirm.md` (Opus, approved: m1, m2, n1 to n5). Carried by **an insights follow-up before E2-C's captures** (or the next task that edits `src/wallet/insights`):
+  - **m1 (before E2-C):** month names drift off their bars on phones wider than 375 pt, by 19 pt at 402 pt and 35 pt at 440 pt.
+    - The cause: `MonthBars.tsx:68` and `InOutTab.tsx:60-84` draw a fixed `viewBox="0 0 300 140"` (meet, centred), while the names are `flex: 1` columns across the card.
+    - The fix: the board's `flex: 1` columns with a 12 pt gap, with bars as Views (W4 allows it), or a viewBox as wide as the measured card. Run the budget line across the card. Add a Node test that each name's centre is its bar's.
+  - **m2:** pin the 14 survivors (`scratch/p2-t31-confirm/own_mutants.py`, probe `ReviewerProbes.render.test.tsx`). The code is right today.
+    - O12: private mode on the spending tab's category amounts.
+    - O11: a day's amount colour on dark steps.
+    - O1: the month row after stepping back.
+    - O9, O14, O10: `accessible` on the bars, pairs and legend, needed for iOS VoiceOver.
+    - O2, O3, O8: weekday initials and the legend unit at AX5, and the initials hidden from screen readers.
+    - O5: the safe area.
+  - **Nits:**
+    - n1: English drafts' number agreement (`{count} entries`, the early title);
+    - n2: a day under ฿1 draws "0";
+    - n3: an income-only day says "0 รายการ ฿0";
+    - n4: a past month keeps the early state;
+    - n5: on a 360 dp Android phone the calendar is 8 dp wider than the page (7 × 44 + 6 × 4 > 324).
+- **Owner, at E2-B, from #429's review (P2-T21 m3, 12 Nov):** in the wallet area a wallet's tracking start (เริ่มจด) cannot be changed anywhere. The new-wallet flow shows it as text, and today's screen with its date chip is not reachable while the `wallet` area is on. So a wallet made through the flow starts today, and earlier dates cannot be logged to it (the server refuses with `DATE_BEFORE_TRACKING_START`). The board (`wc-wallet-edit.dc.html:69`) draws it as a link. Decide: a date tray under today's `validateTrackingStart` rules, or text with the consequence stated (R115 keeps it as text for now).
+- P2-T15 (#427, merged 12 Nov as 9860750 at 334847d3, after the R114 fix round; promotion #432). The reviews are `reviews/P2-T15.md` (Opus), `reviews/P2-T15-second.md` (Sonnet) and the confirming `reviews/P2-T15-confirm.md` (Opus, approved: m1, n1, n2). Carried:
+  - **P2-T16 (the add tray's host), m1, a pin gap in private mode; the code is right today:**
+    - In P2-T16's host test, cover Tell Bun with `amount_unclear` (no amount read, the person types it) in private mode, and assert the Bun line is exactly the hidden words.
+    - Or add to `AddSteps.render.test.tsx`'s private-mode case one mount with a sentence and a typed amount (no `filled`). That kills the confirm's R3 (`ConfirmStep.tsx:108` `hidden` swapped for `masked`).
+  - **P2-T16, R114.2:** `TransferFooter` takes a required `wallets` prop. P2-T16 must pass the same wallets as `TransferStep`.
+  - **The next task that edits `AddSteps.render.test.tsx`:**
+    - n1: a mount with the same archived wallet on both sides, expecting no `transfer-problem` (kills R1);
+    - n2: a move whose `walletId` differs from `fromWalletId`, so the from row draws the from wallet's material (kills R4).
+  - **P2-T37:** the sweep must check that free text quoting the person is not drawn in private mode (R114), not just that it has no digits.
+- P2-T29 (#423, merged 12 Nov as 59edd56 at f7f47fa4, after the R113 fix round; promotion #433). The confirming review is `reviews/P2-T29-confirm.md` (Opus, approved: m1 to m3, n1 to n3). Carried by **a categories follow-up** (or the next task that edits `src/wallet/categories`, such as P2-T30 or P2-T37):
+  - **m1:** pin six held guards (`logs/my-mutants.out` in the confirm's scratch).
+    - MT and MU, the most important: an unconfirmed tray can be closed. After Close while unconfirmed, assert the tray is gone and the grid read again.
+    - MA: the limit field is frozen while unconfirmed.
+    - MC: new opens on the รายรับ tab's type.
+    - MI: an unarchive refused as changed elsewhere reads again.
+    - MO: a budget conflict in the tray is told as the budget's own words.
+  - **m2:** an unconfirmed unarchive loses its frozen Try again when the type tab changes. `ArchivedCategories` owns its hook, and it unmounts on the other tab.
+    - Hold that hook above the type switch, or disable the switch while it is unconfirmed, as today's toggle is (`CategoriesScreen.tsx:253`).
+    - Probes C3 and C3b; there is no data harm.
+  - **m3, both screens:** the pack tray reopened before the read after an add lands offers what was just added, so a second add duplicates (probe C4; today's screen has the same window).
+    - Have `useLoad` report a refresh in flight and the pack card and trays wait for it, or treat the keys added since the last read as มีแล้ว.
+  - **Nits:**
+    - n1: keep the message while `blocked` when a tray reopens;
+    - n2: another tile opens the frozen tray (show at E2-C);
+    - n3: say a landed change to screen readers (E2-C or P2-T37).
+  - **Known risk:** no route mounts `WalletLooksProvider` until P2-T18, so a picked icon is not kept on a phone before then.

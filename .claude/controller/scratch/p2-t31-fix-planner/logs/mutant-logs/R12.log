@@ -1,0 +1,155 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 83ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 56ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 44ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 42ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 21ms
+   → th: expected [ 'อาหาร1 รายการ฿3,784.50', …(1) ] to deeply equal [ 'อาหาร3 รายการ฿3,784.50', …(1) ]
+ × src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 20ms
+   → expected [ 'อาหาร1 รายการ฿3,784.50', …(2) ] to deeply equal [ 'อาหาร3 รายการ฿3,784.50', …(2) ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 88ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 59ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 50ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 105ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 86ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 66ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 43ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 189ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 45ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 16ms
+   → expected [ 'อาหาร1 รายการ฿3,652.50' ] to deeply equal [ 'อาหาร2 รายการ฿3,652.50' ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 122ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 101ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 25ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 34ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 24ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 82ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 70ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 17ms
+   → expected '฿3,972.50Spent so far · 8 days to the…' to be '฿3,972.50Spent so far · 8 days to the…' // Object.is equality
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 40ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 524ms
+   → bw-insights-large: expected [ '฿999,999,999.99', [ …(2) ] ] to deeply equal [ '฿999,999,999.99', [ …(2) ] ]
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 21 passed (26)
+   Start at  08:57:06
+   Duration  4.45s (transform 1.63s, setup 55ms, import 2.12s, tests 2.05s, environment 103ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:28160) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it
+AssertionError: th: expected [ 'อาหาร1 รายการ฿3,784.50', …(1) ] to deeply equal [ 'อาหาร3 รายการ฿3,784.50', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "อาหาร3 รายการ฿3,784.50",
++   "อาหาร1 รายการ฿3,784.50",
+    "การเดินทาง1 รายการ฿188",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:243:51
+    241|     mountInsights({ locale });
+    242|     await settle();
+    243|     expect(rowsOf('insights-categories'), locale).toEqual(locale === '…
+       |                                                   ^
+    244|       ? ['อาหาร3 รายการ฿3,784.50', 'การเดินทาง1 รายการ฿188']
+    245|       : ['Food3 entries฿3,784.50', 'Travel1 entries฿188']);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong
+AssertionError: expected [ 'อาหาร1 รายการ฿3,784.50', …(2) ] to deeply equal [ 'อาหาร3 รายการ฿3,784.50', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "อาหาร3 รายการ฿3,784.50",
++   "อาหาร1 รายการ฿3,784.50",
+    "การเดินทาง1 รายการ฿188",
+    "หมวดหมู่1 รายการ฿50",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:276:16
+    274|   const rows = rowsOf('insights-categories');
+    275|   // Food's count is its three live expenses; the money in and the del…
+    276|   expect(rows).toEqual(['อาหาร3 รายการ฿3,784.50', 'การเดินทาง1 รายการ฿…
+       |                ^
+    277|   await openTab('ปฏิทิน');
+    278|   await press(day(2));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day
+AssertionError: expected [ 'อาหาร1 รายการ฿3,652.50' ] to deeply equal [ 'อาหาร2 รายการ฿3,652.50' ]
+
+- Expected
++ Received
+
+  [
+-   "อาหาร2 รายการ฿3,652.50",
++   "อาหาร1 รายการ฿3,652.50",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:492:41
+    490|   expect(named('heading', 'ที่จดไว้แล้ว')).not.toBeNull();
+    491|   expect(textOf('insights-no-previous')).toBe('ยังไม่มีเดือนก่อนให้เที…
+    492|   expect(rowsOf('insights-categories')).toEqual(['อาหาร2 รายการ฿3,652.…
+       |                                         ^
+    493|   cleanup();
+    494|   // An earlier month with money out: no "no earlier month".
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words
+AssertionError: expected '฿3,972.50Spent so far · 8 days to the…' to be '฿3,972.50Spent so far · 8 days to the…' // Object.is equality
+
+Expected: "฿3,972.50Spent so far · 8 days to the end of the monthBudget ฿18,000MayJunJulAugSepOctCategoriesFood3 entries฿3,784.50Travel1 entries฿188"
+Received: "฿3,972.50Spent so far · 8 days to the end of the monthBudget ฿18,000MayJunJulAugSepOctCategoriesFood1 entries฿3,784.50Travel1 entries฿188"
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:700:45
+    698|   await settle();
+    699|   expect(named('heading', 'Insights')).not.toBeNull();
+    700|   expect(found('spending-tab').textContent).toBe('฿3,972.50Spent so fa…
+       |                                             ^
+    701|   await openTab('In and out');
+    702|   expect(found('in-out-tab').textContent).not.toMatch(THAI_LETTERS);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+AssertionError: bw-insights-large: expected [ '฿999,999,999.99', [ …(2) ] ] to deeply equal [ '฿999,999,999.99', [ …(2) ] ]
+
+- Expected
++ Received
+
+  [
+    "฿999,999,999.99",
+    [
+      "ค่าเทอมลูก ค่าเรียนพิเศษ และค่าใช้จ่ายในบ้านของครอบครัวใหญ่ทุกเดือนตลอดทั้งปีน้า1 รายการ฿999,999,998.99",
+-     "อาหาร2 รายการ฿1",
++     "อาหาร1 รายการ฿1",
+    ],
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:762:46
+    760|     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-…
+    761|     expect(screen.queryByTestId('catalogue-screen-ready'), section.id)…
+    762|     expect(states[section.id](), section.id).toEqual(expected[section.…
+       |                                              ^
+    763|     cleanup();
+    764|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

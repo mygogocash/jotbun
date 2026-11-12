@@ -1,0 +1,32 @@
+diff --git a/apps/app/src/wallet/wallets/WalletsListScreen.tsx b/apps/app/src/wallet/wallets/WalletsListScreen.tsx
+index 34a184be7ed9d4152ff5caecf3cd1cc302c9c796..0af742756b9c57eba365b91f3c3e29c75b037862 100644
+--- a/apps/app/src/wallet/wallets/WalletsListScreen.tsx
++++ b/apps/app/src/wallet/wallets/WalletsListScreen.tsx
+@@ -4,7 +4,9 @@
+ // holds), a 68 pt row per wallet in use, front first, the add tile, and the
+ // archived wallets behind one row that opens them, each with นำกลับมาใช้.
+ // A row opens its wallet (P2-T22's route) and the tile the new-wallet flow
+-// (P2-T21's). ?reorder=1 (Home's จัดเรียง, P2-T24) opens the reorder tray.
++// (P2-T21's), which comes back here; the list is read again then, since the
++// spend layout's Slot draws only the screen in front, so this one mounts
++// again. ?reorder=1 (Home's จัดเรียง, P2-T24) opens the reorder tray.
+ //
+ // - Looks and the order come from the looks kept for the open diary's account
+ //   (P2-T11, W7). The rows follow the kept order, as Home's stack does. With
+@@ -60,12 +62,12 @@ import type { WalletsSummary } from './walletsList';
+ const LINES = { ...COMMON_COPY, ...CARD_COPY, ...COPY } as const;
+ 
+ /**
+- * P2-T22 adds `/spend/wallet/[id]` and P2-T21 `/spend/wallet/new`. Until they
+- * land, typed routes do not know these two, so they are typed by hand here;
+- * P2-T22 can drop the casts.
++ * P2-T22 adds `/spend/wallet/[id]`. Until it lands, typed routes do not know
++ * it, so it is typed by hand here; P2-T22 can drop the cast.
+  */
+ const walletHref = (walletId: string) => `/spend/wallet/${walletId}` as Href;
+-const NEW_WALLET_HREF = '/spend/wallet/new' as Href;
++/** P2-T21's flow, which comes back here once the wallet is added. */
++const NEW_WALLET_HREF = { pathname: '/spend/wallet/new', params: { returnTo: '/spend/wallets' } } as const;
+ 
+ export function WalletsListScreen({ openReorder = false }: { openReorder?: boolean }) {
+   const resources = useSpendV1();

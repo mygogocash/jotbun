@@ -1,0 +1,767 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/red/apps/app
+
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 0: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 10ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 1: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 2ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 2: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 2ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area wallets.tsx shows the Bun Wallet list with the shared resources, ?reorder=1 opens its reorder tray, and the legacy build still goes back to Home 3ms
+ × src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home 5ms
+   → expected null not to be null
+ × src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again 4121ms
+   → the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"categories-screen"[39m
+        [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+          [33mdata-testid[39m=[32m"categories-scroll"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"padding-bottom: 12px; gap: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"stage-header"[39m
+              [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mEdit category[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"padding-right: 16px; padding-left: 16px; gap: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 16px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"category-preview"[39m
+                  [33mstyle[39m=[32m"align-items: center; padding-top: 8px; padding-bottom: 8px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"css-text-146c3p1"[39m
+                          [33mdir[39m=[32m"auto"[39m
+                          [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                        [36m>[39m
+                          [0mP[0m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mPets[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mName[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33maria-label[39m=[32m"4 of 80 characters"[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+                    [36m>[39m
+                      [0m4 / 80[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<input[39m
+                    [33maria-invalid[39m=[32m"false"[39m
+                    [33maria-label[39m=[32m"Name"[39m
+                    [33mautocapitalize[39m=[32m"sentences"[39m
+                    [33mautocomplete[39m=[32m"on...
+ × src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why 4074ms
+   → the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"categories-screen"[39m
+        [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+          [33mdata-testid[39m=[32m"categories-scroll"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"padding-bottom: 12px; gap: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"stage-header"[39m
+              [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mEdit category[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"padding-right: 16px; padding-left: 16px; gap: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 16px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"category-preview"[39m
+                  [33mstyle[39m=[32m"align-items: center; padding-top: 8px; padding-bottom: 8px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"css-text-146c3p1"[39m
+                          [33mdir[39m=[32m"auto"[39m
+                          [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                        [36m>[39m
+                          [0mP[0m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mPets[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mName[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33maria-label[39m=[32m"4 of 80 characters"[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+                    [36m>[39m
+                      [0m4 / 80[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<input[39m
+                    [33maria-invalid[39m=[32m"false"[39m
+                    [33maria-label[39m=[32m"Name"[39m
+                    [33mautocapitalize[39m=[32m"sentences"[39m
+                    [33mautocomplete[39m=[32m"on...
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > a category changed on another device closes the form, says so, and reads the grid again 58ms
+ ✓ src/screens/redesign/planning/categoryCommands.render.test.tsx > once the category is accepted and the budget refused, saving again sends only the budget 73ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home
+AssertionError: expected null not to be null
+ ❯ src/screens/redesign/planning/PlanningRoutes.render.test.tsx:105:77
+    103|   flags({ redesign: 'wallet' });
+    104|   render(<SpendCategoriesRoute />);
+    105|   expect(screen.queryByText('wallet categories with shared resources')…
+       |                                                                             ^
+    106|   cleanup();
+    107|   // The wallet area is its own (W1): it does not need the planning ar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is not confirmed closes the sheet and offers Try again
+AssertionError: the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"categories-screen"[39m
+        [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+          [33mdata-testid[39m=[32m"categories-scroll"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"padding-bottom: 12px; gap: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"stage-header"[39m
+              [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mEdit category[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"padding-right: 16px; padding-left: 16px; gap: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 16px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"category-preview"[39m
+                  [33mstyle[39m=[32m"align-items: center; padding-top: 8px; padding-bottom: 8px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"css-text-146c3p1"[39m
+                          [33mdir[39m=[32m"auto"[39m
+                          [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                        [36m>[39m
+                          [0mP[0m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mPets[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mName[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33maria-label[39m=[32m"4 of 80 characters"[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+                    [36m>[39m
+                      [0m4 / 80[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<input[39m
+                    [33maria-invalid[39m=[32m"false"[39m
+                    [33maria-label[39m=[32m"Name"[39m
+                    [33mautocapitalize[39m=[32m"sentences"[39m
+                    [33mautocomplete[39m=[32m"on...
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-label="Archive Pets?"
+  aria-modal="true"
+  class="css-view-g5y9jx r-bottom-1p0dtai r-left-1d2f490 r-position-1xcajam r-right-zchlnj r-top-ipm5af r-backgroundColor-1niwhzg"
+  role="dialog"
+>
+  <div
+    class="css-view-g5y9jx r-flex-13awgt0 r-top-ipm5af"
+  >
+    <div
+      class="css-view-g5y9jx"
+      style="justify-content: flex-end; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+    >
+      <div
+        aria-hidden="true"
+        class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+        data-testid="sheet-backdrop"
+        style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; background-color: rgba(35, 27, 58, 1.00); opacity: 0.55;"
+        tabindex="-1"
+      />
+      <div
+        class="css-view-g5y9jx"
+        data-testid="sheet-panel"
+        style="max-height: 92%; background-color: rgba(255, 248, 236, 1.00); border-top-left-radius: 24px; border-top-right-radius: 24px; gap: 16px; transform: translateY(0px); padding: 16px 24px 58px; border-width: 2px 2px 0px; border-color: rgba(35, 27, 58, 1.00);"
+        tabindex="-1"
+      >
+        <div
+          class="css-view-g5y9jx"
+          style="flex-direction: row; align-items: flex-start; gap: 12px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-top: 8px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Archive Pets?
+            </h1>
+          </div>
+          <button
+            aria-label="Close"
+            class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+            role="button"
+            style="min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+            tabindex="0"
+            type="button"
+          >
+            <div
+              aria-hidden="true"
+              class="css-view-g5y9jx"
+            >
+              <div
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                ×
+              </div>
+            </div>
+          </button>
+        </div>
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          style="flex-shrink: 1;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="gap: 16px;"
+          >
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Pets won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 12px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+ ❯ src/screens/redesign/planning/categoryCommands.render.test.tsx:73:115
+     71|   await confirmArchive();
+     72|   await waitFor(() => expect(within(screen.getByTestId('categories-foo…
+     73|   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Arc…
+       |                                                                                                                   ^
+     74|   expect(within(screen.getByTestId('categories-footer')).queryByRole('…
+     75| });
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/screens/redesign/planning/categoryCommands.render.test.tsx > an archive that is refused closes the sheet and says why
+AssertionError: the archive sheet closes: expected <div …(4)><div …(1)>…(1)</div></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mdata-testid[39m=[32m"categories-screen"[39m
+        [33mstyle[39m=[32m"background-color: rgba(237, 230, 255, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+          [33mdata-testid[39m=[32m"categories-scroll"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"padding-bottom: 12px; gap: 16px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mdata-testid[39m=[32m"stage-header"[39m
+              [33mstyle[39m=[32m"background-color: rgba(185, 163, 249, 1.00); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; gap: 12px; padding: 78px 16px 24px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: flex-end; gap: 12px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-size: 28px; line-height: 37px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                  [36m>[39m
+                    [0mEdit category[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"padding-right: 16px; padding-left: 16px; gap: 16px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 16px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"category-preview"[39m
+                  [33mstyle[39m=[32m"align-items: center; padding-top: 8px; padding-bottom: 8px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"min-height: 44px; flex-direction: row; align-items: center; gap: 8px; background-color: rgba(255, 248, 236, 1.00); max-width: 100%; transform: scale(1); padding: 4px 12px 4px 4px; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"width: 32px; height: 32px; background-color: rgba(242, 145, 196, 1.00); align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 12px;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"css-text-146c3p1"[39m
+                          [33mdir[39m=[32m"auto"[39m
+                          [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"[39m
+                        [36m>[39m
+                          [0mP[0m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 15px; line-height: 20px; font-weight: 500; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mPets[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"gap: 4px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; justify-content: space-between; align-items: flex-end; gap: 8px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00); flex-shrink: 1;"[39m
+                    [36m>[39m
+                      [0mName[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33maria-label[39m=[32m"4 of 80 characters"[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-size: 13px; line-height: 17px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"[39m
+                    [36m>[39m
+                      [0m4 / 80[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<input[39m
+                    [33maria-invalid[39m=[32m"false"[39m
+                    [33maria-label[39m=[32m"Name"[39m
+                    [33mautocapitalize[39m=[32m"sentences"[39m
+                    [33mautocomplete[39m=[32m"on...
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-label="Archive Pets?"
+  aria-modal="true"
+  class="css-view-g5y9jx r-bottom-1p0dtai r-left-1d2f490 r-position-1xcajam r-right-zchlnj r-top-ipm5af r-backgroundColor-1niwhzg"
+  role="dialog"
+>
+  <div
+    class="css-view-g5y9jx r-flex-13awgt0 r-top-ipm5af"
+  >
+    <div
+      class="css-view-g5y9jx"
+      style="justify-content: flex-end; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+    >
+      <div
+        aria-hidden="true"
+        class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+        data-testid="sheet-backdrop"
+        style="position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; background-color: rgba(35, 27, 58, 1.00); opacity: 0.55;"
+        tabindex="-1"
+      />
+      <div
+        class="css-view-g5y9jx"
+        data-testid="sheet-panel"
+        style="max-height: 92%; background-color: rgba(255, 248, 236, 1.00); border-top-left-radius: 24px; border-top-right-radius: 24px; gap: 16px; transform: translateY(0px); padding: 16px 24px 58px; border-width: 2px 2px 0px; border-color: rgba(35, 27, 58, 1.00);"
+        tabindex="-1"
+      >
+        <div
+          class="css-view-g5y9jx"
+          style="flex-direction: row; align-items: flex-start; gap: 12px;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="padding-top: 8px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
+          >
+            <h1
+              class="css-text-146c3p1"
+              dir="auto"
+              role="heading"
+              style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Archive Pets?
+            </h1>
+          </div>
+          <button
+            aria-label="Close"
+            class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
+            role="button"
+            style="min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-width: 1.5px; border-color: rgba(35, 27, 58, 1.00); border-radius: 999px;"
+            tabindex="0"
+            type="button"
+          >
+            <div
+              aria-hidden="true"
+              class="css-view-g5y9jx"
+            >
+              <div
+                class="css-text-146c3p1"
+                dir="auto"
+                style="font-size: 22px; line-height: 29px; font-weight: 700; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+              >
+                ×
+              </div>
+            </div>
+          </button>
+        </div>
+        <div
+          class="css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"
+          style="flex-shrink: 1;"
+        >
+          <div
+            class="css-view-g5y9jx"
+            style="gap: 16px;"
+          >
+            <div
+              class="css-text-146c3p1"
+              dir="auto"
+              style="font-size: 17px; line-height: 23px; font-weight: 400; font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; color: rgba(35, 27, 58, 1.00);"
+            >
+              Pets won't show in Quick add any more. Past entries keep it, and you can unarchive it here any time.
+            </div>
+            <div
+              class="css-view-g5y9jx"
+              style="gap: 12px;"
+            >
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+              <div
+                class="css-view-g5y9jx"
+                style="gap: 4px;"
+              >
+                <button … />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+ ❯ src/screens/redesign/planning/categoryCommands.render.test.tsx:82:115
+     80|   await confirmArchive();
+     81|   await waitFor(() => expect(within(screen.getByTestId('categories-foo…
+     82|   await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Arc…
+       |                                                                                                                   ^
+     83| });
+     84|
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../../../worktrees/p2-t29/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 6 passed (9)
+   Start at  09:35:03
+   Duration  9.18s (transform 389ms, setup 92ms, import 686ms, tests 8.35s, environment 213ms)
+

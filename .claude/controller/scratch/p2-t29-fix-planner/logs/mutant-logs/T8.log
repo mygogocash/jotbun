@@ -1,0 +1,554 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 129ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 107ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 261ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 303ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 180ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 41ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 217ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 141ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 110ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 169ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 145ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 61ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 86ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 91ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 38ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 144ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 339ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 15ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 101ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 144ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 110ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 223ms
+   → no icon picker without an account: expected [ …(1) ] to deeply equal []
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 30ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 82ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 79ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 278ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 106ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 127ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 90ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 235ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 93ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 76ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  09:46:09
+   Duration  5.82s (transform 945ms, setup 43ms, import 1.24s, tests 4.36s, environment 79ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:96155) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account
+AssertionError: no icon picker without an account: expected [ …(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <div
++     aria-label="ไอคอน"
++     class="css-view-g5y9jx"
++     data-testid="category-glyphs"
++     role="radiogroup"
++     style="gap: 8px;"
++   >
++     <div
++       class="css-view-g5y9jx"
++       style="flex-direction: row; gap: 8px;"
++     >
++       <div
++         aria-checked="false"
++         aria-label="อาหาร"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-food"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M4 12h16a8 8 0 0 1-16 0z"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <path
++               d="M13 9l3-6"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <path
++               d="M16 9l4-5"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="กาแฟ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-coffee"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5Z M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16 M9 3.5c0 1-1 1.5-1 2.5M12.5 3.5c0 1-1 1.5-1 2.5"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="รถ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-car"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M6 4h12a2 2 0 0 1 2 2v11H4V6a2 2 0 0 1 2-2Z M4 11h16 M6.5 17v2.5M17.5 17v2.5"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <circle
++               cx="8"
++               cy="14"
++               fill="#111014"
++               r="1.2"
++             />
++             <circle
++               cx="16"
++               cy="14"
++               fill="#111014"
++               r="1.2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="ถุงช้อปปิ้ง"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-bag"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9Z M9 10V7a3 3 0 0 1 6 0v3"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="บ้าน"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-home"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M4 11l8-7 8 7 M6 9.5V20h12V9.5 M10 20v-5h4v5"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="ใบเสร็จ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-receipt"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5Z M9 8h6M9 12h6M9 16h3"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++     </div>
++     <div
++       class="css-view-g5y9jx"
++       style="flex-direction: row; gap: 8px;"
++     >
++       <div
++         aria-checked="false"
++         aria-label="หัวใจ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-heart"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20Z"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="ดอกบัว"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-lotus"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M12 4.5c2.2 3 2.2 7.5 0 11.5-2.2-4-2.2-8.5 0-11.5Z M4.5 9c3.5.6 6 3.5 7.5 7-4.2.3-7.5-2.8-7.5-7Z M19.5 9c-3.5.6-6 3.5-7.5 7 4.2.3 7.5-2.8 7.5-7Z M5.5 19.5h13"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="ของขวัญ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-gift"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <rect
++               fill="none"
++               height="10"
++               rx="2"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++               width="16"
++               x="4"
++               y="10"
++             />
++             <rect
++               fill="none"
++               height="3"
++               rx="2"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++               width="18"
++               x="3"
++               y="7"
++             />
++             <path
++               d="M12 7v13"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <path
++               d="M12 7C10 4 7 4 7 5.5S9.5 7 12 7c2.5 0 5-.5 5-1.5S14 4 12 7z"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="มือถือ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-phone"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <rect
++               fill="none"
++               height="19"
++               rx="2.5"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++               width="11"
++               x="6.5"
++               y="2.5"
++             />
++             <path
++               d="M12 8.5v6M9 11.5h6 M10.5 18.5h3"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="รอยเท้าสัตว์"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-paw"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M8.5 17.2c0-2.6 1.6-5 3.5-5s3.5 2.4 3.5 5c0 1.6-1.5 2.3-3.5 2.3s-3.5-.7-3.5-2.3Z"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <circle
++               cx="6.6"
++               cy="11.4"
++               fill="none"
++               r="1.7"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <circle
++               cx="10"
++               cy="7.8"
++               fill="none"
++               r="1.7"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <circle
++               cx="14"
++               cy="7.8"
++               fill="none"
++               r="1.7"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++             <circle
++               cx="17.4"
++               cy="11.4"
++               fill="none"
++               r="1.7"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++       <div
++         aria-checked="false"
++         aria-label="หนังสือ"
++         class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++         data-testid="category-glyph-book"
++         role="radio"
++         style="min-height: 48px; align-items: center; justify-content: center; background-color: rgba(244, 243, 249, 1.00); opacity: 1; border-radius: 14px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++         tabindex="0"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++         >
++           <svg
++             height="22"
++             viewBox="0 0 24 24"
++             width="22"
++           >
++             <path
++               d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15.5H5.5A1.5 1.5 0 0 0 4 21Z M20 5.5A1.5 1.5 0 0 0 18.5 4H13v15.5h5.5A1.5 1.5 0 0 1 20 21Z"
++               fill="none"
++               stroke="#111014"
++               stroke-linecap="round"
++               stroke-linejoin="round"
++               stroke-width="2"
++             />
++           </svg>
++         </div>
++       </div>
++     </div>
++   </div>,
++ ]
+
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:775:91
+    773|   await openScreen(board(), { diary: null });
+    774|   await openTray(found('categories-new-tile'));
+    775|   expect(screen.queryAllByTestId('category-glyphs'), 'no icon picker w…
+       |                                                                                           ^
+    776| }, 30_000);
+    777|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

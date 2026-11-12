@@ -1,0 +1,91 @@
+# P2-T29-fix: the categories on today's rules, the wallet kit and real states
+
+- **Status:** built and verified locally on `p2/t29-categories` (`.claude/worktrees/p2-t29`): one fix commit on PR #423's reviewed head `cee7eff5`. Not pushed. This is the fix round after the review (`.claude/controller/reviews/P2-T29.md`), which said Needs fixes for four blockers (B1 to B4), twelve majors (M1 to M12), thirteen minors (m1 to m13) and four nits. No second review had landed. The controller ruled R113: fix every blocker, major and minor as the review proposes, unless the plan says otherwise. The planner's brief is `.claude/controller/briefs/P2-T29-fix.md` (its rulings P1 to P28). Under R87 this receipt is its own file; `P2-T29.md` gains one line pointing here, and `premium-progress.md` is not edited. The independent review is the controller's, after this receipt.
+- **Base:** `cee7eff5` (the first round, on `2ff43b0e`). No sync merge: `apps/app/src/dev/catalogue/wallet/index.ts` stays the first round's (`911e4ce0…`: KIT, STACK, TRAY, ADD, LIST, CATEGORY, LOCK). #411 has since merged RECAP at the same lines; the controller resolves `index.ts` in plan order when it merges the head in (LIST, RECORD, CATEGORY, RECAP, LOCK).
+- **Files:**
+  - Rewritten: `apps/app/src/screens/redesign/planning/categoryCommands.ts`, `apps/app/src/wallet/categories/WalletCategoriesScreen.tsx`, `CategoryTray.tsx`, `ThaiPackTray.tsx`, `copy.ts`, `WalletCategories.render.test.tsx` (38 cases; 18 before), `apps/app/src/dev/catalogue/wallet/categorySections.tsx` and the route `apps/app/app/spend/categories.tsx`.
+  - Created: `apps/app/src/screens/redesign/planning/categoryCommands.render.test.tsx` (4 cases).
+  - Shared: `CategoriesScreen.tsx` (`2ff43b0e`'s file with the move and the hook's host only; its suite of 56 runs unchanged) and `PlanningRoutes.render.test.tsx` (stubs the wallet screen; one case added).
+  - Unchanged: `index.ts`, `categoriesModel.ts`, `thaiPack.ts`, the wallet kit, the fakes, `CategoriesScreen.render.test.tsx`.
+  - This receipt, and one line in `P2-T29.md`.
+- **The blockers:**
+  - B1: a new category's id is `newId` (expo-crypto), made once when the tray opens. No app code reaches for the Web Crypto global; the Hermes guard in `test:unit` passes.
+  - B2: the catalogue's category sections load the screen when a section opens (`lazy()`, as `walletListSections.tsx` does), so the wallet catalogue's list loads neither `screens/v1/parts.tsx` (expo-crypto) nor expo-router. The eight render files that read the list pass.
+  - B3: the name and limit fields are named (ชื่อหมวด, วงเงินต่อเดือน); their visible captions are decorative.
+  - B4: an unconfirmed save or pack add keeps today's frozen Try again: the same ids and keys, every field disabled, no Save or Add. The tray can be closed (P2-T16's rule); opened again it is still frozen until the outcome is known. One category, one pack item.
+- **The majors:**
+  - M1: `useCategoryCommands(host)` is today's `send`, `refused` and `tryAgain` word for word. The five points where today's code changed the screen are required host callbacks (`rebase`, `stopped`, `saved`, `changedElsewhere`, `fieldErrors`), each called where today's line ran. The review's A1 and A2 pass.
+  - M2: the screen reads again whenever a tray closes, so a new tile shows and a second change sends the new version (1, then 2).
+  - M3: one read (`ensureBuiltinCategories`, the budget, the summary); loading and a failed read say so in today's words, with Try again only when it can help, and nothing of a failed read is drawn.
+  - M4: tiles take the mode's tint; names and amounts `ink`, the limit line `quietOnGround`, and `เกิน` in `over` on a `card` chip. Every tile word is 4.5:1 or more in both modes (the test computes each one).
+  - M5, M6, m8: swatches and glyphs by the board's names; a built-in's tray by its name, never its key.
+  - M7: Back is today's `useGoBack('/spend/budget')`.
+  - M8: both trays are locked while they send.
+  - M9: in private mode the tray's budget, total and refusal read `฿••••`, and a stored limit is masked in its field until a key is pressed (R106).
+  - M10: problems are today's words: as typed for a name too long or a limit over the budget, when saving for an empty name or a mistyped amount.
+  - M11: the sections are drawn in the catalogue's language and theme, on the board's month (per-category totals over the fakes, one tile ฿310 over).
+  - M12: the plan's tests 2 and 3 now check the whole pack line and exactly which items are created; the review's R1 to R6 are killed.
+- **The minors:**
+  - m1: the refusal is today's over-total sentence, not the total's.
+  - m2: money goes through BigInt and `minorToInputText` only.
+  - m3: a new opening shows no failure from the last.
+  - m4: the tile draws the kit's `CategoryGlyph`, `categoryInitial` and dark-aware `tileTint` at the board's 22 pt; `WalletCategoryIcon` is used where a square tile is drawn (the pack rows, the archived rows).
+  - m5: tiles and fields have minimum heights and grow; at AX5 each tile takes a row and the segments stack.
+  - m6: archive asks first, as the tray's second step; the grid lists archived categories with Unarchive (drafts for E2-C).
+  - m7: the board's เพิ่มหมวดนี้ and วงเงินต่อเดือน; the pack card joins names as the board does; unused keys removed.
+  - m9: a tray's session is made when it opens, so a later read never resets what was typed.
+  - m10: an icon is kept only when it changes.
+  - m11: income tiles say ได้รับ, with no limit line.
+  - m12: the four carried P2-T11 cases are counted apart (below).
+  - m13: corrected below.
+- **The nits:** n1, the pack's picks start empty; n2, the unused names go; n3, "Add 1 category" and "Built-in categories"; n4, only the kit's type roles.
+- **RED to GREEN:**
+  - RED, on the planner's typed stubs of `WalletCategoriesScreen.tsx`, `CategoryTray.tsx`, `ThaiPackTray.tsx` and `categorySections.tsx`, with the round's three tests and the first round's hook, screen, copy and route:
+    - `typecheck:app` exit 0;
+    - `WalletCategories.render.test.tsx`: 33 failed and 5 passed of 38, each failure an `AssertionError` through an asserting lookup (33), with no module-load error. The 5 that pass hold what the first round already had: the four carried P2-T11 cases and the plan's Thai lines;
+    - `categoryCommands.render.test.tsx` and `PlanningRoutes.render.test.tsx`: 3 failed and 6 passed of 9, each failure an `AssertionError` (3): A1 and A2 on the first round's hook, and the new route case on the first round's lazy route. The other two hook cases hold paths the first round kept (they kill mutants S4 and S6 of the new code).
+  - GREEN:
+    - `typecheck:app` exit 0;
+    - `WalletCategories.render.test.tsx` 38 of 38 (34 of this round's, and the 4 carried P2-T11 cases);
+    - `categoryCommands.render.test.tsx` 4 and `CategoriesScreen.render.test.tsx` 56 (unchanged): 60 of 60;
+    - `PlanningRoutes.render.test.tsx` 5 of 5.
+- **Mutation check:** 119 mutants, all killed (about 15 minutes), each restore's SHA-256 checked (`tools/mutants.py`).
+  - The runner's groups: the moved commands (H1 to H5) and today's screen's host (S1 to S6), against the hook's cases, today's suite and the wallet suite; the wallet screen (W1 to W33), the category tray (T1 to T50), the pack tray (P1 to P17), the route (R1 to R3), the catalogue (C1 to C4) and the copy (Y1).
+  - C1 is killed by the kit's render files failing to load (B2's own failure), and S3 and S5 by today's suite's own lookups (`TestingLibraryElementError`); every other one by an assertion, T1's in the Hermes guard (`test:unit`).
+  - The plan's two mutants are T6 (the icon kept before the acknowledgement) and P1 (every missing item created).
+  - The four carried P2-T11 cases (RV1 to RV4s) hold the kit's glyph and initial; all 119 mutants are in this round's own files.
+- **Gate** (R100):
+  - `typecheck:app` exit 0; `typecheck:routes` exit 0 (the route changed);
+  - `test:app` exit 0, `ℹ fail 0`; `test:unit` exit 0, `ℹ fail 0`;
+  - the focused files above;
+  - the eight render files that read the wallet catalogue's list: 8 files, 138 of 138 (`CardStack`, `WalletLooks`, `PrivateMode`, `walletHarness`, `Tray`, `Lock`, `AmountStep`, `WalletsList`);
+  - the catalogue suites for the four sections (and P2-T11's `bw-category-icons`): 10 passed, 612 skipped (622), with `-t "bw-categor|bw-thai-pack"`;
+  - the four routes tests: 4 files, 13 of 13 (`PlanningRoutes` 5);
+  - `export:web` exit 0;
+  - whitespace: clean.
+- **CI** (R100): the full render suite, the iOS export, the edge, database and ops suites run on the PR.
+- **Corrections to the first round's receipt (m13):**
+  - Its routes line read `Tests 12 passed (12)` against its brief's Expected 11; that was a missed Expected line and should have stopped the build.
+  - Its gate skipped `test:unit` and every render file that reads the wallet catalogue's list. That is how B1 (the Hermes guard) and B2 (five files that no longer loaded) reached CI. Both are in this round's gate.
+  - Its "Risks: None identified" was wrong: see the review's B1 to B4 and the risks below.
+  - Its 18 cases and 14 mutants counted four cases and four mutants of P2-T11's `WalletCategoryIcon.tsx`.
+- **Deviations** (the brief's planner rulings):
+  - P1 to P28: accepted by the controller, as written in the fix brief (the controller's note for this round, 12 November).
+  - P5: `CategoryTray` takes this month's `budget` from the screen, beside the plan's props. The plan's interface has none, and the first round's own read inside the tray went stale after a save.
+  - P4: the screen reads again whenever a tray closes, since the plan's tray props carry no `onSaved`.
+  - P8: the over line sits on a `card` chip, since `over` measures 4.18 to 4.38:1 on six hues' tints.
+  - P9: the tile composes the kit's parts rather than `WalletCategoryIcon`, whose square would not fit the plan's 104 pt tile at the board's 22 pt glyph.
+  - P12: archive and unarchive in the wallet look, which no board draws.
+  - P19: the pack card shows on either tab, as the plan binds it.
+  - P21: income tiles say ได้รับ (`categories.tileIncome`, a draft).
+- **SKIPPED:** device checks (VoiceOver, Dynamic Type at AX5) until E2-C; Docker is stopped, so the database suites are CI's.
+- **Risks:**
+  - No app route mounts `WalletLooksProvider` yet (P2-T18's `WalletShell` will). Until then, with an account open on a phone, the icon picker is offered but `setIcon` keeps nothing (the review's note; P2-T20's list has the same gap). The wallet area stays off until P2-T38.
+  - Every tray close reads the categories, the budget and the summary again, even when nothing was saved.
+  - Today's screen also keeps a failed refresh quiet (`useLoad`'s `refresh` keeps the data on screen); so does this one.
+- **For E2-C (owner, Q3):** the English drafts; the board names for the swatches and glyphs; `categories.tileIncome` and `categories.packAddOne`; the over chip; the archived list and the archive step; the pack card on the income tab; the name and the limit line at the kit's label (15) and caption (13), where the board draws 14 and 12; the pack tray's empty start (the board pre-picks the missing items).
+- **Notes for later tasks:**
+  - P2-T18: mount `WalletLooksProvider` in `WalletShell` (the risk above).
+  - P2-T37: no colour literal in `src/wallet/categories` but the segments' lift shadow (as `TypeSwitchHeader`'s); `tc()` is called only with catalog lines.
+  - P2-T38: the draft lines move to the catalogs.
+  - A change to `dev/catalogue/wallet/index.ts` or a section it lists runs the eight render files that read it, and `test:unit`.

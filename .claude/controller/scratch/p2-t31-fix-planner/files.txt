@@ -1,0 +1,16 @@
+apps/app/src/ui/dateStep.ts
+apps/app/src/ui/dateStep.test.ts
+apps/app/src/wallet/insights/calendarShade.ts
+apps/app/src/wallet/insights/copy.ts
+apps/app/src/wallet/insights/insightsData.ts
+apps/app/src/wallet/insights/WalletInsightsScreen.tsx
+apps/app/src/wallet/insights/SpendingTab.tsx
+apps/app/src/wallet/insights/MonthBars.tsx
+apps/app/src/wallet/insights/InOutTab.tsx
+apps/app/src/wallet/insights/CalendarTab.tsx
+apps/app/src/wallet/insights/InfoTray.tsx
+apps/app/src/wallet/insights/WalletInsights.render.test.tsx
+apps/app/src/dev/catalogue/wallet/insightsSections.tsx
+apps/app/src/dev/catalogue/wallet/insightsScreens.tsx
+docs/implementation/receipts/P2-T31.md
+docs/implementation/receipts/P2-T31-fix.md

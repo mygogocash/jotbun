@@ -1,7 +1,7 @@
 import { waitUntil } from 'cloudflare:workers'
 
 import { V1_HEADERS, formatClientHeader, parseClientHeader } from '@gogospend/contracts'
-import type { PolicyKind, PolicyVersionDto } from '@gogospend/contracts'
+import type { AiFeature, PolicyKind, PolicyVersionDto } from '@gogospend/contracts'
 
 import { ProblemException } from '@api/common/api-problem.filter'
 
@@ -36,6 +36,8 @@ export type V1Deps = {
   startWork?: (stub: DurableObjectStub<UserVault>) => Promise<unknown>
   /** The AI routes' model transport (P3-T4). Tests give a fake, or null for AI that is not configured; absent, AI_ENABLED and ANTHROPIC_API_KEY decide. */
   transport?: ModelTransport | null
+  /** Each AI route's deadline in ms (P3-T6), in place of AI_ROUTE_DEADLINE_MS's. Tests give short ones; the Worker gives none. */
+  aiDeadlines?: Partial<Record<AiFeature, number>>
 }
 
 /** A route marked `starts` hands its vault to startWork only after a 2xx answer. */
@@ -128,6 +130,7 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
         stream,
         vault,
         transport: deps.transport !== undefined ? deps.transport : transportFromEnv(env),
+        aiDeadlines: deps.aiDeadlines,
         waitUntil: deps.waitUntil ?? waitUntil,
       })
     }

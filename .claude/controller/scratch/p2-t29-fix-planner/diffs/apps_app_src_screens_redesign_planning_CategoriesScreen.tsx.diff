@@ -1,0 +1,113 @@
+diff --git a/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx b/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
+index 3a2da36b..476b5ab7 100644
+--- a/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
++++ b/apps/app/src/screens/redesign/planning/CategoriesScreen.tsx
+@@ -23,15 +23,15 @@
+ // is offered, which resends the very same commands under the same keys. A
+ // definite refusal settles the key, so a corrected save is a new command. A
+ // version conflict shows the category or budget as it now is beside yours,
+-// with Reload.
++// with Reload. The rule itself is `useCategoryCommands` (categoryCommands.ts,
++// P2-T29), which the Bun Wallet's trays share; this screen hands it its own
++// effects (the form, the archive sheet, the type shown and the reads).
+ import type { BudgetDto, CategoryDto, CategoryType } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+-import { useRef, useState } from 'react';
++import { useState } from 'react';
+ import type { ReactNode } from 'react';
+ import { ScrollView, View } from 'react-native';
+ 
+-import { V1Error } from '@mobile/api/client';
+-import type { V1Outcome } from '@mobile/api/client';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { PACK_BEFORE_C3, missingPackItems, packCommands } from '@mobile/spend/v1/redesign/planning/thaiPack';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+@@ -39,8 +39,7 @@ import { Bun } from '@mobile/mascot/Bun';
+ import { formatMinor } from '@mobile/spend/v1/money';
+ import { classifyLoadProblem } from '@mobile/spend/v1/redesign/homeModel';
+ import {
+-  LABEL_PROBLEM_TEXT, archiveCommand, checkLabel, draftName, editCategoryDraft,
+-  groupCategories, hasLimitField, limitProblem, newCategoryDraft, planSave, readLimit, suggestColor,
++  LABEL_PROBLEM_TEXT, archiveCommand, checkLabel, draftName, editCategoryDraft, groupCategories, hasLimitField, limitProblem, newCategoryDraft, planSave, readLimit, suggestColor,
+ } from '@mobile/spend/v1/redesign/planning/categoriesModel';
+ import type { CategoryDraft, CategoryItem, FormErrors } from '@mobile/spend/v1/redesign/planning/categoriesModel';
+ import { useSpendV1 } from '@mobile/spend/v1/SpendV1Context';
+@@ -57,7 +56,6 @@ import { ActionFooter, ActionRow, EntryPage } from '../ActionFooter';
+ import { LoadingBlock, Notice, useGoBack } from '../HistoryParts';
+ import { ArchivedSection, CategoryTile, ChipPreview, ConflictPanel, LabelField, LimitField, NoBudgetNote, SwatchPicker, TypeToggle } from './CategoryParts';
+ import { useCategoryCommands } from './categoryCommands';
+-import type { CategoryCommandsStatus, CategoryConflict, Origin } from './categoryCommands';
+ 
+ export type CategoriesScreenProps = {
+   /** The clock, for tests; this month is its Bangkok month. */
+@@ -66,8 +64,6 @@ export type CategoriesScreenProps = {
+ 
+ type Loaded = { categories: CategoryDto[]; budget: BudgetDto | null };
+ type Form = { draft: CategoryDraft; errors: FormErrors };
+-type Status = CategoryCommandsStatus;
+-type Conflict = CategoryConflict;
+ 
+ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
+   const resources = useSpendV1();
+@@ -87,45 +83,32 @@ export function CategoriesScreen({ now }: CategoriesScreenProps = {}) {
+   const [form, setForm] = useState<Form | null>(null);
+   const [archivedOpen, setArchivedOpen] = useState(false);
+   const [confirming, setConfirming] = useState(false);
+-
+-  const commands = useCategoryCommands({
+-    onRebase: (draft) => setForm((current) => (current ? { ...current, draft } : current)),
+-    onRefused: (errors) => setForm((current) => (current ? { ...current, errors } : current)),
+-    onConflict: () => setConfirming(false),
+-    onStateChanged: () => {
+-      setForm(null);
+-      setConfirming(false);
+-    },
+-    onSuccess: (origin) => {
++  const { status, message, setMessage, resendBlocked, blocked, conflict, setConflict, done, setDone, unarchiving, setUnarchiving, send, tryAgain } = useCategoryCommands({
++    rebase: (rebased) => setForm((current) => (current ? { ...current, draft: rebased } : current)),
++    stopped: () => setConfirming(false),
++    saved: (origin) => {
+       setConfirming(false);
+       setForm(null);
++      // The grid shows the type just saved, so a new income category is in view.
+       if (origin.draft) setType(origin.draft.type);
++      // Reading the result is a separate load: its failure is a load problem, never an unconfirmed save.
++      loaded.refresh();
+     },
+-    onRefresh: () => loaded.refresh(),
+-    onReload: () => loaded.reload(),
++    changedElsewhere: () => {
++      setForm(null);
++      loaded.reload();
++    },
++    fieldErrors: (errors) => setForm((current) => (current ? { ...current, errors } : current)),
+   });
+ 
+-  const {
+-    status,
+-    message,
+-    resendBlocked,
+-    blocked,
+-    conflict,
+-    done,
+-    unarchiving,
+-    locked,
+-    send,
+-    tryAgain,
+-    setMessage,
+-    setDone,
+-    setUnarchiving,
+-  } = commands;
+-
++  const locked = status !== 'idle';
+   const data = loaded.state === 'ready' ? loaded.data : null;
+ 
+   function reload() {
+-    commands.reload();
++    setConflict(null);
+     setForm(null);
++    setMessage(null);
++    loaded.reload();
+   }
+ 
+   function openForm(draft: CategoryDraft) {
