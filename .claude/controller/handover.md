@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13:40: #428 (P3-T6) MERGED as `d0f1897`; the head is `d0f1897`.** Opus and Sonnet approved, and CI was 9 of 9 on attempt 3 (R-B twice). Issue #190 is closed, and it is promoted as **#430** (stack #379 holds 27). m1 must ride P3-T8 (followups.md).
+- **13:30: P2-T29 fix brief READY (Opus, R113); its fixer is building (Haiku).**
+  - 119 of 119 mutants. The gate holds the 12 Nov rules. `index.ts` is unchanged (`911e4ce0…`), so the controller resolves RECORD and RECAP at merge.
+  - Fixer on worktree `p2-t29` at `cee7eff5`, with no sync merge. P1 to P28 accepted.
+  - Risk: no route mounts `WalletLooksProvider` until P2-T18, so a picked icon is not kept on a phone before then.
 - **13:25: Claude Code's 5-hour limit stopped everything from about 09:41 to 13:20, the controller included.** At 13:20 T3 resumed every paused thread.
   - **Stopped 7 resumed threads that had already finished:**
     - the P3-T6, P2-T15 and P2-T21 implementers;
