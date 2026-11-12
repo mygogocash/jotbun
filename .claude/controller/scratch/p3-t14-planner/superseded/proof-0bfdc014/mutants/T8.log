@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:98591) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 305ms
+   × อ่านรายละเอียด closes the tray, then opens Privacy and data once it has gone 305ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > อ่านรายละเอียด closes the tray, then opens Privacy and data once it has gone
+AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:301:16
+    299|   expect(router.push).toHaveBeenCalledTimes(1);
+    300|   // The host hears that the tray has gone, once.
+    301|   expect(gone).toHaveBeenCalledTimes(1);
+       |                ^
+    302|   expect(ai.resources.setPreferences).not.toHaveBeenCalled();
+    303| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:03:49
+   Duration  2.47s (transform 1.36s, setup 62ms, import 1.85s, tests 305ms, environment 121ms)
+

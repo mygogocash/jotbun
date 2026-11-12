@@ -1,0 +1,55 @@
+== base
+8
+checked
+typecheck rc=0
+== red
+red: 15 files placed
+typecheck rc=0
+unit rc=1
+ℹ tests 16
+ℹ pass 14
+ℹ fail 2
+2
+render rc=1
+      Tests  27 failed | 77 passed (104)
+27
+0
+== green
+green: 21 files placed
+typecheck rc=0
+unit rc=0
+ℹ tests 16
+ℹ pass 16
+ℹ fail 0
+render rc=0
+      Tests  104 passed (104)
+0
+unchanged rc=0
+      Tests  14 passed (14)
+== mutants
+74 of 74 killed; survivors []; not restored []
+rc=0
+74
+== gate
+typecheck:app rc=0
+typecheck:routes rc=0
+catalogue rc=0
+ Test Files  2 passed (2)
+      Tests  56 passed | 612 skipped (668)
+routes rc=0
+ Test Files  4 passed (4)
+      Tests  16 passed (16)
+kit rc=0
+ Test Files  8 passed (8)
+      Tests  141 passed (141)
+test:app rc=0
+test:unit rc=0
+export:web rc=0
+Web Bundled 752ms node_modules/expo-router/entry.js (4885 modules)
+Exported: dist
+== receipt
+receipt: real/docs/implementation/receipts/P3-T14.md
+receipt: 1 files placed
+compared
+applycheck: 8 of 8 equal
+== done

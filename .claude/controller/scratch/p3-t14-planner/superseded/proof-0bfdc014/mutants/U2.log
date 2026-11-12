@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 6ms
+   × bunAiText reads Thai for th and English for en and vi, filling tokens in one pass 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > bunAiText reads Thai for th and English for en and vi, filling tokens in one pass
+AssertionError: expected '{limit} of undefined left' to be '{limit} of {limit} left' // Object.is equality
+
+Expected: "{limit} of {limit} left"
+Received: "{limit} of undefined left"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:405:71
+    403|   expect(bunAiText(table, 'bunai.sample', 'vi', { left: 3, limit: 10 }…
+    404|   // One pass: a value that looks like a token is inserted, not filled…
+    405|   expect(bunAiText(table, 'bunai.sample', 'en', { left: '{limit}' })).…
+       |                                                                       ^
+    406|   expect(bunAiText(table, 'bunai.unknown', 'th')).toBe('bunai.unknown'…
+    407|   expect(bunAiText(BUNAI_DRAFTS, 'bunai.usesOf', 'th', { left: 27, lim…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:02:14
+   Duration  2.26s (transform 1.44s, setup 86ms, import 1.91s, tests 6ms, environment 137ms)
+

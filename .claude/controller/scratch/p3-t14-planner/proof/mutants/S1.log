@@ -1,0 +1,64 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/screens/redesign/account/SettingsScreen.render.test.tsx (76 tests | 1 failed | 75 skipped) 56ms
+   × with wallet and bunai on, Settings opens AI settings from its บันและ AI row and still offers the cashback tips switch 54ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/account/SettingsScreen.render.test.tsx > with wallet and bunai on, Settings opens AI settings from its บันและ AI row and still offers the cashback tips switch
+AssertionError: account: expected [ <div …(5)>…(2)</div> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <div
++     aria-label="บันและ AI"
++     class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++     role="link"
++     style="min-height: 44px; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; padding-bottom: 8px; border-top-width: 0px; border-top-color: rgba(207, 200, 228, 1.00); opacity: 1;"
++     tabindex="0"
++   >
++     <div
++       class="css-text-146c3p1"
++       dir="auto"
++       style="font-size: 15px; line-height: 23px; font-weight: 500; font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; color: rgba(35, 27, 58, 1.00); flex-shrink: 1;"
++     >
++       บันและ AI
++     </div>
++     <div
++       aria-hidden="true"
++       class="css-view-g5y9jx"
++     >
++       <div
++         class="css-text-146c3p1"
++         dir="auto"
++         style="font-size: 22px; line-height: 33px; font-weight: 700; font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; color: rgba(91, 79, 128, 1.00);"
++       >
++         ›
++       </div>
++     </div>
++   </div>,
++ ]
+
+ ❯ src/screens/redesign/account/SettingsScreen.render.test.tsx:573:26
+    571|     setEnv('EXPO_PUBLIC_REDESIGN', flags);
+    572|     mountSettings({ locale: 'th' });
+    573|     expect(row(), flags).toEqual([]);
+       |                          ^
+    574|     expect(screen.queryAllByRole('radiogroup', { name: aiHelp }).lengt…
+    575|     expect(screen.queryAllByRole('radiogroup', { name: tips }).length,…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 75 skipped (76)
+   Start at  20:16:42
+   Duration  755ms (transform 317ms, setup 41ms, import 467ms, tests 56ms, environment 87ms)
+

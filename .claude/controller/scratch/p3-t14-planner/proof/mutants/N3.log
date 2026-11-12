@@ -1,0 +1,64 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 48ms
+   × the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going 43ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going
+AssertionError: expected 'on reading' to be 'on ready' // Object.is equality
+
+Expected: "on ready"
+Received: "on reading"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:389:43
+    387|   render(<NoteProbe />);
+    388|   await settle();
+    389|   expect(found('note-probe').textContent).toBe('on ready');
+       |                                           ^
+    390|   cleanup();
+    391|   // Unwritable: the choice still applies, and nothing throws.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: locked
+ ❯ Object.getItem src/wallet/bunai/WalletAiSettings.render.test.tsx:386:62
+    384|   cleanup();
+    385|   // Unreadable: the default, and ready.
+    386|   installStoreBackend(backend({ getItem: async () => { throw new Error…
+       |                                                              ^
+    387|   render(<NoteProbe />);
+    388|   await settle();
+ ❯ Object.get src/wallet/store/walletStore.ts:26:28
+ ❯ src/wallet/bunai/aiConsent.ts:67:30
+ ❯ Object.react_stack_bottom_frame ../../node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
+ ❯ runWithFiberInDEV ../../node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
+ ❯ commitHookEffectListMount ../../node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
+ ❯ commitHookPassiveMountEffects ../../node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
+ ❯ commitPassiveMountOnFiber ../../node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
+ ❯ recursivelyTraversePassiveMountEffects ../../node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
+ ❯ commitPassiveMountOnFiber ../../node_modules/react-dom/cjs/react-dom-client.development.js:16941:11
+
+This error originated in "src/wallet/bunai/WalletAiSettings.render.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+     Errors  1 error
+   Start at  20:15:22
+   Duration  1.89s (transform 1.18s, setup 51ms, import 1.59s, tests 48ms, environment 89ms)
+

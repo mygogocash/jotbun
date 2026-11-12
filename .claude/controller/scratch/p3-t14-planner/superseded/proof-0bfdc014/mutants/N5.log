@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 103ms
+   × the note switch is kept on this phone 99ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the note switch is kept on this phone
+AssertionError: expected 'on' to be 'off' // Object.is equality
+
+Expected: "off"
+Received: "on"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:221:43
+    219|   await press(note());
+    220|   expect(checked(note())).toBe('false');
+    221|   expect(first.view.stored.get(NOTE_KEY)).toBe('off');
+       |                                           ^
+    222|   await press(note());
+    223|   expect(checked(note())).toBe('true');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:02:56
+   Duration  2.23s (transform 1.39s, setup 48ms, import 1.83s, tests 103ms, environment 107ms)
+

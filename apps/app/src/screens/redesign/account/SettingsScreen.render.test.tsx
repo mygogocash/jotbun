@@ -558,3 +558,30 @@ test.each(SETTINGS_SECTIONS.map((section) => [section.id, section] as const))('c
   expect(network).not.toHaveBeenCalled();
   network.mockRestore();
 }, 20_000);
+
+// ---------------------------------------------------------------------------
+// Bun and AI (P3-T14): with the Bun AI area on, Bun's AI help lives at /settings/ai
+
+test('with wallet and bunai on, Settings opens AI settings from its บันและ AI row and still offers the cashback tips switch', () => {
+  const aiHelp = translateCopy("Bun's AI help", 'th');
+  const tips = translateCopy('Cashback tips', 'th');
+  const row = () => screen.queryAllByRole('link', { name: 'บันและ AI' });
+  // Without both areas: no row, and the companion card keeps Bun's AI help.
+  for (const flags of ['account', 'account,wallet', 'account,bunai']) {
+    setEnv('EXPO_PUBLIC_REDESIGN', flags);
+    mountSettings({ locale: 'th' });
+    expect(row(), flags).toEqual([]);
+    expect(screen.queryAllByRole('radiogroup', { name: aiHelp }).length, flags).toBe(1);
+    expect(screen.queryAllByRole('radiogroup', { name: tips }).length, flags).toBe(1);
+    cleanup();
+  }
+  setEnv('EXPO_PUBLIC_REDESIGN', 'account,wallet,bunai');
+  mountSettings({ locale: 'th' });
+  expect(row().length).toBe(1);
+  // No Bun's AI help section here any more; the cashback tips switch stays (§5.2).
+  expect(screen.queryAllByRole('radiogroup', { name: aiHelp })).toEqual([]);
+  expect(screen.queryAllByRole('heading', { name: aiHelp })).toEqual([]);
+  expect(screen.queryAllByRole('radiogroup', { name: tips }).length).toBe(1);
+  fireEvent.click(row()[0]);
+  expect(router.push).toHaveBeenLastCalledWith('/settings/ai');
+});

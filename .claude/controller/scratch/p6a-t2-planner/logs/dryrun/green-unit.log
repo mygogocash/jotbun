@@ -1,0 +1,58 @@
+(node:88910) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88910) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.517917ms)
+✔ leap days follow the Gregorian rules (0.074584ms)
+✔ only real YYYY-MM-DD dates are accepted (0.237667ms)
+✔ never steps into the future (0.0945ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.066792ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.269084ms)
+✔ other days are written out, with the year only when it is not this year (0.088625ms)
+✔ Thai dates show Buddhist-era years (0.119041ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.06675ms)
+✔ weekday initials run Sunday first in each language (0.08675ms)
+✔ a month's short name has no year, in each language (0.08ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.057667ms)
+✔ monthName gives short and long names in Thai and English (0.178542ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.081625ms)
+(node:88911) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.012292ms)
+(node:88912) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88912) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/sim/wt/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.252667ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.334958ms)
+✔ private mode masks both faces and keeps the count (0.176625ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.335833ms)
+✔ no budget has no side line and no gauge figure (0.179375ms)
+✔ after midnight the widget shows a new day with nothing logged (0.112583ms)
+✔ each face names its day (0.119166ms)
+✔ on the month's last evening the next entry drops the budget figures (0.234875ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.112ms)
+✔ the second midnight asks to open Jotbun (0.121875ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.054375ms)
+✔ entryAt picks the newest started entry, else the first (0.097375ms)
+✔ faceFor gives system families the home face and accessory families the lock face (0.112666ms)
+✔ Vietnamese reads the English lines (0.102709ms)
+✔ a signed-out snapshot has no figures (0.090208ms)
+✔ sameSnapshot ignores only the first entry's time (0.436083ms)
+✔ both snapshots carry the link words in the person's language (0.207875ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 153.85875

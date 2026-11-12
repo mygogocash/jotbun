@@ -1,0 +1,150 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 10728ms
+   × the catalogue lists bw-ai-consent, bw-ai-settings and bw-ai-settings-off after the lock's, and each reaches its state 10724ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the catalogue lists bw-ai-consent, bw-ai-settings and bw-ai-settings-off after the lock's, and each reaches its state
+AssertionError: catalogue-screen-ready: expected 0 to be greater than 0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"catalogue-screen-stopped"[39m
+          [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"ai-settings"[39m
+            [33mstyle[39m=[32m"background-color: rgba(244, 243, 249, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx r-WebkitOverflowScrolling-150rngu r-flexDirection-eqz5dr r-flexGrow-16y2uox r-flexShrink-1wbh5a2 r-overflowX-11yh6sk r-overflowY-1rnoaur r-transform-agouwx"[39m
+              [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mstyle[39m=[32m"gap: 10px; padding: 8px 18px 58px;"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 12px; margin-bottom: 4px;"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33maria-label[39m=[32m"กลับ"[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                    [33mrole[39m=[32m"button"[39m
+                    [33mstyle[39m=[32m"width: 44px; height: 44px; background-color: rgba(255, 255, 255, 1.00); align-items: center; justify-content: center; opacity: 1; border-width: 1px; border-color: rgba(230, 228, 238, 1.00); border-radius: 22px;"[39m
+                    [33mtabindex[39m=[32m"0"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33mheight[39m=[32m"18"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"18"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M15 5l-7 7 7 7"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mstroke[39m=[32m"#111014"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                    [36m</div>[39m
+                  [36m</button>[39m
+                  [36m<h1[39m
+                    [33mclass[39m=[32m"css-text-146c3p1"[39m
+                    [33mdir[39m=[32m"auto"[39m
+                    [33mrole[39m=[32m"heading"[39m
+                    [33mstyle[39m=[32m"font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 28px; font-weight: 700; line-height: 42px; color: rgba(17, 16, 20, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                  [36m>[39m
+                    [0mบันและ AI[0m
+                  [36m</h1>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mdata-testid[39m=[32m"ai-settings-presence"[39m
+                  [33mstyle[39m=[32m"gap: 8px; background-color: rgba(255, 255, 255, 1.00); padding: 14px; border-radius: 22px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; justify-content: space-between; align-items: baseline; gap: 4px;"[39m
+                  [36m>[39m
+                    [36m<h1[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mrole[39m=[32m"heading"[39m
+                      [33mstyle[39m=[32m"font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(17, 16, 20, 1.00);"[39m
+                    [36m>[39m
+                      [0mบัน[0m
+                    [36m</h1>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-text-146c3p1"[39m
+                      [33mdir[39m=[32m"auto"[39m
+                      [33mstyle[39m=[32m"font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(107, 104, 120, 1.00);"[39m
+                    [36m>[39m
+                      [0mบันโผล่มาแค่ไหน[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33maria-label[39m=[32m"บันโผล่มาแค่ไหน"[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mrole[39m=[32m"radiogroup"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; gap: 8px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-checked[39m=[32m"true"[39m
+                      [33maria-label[39m=[32m"เต็ม"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+                      [33mrole[39m=[32m"radio"[39m
+                      [33mstyle[39m=[32m"min-height: 44px; background-color: rgba(255, 255, 255, 1.00); gap: 6px; padding: 8px; border-width: 2px; border-color: rgba(17, 16, 20, 1.00); border-radius: 16px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                      [33mtabindex[39m=[32m"0"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                        [33mstyle[39m=[32m"height: 50px; background-color: rgba(244, 243, 249, 1.00); overflow-x: hidden; overflow-y: hidden; justify-content: center; padding-right: 8px; padding-left: 8px; gap: 5px; border-radius: 10px;"[39m
+                      [36m>[39m
+                        [36m<di...
+ ❯ found src/wallet/bunai/WalletAiSettings.render.test.tsx:111:30
+    109| function found(testID: string, inside?: HTMLElement): HTMLElement {
+    110|   const all = (inside ? within(inside) : screen).queryAllByTestId(test…
+    111|   expect(all.length, testID).toBeGreaterThan(0);
+       |                              ^
+    112|   return all[0];
+    113| }
+ ❯ waitFor.timeout src/wallet/bunai/WalletAiSettings.render.test.tsx:423:25
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:05:20
+   Duration  12.73s (transform 1.82s, setup 54ms, import 1.72s, tests 10.73s, environment 99ms)
+

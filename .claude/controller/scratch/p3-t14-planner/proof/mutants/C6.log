@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:9310) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 90ms
+   × while turning on waits for the server, nothing leaves the tray 89ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > while turning on waits for the server, nothing leaves the tray
+AssertionError: expected 'false' to be 'true' // Object.is equality
+
+Expected: "true"
+Received: "false"
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:278:64
+    276|   const { closes } = await mountTray({ ai });
+    277|   await press(named('button', 'เปิดใช้'));
+    278|   expect(named('button', 'เปิดใช้').getAttribute('aria-busy')).toBe('t…
+       |                                                                ^
+    279|   await press(named('button', 'ไม่ใช่ตอนนี้'));
+    280|   await press(named('button', 'อ่านรายละเอียด'));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:15:12
+   Duration  2.27s (transform 1.50s, setup 48ms, import 1.92s, tests 90ms, environment 102ms)
+

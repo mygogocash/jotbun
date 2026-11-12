@@ -178,3 +178,7 @@
 - When a usage limit pauses Claude threads, T3 arms a resume for each one and sends "Continue where you left off." at the reset. It does this for threads whose work had already finished, too (a confirming review, a planner whose brief was done).
 - Stopping such a thread with `t3_thread_interrupt stop:true` ends that run, but it can be armed again at the next limit. **Archive a thread (`t3_thread_organize archive`) as soon as its result is used.** At each reset, list the project's running and starting threads and stop and archive anything finished.
 - The 13:20 window ran out at 14:36: three confirming reviews, a fix planner, two Haiku fixers and the controller used it up in 76 minutes. With three Opus planners running, expect a window to last about one to two hours. Start Opus work early in a window and put Haiku builds between.
+
+## Check the head's code diff before telling a planner it need not re-prove (12 Nov, 20:10)
+- The head moves every few minutes by controller-state syncs (`.claude/` only), but task merges land between them. The controller told the P3-T14 planner its proof held at a newer head, when #436 and #435 had merged in between (27 files under apps, packages and docs), and had to correct itself.
+- Before any such note, run `git diff --stat <its base> <head> -- apps packages docs`. Only an empty diff means the proof holds.

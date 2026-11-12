@@ -13,6 +13,7 @@ import { WALLET_RECORD_SECTIONS } from './recordSections';
 import { WALLET_CATEGORY_SECTIONS } from './categorySections';
 import { WALLET_INSIGHTS_SECTIONS } from './insightsSections';
 import { WALLET_RECAP_SECTIONS } from './recapSections';
+import { WALLET_BUNAI_SECTIONS } from './bunaiSections';
 
 export const WALLET_SECTIONS: readonly CatalogueSection[] = [
   ...WALLET_KIT_SECTIONS,
@@ -25,4 +26,5 @@ export const WALLET_SECTIONS: readonly CatalogueSection[] = [
   ...WALLET_INSIGHTS_SECTIONS,
   ...WALLET_RECAP_SECTIONS,
   ...WALLET_LOCK_SECTIONS,
+  ...WALLET_BUNAI_SECTIONS,
 ];

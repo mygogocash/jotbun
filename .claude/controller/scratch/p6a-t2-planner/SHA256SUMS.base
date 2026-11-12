@@ -1,0 +1,10 @@
+3d642ab2b19272d7b61c98391c17c768263fc52f60ae8e1b7129088f777acc8f  apps/app/src/ui/dateStep.ts
+30ad75c01c18dcf7b477a98e337d7c2a28e9861447f35db02079f45c93aaf67f  apps/app/src/ui/dateStep.test.ts
+847911966b4900a9437aa473fa91d95903d3e75e069fd5baba23ef9c851b251b  apps/app/src/wallet/copy/draftText.ts
+b8a57dc2166fec687f4750c885a5262929ac8fca2064b9e7ae45568a34d3162a  apps/app/src/wallet/copy/useDraftCopy.ts
+8b199bb7f90cf285f81a24f581de3e0ab976bef38cb2f749b84c4e545778e483  apps/app/src/wallet/money/walletMoney.ts
+ac25a65ac19cf68ba529f3783b56a2574b88c3b9c945aa220f8e734d4ffc9ba4  apps/app/src/spend/v1/money.ts
+51e062db9b92f0e399873c6e3a9bc70d1cde48b68ec020c601e6d0d34af2a586  apps/app/src/spend/v1/redesign/budgetPace.ts
+bcbfa430b010b37216afc4fe7e92d3716665a5b6cde8ea491b64bfa0ee58557f  apps/app/src/spend/v1/redesign/shared.ts
+8f15786301bff6fcbc2a0f26088c4c1f087233d0ea127035fc6f8a42d1cd8d8a  apps/app/src/spend/v1/redesign/testing/fixtures.ts
+08b9a1006a8d8ebacd59c0dfa48e82e31cefeb42d646bf896138f9012e3c667f  apps/app/scripts/test-unit.mjs

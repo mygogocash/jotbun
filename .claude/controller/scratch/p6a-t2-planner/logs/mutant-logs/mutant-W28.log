@@ -1,0 +1,111 @@
+(node:15605) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15605) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.830917ms)
+✔ leap days follow the Gregorian rules (0.097917ms)
+✔ only real YYYY-MM-DD dates are accepted (0.181292ms)
+✔ never steps into the future (0.080584ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.046417ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.267167ms)
+✔ other days are written out, with the year only when it is not this year (0.087666ms)
+✔ Thai dates show Buddhist-era years (0.190125ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.110167ms)
+✔ weekday initials run Sunday first in each language (0.100625ms)
+✔ a month's short name has no year, in each language (0.137625ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.19525ms)
+✔ monthName gives short and long names in Thai and English (0.213416ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.152334ms)
+(node:15606) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/outsideCopy.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every outside line has Thai and English with the same placeholders, no emoji and no dash punctuation, under an outside. key (1.2805ms)
+(node:15607) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15607) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/packages/contracts/package.json.
+✔ the home face reads as ox-widget-home (2.114417ms)
+✔ with the Face ID lock on, the lock face holds no amount, private mode or not (0.307209ms)
+✔ private mode masks both faces and keeps the count (0.221ms)
+✔ over budget says เกินงบไป ฿420 and, masked, keeps the words (0.50025ms)
+✔ no budget has no side line and no gauge figure (0.275459ms)
+✔ after midnight the widget shows a new day with nothing logged (0.157ms)
+✔ each face names its day (0.185584ms)
+✔ on the month's last evening the next entry drops the budget figures (0.284208ms)
+✔ a pace for another month draws no budget figures, so the 1st never shows last month's (0.241917ms)
+✔ the second midnight asks to open Jotbun (0.223292ms)
+✔ nextBangkokMidnight is the next 00:00 in Bangkok, strictly after now (0.080375ms)
+✔ entryAt picks the newest started entry, else the first (0.179125ms)
+✖ faceFor gives system families the home face and accessory families the lock face (1.092625ms)
+✔ Vietnamese reads the English lines (0.335334ms)
+✔ a signed-out snapshot has no figures (0.133292ms)
+✔ sameSnapshot ignores only the first entry's time (0.928833ms)
+✔ both snapshots carry the link words in the person's language (0.447791ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 31
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 183.35925
+
+✖ failing tests:
+
+test at src/wallet/outside/widgetSnapshot.test.ts:225:1
+✖ faceFor gives system families the home face and accessory families the lock face (1.092625ms)
+  AssertionError [ERR_ASSERTION]: systemSmall
+  + actual - expected
+  
+    {
+      count: '3 รายการ',
+      dayLabel: 'ส. 24',
+  +   gaugeFraction: null,
+  -   gaugeFraction: 0.742,
+      gaugeLabel: 'งบ ต.ค.',
+  +   gaugeText: null,
+  +   masked: true,
+  +   out: '฿••••',
+  -   gaugeText: '74%',
+  -   masked: false,
+  -   out: '฿132',
+      outLabel: 'ใช้วันนี้',
+      over: false,
+  +   side: '฿••••',
+  -   side: '≈ ฿580',
+      sideLabel: 'เหลือวันนี้',
+      spoken: {
+  +     gauge: 'งบเดือนนี้ ซ่อนอยู่',
+  +     inline: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่',
+  +     rectangular: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่',
+  +     small: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่'
+  -     gauge: 'งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์',
+  -     inline: 'เหลือวันนี้ประมาณ 580 บาท',
+  -     rectangular: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท',
+  -     small: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท'
+      },
+      today: 'วันนี้ · 3 รายการ'
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p6a-t2-planner/tree/apps/app/src/wallet/outside/widgetSnapshot.test.ts:228:73)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { masked: true, dayLabel: 'ส. 24', outLabel: 'ใช้วันนี้', out: '฿••••', count: '3 รายการ', today: 'วันนี้ · 3 รายการ', sideLabel: 'เหลือวันนี้', side: '฿••••', over: false, gaugeLabel: 'งบ ต.ค.', gaugeText: null, gaugeFraction: null, spoken: { small: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่', inline: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่', gauge: 'งบเดือนนี้ ซ่อนอยู่', rectangular: 'วันนี้ 3 รายการ ยอดเงินซ่อนอยู่' } },
+    expected: { masked: false, dayLabel: 'ส. 24', outLabel: 'ใช้วันนี้', out: '฿132', count: '3 รายการ', today: 'วันนี้ · 3 รายการ', sideLabel: 'เหลือวันนี้', side: '≈ ฿580', over: false, gaugeLabel: 'งบ ต.ค.', gaugeText: '74%', gaugeFraction: 0.742, spoken: { small: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท', inline: 'เหลือวันนี้ประมาณ 580 บาท', gauge: 'งบเดือนตุลาคม ใช้ไป 74 เปอร์เซ็นต์', rectangular: 'วันนี้ใช้ 132 บาท 3 รายการ เหลือวันนี้ประมาณ 580 บาท' } },
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

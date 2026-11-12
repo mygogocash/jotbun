@@ -1,0 +1,22 @@
+green: real/apps/app/src/config/featureFlags.ts
+green: real/apps/app/src/config/featureFlags.test.ts
+green: real/apps/app/src/wallet/bunai/drafts.ts
+green: real/apps/app/src/wallet/bunai/drafts.test.ts
+green: real/apps/app/src/wallet/bunai/useBunAiCopy.ts
+green: real/apps/app/src/wallet/bunai/aiArea.ts
+green: real/apps/app/src/wallet/bunai/aiConsent.ts
+green: real/apps/app/src/wallet/bunai/AiConsentContent.tsx
+green: real/apps/app/src/wallet/bunai/AiConsentTray.tsx
+green: real/apps/app/src/wallet/bunai/WalletAiSettingsScreen.tsx
+green: real/apps/app/src/wallet/bunai/AiConsent.render.test.tsx
+green: real/apps/app/src/wallet/bunai/WalletAiSettings.render.test.tsx
+green: real/apps/app/app/settings/ai.tsx
+green: real/apps/app/src/dev/catalogue/wallet/bunaiSections.tsx
+green: real/apps/app/src/dev/catalogue/wallet/bunaiScreens.tsx
+green: real/apps/app/src/dev/catalogue/wallet/index.ts
+green: real/apps/app/src/screens/redesign/account/SettingsScreen.tsx
+green: real/apps/app/src/screens/redesign/account/SettingsScreen.render.test.tsx
+green: real/apps/app/src/screens/redesign/account/CompanionSettings.tsx
+green: real/apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+green: real/apps/app/src/screens/redesign/account/AccountRoutes.render.test.tsx
+green: 21 files placed

@@ -1,0 +1,48 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:8676) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx (10 tests | 1 failed | 9 skipped) 98ms
+   × เปิดใช้ turns AI on with the current notice and sends one ai_consent_changed carrying ai_enabled true 97ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/AiConsent.render.test.tsx > เปิดใช้ turns AI on with the current notice and sends one ai_consent_changed carrying ai_enabled true
+AssertionError: expected "vi.fn()" to be called with arguments: [ { companion: true, …(1) } ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+    {
+      "companion": true,
+-     "notice_version": 1,
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/wallet/bunai/AiConsent.render.test.tsx:177:41
+    175|     await press(named('button', 'เปิดใช้'));
+    176|     expect(ai.resources.setPreferences).toHaveBeenCalledTimes(1);
+    177|     expect(ai.resources.setPreferences).toHaveBeenCalledWith({ compani…
+       |                                         ^
+    178|     expect(ai.preferences().companion).toBe(true);
+    179|     expect(consentEvents(recorded.sent)).toEqual([{ kind: 'capture', n…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 skipped (10)
+   Start at  20:15:08
+   Duration  1.65s (transform 976ms, setup 48ms, import 1.30s, tests 98ms, environment 89ms)
+

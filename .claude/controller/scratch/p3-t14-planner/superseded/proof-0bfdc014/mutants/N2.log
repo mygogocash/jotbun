@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t14-planner/tree/apps/app
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx (15 tests | 1 failed | 14 skipped) 43ms
+   × the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going 40ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/bunai/WalletAiSettings.render.test.tsx > the note setting: a choice made before the stored one is read wins, and a store that can't be read or written keeps going
+AssertionError: expected 'on ready' to be 'off ready' // Object.is equality
+
+Expected: "off ready"
+Received: "on ready"
+
+ ❯ src/wallet/bunai/WalletAiSettings.render.test.tsx:383:43
+    381|   await act(async () => { answer?.('on'); });
+    382|   await settle();
+    383|   expect(found('note-probe').textContent).toBe('off ready');
+       |                                           ^
+    384|   cleanup();
+    385|   // Unreadable: the default, and ready.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 skipped (15)
+   Start at  20:02:46
+   Duration  3.22s (transform 2.19s, setup 74ms, import 2.81s, tests 43ms, environment 145ms)
+

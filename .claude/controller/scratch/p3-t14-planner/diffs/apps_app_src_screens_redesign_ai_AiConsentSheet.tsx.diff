@@ -1,0 +1,47 @@
+diff --git a/apps/app/src/screens/redesign/ai/AiConsentSheet.tsx b/apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+index 2c7809cdcab2ace8b71206aa789bf3a1cd027c09..afc476bc98fd0e9b1572c39abf2608e7b46f5c59 100644
+--- a/apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
++++ b/apps/app/src/screens/redesign/ai/AiConsentSheet.tsx
+@@ -1,20 +1,21 @@
+ // Turning on Bun's AI help (premium plan D15): consent at the moment of
+ // action, in plain promises, as the trust screens do. What is sent, what is
+ // never sent, who reads it, and that it can be turned off. Nothing is sent
+-// until the person agrees; "Not now" changes nothing.
+-import { AI_NOTICE_VERSION } from '@gogospend/contracts';
++// until the person agrees; "Not now" changes nothing. Agreeing goes through
++// useAiConsentChange (P3-T14): the current notice, then one
++// ai_consent_changed once the server has taken it.
+ import { useState } from 'react';
+ import { View } from 'react-native';
+ 
+ import { useCopy } from '@mobile/i18n/useCopy';
+ import { playHaptic } from '@mobile/lib/hapticMoment';
+ import { Bun } from '@mobile/mascot/Bun';
+-import { useAiCompanion } from '@mobile/spend/v1/ai/AiCompanionProvider';
+ import { BunText } from '@mobile/ui/BunText';
+ import { BUN_SPACE } from '@mobile/ui/layout';
+ import { PillButton } from '@mobile/ui/PillButton';
+ import { PromiseList } from '@mobile/ui/PromiseList';
+ import { Sheet } from '@mobile/ui/Sheet';
++import { useAiConsentChange } from '@mobile/wallet/bunai/aiConsent';
+ 
+ export type AiConsentSheetProps = {
+   readonly visible: boolean;
+@@ -25,7 +26,7 @@ export type AiConsentSheetProps = {
+ 
+ export function AiConsentSheet({ visible, onClose, onAgreed }: AiConsentSheetProps) {
+   const tc = useCopy();
+-  const { update } = useAiCompanion();
++  const { turnOn } = useAiConsentChange();
+   const [busy, setBusy] = useState(false);
+   const [problem, setProblem] = useState<string | null>(null);
+ 
+@@ -43,7 +44,7 @@ export function AiConsentSheet({ visible, onClose, onAgreed }: AiConsentSheetPro
+     setBusy(true);
+     setProblem(null);
+     try {
+-      await update({ companion: true, notice_version: AI_NOTICE_VERSION });
++      await turnOn();
+       playHaptic('saveLanded');
+       onAgreed?.();
+       onClose();
