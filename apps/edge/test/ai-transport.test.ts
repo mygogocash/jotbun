@@ -141,6 +141,46 @@ describe('P3-T4: The gateway transport, one deadline per request and the call tr
     expect(call.httpStatus).toBeNull()
   })
 
+  it("a reply whose body stalls past its time fails as a timeout, ended by the call's own signal", async () => {
+    // P3-T7, from the P3-T4 review's m1: the headers come at once, then the body never ends. SDK 1.2.0 clears
+    // its own timer once the headers arrive, so only the AbortSignal ends the read, which then rejects with the
+    // signal's DOMException, as a fetch does when its signal aborts mid-body. Real time: fake timers do not
+    // drive AbortSignal.timeout.
+    const stallingFetch = async (_url: unknown, init?: RequestInit): Promise<Response> => {
+      const signal = init?.signal
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('{"id":"msg_stalled",'))
+          signal?.addEventListener('abort', () => controller.error(signal.reason), { once: true })
+        },
+      })
+      return new Response(body, { headers: { 'content-type': 'application/json' } })
+    }
+    const transport = anthropicTransport({ apiKey: 'sk-test', fetch: stallingFetch })
+    const trace = newTrace()
+    const start = Date.now()
+    let caught: unknown
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const outcome = await Promise.race([
+      tracedSend(transport, trace, new AiDeadline(2_100), { feature: 'slip', escalated: false, params: sampleParams }).then(
+        () => 'resolved',
+        (error: unknown) => {
+          caught = error
+          return 'rejected'
+        },
+      ),
+      new Promise<string>((resolve) => {
+        timer = setTimeout(() => resolve('still pending at 4 s'), 4_000)
+      }),
+    ])
+    clearTimeout(timer)
+    expect(outcome).toBe('rejected')
+    expect(Date.now() - start).toBeLessThan(3_000)
+    expect(callFailure(caught)).toBe('timeout')
+    expect(trace.calls).toHaveLength(1)
+    expect(trace.calls[0]).toMatchObject({ sent: true, failure: 'timeout', httpStatus: null })
+  })
+
   it('a rate limit fails at once as rate_limited with its wait', async () => {
     let fetchCount = 0
     const rateLimitFetch = async (): Promise<Response> => {
@@ -243,6 +283,10 @@ describe('P3-T4: The gateway transport, one deadline per request and the call tr
     expect(callFailure(Anthropic.APIError.generate(500, { error: { message: 'internal' } }, 'Server error', new Headers()))).toBe('server_error')
     expect(callFailure(Anthropic.APIError.generate(400, { error: { message: 'bad request' } }, 'Bad request', new Headers()))).toBe('rejected')
     expect(callFailure(new Error('something else'))).toBe('other')
+    // P3-T7 (the P3-T4 review's m1): a read the call's own signal ended, whichever name its DOMException carries.
+    expect(callFailure(new DOMException('This operation was aborted', 'AbortError'))).toBe('timeout')
+    expect(callFailure(new DOMException('The operation timed out.', 'TimeoutError'))).toBe('timeout')
+    expect(callFailure(new DOMException('The object could not be cloned.', 'DataCloneError'))).toBe('other')
   })
 
   it('the trace keeps the reply\'s model, status, stop reason and tokens', async () => {

@@ -30,7 +30,7 @@
   - `test:edge` (19 files, 196);
   - `build:edge`;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full workers suite.
+- [x] CI at `088b346a`: 9 of 9, including the full workers suite.
 - [ ] Independent review (Opus), and a second review: the refund rules, the day, and the session.
 - [ ] SKIPPED: none beyond R100's whole suites, which CI runs.
 
