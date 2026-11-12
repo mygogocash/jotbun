@@ -34,7 +34,7 @@
   - The proofs: RED 1 of 38 Node and 2 of 220 render, all assertions; GREEN 38 and 220; **75 of 75 mutants killed** (QE equivalent). All 12 fix-kit files are byte-identical.
   - Planned on Claude Opus, built on Claude Haiku 5.5.
 - [x] The controller merged the integration head (with #441) as `d8d7364a`, with no conflicts. On the merged tree: `typecheck:app` 0; `test:unit` 1085; `test:app` 36; the task's render files 422; the eight kit files and the four routes tests 158; `git diff --check` on the range.
-- [ ] CI on this pull request is green at `d8d7364a`.
+- [x] CI at `d8d7364a`: 9 of 9.
 - [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (events on a real PostHog EU project, for 1D-T15's two-phone run).
 
