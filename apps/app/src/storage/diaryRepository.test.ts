@@ -113,6 +113,22 @@ test('a draft must match its command and account, be a valid create, and use syn
   assert.equal(category().id, FOOD);
 });
 
+test('a pending entry may carry a source, and an unknown one is refused', async () => {
+  const store = await open();
+  await store.applyChangeGroups([references()], 'c1', null);
+  // How the record was made (P3-T2): one of the seven sources, or none (absent or null).
+  const photo = draft({ source: 'photo' });
+  await assert.doesNotReject(store.savePending(photo, outbox(photo)));
+  const none = draft({ source: null });
+  await assert.doesNotReject(store.savePending(none, outbox(none)));
+  const siri = { id: randomUUID(), type: 'transfer', amount_minor: '100', occurred_on: '2026-03-02', source_wallet_id: WALLET, destination_wallet_id: SAVINGS, source: 'siri' } as const;
+  await assert.doesNotReject(store.savePending(siri, outbox(siri)));
+  const camera = draft({ source: 'camera' as never });
+  await assert.rejects(store.savePending(camera, outbox(camera)), { name: 'TypeError', message: 'A pending entry is not a valid create: source.' });
+  assert.deepEqual((await store.readState()).pending.map((entry) => entry.source), ['photo', null, 'siri']);
+  assert.equal((await store.readOutbox()).length, 3);
+});
+
 test('delta records, totals and cursor commit together: a failure at any statement keeps the previous state', async () => {
   const prepare = async () => {
     const fresh = await open();

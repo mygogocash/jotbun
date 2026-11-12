@@ -1,0 +1,140 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/work/apps/app
+
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 150ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 120ms
+   → no pack card once all nine are there: expected [ <button …(7)>…(3)</button> ] to deeply equal []
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 301ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 332ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 245ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 57ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 261ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 158ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 138ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 194ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 180ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 81ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 110ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 100ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 40ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 152ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 382ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 19ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 128ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 172ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 145ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 262ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 40ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 114ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 90ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 450ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 168ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 176ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 110ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 244ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 102ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 82ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  09:42:57
+   Duration  7.22s (transform 1.20s, setup 49ms, import 1.64s, tests 5.31s, environment 102ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:93439) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items
+AssertionError: no pack card once all nine are there: expected [ <button …(7)>…(3)</button> ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   <button
++     aria-label="เพิ่มชุดหมวด ชีวิตประจำวันแบบไทย "
++     class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"
++     data-testid="categories-pack"
++     role="button"
++     style="min-height: 84px; flex-direction: row; align-items: center; gap: 12px; background-color: rgba(251, 241, 209, 1.00); opacity: 1; padding: 14px 16px; border-radius: 20px;"
++     tabindex="0"
++     type="button"
++   >
++     <div
++       aria-hidden="true"
++       class="css-view-g5y9jx"
++       style="width: 64px; height: 62px;"
++     />
++     <div
++       class="css-view-g5y9jx"
++       style="min-width: 0px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++     >
++       <div
++         class="css-text-146c3p1"
++         dir="auto"
++         style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 23px; color: rgba(17, 16, 20, 1.00);"
++       >
++         เพิ่มชุดหมวด
++       </div>
++       <div
++         class="css-text-146c3p1"
++         dir="auto"
++         style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 23px; color: rgba(17, 16, 20, 1.00);"
++       >
++         ชีวิตประจำวันแบบไทย
++       </div>
++       <div
++         class="css-text-146c3p1"
++         data-testid="categories-pack-line"
++         dir="auto"
++         style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(74, 71, 86, 1.00);"
++       />
++     </div>
++     <div
++       aria-hidden="true"
++       class="css-view-g5y9jx"
++     >
++       <div
++         aria-hidden="true"
++         class="css-view-g5y9jx"
++       >
++         <svg
++           height="12"
++           viewBox="0 0 24 24"
++           width="12"
++         >
++           <path
++             d="M9 5l7 7-7 7"
++             fill="none"
++             stroke="#111014"
++             stroke-linecap="round"
++             stroke-linejoin="round"
++             stroke-width="2"
++           />
++         </svg>
++       </div>
++     </div>
++   </button>,
++ ]
+
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:275:94
+    273|   cleanup();
+    274|   await openScreen(board([FOOD, ...eight, held('ลอตเตอรี่', 9)]));
+    275|   expect(screen.queryAllByTestId('categories-pack'), 'no pack card onc…
+       |                                                                                              ^
+    276| }, 60_000);
+    277|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

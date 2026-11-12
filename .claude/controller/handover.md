@@ -49,6 +49,84 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13:55: P2-T15 fix brief READY (Opus, R114); its fixer is building (Haiku).**
+  - Private mode quotes none of Bun's sentence. Next waits on archived or unknown wallets (`inUse`; `TransferFooter` takes `wallets`, which P2-T16 must pass). Every gap is pinned, and the sections are lazy.
+  - 120 of 120 mutants. Kit sums 32 of 32.
+  - Fixer on worktree `p2-t15` at `fd41909c`, with no sync merge. P1 to P33 accepted.
+- **13:50: #429 (P2-T21): Opus says NEEDS FIXES** (Sonnet approved; CI 9 of 9).
+  - **M1:** after an unconfirmed create, especially with a blocked resend, every control on step 2 is held, and on iOS in the wallet area nothing leaves the screen.
+  - The minors: m1 (a late save goes back twice), m2 (six unheld guards, Y7 on money), m3 (the tracking start cannot be changed in the wallet area, an owner call at E2-B), n1 (the card drop) and n2 (a ฿0 in private mode).
+  - **R115:** back is held only while saving and leaves the flow while unconfirmed or blocked; one navigation; the pins PR1, PR4, PR7, PR8, Y6, Y8 and Y9; m3 stays text with the consequence stated (owner); n1 and n2 fixed.
+  - The fix round went back to the original Opus planner `a35bacd7…` (run 4), writing `briefs/P2-T21-fix.md` with the kit at `scratch/p2-t21-fix-planner/`, on `2411001e`.
+- **13:45: #421 (P2-T31) MERGED as `ce165ed`; the head is `ce165ed`.**
+  - The confirming review (Opus) approved after the R112 round, and CI was 9 of 9 at `f72ad233`.
+  - Issue #177 is closed, and it is promoted as **#431** (stack #379 holds 28). The insights follow-ups (m1 before E2-C, and 14 pins) are in followups.md.
+  - `index.ts` on the head is now ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. **#423 (P2-T29)** needs CATEGORY between RECORD and INSIGHTS when its fix lands.
+- **13:40: #428 (P3-T6) MERGED as `d0f1897`; the head is `d0f1897`.** Opus and Sonnet approved, and CI was 9 of 9 on attempt 3 (R-B twice). Issue #190 is closed, and it is promoted as **#430** (stack #379 holds 27). m1 must ride P3-T8 (followups.md).
+- **13:30: P2-T29 fix brief READY (Opus, R113); its fixer is building (Haiku).**
+  - 119 of 119 mutants. The gate holds the 12 Nov rules. `index.ts` is unchanged (`911e4ce0…`), so the controller resolves RECORD and RECAP at merge.
+  - Fixer on worktree `p2-t29` at `cee7eff5`, with no sync merge. P1 to P28 accepted.
+  - Risk: no route mounts `WalletLooksProvider` until P2-T18, so a picked icon is not kept on a phone before then.
+- **13:25: Claude Code's 5-hour limit stopped everything from about 09:41 to 13:20, the controller included.** At 13:20 T3 resumed every paused thread.
+  - **Stopped 7 resumed threads that had already finished:**
+    - the P3-T6, P2-T15 and P2-T21 implementers;
+    - the P2-T31 fix planner and the P2-T21 planner;
+    - both P2-T15 reviewers.
+  - Archived the old P2-T20 implementer, which was snoozed to resume on 14 Nov after its PR had merged.
+  - **Continuing legitimately:**
+    - Opus: P3-T6 reviewer, P2-T21 reviewer, P2-T31 confirmer, P2-T29 fix planner, and P2-T15 fix planner (`f193feb1`, run 3);
+    - Sonnet: the P3-T6 and P2-T21 second reviewers.
+  - That load (5 Opus plus 2 Sonnet plus the controller) is the one that ran the window out; launch no more Opus until some finish.
+  - Heavy lock free. Runners online. The `node --test` process seen is another project's.
+  - **CI:** #421 9 of 9 at `f72ad233` (waiting for the confirming review); #427 9 of 9 (fix round); #429 9 of 9 (reviews running).
+    - #428 hit R-B twice (attempts 1 and 2), and attempt 3 is running on idle runners.
+    - **R-B is the owner's item 0:** an `apps/api` migration `0020_receipt_copy_once.sql` that needs the API's migration step, so it is a deploy decision.
+  - Background watchers now run with `timeout 7200000`; the default 30 minutes killed the last ones.
+- **10:15: #429 (P2-T21) opened.** Head `2411001e`, built by Haiku. The controller checked all 18 `real/` files byte-identical; 109 of 109 mutants; the gate passed (routes, `export:web` and the kit files).
+  - Opus reviewer: thread "P2-T21 reviewer (#429)". It writes `reviews/P2-T21.md`.
+  - Sonnet second reviewer: thread "P2-T21 second reviewer (#429)". It writes `reviews/P2-T21-second.md`.
+- **10:10: #421 (P2-T31) fix round DONE and merged up.**
+  - Fix `91d7e926` (Haiku, R112): all 16 `real/` files byte-identical, 127 of 127 mutants.
+  - The controller merged the head as `f72ad233`. `index.ts` goes ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. On the merged tree: tsc 0, 217 of 217 focused, and `test:unit` 1042 of 1042.
+  - Pushed, and the PR body is updated. CI is running.
+  - Opus confirming review (Opus high, chosen over make_prompt's Sonnet because this round was big and money and privacy are at stake): see the thread titled "P2-T31 confirming review"; it writes `reviews/P2-T31-confirm.md`.
+- **#428 (P3-T6):** the SQL job hit the R-B flake again (P3-T6 touches no `apps/api`), so it was rerun once. **R-B now costs a rerun on most PRs**; the owner decision on the prepared `apps/api` migration fix is still open.
+- **10:00: #427 (P2-T15): both reviews say NEEDS FIXES** (CI green 9 of 9).
+  - **M1, in both:** private mode masks digits only, so Thai number words in Bun's sentence show the amount.
+  - Also: m1 (Next ignores an archived side), pins for survivors and accessibility, and nits including n4 (eager sections).
+  - **R114:** in private mode do not draw Bun's sentence at all (a line that does not quote it). Next waits on archived or unknown sides. Pin every survivor and gap. Load the sections lazily.
+  - The fix round went back to the original Opus planner `f193feb1…` (run 2), writing `briefs/P2-T15-fix.md` with the kit at `scratch/p2-t15-fix-planner/`, on `fd41909c`.
+- **09:50: #428 (P3-T6) opened.** Head `8b528df1`, built by Haiku. The controller checked 20 of 21 `real/` files byte-identical (the receipt only adds "as accepted by the controller"); 30 of 30 mutants.
+  - Opus reviewer `mcp:launch:7af3cde0bab339da1916635e5abc6cb2713cd4fab4cfb1ad2caa7d968955eb0a` writes `reviews/P3-T6.md`.
+  - Sonnet second reviewer `mcp:launch:7f8ac96f0cd5645510cb20962d374acd6306b633e8d67d1da87e4154feb9e037` writes `reviews/P3-T6-second.md`.
+  - CI is running (`ci_watch.sh 115 427 428`).
+- **09:40: P2-T31 fix brief READY (Opus, R112); its fixer is building (Haiku).**
+  - 127 of 127 mutants. The gate includes the catalogue-index kit files and `test:unit`. Sections load lazily. `dateStep.ts` gains `monthShortLabel` and `shortDateLabel` (additive).
+  - Fixer on worktree `p2-t31` at `afc19276`, with no sync merge. P1 to P23 accepted.
+  - **After its commit:** check the kit, push, then merge the head into the branch. `index.ts` goes KIT, STACK, TRAY, ADD, LIST, RECORD, (CATEGORY when #423 lands), INSIGHTS, RECAP, LOCK. Then CI, then the Opus confirming review.
+- **09:35: #427 (P2-T15) opened; P2-T21 building.**
+  - **#427 (P2-T15):** head `fd41909c`, built by Haiku. The controller checked all 7 `real/` files byte-identical; 104 of 104 mutants, matching the planner.
+    - Opus reviewer `mcp:launch:4b36bd564c682ce13a5243d00f8858d781da321e1c4af0788974d581bdae37b2` writes `reviews/P2-T15.md`.
+    - Sonnet second reviewer `mcp:launch:62f8743d31ad1a4718ee4ef32ae02cd8c170392370e42a1a3c34397c9e024d28` writes `reviews/P2-T15-second.md`.
+    - CI is running.
+  - **P2-T21 brief READY (Opus):** kit sums 55 of 55, 109 of 109 mutants, new routes `app/spend/wallet/new.tsx` and `[id]/edit.tsx`.
+    - The controller's pre-flight on the kit over the head: tsc 0; the eight catalogue-index kit files, the new suites and the routes 175 of 175; `test:unit` 1037 of 1037. Then the worktree was reset.
+    - Worktree `p2-t21` (`p2/t21-wallet-edit`) at `150cfb82`, installed. P1 to P21 accepted. Implementer: Haiku 5.5 max.
+  - **The pre-flight is now routine for UI briefs.** Lay `real/` over a fresh worktree, run the catalogue-index files, the routes and `test:unit`, then `git checkout -- . && git clean -fd apps docs` before dispatch.
+- **09:20: #420 (P3-T2) MERGED as `25ce266`; the head is `25ce266`.**
+  - Opus approved, the second review (Claude Sonnet 5.5) approved, and CI was 9 of 9.
+  - Issue #186 is closed and it is promoted as **#426** (stack #379 holds 26). The release rule (client minimum 0.2.0) is in followups.md for the owner and P6C.
+  - **P3-T6 is building (Haiku 5.5 max, `--lock`).** Worktree `p3-t6` on `p3/t6-haiku-first` at `25ce2661`, with `install-edge`. The kit holds there (72 of 72 sums, 16 of 16 originals). P1 to P13 accepted.
+- **09:10: P2-T15 brief READY (Opus) and building on Haiku.**
+  - Kit sums 25 of 25, 104 of 104 mutants. Its sections join `addSections.tsx`, and `index.ts` is untouched.
+  - **The controller's pre-flight:** the kit's `real/` laid over the head gave the eight catalogue-index kit files plus `AddSteps` 152 of 152, and `test:unit` 1035 of 1035. Then the worktree was reset clean.
+  - Worktree `p2-t15` (`p2/t15-transfer-confirm-pick`) is new at `9a7b767e`, installed. P1 to P19 accepted.
+  - Implementer (Haiku 5.5 max): see the thread titled "P2-T15 implementer".
+- **09:00: GEMINI FLASH IS OUT OF QUOTA TOO** ("Error 429, Individual quota reached", from 07:46 until about 14 Nov 09:58 Bangkok, per T3's snooze of 2026-11-14T02:57:58Z). With Argon and Antigravity's Claude also out, **every lane runs on Claude Code**: `make_prompt.py --claude-code`, which means Haiku 5.5 max builds and fixes, Opus plans and reviews, and Sonnet 5.5 confirms.
+  - The failed Flash threads were archived so they do not resume on 14 Nov: P3-T2's second review, P2-T29's second review, and P2-T31's second review, which had already approved.
+  - **#420 (P3-T2):** CI is now 9 of 9 at `182f3054` (the R-B rerun passed), and Opus approved. The second review was moved to Claude Sonnet 5.5 high to keep two reviews on the vault migration: `mcp:launch:79573ece84af1bbfd409afb9d5ed95afa3d9284c922d090333949b8195a242d1`, writing `reviews/P3-T2-second.md`. **It merges when that approves.**
+  - **P3-T6 brief READY** (Opus; kit `scratch/p3-t6-planner`, 72 sums; 30 of 30 mutants; built on `964f6c0e` plus #420's `182f3054`). Its builder (Haiku) starts once #420 merges, from a new worktree `p3-t6` on `p3/t6-haiku-first`.
+    - Rulings P2 to P5 go beyond the plan: type-only fixture edits in `companionSections.tsx` and three render tests; `ai.test.ts`'s env case; the deadline clock; and fake-clock carries.
 - **08:50: #412 (P2-T25) MERGED as `82b9669`; the head is `82b9669`.**
   - The confirming review approved, and CI was 9 of 9 at `6e2541a2`.
   - Issue #171 is closed and it is promoted as **#425** (stack #379 holds 25).

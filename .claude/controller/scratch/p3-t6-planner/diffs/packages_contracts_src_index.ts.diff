@@ -1,0 +1,29 @@
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index ead1477..697f26b 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -277,6 +277,8 @@ export {
+   AI_MIN_CLIENT_VERSION,
+   AI_FEATURES,
+   AI_DAILY_LIMITS,
++  AI_ROUTE_DEADLINE_MS,
++  AI_PHONE_TIMEOUT_MS,
+   AI_LOCALES,
+   AI_TEXT_MAX_CHARS,
+   AI_QUESTION_MAX_CHARS,
+@@ -286,6 +288,7 @@ export {
+   AI_CONFIDENCE,
+   AI_DRAFT_FLAGS,
+   AI_DRAFTS_MAX,
++  AI_MODELS,
+   BUN_FACT_KINDS,
+   parseAiPreferencesUpdate,
+   parseAiLocale,
+@@ -305,6 +308,7 @@ export type {
+   AiConfidence,
+   AiDraftFlag,
+   AiDraft,
++  AiModel,
+   AiParseRequest,
+   AiParseResult,
+   AiSlipRequest,

@@ -4,7 +4,7 @@
 // EdDSA key from jose, and the verifier reads that key from a local JWKS.
 import { env } from 'cloudflare:workers'
 import { SignJWT, createLocalJWKSet, exportJWK, generateKeyPair } from 'jose'
-import type { PolicyVersionDto } from '@gogospend/contracts'
+import type { AiFeature, PolicyVersionDto } from '@gogospend/contracts'
 
 import { EDGE_CONFIG_KEY } from '../../../src/v1/config'
 import type { EdgeConfigJson } from '../../../src/v1/config'
@@ -121,13 +121,15 @@ function clientFor(raw: (request: Request) => Promise<Response>, user: TestUser,
  * Each call rewrites the KV entry, so every test starts from the config it names.
  * Promises the Worker hands to waitUntil are kept for `settle()`. With
  * `startWork: 'manual'` a `starts` route starts nothing; the default, 'auto',
- * calls the vault's startPendingWork as the deployed Worker does. `send` is
- * the AI routes' model call (1B-T7): a fake, or null for AI that is not
+ * calls the vault's startPendingWork as the deployed Worker does. `transport`
+ * is the AI routes' model call (P3-T4): a fake, or null for AI that is not
  * configured; without it the env decides, and the vault Worker's AI is off.
+ * `aiDeadlines` shortens AI routes' deadlines (P3-T6), so a model that never
+ * answers is waited out in a test's time.
  */
 export async function startV1(
   config: EdgeConfigJson | 'absent' | 'malformed' = DEFAULT_CONFIG,
-  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; transport?: ModelTransport | null },
+  options?: { env?: Partial<V1Env>; fetchCatalogue?: typeof fetch; startWork?: 'auto' | 'manual'; transport?: ModelTransport | null; aiDeadlines?: Partial<Record<AiFeature, number>> },
 ): Promise<V1Client> {
   if (config === 'absent') await env.CONFIG.delete(EDGE_CONFIG_KEY)
   else if (config === 'malformed') await env.CONFIG.put(EDGE_CONFIG_KEY, JSON.stringify({ gates: 'nope' }))
@@ -139,6 +141,7 @@ export async function startV1(
     verifier,
     fetchCatalogue: options?.fetchCatalogue,
     transport: options?.transport,
+    aiDeadlines: options?.aiDeadlines,
     waitUntil: (promise) => {
       pending.push(promise)
     },

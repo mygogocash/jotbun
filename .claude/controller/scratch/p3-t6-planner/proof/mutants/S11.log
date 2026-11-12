@@ -1,0 +1,42 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10190ms
+     × Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second
+AssertionError: expected [ { …(2) }, { …(2) } ] to deeply equal [ { model: 'claude-haiku-5-5', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "model": "claude-haiku-5-5",
+      "timeoutMs": 25000,
+    },
++   {
++     "model": "claude-haiku-5-5",
++     "timeoutMs": 25000,
++   },
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:281:77
+    279|     const answer = await run(service, fakeVault(clock), 'ask')
+    280|     expect(answer.status).toBe(200)
+    281|     expect(model.calls.filter((call) => call.model === 'claude-haiku-5…
+       |                                                                             ^
+    282|   })
+    283| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:34:56
+   Duration  12.94s (transform 1.12s, setup 2.15s, import 26ms, tests 10.19s, environment 0ms)
+

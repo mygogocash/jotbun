@@ -1,0 +1,13 @@
+apps/app/app/spend/categories.tsx: clean
+apps/app/src/dev/catalogue/wallet/categorySections.tsx: clean
+apps/app/src/screens/redesign/planning/CategoriesScreen.tsx: clean
+apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx: clean
+apps/app/src/screens/redesign/planning/categoryCommands.render.test.tsx: clean
+apps/app/src/screens/redesign/planning/categoryCommands.ts: clean
+apps/app/src/wallet/categories/CategoryTray.tsx: clean
+apps/app/src/wallet/categories/ThaiPackTray.tsx: clean
+apps/app/src/wallet/categories/WalletCategories.render.test.tsx: clean
+apps/app/src/wallet/categories/WalletCategoriesScreen.tsx: clean
+apps/app/src/wallet/categories/copy.ts: clean
+docs/implementation/receipts/P2-T29-fix.md: clean
+docs/implementation/receipts/P2-T29.md: clean

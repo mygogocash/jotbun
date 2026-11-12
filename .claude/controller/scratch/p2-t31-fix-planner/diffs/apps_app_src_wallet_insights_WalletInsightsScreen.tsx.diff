@@ -1,0 +1,266 @@
+diff --git a/apps/app/src/wallet/insights/WalletInsightsScreen.tsx b/apps/app/src/wallet/insights/WalletInsightsScreen.tsx
+--- a/apps/app/src/wallet/insights/WalletInsightsScreen.tsx
++++ b/apps/app/src/wallet/insights/WalletInsightsScreen.tsx
+@@ -1,158 +1,145 @@
+-// The Bun Wallet insights screen (P2-T31, bw-insights, wc-calendar, es-empty-insights).
+-import { useEffect, useState } from 'react';
+-import type { ReactElement } from 'react';
++// The Bun Wallet insights screen (P2-T31; bw-insights, wc-calendar,
++// es-empty-insights).
++//
++// - The heading, three 44 pt tabs (role tab), and on the spending and
++//   in-and-out tabs the month with `insights.monthly` as text (months only in
++//   phase 2). The calendar names the month itself, with its steps.
++// - The first tab shown, then each tab chosen, sends one insights_viewed with
++//   its InsightsTab (R61), from the tab rule.
++// - One load for every tab (useInsightsData). Loading says so. A problem says
++//   so with its title and words (recapProblem), Try again when a retry can
++//   help, and the offline banner where entries are kept on this phone. A
++//   refresh is quiet, so the tabs, the chosen day and an open tray stay.
++// - When a later history page says the diary changed, the screen says so and
++//   offers Refresh.
++// - The month is the tabs' one month; the calendar steps it.
++// - The page keeps clear of the status bar and the home indicator (the safe
++//   area), as the wallets list does.
++import { useEffect, useMemo, useState } from 'react';
++import type { ReactElement, ReactNode } from 'react';
+ import { Pressable, ScrollView, View } from 'react-native';
++import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ 
+ import { trackInsightsViewed } from '@mobile/analytics/events';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+-import { LoadingBlock, Notice } from '@mobile/screens/redesign/HistoryParts';
+-import { monthLabel } from '@mobile/ui/dateStep';
++import { useMoneyLocale } from '@mobile/screens/v1/parts';
++import { calendarModel } from '@mobile/spend/v1/redesign/insights/insightsModel';
+ import { monthOf, todayInBangkok } from '@mobile/spend/v1/viewModels';
++import type { OutboxCommand } from '@mobile/storage/types';
+ import { useWalletColors } from '@mobile/theme/ThemeProvider';
+-import { BUN_SPACE } from '@mobile/ui/layout';
++import { fullDateLabel, monthLabel } from '@mobile/ui/dateStep';
+ import { SyncBanner } from '@mobile/ui/SyncBanner';
++import { COMMON_COPY } from '../common/copy';
+ import { useDraftCopy } from '../copy/useDraftCopy';
++import { PrimaryButton } from '../tray/PrimaryButton';
++import { TextLink } from '../tray/TextLink';
+ import { WalletText } from '../WalletText';
+ import { CalendarTab } from './CalendarTab';
+ import { COPY } from './copy';
+ import { InOutTab } from './InOutTab';
+-import { useInsightsData, type InsightsTab } from './insightsData';
++import { useInsightsData } from './insightsData';
++import type { InsightsData, InsightsTab } from './insightsData';
+ import { SpendingTab } from './SpendingTab';
+ 
+-const TABS: readonly { key: InsightsTab; labelKey: 'insights.tabSpending' | 'insights.tabInOut' | 'insights.tabCalendar' }[] = [
+-  { key: 'spending', labelKey: 'insights.tabSpending' },
+-  { key: 'in_out', labelKey: 'insights.tabInOut' },
+-  { key: 'calendar', labelKey: 'insights.tabCalendar' },
++const INSIGHTS_COPY = { ...COMMON_COPY, ...COPY };
++/** bw-insights' side gutters, and the 12 pt between the status bar and the heading (its 56 pt top on a 44 pt status bar). */
++const GUTTER = 18;
++const BELOW_STATUS_BAR = 12;
++
++const TABS: readonly { tab: InsightsTab; label: 'insights.tabSpending' | 'insights.tabInOut' | 'insights.tabCalendar' }[] = [
++  { tab: 'spending', label: 'insights.tabSpending' },
++  { tab: 'in_out', label: 'insights.tabInOut' },
++  { tab: 'calendar', label: 'insights.tabCalendar' },
+ ];
+ 
+-export function WalletInsightsScreen(props: { now?: Date }): ReactElement {
++type ShownTabProps = { tab: InsightsTab; month: string; data: InsightsData; drafts: readonly OutboxCommand[]; onMonthChange: (month: string) => void };
++
++/** The tab shown, over one calendar of the month shown: drawn from the data read for that month, never another's. */
++function ShownTab({ tab, month, data, drafts, onMonthChange }: ShownTabProps) {
++  const tc = useCopy();
++  const locale = useMoneyLocale();
++  const dateLocale = useActiveLocale();
++  const words = useMemo(() => ({ tc, locale, fullDate: (date: string) => fullDateLabel(date, dateLocale) }), [tc, locale, dateLocale]);
++  const calendar = useMemo(() => calendarModel({ month, today: data.today, records: data.records, drafts, words }), [month, data, drafts, words]);
++  if (tab === 'in_out') return <InOutTab data={data} />;
++  // A month step unmounts the calendar while that month loads, so its chosen day starts afresh.
++  if (tab === 'calendar') return <CalendarTab data={data} calendar={calendar} onMonthChange={onMonthChange} />;
++  return <SpendingTab data={data} calendar={calendar} />;
++}
++
++export function WalletInsightsScreen({ now }: { now?: Date }): ReactElement {
+   const colors = useWalletColors();
++  const insets = useSafeAreaInsets();
+   const tc = useCopy();
++  const t = useDraftCopy(INSIGHTS_COPY);
+   const dateLocale = useActiveLocale();
+-  const t = useDraftCopy(COPY);
++  const today = todayInBangkok(now ?? new Date());
++  const [month, setMonth] = useState(() => monthOf(today));
++  const [tab, setTab] = useState<InsightsTab>('spending');
++  const load = useInsightsData(month, today);
+ 
+-  const today = todayInBangkok(props.now ?? new Date());
+-  const thisMonth = monthOf(today);
+-  const [month, setMonth] = useState(thisMonth);
+-  const [tab, setTab] = useState<InsightsTab>('spending');
+-
+-  // Analytics (R61): first tab shown, and each tab change, calls trackInsightsViewed({ tab })
++  // R61: the first tab shown, then each tab chosen, sends one insights_viewed.
+   useEffect(() => {
+     trackInsightsViewed({ tab });
+   }, [tab]);
+ 
+-  const load = useInsightsData(month, today);
+-  const monthName = monthLabel(month, dateLocale);
++  let body: ReactNode;
++  if (load.state === 'loading') {
++    body = <WalletText role="body" tone="quietOnGround" testID="insights-loading">{tc('Loading your diary')}</WalletText>;
++  } else if (load.state === 'error') {
++    body = (
++      <View testID="insights-problem" style={{ gap: 12 }}>
++        {load.offline ? <SyncBanner state="offline" /> : null}
++        <WalletText role="h2" accessibilityRole="header">{load.problem.title}</WalletText>
++        <WalletText role="body" tone="quietOnGround">{load.problem.message}</WalletText>
++        {load.problem.retry ? <PrimaryButton label={t('common.tryAgain')} onPress={load.reload} testID="insights-try-again" /> : null}
++      </View>
++    );
++  } else {
++    body = (
++      <>
++        {load.data.refreshSuggested ? (
++          <View testID="insights-changed" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 8 }}>
++            <WalletText role="caption" tone="quietOnGround" style={{ flexShrink: 1 }}>{tc('Entries changed since you opened this list.')}</WalletText>
++            <TextLink label={tc('Refresh')} onPress={load.refresh} />
++          </View>
++        ) : null}
++        <ShownTab tab={tab} month={month} data={load.data} drafts={load.drafts} onMonthChange={setMonth} />
++      </>
++    );
++  }
+ 
+   return (
+     <View testID="wallet-insights-screen" style={{ flex: 1, backgroundColor: colors.ground }}>
+-      <ScrollView
+-        style={{ flex: 1 }}
+-        contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 56, paddingBottom: 40, gap: 14 }}
+-      >
+-        {/* Screen Title */}
+-        <WalletText style={{ fontSize: 32, fontWeight: '700', color: colors.ink, lineHeight: 40 }}>
+-          {t('insights.title')}
+-        </WalletText>
+-
+-        {/* Three 44 pt tabs (role="tab") */}
+-        <View
+-          accessibilityRole="tablist"
+-          style={{
+-            flexDirection: 'row',
+-            gap: 22,
+-            borderBottomWidth: 1,
+-            borderBottomColor: colors.hairline,
+-          }}
+-        >
++      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: insets.top + BELOW_STATUS_BAR, paddingBottom: insets.bottom + 24, gap: 12 }}>
++        <WalletText role="h1" accessibilityRole="header">{t('insights.title')}</WalletText>
++        <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 22, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
+           {TABS.map((item) => {
+-            const selected = tab === item.key;
++            const selected = item.tab === tab;
+             return (
+               <Pressable
+-                key={item.key}
++                key={item.tab}
+                 accessibilityRole="tab"
+                 accessibilityState={{ selected }}
+-                testID={`insights-tab-${item.key}`}
+-                onPress={() => setTab(item.key)}
+-                style={{
+-                  minHeight: 44,
+-                  borderBottomWidth: selected ? 2.5 : 0,
+-                  borderBottomColor: colors.ink,
+-                  justifyContent: 'center',
+-                  paddingHorizontal: 0,
+-                }}
++                aria-selected={selected}
++                testID={`insights-tab-${item.tab}`}
++                onPress={() => setTab(item.tab)}
++                style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', borderBottomWidth: selected ? 2.5 : 0, borderBottomColor: colors.ink }}
+               >
+-                <WalletText
+-                  style={{
+-                    fontSize: 16,
+-                    fontWeight: selected ? '700' : '400',
+-                    color: selected ? colors.ink : colors.quiet,
+-                  }}
+-                >
+-                  {t(item.labelKey)}
+-                </WalletText>
++                <WalletText role="label" tone={selected ? 'ink' : 'quietOnGround'} style={{ fontWeight: selected ? '700' : '400' }}>{t(item.label)}</WalletText>
+               </Pressable>
+             );
+           })}
+         </View>
+-
+-        {/* Month and monthly text badge */}
+-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+-          <WalletText style={{ fontSize: 18, fontWeight: '700', color: colors.ink }}>
+-            {monthName}
+-          </WalletText>
+-          <View
+-            style={{
+-              paddingHorizontal: 12,
+-              paddingVertical: 6,
+-              borderRadius: 999,
+-              backgroundColor: colors.raised,
+-            }}
+-          >
+-            <WalletText style={{ fontSize: 13, fontWeight: '500', color: colors.violet }}>
+-              {t('insights.monthly')}
+-            </WalletText>
++        {tab === 'calendar' ? null : (
++          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
++            <WalletText role="h2" testID="insights-month">{monthLabel(month, dateLocale)}</WalletText>
++            <View style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, backgroundColor: colors.card, justifyContent: 'center' }}>
++              <WalletText role="caption" tone="violet" style={{ fontWeight: '500' }}>{t('insights.monthly')}</WalletText>
++            </View>
+           </View>
+-        </View>
+-
+-        {/* State handling: loading / error / ready */}
+-        {load.state === 'loading' ? (
+-          <View style={{ paddingVertical: 20 }}>
+-            <LoadingBlock label={tc('Loading your diary')} />
+-          </View>
+-        ) : null}
+-
+-        {load.state === 'error' ? (
+-          <View style={{ gap: BUN_SPACE.md, paddingVertical: 10 }}>
+-            {load.error instanceof Error && load.error.message.includes('network') ? (
+-              <SyncBanner state="offline" />
+-            ) : null}
+-            <Notice
+-              tone="alert"
+-              message={load.problem.message}
+-              action={load.problem.retry ? { label: tc('Try again'), onPress: load.reload } : undefined}
+-            />
+-          </View>
+-        ) : null}
+-
+-        {load.state === 'ready' ? (
+-          <>
+-            {tab === 'spending' ? (
+-              <SpendingTab data={load.data} month={month} today={today} />
+-            ) : null}
+-            {tab === 'in_out' ? (
+-              <InOutTab data={load.data} month={month} today={today} />
+-            ) : null}
+-            {tab === 'calendar' ? (
+-              <CalendarTab
+-                data={load.data}
+-                month={month}
+-                today={today}
+-                onMonthChange={setMonth}
+-              />
+-            ) : null}
+-          </>
+-        ) : null}
++        )}
++        {body}
+       </ScrollView>
+     </View>
+   );

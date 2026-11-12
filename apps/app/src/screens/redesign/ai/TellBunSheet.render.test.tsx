@@ -51,7 +51,7 @@ test('with AI help off, the phone reads a Thai sentence and Use this hands the d
 
 test('with AI help on, Claude reads it, and what Bun could not tell is said under the draft', async () => {
   const draft: AiDraft = { type: 'expense', amount_minor: '12000', occurred_on: '2026-10-24', category_id: null, wallet_id: cash.id, merchant: 'Grab', note: null, confidence: 'medium', flags: ['category_guessed'] };
-  const ai = fakeAiResources({ parse: vi.fn(async () => ({ drafts: [draft], source: 'ai' as const })) }, { companion: true, notice_version: 1 });
+  const ai = fakeAiResources({ parse: vi.fn(async () => ({ drafts: [draft], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })) }, { companion: true, notice_version: 1 });
   mount(ai);
   await waitFor(() => expect(ai.resources.preferences).toHaveBeenCalled());
   type('grab 120');
@@ -82,7 +82,7 @@ test('scanning a slip without AI help asks to turn it on first and picks nothing
 
 test('a scanned slip becomes a draft, with the bank named', async () => {
   const draft: AiDraft = { type: 'expense', amount_minor: '125000', occurred_on: '2026-10-24', category_id: food.id, wallet_id: cash.id, merchant: 'ร้านป้าแดง', note: null, confidence: 'high', flags: [] };
-  const ai = fakeAiResources({ slip: vi.fn(async () => ({ drafts: [draft], bank: 'K PLUS', source: 'ai' as const })) }, { companion: true, notice_version: 1 });
+  const ai = fakeAiResources({ slip: vi.fn(async () => ({ drafts: [draft], bank: 'K PLUS', source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })) }, { companion: true, notice_version: 1 });
   const pickSlip = vi.fn(async () => ({ kind: 'picked' as const, base64: 'aGVsbG8=', mediaType: 'image/jpeg' as const }));
   mount(ai, vi.fn(), pickSlip);
   await waitFor(() => expect(ai.resources.preferences).toHaveBeenCalled());
@@ -183,7 +183,7 @@ test('a sentence Bun cannot read keeps the keyboard up for another try', async (
 test('a draft that lands after the sheet closed leaves the keyboard alone', async () => {
   const draft: AiDraft = { type: 'expense', amount_minor: '12000', occurred_on: '2026-10-24', category_id: null, wallet_id: cash.id, merchant: 'Grab', note: null, confidence: 'medium', flags: [] };
   let release!: () => void;
-  const parse = vi.fn(() => new Promise<{ drafts: AiDraft[]; source: 'ai' }>((resolve) => { release = () => resolve({ drafts: [draft], source: 'ai' }); }));
+  const parse = vi.fn(() => new Promise<{ drafts: AiDraft[]; source: 'ai'; model: 'claude-haiku-5-5'; escalated: false }>((resolve) => { release = () => resolve({ drafts: [draft], source: 'ai', model: 'claude-haiku-5-5', escalated: false }); }));
   const ai = fakeAiResources({ parse }, { companion: true, notice_version: 1 });
   function Host() {
     const [open, setOpen] = useState(true);

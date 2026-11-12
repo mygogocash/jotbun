@@ -1,0 +1,854 @@
+diff --git a/apps/app/app.json b/apps/app/app.json
+index f445bd0c..89c4039e 100644
+--- a/apps/app/app.json
++++ b/apps/app/app.json
+@@ -2,7 +2,7 @@
+   "expo": {
+     "name": "Jotbun",
+     "slug": "gogospend",
+-    "version": "0.1.0",
++    "version": "0.2.0",
+     "orientation": "portrait",
+     "icon": "./assets/icon.png",
+     "scheme": "gogospend",
+diff --git a/apps/app/src/analytics/events.ts b/apps/app/src/analytics/events.ts
+index c77c27c5..01e3fd04 100644
+--- a/apps/app/src/analytics/events.ts
++++ b/apps/app/src/analytics/events.ts
+@@ -3,7 +3,7 @@
+ import { trackClientEvent } from './bus.ts';
+ 
+ export type RecordKind = 'expense' | 'income' | 'transfer';
+-export type RecordSource = 'typed' | 'tell_bun';
++export type RecordSource = import('@gogospend/contracts').TransactionSource;
+ export type SignInMethodName = 'apple' | 'google' | 'email' | 'passkey';
+ 
+ function emit(name: string, properties?: Record<string, unknown>): void {
+diff --git a/apps/app/src/api/aiClientVersion.test.ts b/apps/app/src/api/aiClientVersion.test.ts
+new file mode 100644
+index 00000000..78fd5377
+--- /dev/null
++++ b/apps/app/src/api/aiClientVersion.test.ts
+@@ -0,0 +1,14 @@
++import assert from 'node:assert/strict';
++import { readFileSync } from 'node:fs';
++import { test } from 'node:test';
++
++import { AI_MIN_CLIENT_VERSION, compareVersions } from '@gogospend/contracts';
++
++// P3's contract changes (a record's source first, P3-T2) reach only builds at or
++// above AI_MIN_CLIENT_VERSION, so this build's own version is never below it (C5).
++const appJson = JSON.parse(readFileSync(new URL('../../app.json', import.meta.url), 'utf8')) as { expo: { version: string } };
++
++test('this build is at least the minimum client version', () => {
++  assert.equal(AI_MIN_CLIENT_VERSION, '0.2.0');
++  assert.ok(compareVersions(appJson.expo.version, AI_MIN_CLIENT_VERSION) >= 0, `app.json's expo.version ${appJson.expo.version} is below ${AI_MIN_CLIENT_VERSION}`);
++});
+diff --git a/apps/app/src/spend/v1/resources.ts b/apps/app/src/spend/v1/resources.ts
+index ae1e02c6..0ca46065 100644
+--- a/apps/app/src/spend/v1/resources.ts
++++ b/apps/app/src/spend/v1/resources.ts
+@@ -29,6 +29,7 @@ import type {
+   MonthSummary,
+   SetMonthlyBudgetRequest,
+   TransactionDto,
++  TransactionSource,
+   UpdateCategoryRequest,
+   UpdateTransactionRequest,
+   UpdateWalletRequest,
+@@ -45,8 +46,9 @@ export const V1_COMMAND_SCHEMA = 1;
+ /** Sync pages and chunks may carry entity types a newer server added; this build skips them instead of failing the page. */
+ const SKIP_UNKNOWN_ENTITIES = { unknownEntities: 'skip' } as const;
+ 
+-export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null };
+-export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null };
++/** `source` is how the record was made (P3-T2): a create names one or leaves the key out. */
++export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
++export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
+ 
+ /** The app's typed port to the v1 API: owned ids only, no name-based ownership, no legacy fallback. */
+ export type SpendV1Resources = {
+diff --git a/apps/app/src/storage/diaryRepository.test.ts b/apps/app/src/storage/diaryRepository.test.ts
+index 77525201..d04c8c16 100644
+--- a/apps/app/src/storage/diaryRepository.test.ts
++++ b/apps/app/src/storage/diaryRepository.test.ts
+@@ -113,6 +113,22 @@ test('a draft must match its command and account, be a valid create, and use syn
+   assert.equal(category().id, FOOD);
+ });
+ 
++test('a pending entry may carry a source, and an unknown one is refused', async () => {
++  const store = await open();
++  await store.applyChangeGroups([references()], 'c1', null);
++  // How the record was made (P3-T2): one of the seven sources, or none (absent or null).
++  const photo = draft({ source: 'photo' });
++  await assert.doesNotReject(store.savePending(photo, outbox(photo)));
++  const none = draft({ source: null });
++  await assert.doesNotReject(store.savePending(none, outbox(none)));
++  const siri = { id: randomUUID(), type: 'transfer', amount_minor: '100', occurred_on: '2026-03-02', source_wallet_id: WALLET, destination_wallet_id: SAVINGS, source: 'siri' } as const;
++  await assert.doesNotReject(store.savePending(siri, outbox(siri)));
++  const camera = draft({ source: 'camera' as never });
++  await assert.rejects(store.savePending(camera, outbox(camera)), { name: 'TypeError', message: 'A pending entry is not a valid create: source.' });
++  assert.deepEqual((await store.readState()).pending.map((entry) => entry.source), ['photo', null, 'siri']);
++  assert.equal((await store.readOutbox()).length, 3);
++});
++
+ test('delta records, totals and cursor commit together: a failure at any statement keeps the previous state', async () => {
+   const prepare = async () => {
+     const fresh = await open();
+diff --git a/apps/app/src/storage/diaryRepository.ts b/apps/app/src/storage/diaryRepository.ts
+index 85052599..9a8675fd 100644
+--- a/apps/app/src/storage/diaryRepository.ts
++++ b/apps/app/src/storage/diaryRepository.ts
+@@ -1,4 +1,4 @@
+-import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isTransactionSnapshot, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
++import { SYNC_ENTITY_VALIDATORS, isCommittedChangeGroup, isEntityChange, isKnownSyncEntity, isTransactionSnapshot, isUuid, normalizeCommand, normalizeMerchant, normalizeNote, parseTransactionSource, validateOccurredOn } from '@gogospend/contracts';
+ import type { CategoryDto, CommittedChangeGroup, EntityChange, Minor, Revision, TransactionDto, UpdateTransactionRequest, WalletSnapshot } from '@gogospend/contracts';
+ 
+ import { CursorMoved, DiaryLocked, DraftReferenceUnavailable, StaleEpochError } from './types.ts';
+@@ -107,8 +107,8 @@ const toCommand = (row: OutboxRow): OutboxCommand => ({
+ 
+ type EntityRow = { entity: string; id: string; version: number; state: EntityChange['state']; snapshot: string | null };
+ 
+-const ENTRY_KEYS = ['amount_minor', 'category_id', 'id', 'merchant', 'note', 'occurred_on', 'type', 'wallet_id'];
+-const TRANSFER_KEYS = ['amount_minor', 'destination_wallet_id', 'id', 'merchant', 'note', 'occurred_on', 'source_wallet_id', 'type'];
++const ENTRY_KEYS = ['amount_minor', 'category_id', 'id', 'merchant', 'note', 'occurred_on', 'source', 'type', 'wallet_id'];
++const TRANSFER_KEYS = ['amount_minor', 'destination_wallet_id', 'id', 'merchant', 'note', 'occurred_on', 'source', 'source_wallet_id', 'type'];
+ const LATEST_DATE = '9999-12-31';
+ 
+ /** The command canonical form (sorted keys, undefined fields dropped), as the server digests it. */
+@@ -148,6 +148,12 @@ async function assertDraft(tx: SqlExecutor, entry: PendingEntry): Promise<void>
+     }
+     if (normalized !== value) fail(field);
+   }
++  // How the record was made (P3-T2): absent or null is none, anything else one of the seven sources.
++  try {
++    parseTransactionSource(record.source);
++  } catch {
++    fail('source');
++  }
+   const walletIds = transfer ? [record.source_wallet_id, record.destination_wallet_id] : [record.wallet_id];
+   if (transfer && record.source_wallet_id === record.destination_wallet_id) fail('a transfer needs two different wallets');
+   const wallets: WalletSnapshot[] = [];
+diff --git a/apps/edge/src/vault/domain/transactions.ts b/apps/edge/src/vault/domain/transactions.ts
+index 10e341af..02eaaa9d 100644
+--- a/apps/edge/src/vault/domain/transactions.ts
++++ b/apps/edge/src/vault/domain/transactions.ts
+@@ -18,9 +18,10 @@ import {
+   normalizeMerchant,
+   normalizeNote,
+   parseMinor,
++  parseTransactionSource,
+   validateOccurredOn,
+ } from '@gogospend/contracts'
+-import type { CommandAck, TransactionDto, TransactionType } from '@gogospend/contracts'
++import type { CommandAck, TransactionDto, TransactionSource, TransactionType } from '@gogospend/contracts'
+ 
+ import { routeId, stateProblem } from '@api/commands/versioned-entity'
+ import { ProblemException } from '@api/common/api-problem.filter'
+@@ -56,23 +57,29 @@ export type TransactionRow = {
+   version: number
+   /** The receipt the record holds (1B-T9), or null. */
+   attachment_id?: string | null
++  /** How the record was made (P3-T2), or null when its create named none. */
++  source?: TransactionSource | null
+ }
+ 
+-/** The record's editable state, before it is written. */
+-type Draft = Omit<TransactionRow, 'deleted_at' | 'version' | 'attachment_id'>
++/** The record's editable state, before it is written. `source` is not part of it: only a create sets it. */
++type Draft = Omit<TransactionRow, 'deleted_at' | 'version' | 'attachment_id' | 'source'>
+ 
+ // Money as text: the SQL API would otherwise return INTEGER as a JavaScript number.
+-// History and Recently deleted read rows with these columns too (reads/history.ts).
++// History and Recently deleted read rows with these columns too (reads/history.ts and
++// reads/deleted-history.ts), so they carry `source` (P3-T2) without a list of their own.
+ // attachment_id is the receipt the record holds (1B-T9, the API's RECORD_COLUMNS):
+ // transaction_attachments has no `id`, so the subquery's `id` is the outer row's,
+ // whatever the transactions table is aliased as.
+ export const COLUMNS = `id, type, CAST(amount_minor AS TEXT) AS amount_minor, occurred_on, wallet_id, category_id,
+-  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version,
++  source_wallet_id, destination_wallet_id, note, merchant, deleted_at, version, source,
+   (SELECT ta.attachment_id FROM transaction_attachments ta WHERE ta.transaction_id = id) AS attachment_id`
+ 
+ const refsOf = (type: TransactionType): readonly RefField[] => (type === 'transfer' ? TRANSFER_REFS : ENTRY_REFS)
+ 
+-/** The persisted record, with `attachment_id` only while it holds a receipt (1B-T9), as the API's toDto. */
++/**
++ * The persisted record, with `attachment_id` only while it holds a receipt (1B-T9), as the API's toDto,
++ * and `source` only when its create named one (P3-T2).
++ */
+ export function toDto(row: TransactionRow): TransactionDto {
+   const common = {
+     id: row.id,
+@@ -83,6 +90,7 @@ export function toDto(row: TransactionRow): TransactionDto {
+     deleted_at: row.deleted_at,
+     version: row.version,
+     ...(row.attachment_id ? { attachment_id: row.attachment_id } : {}),
++    ...(row.source ? { source: row.source } : {}),
+   }
+   return row.type === 'transfer'
+     ? { ...common, type: 'transfer', source_wallet_id: row.source_wallet_id as string, destination_wallet_id: row.destination_wallet_id as string }
+@@ -166,12 +174,12 @@ function checkReferences(c: VaultContext, draft: Draft, newlyReferenced: Readonl
+   }
+ }
+ 
+-function insertRow(c: VaultContext, draft: Draft): TransactionRow | undefined {
++function insertRow(c: VaultContext, draft: Draft, source: TransactionSource | null): TransactionRow | undefined {
+   const now = c.now.toISOString()
+   return c.sql
+     .exec<TransactionRow>(
+-      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, version, created_at, updated_at)
+-       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
++      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, source, version, created_at, updated_at)
++       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        ON CONFLICT DO NOTHING RETURNING ${COLUMNS}`,
+       draft.id,
+       draft.type,
+@@ -183,6 +191,7 @@ function insertRow(c: VaultContext, draft: Draft): TransactionRow | undefined {
+       draft.destination_wallet_id,
+       draft.note,
+       draft.merchant,
++      source,
+       now,
+       now,
+     )
+@@ -227,7 +236,7 @@ export function createTransaction(c: VaultContext, call: VaultCall): CommandAck
+     throw new ContractValidationError('VALIDATION_FAILED', 'type must be expense, income or transfer.', 'type')
+   }
+   const refs = refsOf(type as TransactionType)
+-  const input = assertKnownFields(call.body, ['id', 'type', ...COMMON_FIELDS, ...refs])
++  const input = assertKnownFields(call.body, ['id', 'type', ...COMMON_FIELDS, ...refs, 'source'])
+   const today = bangkokDate(c.now)
+   const draft: Draft = {
+     id: uuidField(input.id, 'id'),
+@@ -242,12 +251,15 @@ export function createTransaction(c: VaultContext, call: VaultCall): CommandAck
+     merchant: normalizeMerchant(input.merchant),
+   }
+   for (const ref of refs) draft[ref] = uuidField(input[ref], ref)
++  // How the record was made (P3-T2), set only here. It joins the digested payload only when one is
++  // sent, so a create the phone queued before this field existed keeps its digest and still replays.
++  const source = parseTransactionSource(input.source)
+   sameWallet(draft)
+-  return runCommand(c, { ...command, payload: draft }, () => {
++  return runCommand(c, { ...command, payload: source === null ? draft : { ...draft, source } }, () => {
+     // A purged record leaves no row but keeps its head: its id is spent.
+     if (entityHead(c, ENTITY, draft.id)?.state === 'purged') throw new ProblemException(410, 'ENTITY_PURGED')
+     checkReferences(c, draft, new Set(refs))
+-    const row = insertRow(c, draft)
++    const row = insertRow(c, draft, source)
+     if (!row) {
+       const existing = transactionRow(c, draft.id)
+       throw new ProblemException(409, 'VERSION_CONFLICT', { current: existing ? toDto(existing) : undefined })
+diff --git a/apps/edge/src/vault/migrations/0005_transaction_source.sql b/apps/edge/src/vault/migrations/0005_transaction_source.sql
+new file mode 100644
+index 00000000..66d9696c
+--- /dev/null
++++ b/apps/edge/src/vault/migrations/0005_transaction_source.sql
+@@ -0,0 +1,9 @@
++-- How each record was made (P3-T2, B2): one of the seven sources in TRANSACTION_SOURCES
++-- (packages/contracts/src/v1/transactions.ts), or NULL for a record made before phase 3 and
++-- for one whose create named none. Only a create sets it. 0000 to 0004 are never edited.
++--
++-- transactions only gains a column; it is never rebuilt. A rebuild would delete every receipt
++-- link (transaction_attachments, ON DELETE CASCADE) and clear every import link
++-- (import_row_progress, ON DELETE SET NULL). ADD COLUMN keeps every row as it is, and the
++-- previous release's statements, which never name the column, still run.
++ALTER TABLE transactions ADD COLUMN source TEXT CHECK (source IN ('typed', 'photo', 'slip_import', 'tell_bun', 'statement', 'share_extension', 'siri'));
+diff --git a/apps/edge/src/vault/migrations/index.ts b/apps/edge/src/vault/migrations/index.ts
+index 678b83bc..426dd74c 100644
+--- a/apps/edge/src/vault/migrations/index.ts
++++ b/apps/edge/src/vault/migrations/index.ts
+@@ -3,6 +3,7 @@ import files from './0001_vault_files.sql?raw'
+ import currenciesTrips from './0002_currencies_trips.sql?raw'
+ import alarmIndexes from './0003_alarm_indexes.sql?raw'
+ import alarmBounds from './0004_alarm_bounds.sql?raw'
++import transactionSource from './0005_transaction_source.sql?raw'
+ 
+ // The journal drizzle-orm's durable-sqlite migrator reads (handwritten SQL, so
+ // no drizzle-kit). The migrator applies an entry only when its `when` is later
+@@ -19,7 +20,8 @@ export const VAULT_MIGRATIONS: {
+       { idx: 2, when: 1761523200000, tag: '0002_currencies_trips', breakpoints: true },
+       { idx: 3, when: 1761609600000, tag: '0003_alarm_indexes', breakpoints: true },
+       { idx: 4, when: 1761696000000, tag: '0004_alarm_bounds', breakpoints: true },
++      { idx: 5, when: 1761782400000, tag: '0005_transaction_source', breakpoints: true },
+     ],
+   },
+-  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds },
++  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds, m0005: transactionSource },
+ }
+diff --git a/apps/edge/src/vault/schema.ts b/apps/edge/src/vault/schema.ts
+index 9d7ba67b..802b0ac5 100644
+--- a/apps/edge/src/vault/schema.ts
++++ b/apps/edge/src/vault/schema.ts
+@@ -94,6 +94,8 @@ export const transactions = sqliteTable('transactions', {
+   walletAmountMinor: integer('wallet_amount_minor'),
+   toAmountMinor: integer('to_amount_minor'),
+   tripId: text('trip_id'),
++  // How the record was made (0005_transaction_source.sql, P3-T2): set only at create, null when none was named.
++  source: text('source'),
+ })
+ 
+ export const monthlyBudgets = sqliteTable('monthly_budgets', {
+diff --git a/apps/edge/test/contracts-source.test.ts b/apps/edge/test/contracts-source.test.ts
+new file mode 100644
+index 00000000..6b762985
+--- /dev/null
++++ b/apps/edge/test/contracts-source.test.ts
+@@ -0,0 +1,65 @@
++// P3-T2: how a record was made (B2), in the shared contract.
++import { ContractValidationError, TRANSACTION_SOURCES, isTransactionSnapshot, parseTransactionSource } from '@gogospend/contracts'
++import { describe, expect, it } from 'vitest'
++
++const expense = {
++  id: '3c000000-0000-4000-8000-000000000001',
++  type: 'expense',
++  amount_minor: '4500',
++  occurred_on: '2026-10-20',
++  wallet_id: '1a000000-0000-4000-8000-000000000001',
++  category_id: '2c000000-0000-4000-8000-000000000001',
++  note: null,
++  merchant: null,
++  deleted_at: null,
++  version: 1,
++}
++const transfer = {
++  id: '3c000000-0000-4000-8000-000000000002',
++  type: 'transfer',
++  amount_minor: '1000',
++  occurred_on: '2026-10-21',
++  source_wallet_id: '1a000000-0000-4000-8000-000000000001',
++  destination_wallet_id: '1a000000-0000-4000-8000-000000000002',
++  note: null,
++  merchant: null,
++  deleted_at: null,
++  version: 2,
++}
++
++/** The refusal's code and field, or 'accepted'. */
++const refusal = (run: () => unknown): { code: string; field: string | undefined } | 'accepted' => {
++  try {
++    run()
++    return 'accepted'
++  } catch (error) {
++    if (!(error instanceof ContractValidationError)) throw error
++    return { code: error.code, field: error.field }
++  }
++}
++
++describe('a record source', () => {
++  it("the sources are the spec's seven, in order", () => {
++    expect(TRANSACTION_SOURCES).toEqual(['typed', 'photo', 'slip_import', 'tell_bun', 'statement', 'share_extension', 'siri'])
++  })
++
++  it('a record snapshot accepts each source or none, and refuses anything else', () => {
++    for (const source of TRANSACTION_SOURCES) {
++      expect([source, isTransactionSnapshot({ ...expense, source })]).toEqual([source, true])
++      expect([source, isTransactionSnapshot({ ...transfer, source })]).toEqual([source, true])
++    }
++    expect(isTransactionSnapshot(expense)).toBe(true)
++    expect(isTransactionSnapshot({ ...expense, attachment_id: '4d000000-0000-4000-8000-000000000001', source: 'photo' })).toBe(true)
++    for (const source of ['manual', null, '', 'Photo', 7]) expect([source, isTransactionSnapshot({ ...expense, source })]).toEqual([source, false])
++  })
++
++  it('parseTransactionSource reads absent and null as none and refuses other values on source', () => {
++    expect(parseTransactionSource(undefined)).toBeNull()
++    expect(parseTransactionSource(null)).toBeNull()
++    for (const source of TRANSACTION_SOURCES) expect(parseTransactionSource(source)).toBe(source)
++    for (const value of ['manual', '', 'TELL_BUN', ' photo', 1, true, {}, ['typed']]) {
++      expect([value, refusal(() => parseTransactionSource(value))]).toEqual([value, { code: 'VALIDATION_FAILED', field: 'source' }])
++    }
++    expect(refusal(() => parseTransactionSource('camera', 'drafts[0].source'))).toEqual({ code: 'VALIDATION_FAILED', field: 'drafts[0].source' })
++  })
++})
+diff --git a/apps/edge/test/workers/currency-migration.test.ts b/apps/edge/test/workers/currency-migration.test.ts
+index 88020cba..38c3294c 100644
+--- a/apps/edge/test/workers/currency-migration.test.ts
++++ b/apps/edge/test/workers/currency-migration.test.ts
+@@ -17,6 +17,9 @@ const CAP = 99999999999
+ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '\\_cf\\_%' ESCAPE '\\' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' AND name <> '__drizzle_migrations' ORDER BY name"
+ const NAMING_WALLETS = "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('trigger', 'view') AND sql LIKE '%wallets%' ORDER BY name"
+ const WALLET_COLUMNS = ['id', 'name', 'currency', 'opening_minor', 'tracking_start', 'archived', 'version', 'created_at', 'updated_at']
++// A record's columns from 1A (but its id, amount, date, wallet and category, which the case sets), and the eight this migration adds.
++const RECORD_1A_COLUMNS = ['type', 'source_wallet_id', 'destination_wallet_id', 'note', 'merchant', 'version', 'deleted_at', 'created_at', 'updated_at']
++const RECORD_MONEY_COLUMNS = ['currency', 'rate', 'rate_source', 'rate_date', 'home_amount_minor', 'wallet_amount_minor', 'to_amount_minor', 'trip_id']
+ const WALLET_ROWS = 'SELECT *, CAST(opening_minor AS TEXT) AS opening_text FROM wallets ORDER BY id'
+ // Every reference to a wallet, and how many name no wallet (a join, not a pragma).
+ const DANGLING = `SELECT count(*) AS refs, coalesce(sum(w.id IS NULL), 0) AS missing FROM (
+@@ -103,7 +106,7 @@ it('every table that references wallets keeps its rows', () =>
+       rows(state, USER_TABLES).flatMap(({ name }) =>
+         rows(state, `PRAGMA foreign_key_list(${String(name)})`)
+           .filter((key) => key.table === 'wallets')
+-          .map((key) => ({ table: String(name), column: String(key.from), to: key.to })),
++          .map((key) => ({ table: String(name), column: String(key.from), to: key.to, on_delete: key.on_delete })),
+       )
+     const held = (refs: ReturnType<typeof references>) =>
+       refs.map(({ table, column }) => ({
+@@ -113,14 +116,21 @@ it('every table that references wallets keeps its rows', () =>
+         values: rows(state, `SELECT ${column} AS v FROM ${table} ORDER BY rowid`).map((row) => row.v),
+       }))
+     const before = references()
++    // DROP TABLE wallets fires each child's ON DELETE action, deferred keys or not: SET NULL or CASCADE would change or lose rows.
++    expect(before.filter((key) => key.on_delete !== 'NO ACTION')).toEqual([])
+     const was = held(before)
++    // A referencing table with no row here would pass the comparison below without checking anything: seed one in seedToday.
++    expect(was.filter(({ count }) => count === 0).map(({ table, column }) => `${table}.${column}`)).toEqual([])
+     await upgrade(state)
+     expect(columnsOf(state, 'wallets')).toEqual([...WALLET_COLUMNS, 'type', 'material', 'bun_face'])
+     expect(before.map(({ table, column }) => `${table}.${column}`)).toEqual(
+       expect.arrayContaining(['import_selection_rows.wallet_id', 'transactions.destination_wallet_id', 'transactions.source_wallet_id', 'transactions.wallet_id']),
+     )
+-    expect(references()).toEqual(before)
++    // Only the tables that existed before: a later migration may add its own (P4's slip_accounts).
++    expect(references()).toEqual(expect.arrayContaining(before))
+     expect(held(before)).toEqual(was)
++    // Every key to wallets, a later migration's too, stays NO ACTION, so a later rebuild keeps their rows as well.
++    expect(references().filter((key) => key.on_delete !== 'NO ACTION')).toEqual([])
+   }))
+ 
+ it('older records gain THB money fields', () =>
+@@ -283,8 +293,9 @@ it('a record, wallet or category the previous release writes after the migration
+     // 1A's own statements (src/vault/domain/transactions.ts, wallets.ts and categories.ts), column for column.
+     const id = uuid()
+     run(state, 'INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, version, created_at, updated_at) VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, 1, ?, ?) ON CONFLICT DO NOTHING', id, 'expense', '120', '2026-10-22', s.cash, s.food, null, null, null, null, AT, AT)
+-    const [row] = rows(state, 'SELECT * FROM transactions WHERE id = ?', id)
+-    expect({ ...row, id: undefined, amount_minor: undefined, occurred_on: undefined, wallet_id: undefined, category_id: undefined }).toEqual({
++    // 1A's columns and this migration's eight only: later migrations add their own (P3-T2's source).
++    const [row] = rows(state, `SELECT ${[...RECORD_1A_COLUMNS, ...RECORD_MONEY_COLUMNS].join(', ')} FROM transactions WHERE id = ?`, id)
++    expect(row).toEqual({
+       type: 'expense', source_wallet_id: null, destination_wallet_id: null, note: null, merchant: null, version: 1, deleted_at: null, created_at: AT, updated_at: AT,
+       currency: 'THB', rate: '1', rate_source: 'reference', rate_date: null, home_amount_minor: null, wallet_amount_minor: null, to_amount_minor: null, trip_id: null,
+     })
+diff --git a/apps/edge/test/workers/transaction-source.test.ts b/apps/edge/test/workers/transaction-source.test.ts
+new file mode 100644
+index 00000000..83e29a89
+--- /dev/null
++++ b/apps/edge/test/workers/transaction-source.test.ts
+@@ -0,0 +1,215 @@
++// P3-T2: how each record was made (B2). A create may name its source, every read
++// shows it, an edit never changes it, and a record made without one, before or
++// after this release, reads as it always did. 0005_transaction_source.sql only adds
++// the column, so a vault the previous release wrote keeps every row and link.
++import { randomUUID } from 'node:crypto'
++
++import { env } from 'cloudflare:workers'
++import { runInDurableObject } from 'cloudflare:test'
++import { drizzle } from 'drizzle-orm/durable-sqlite'
++import { migrate } from 'drizzle-orm/durable-sqlite/migrator'
++import { beforeEach, describe, expect, it } from 'vitest'
++
++import { CommandDigester } from '@api/commands/command-digest'
++import { TRANSACTION_SOURCES, isTransactionSnapshot } from '@gogospend/contracts'
++
++import { VAULT_MIGRATIONS } from '../../src/vault/migrations'
++import { TEST_DIGEST_KEY, countRows, sqlExec, sqlRows } from './support/command-fixtures'
++import { migrateBefore } from './support/migrations'
++import { builtinId, moneyFixtures } from './support/money-fixtures'
++import { startV1 } from './support/v1-client'
++import type { TestUser, V1Client } from './support/v1-client'
++
++let client: V1Client
++let money: ReturnType<typeof moneyFixtures>
++
++beforeEach(async () => {
++  client = await startV1()
++  money = moneyFixtures(client)
++})
++
++type Problem = { code?: string; fields?: Record<string, string> }
++type Json = Record<string, unknown>
++type Setup = { user: TestUser; cash: string; daily: string; expense: (overrides?: Json) => Json }
++
++async function setup(): Promise<Setup> {
++  const user = await money.member()
++  const cash = await money.wallet(user, { name: 'Cash', opening_minor: '100000', tracking_start: '2026-09-01' })
++  const daily = await money.wallet(user, { name: 'Daily', opening_minor: '0', tracking_start: '2026-09-01' })
++  const expense = (overrides: Json = {}) => ({ id: randomUUID(), type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: cash, category_id: builtinId(user, 'food'), ...overrides })
++  return { user, cash, daily, expense }
++}
++
++const json = async (res: Response): Promise<Json> => (await res.json()) as Json
++const record = async (s: Setup, id: unknown): Promise<Json> => json(await client.as(s.user).get(`/v1/transactions/${String(id)}`))
++const historyItem = async (s: Setup, id: unknown): Promise<Json | undefined> =>
++  ((await json(await client.as(s.user).get('/v1/history?from=2026-09-01&through=2026-09-30'))).items as Json[]).find((item) => item.id === id)
++const deletedItem = async (s: Setup, id: unknown): Promise<Json | undefined> => ((await json(await client.as(s.user).get('/v1/history/deleted'))).items as Json[]).find((item) => item.id === id)
++/** Every snapshot the delta feed serves for this record, oldest first. */
++const syncSnapshots = async (s: Setup, id: unknown): Promise<Json[]> => {
++  const page = (await json(await client.as(s.user).get('/v1/sync/changes'))) as { groups: { changes: { entity: string; id: string; snapshot: Json }[] }[] }
++  return page.groups.flatMap((group) => group.changes).filter((change) => change.entity === 'transaction' && change.id === id).map((change) => change.snapshot)
++}
++
++describe('a record source', () => {
++  it('a record made with a source keeps it, and every read shows it', async () => {
++    const s = await setup()
++    const lunch = s.expense({ source: 'tell_bun' })
++    expect((await client.as(s.user).post('/v1/transactions', lunch)).status).toBe(201)
++    const got = await record(s, lunch.id)
++    expect(got).toEqual({ id: lunch.id, type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: s.cash, category_id: builtinId(s.user, 'food'), note: null, merchant: null, deleted_at: null, version: 1, source: 'tell_bun' })
++    expect(isTransactionSnapshot(got)).toBe(true)
++    expect(await historyItem(s, lunch.id)).toMatchObject({ source: 'tell_bun', version: 1 })
++    // An edit keeps the source (H9: set once, at create).
++    expect(await json(await client.as(s.user).patch(`/v1/transactions/${String(lunch.id)}`, { note: 'ข้าวมันไก่' }, { ifMatch: 1 }))).toMatchObject({ outcome: 'updated', version: 2 })
++    expect(await record(s, lunch.id)).toMatchObject({ note: 'ข้าวมันไก่', version: 2, source: 'tell_bun' })
++    expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snapshot.version, snapshot.source])).toEqual([[1, 'tell_bun'], [2, 'tell_bun']])
++    expect(await json(await client.as(s.user).del(`/v1/transactions/${String(lunch.id)}`, { ifMatch: 2 }))).toMatchObject({ outcome: 'deleted', version: 3 })
++    expect(await deletedItem(s, lunch.id)).toMatchObject({ source: 'tell_bun', version: 3 })
++    // A transfer carries its source the same way.
++    const move = { id: randomUUID(), type: 'transfer', amount_minor: '1000', occurred_on: '2026-09-21', source_wallet_id: s.cash, destination_wallet_id: s.daily, source: 'share_extension' }
++    expect((await client.as(s.user).post('/v1/transactions', move)).status).toBe(201)
++    expect(await record(s, move.id)).toMatchObject({ type: 'transfer', source: 'share_extension' })
++  })
++
++  it('a record made without a source, or with null, reads without the key', async () => {
++    const s = await setup()
++    const plain = s.expense()
++    const nulled = s.expense({ source: null })
++    expect((await client.as(s.user).post('/v1/transactions', plain)).status).toBe(201)
++    expect((await client.as(s.user).post('/v1/transactions', nulled)).status).toBe(201)
++    for (const id of [plain.id, nulled.id]) {
++      const got = await record(s, id)
++      expect(['source' in got, got.version]).toEqual([false, 1])
++      expect('source' in ((await historyItem(s, id)) ?? { source: 'missing item' })).toBe(false)
++      expect((await syncSnapshots(s, id)).map((snapshot) => 'source' in snapshot)).toEqual([false])
++    }
++  })
++
++  it('an unknown source is 422 VALIDATION_FAILED on source, and nothing is written', async () => {
++    const s = await setup()
++    for (const source of ['manual', '', 'Photo', 7]) {
++      const key = randomUUID()
++      const res = await client.as(s.user).post('/v1/transactions', s.expense({ source }), { key })
++      expect([source, res.status, await res.json()]).toEqual([source, 422, expect.objectContaining({ code: 'VALIDATION_FAILED', fields: { source: expect.any(String) } })])
++      expect(await sqlRows(s.user, 'SELECT command_id FROM command_receipts WHERE command_id = ?', key)).toEqual([])
++    }
++    expect(await countRows(s.user, 'transactions')).toBe(0)
++  })
++
++  it('the same command key with another source is 409 IDEMPOTENCY_MISMATCH', async () => {
++    const s = await setup()
++    const key = randomUUID()
++    const lunch = s.expense({ source: 'tell_bun' })
++    const first = await client.as(s.user).post('/v1/transactions', lunch, { key })
++    expect(first.status).toBe(201)
++    const sameAgain = await client.as(s.user).post('/v1/transactions', { ...lunch }, { key })
++    expect(await sameAgain.json()).toEqual(await first.json())
++    for (const changed of [{ ...lunch, source: 'photo' }, { ...lunch, source: null }]) {
++      const res = await client.as(s.user).post('/v1/transactions', changed, { key })
++      expect([changed.source, res.status, ((await res.json()) as Problem).code]).toEqual([changed.source, 409, 'IDEMPOTENCY_MISMATCH'])
++    }
++    // Absent and null are the same create: neither names a source.
++    const plainKey = randomUUID()
++    const plain = s.expense()
++    const plainFirst = await client.as(s.user).post('/v1/transactions', plain, { key: plainKey })
++    const plainAgain = await client.as(s.user).post('/v1/transactions', { ...plain, source: null }, { key: plainKey })
++    expect(await plainAgain.json()).toEqual(await plainFirst.json())
++  })
++
++  it('a create without a source is digested as the release before gave it, so a command queued then still replays', async () => {
++    const s = await setup()
++    const key = randomUUID()
++    const lunch = s.expense({ note: 'lunch' })
++    expect((await client.as(s.user).post('/v1/transactions', lunch, { key })).status).toBe(201)
++    const receipts = await sqlRows<{ digest: string }>(s.user, 'SELECT hex(request_digest) AS digest FROM command_receipts WHERE command_id = ?', key)
++    // The payload the vault digested before P3-T2: the record's fields, and no source key at all. The
++    // vault's COMMAND_DIGEST_KEY is TEST_DIGEST_KEY's secret (vitest.workers.config.ts); the key id is not digested.
++    const earlier = new CommandDigester(TEST_DIGEST_KEY).digest(s.user.sub, {
++      commandId: key,
++      kind: 'transaction.create',
++      schemaVersion: 1,
++      payload: { id: lunch.id, type: 'expense', amount_minor: '6500', occurred_on: '2026-09-20', wallet_id: s.cash, category_id: builtinId(s.user, 'food'), source_wallet_id: null, destination_wallet_id: null, note: 'lunch', merchant: null },
++    })
++    expect(receipts).toEqual([{ digest: earlier?.digest.toString('hex').toUpperCase() }])
++  })
++
++  it('an edit cannot set the source', async () => {
++    const s = await setup()
++    const lunch = s.expense({ source: 'typed' })
++    expect((await client.as(s.user).post('/v1/transactions', lunch)).status).toBe(201)
++    const res = await client.as(s.user).patch(`/v1/transactions/${String(lunch.id)}`, { source: 'photo' }, { ifMatch: 1 })
++    expect([res.status, await res.json()]).toEqual([422, expect.objectContaining({ code: 'UNKNOWN_FIELD', fields: { source: expect.any(String) } })])
++    expect(await record(s, lunch.id)).toMatchObject({ version: 1, source: 'typed' })
++  })
++
++  it('a row without a source reads as before, with its receipt link', async () => {
++    const s = await setup()
++    const id = randomUUID()
++    const receipt = randomUUID()
++    const at = '2026-09-20T05:00:00.000Z'
++    // Written as the previous release writes a record: its statement never names source.
++    await sqlExec(s.user, "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at) VALUES (?, 'expense', 4500, '2026-09-20', ?, ?, 1, ?, ?)", id, s.cash, builtinId(s.user, 'food'), at, at)
++    await sqlExec(s.user, "INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at, released_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 10, ?, 1, 1, ?, NULL)", receipt, randomUUID(), `receipt/${'f'.repeat(64)}/${receipt}/${randomUUID()}/image.jpg`, 'a'.repeat(64), at)
++    await sqlExec(s.user, 'INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, ?)', id, receipt, at)
++    const expected = { id, type: 'expense', amount_minor: '4500', occurred_on: '2026-09-20', wallet_id: s.cash, category_id: builtinId(s.user, 'food'), note: null, merchant: null, deleted_at: null, version: 1, attachment_id: receipt }
++    expect(await record(s, id)).toEqual(expected)
++    expect(await historyItem(s, id)).toEqual(expected)
++  })
++})
++
++describe('the source column', () => {
++  it('takes each of the seven sources or NULL, and refuses anything else', async () => {
++    const s = await setup()
++    const outcome = async (source: unknown): Promise<string> => {
++      try {
++        await sqlExec(s.user, "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, version, created_at, updated_at, source) VALUES (?, 'expense', 100, '2026-09-20', ?, ?, 1, 'x', 'x', ?)", randomUUID(), s.cash, builtinId(s.user, 'food'), source)
++        return 'ok'
++      } catch (error) {
++        return /CHECK constraint failed/.test(String(error)) ? 'CHECK' : String(error)
++      }
++    }
++    const cases: [unknown, string][] = [...TRANSACTION_SOURCES.map((source): [unknown, string] => [source, 'ok']), [null, 'ok'], ['manual', 'CHECK'], ['', 'CHECK'], ['Photo', 'CHECK'], ['tell_bun ', 'CHECK']]
++    const seen: [unknown, string][] = []
++    for (const [source] of cases) seen.push([source, await outcome(source)])
++    expect(seen).toEqual(cases)
++  })
++
++  it('a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row', async () => {
++    await runInDurableObject(env.VAULT.get(env.VAULT.idFromName(randomUUID())), async (_vault, state) => {
++      const rows = (query: string, ...bindings: unknown[]) => state.storage.sql.exec(query, ...bindings).toArray()
++      const run = (query: string, ...bindings: unknown[]) => void state.storage.sql.exec(query, ...bindings).toArray()
++      const upgrade = () => migrate(drizzle(state.storage), VAULT_MIGRATIONS)
++      await migrateBefore(state, '_transaction_source')
++      const at = '2026-10-25T00:00:00.000Z'
++      const [cash, food, lunch, coffee, receipt, job, selection] = [randomUUID(), randomUUID(), randomUUID(), randomUUID(), randomUUID(), randomUUID(), randomUUID()]
++      run("INSERT INTO wallets (id, name, currency, opening_minor, tracking_start, archived, version, created_at, updated_at) VALUES (?, 'เงินสด', 'THB', 0, '2026-01-01', 0, 1, ?, ?)", cash, at, at)
++      run("INSERT INTO categories (id, type, builtin_key, label, color, archived, version, created_at, updated_at) VALUES (?, 'expense', NULL, 'ข้าว', NULL, 0, 1, ?, ?)", food, at, at)
++      const expense = "INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, note, merchant, version, created_at, updated_at) VALUES (?, 'expense', ?, '2026-10-20', ?, ?, ?, NULL, 1, ?, ?)"
++      // A record confirmed from a statement import, and one holding a receipt.
++      run(expense, lunch, 4500, cash, food, null, at, at)
++      run(expense, coffee, 99999999999, cash, food, 'กาแฟ', at, at)
++      run("INSERT INTO import_uploads (job_id, intake_token, status, file_name, declared_type, declared_bytes, format, bytes, sha256, part_count, parse_state, parse_attempts, created_at, receive_deadline, accepted_at, expires_at) VALUES (?, 'token', 'accepted', 'statement.csv', 'text/csv', 10, 'csv', 10, ?, 1, 'parsed', 1, ?, ?, ?, ?)", job, 'b'.repeat(64), at, at, at, at)
++      run("INSERT INTO import_previews (job_id, status, layout, issues, candidate_count, review_required_count, review_revision, created_at, expires_at) VALUES (?, 'ready', 'generic', '[]', 1, 0, 1, ?, ?)", job, at, at)
++      run('INSERT INTO import_selections (selection_id, job_id, frozen_revision, row_count, created_at, expires_at) VALUES (?, ?, 1, 1, ?, ?)', selection, job, at, at)
++      run("INSERT INTO import_selection_rows (selection_id, source_row_id, ordinal, type, amount_minor, occurred_on, wallet_id, category_id, note, merchant) VALUES (?, 'row:1', 1, 'expense', 4500, '2026-10-20', ?, ?, NULL, NULL)", selection, cash, food)
++      run("INSERT INTO import_row_progress (job_id, source_row_id, selection_id, transaction_id, command_id, committed_at) VALUES (?, 'row:1', ?, ?, ?, ?)", job, selection, lunch, randomUUID(), at)
++      run("INSERT INTO attachments (id, source_job_id, status, object_key, content_type, bytes, sha256, width, height, retained_at, released_at) VALUES (?, ?, 'retained', ?, 'image/jpeg', 10, ?, 1, 1, ?, NULL)", receipt, randomUUID(), `receipt/${'f'.repeat(64)}/${receipt}/${randomUUID()}/image.jpg`, 'a'.repeat(64), at)
++      run('INSERT INTO transaction_attachments (transaction_id, attachment_id, attached_at) VALUES (?, ?, ?)', coffee, receipt, at)
++      const columns = () => rows('PRAGMA table_info(transactions)').map((column) => column.name)
++      const records = "SELECT rowid AS row_number, *, CAST(amount_minor AS TEXT) AS amount_text FROM transactions ORDER BY id"
++      const links = 'SELECT (SELECT json_group_array(json_array(transaction_id, attachment_id)) FROM transaction_attachments) AS receipts, (SELECT json_group_array(json_array(job_id, transaction_id)) FROM import_row_progress) AS imports, (SELECT count(*) FROM attachment_checks) AS checks'
++      const before = { columns: columns(), records: rows(records), links: rows(links) }
++      expect(before.columns).not.toContain('source')
++      await upgrade()
++      expect(columns()).toEqual([...before.columns, 'source'])
++      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, source: null })))
++      expect(rows(links)).toEqual(before.links)
++      expect(rows('PRAGMA foreign_key_check')).toEqual([])
++      // The next wake migrates again and changes nothing.
++      await upgrade()
++      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, source: null })))
++      expect(rows('SELECT count(*) AS n FROM __drizzle_migrations')).toEqual([{ n: VAULT_MIGRATIONS.journal.entries.length }])
++    })
++  })
++})
+diff --git a/apps/edge/test/workers/vault-schema.test.ts b/apps/edge/test/workers/vault-schema.test.ts
+index f92894b8..3e6461c5 100644
+--- a/apps/edge/test/workers/vault-schema.test.ts
++++ b/apps/edge/test/workers/vault-schema.test.ts
+@@ -17,6 +17,8 @@ it('a new vault has every core table, migrated once', async () => {
+   expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachment_checks', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
+   // The journal runs in order: idx 0 to n - 1, one key each, and each `when` later than the last, so an upgrade applies every new entry.
+   const entries = VAULT_MIGRATIONS.journal.entries
++  // Every migration, in order; each vault migration adds its tag here (P3-T2: 0005_transaction_source).
++  expect(entries.map((entry) => entry.tag)).toEqual(['0000_vault_core', '0001_vault_files', '0002_currencies_trips', '0003_alarm_indexes', '0004_alarm_bounds', '0005_transaction_source'])
+   expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entry, i) => i))
+   expect(Object.keys(VAULT_MIGRATIONS.migrations).sort()).toEqual(entries.map((entry) => `m${String(entry.idx).padStart(4, '0')}`))
+   expect(entries.every((entry, i) => i === 0 || entry.when > entries[i - 1].when)).toBe(true)
+@@ -38,6 +40,9 @@ it('the Drizzle schema matches the migrated tables column for column', async ()
+     const pragma = await sql(stub, `PRAGMA table_info(${config.name})`)
+     expect(config.columns.map((c) => [c.name, c.notNull]).sort()).toEqual(pragma.map((p) => [p.name, p.notnull === 1 || (p.pk > 0 && p.type === 'INTEGER')]).sort())
+   }
++  // P3-T2 (B2): how a record was made is a TEXT column with no default, NULL until a create names it.
++  const source = (await sql(stub, 'PRAGMA table_info(transactions)')).filter((column) => column.name === 'source')
++  expect(source.map(({ type, notnull, dflt_value }) => ({ type, notnull, dflt_value }))).toEqual([{ type: 'TEXT', notnull: 0, dflt_value: null }])
+ })
+ 
+ it('foreign keys hold: a transaction naming an unknown wallet is refused', async () => {
+diff --git a/docs/implementation/receipts/P3-T2.md b/docs/implementation/receipts/P3-T2.md
+new file mode 100644
+index 00000000..ee89769d
+--- /dev/null
++++ b/docs/implementation/receipts/P3-T2.md
+@@ -0,0 +1,67 @@
++# P3-T2: Record source in the contract, the vault and the phone's outbox
++
++- **Status:** built and verified locally on `p3/t2-transaction-source` (`.claude/worktrees/p3-t2`), from `origin/claude/p1a-vault-core` (`e8de291d`, code at `a00fff7c`). Under ruling R87 this receipt is its own file; `docs/implementation/premium-progress.md` is not edited.
++- **What changed:**
++  - **Contracts (`@gogospend/contracts`):**
++    - `TRANSACTION_SOURCES = ['typed', 'photo', 'slip_import', 'tell_bun', 'statement', 'share_extension', 'siri'] as const` exported from `src/v1/transactions.ts` and `src/index.ts`.
++    - `TransactionSource` type exported.
++    - `parseTransactionSource(value: unknown, field = 'source'): TransactionSource | null` parses valid sources, returns null for null/undefined, and throws `ContractValidationError('VALIDATION_FAILED', ...)` for other values.
++    - `RecordFields` gains `source?: TransactionSource`.
++    - `RecordInput` gains `source?: TransactionSource | null`.
++    - `isTransactionSnapshot` accepts each of the seven sources and absent `source`.
++    - `AI_MIN_CLIENT_VERSION = '0.2.0'` in `src/v1/ai.ts`.
++  - **Vault (`apps/edge`):**
++    - Migration `0005_transaction_source.sql` adds column `source TEXT CHECK (source IN ('typed', 'photo', 'slip_import', 'tell_bun', 'statement', 'share_extension', 'siri'))` to `transactions` via `ALTER TABLE` (no rebuild, preserving receipt links and import progress).
++    - `migrations/index.ts` records entry 5 (`0005_transaction_source`, `when: 1761782400000`).
++    - `src/vault/schema.ts` includes `source: text('source')` in `transactions`.
++    - `src/vault/domain/transactions.ts`: `createTransaction` validates and accepts `source`, includes it in digested payload; `updateTransaction` rejects `source` (422 `UNKNOWN_FIELD`); `toDto` includes `source` only when present on row.
++    - `vault-schema.test.ts` updated to check journal entries and column-for-column definition.
++  - **Followups carried from P5-T4 review (`apps/edge/test/workers/currency-migration.test.ts`):**
++    - "every table that references wallets keeps its rows" compares only tables that existed before the rebuild, and fails on unseeded referencing tables.
++    - Asserts that every foreign key referencing wallets is `ON DELETE NO ACTION`.
++    - The exact-row test only compares 1A columns and P5 currency columns (`RECORD_1A_COLUMNS` and `RECORD_MONEY_COLUMNS`).
++  - **App (`apps/app`):**
++    - `app.json` bumps `expo.version` to `0.2.0`.
++    - `diaryRepository.ts` adds `source` to `ENTRY_KEYS` and `TRANSFER_KEYS`, validates via `parseTransactionSource` in `assertDraft`.
++    - `spend/v1/resources.ts` adds `source?: TransactionSource | null` to `CreateEntryInput` and `CreateTransferInput`.
++    - `analytics/events.ts` re-exports `TransactionSource` as `RecordSource`.
++  - **Tests:**
++    - `apps/edge/test/contracts-source.test.ts` (Node unit test, 3 cases).
++    - `apps/edge/test/workers/transaction-source.test.ts` (Workers test, 8 cases).
++    - `apps/app/src/api/aiClientVersion.test.ts` (Node unit test, 1 case).
++    - `apps/app/src/storage/diaryRepository.test.ts` (unit test, 1 new case for draft source validation).
++- **Files:** 18 paths (13 modified, 5 added).
++- **RED to GREEN:**
++  - RED:
++    - Node contracts (`contracts-source.test.ts`): Tests 2 failed | 1 passed (3).
++    - Node app (`diaryRepository.test.ts`, `aiClientVersion.test.ts`): Tests 2 failed | 24 passed (26).
++    - Workers (`vault-schema.test.ts`, `currency-migration.test.ts`, `transaction-source.test.ts`): Tests 8 failed | 25 passed (33) (brief Expected line noted 34; actual test total across the 3 files is 14 + 10 + 9 = 33).
++    - All RED failures failed on `AssertionError`.
++  - GREEN:
++    - Node contracts: Tests 3 passed (3).
++    - Node app: Tests 26 passed (26).
++    - Workers: Tests 33 passed (33).
++- **Mutation check:**
++  - 27 of 27 mutants killed; 0 survivors (`mutants.out`).
++  - Probes C1 to C4: 4 of 4 passed as expected (`compat.out`).
++- **Gate:**
++  - `npm run typecheck` (contracts & api): exit 0.
++  - `npm run typecheck:app`: exit 0.
++  - `npm run typecheck:edge`: exit 0.
++  - `npm run test:edge`: 18 files passed, 192 passed.
++  - `npm run test:app`: 35 passed.
++  - `npm run test:unit`: 998 passed.
++  - `npm run build:edge`: built cleanly in 266ms.
++  - `vitest.render.config.ts` (SpendRoutes, AccountRoutes, InsightsRoutes, PlanningRoutes): 4 files passed, 11 passed.
++  - `git diff --check`: clean (exit 0).
++- **SKIPPED:** Docker database suites and whole-suite workers/render (CI runs them under R100).
++- **Deviations:** Planner calls P1 to P9 accepted by the controller:
++  - P1: Non-rebuilding migration `0005_transaction_source.sql` uses `ALTER TABLE ADD COLUMN` to preserve receipt links and import progress.
++  - P2: Migration numbering `0005_transaction_source.sql`, idx 5, `when: 1761782400000`.
++  - P3: Carried P5-T4 review followups in `currency-migration.test.ts` (pre-rebuild referencing tables comparison, `ON DELETE NO ACTION` check, exact-row isolation).
++  - P4: Probes C1-C4 verified.
++  - P5: Additive `RecordSource` re-export in shared `events.ts`.
++  - P6: `source` provided only at creation; rejected on edit with 422 `UNKNOWN_FIELD`.
++  - P7: `source` included in idempotent digested payload only when present.
++  - P8: `expo.version` bumped to `0.2.0` in `app.json` matching `AI_MIN_CLIENT_VERSION = '0.2.0'`.
++  - P9: Four routes render tests verified (11 tests pass).
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index a0f68113..ead1477e 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -121,6 +121,8 @@ export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot
+ export type { CategoryType, BuiltinCategoryKey, CategoryDto, CreateCategoryRequest, UpdateCategoryRequest } from "./v1/categories.ts";
+ export { TRANSACTION_TYPES, NOTE_MAX_CHARS, MERCHANT_MAX_CHARS, RESTORE_WINDOW_DAYS, normalizeNote, normalizeMerchant, isTransactionSnapshot } from "./v1/transactions.ts";
+ export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto, CreateTransactionRequest, UpdateTransactionRequest } from "./v1/transactions.ts";
++export { TRANSACTION_SOURCES, parseTransactionSource } from "./v1/transactions.ts";
++export type { TransactionSource } from "./v1/transactions.ts";
+ export { MAX_BUDGET_CATEGORY_LIMITS, parseMonth, isBudgetSnapshot } from "./v1/budgets.ts";
+ export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./v1/budgets.ts";
+ export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
+@@ -272,6 +274,7 @@ export type {
+ } from "./v1/attachments.ts";
+ export {
+   AI_NOTICE_VERSION,
++  AI_MIN_CLIENT_VERSION,
+   AI_FEATURES,
+   AI_DAILY_LIMITS,
+   AI_LOCALES,
+diff --git a/packages/contracts/src/v1/ai.ts b/packages/contracts/src/v1/ai.ts
+index c1260392..cda5045d 100644
+--- a/packages/contracts/src/v1/ai.ts
++++ b/packages/contracts/src/v1/ai.ts
+@@ -16,6 +16,14 @@ import { assertKnownFields } from "./validation.ts";
+ /** Bump when the AI notice text changes; consent to an older notice no longer counts. */
+ export const AI_NOTICE_VERSION = 1;
+ 
++/**
++ * The oldest app build that reads phase 3's contract changes (C5), starting
++ * with a record's `source` (P3-T2). A release carrying them raises the
++ * server's minimum client versions to at least this, and the app's own
++ * version (app.json `expo.version`) is never below it.
++ */
++export const AI_MIN_CLIENT_VERSION = "0.2.0";
++
+ export const AI_FEATURES = ["parse", "slip", "note", "ask"] as const;
+ export type AiFeature = (typeof AI_FEATURES)[number];
+ 
+diff --git a/packages/contracts/src/v1/transactions.ts b/packages/contracts/src/v1/transactions.ts
+index 6401084b..432cbc32 100644
+--- a/packages/contracts/src/v1/transactions.ts
++++ b/packages/contracts/src/v1/transactions.ts
+@@ -11,6 +11,14 @@ export const TRANSACTION_TYPES = ["expense", "income", "transfer"] as const;
+ export type TransactionType = (typeof TRANSACTION_TYPES)[number];
+ export type EntryType = Exclude<TransactionType, "transfer">;
+ 
++/**
++ * How a record was made (B2, spec 6.6): typed, read by Bun from a photo, a slip
++ * import, a Tell Bun draft, a statement, the share extension or Siri. Set once,
++ * when the record is created; records made before phase 3 have none.
++ */
++export const TRANSACTION_SOURCES = ["typed", "photo", "slip_import", "tell_bun", "statement", "share_extension", "siri"] as const;
++export type TransactionSource = (typeof TRANSACTION_SOURCES)[number];
++
+ export const NOTE_MAX_CHARS = 500;
+ export const MERCHANT_MAX_CHARS = 120;
+ /** A deleted record can be restored for this long. */
+@@ -31,6 +39,11 @@ type RecordFields = {
+    * it, and both shapes stay valid.
+    */
+   attachment_id?: string;
++  /**
++   * P3-T2: how the record was made. Present only when its create named one;
++   * records made before phase 3 never carry it, and both shapes stay valid.
++   */
++  source?: TransactionSource;
+ };
+ 
+ export type EntryDto = RecordFields & { type: EntryType; wallet_id: string; category_id: string };
+@@ -38,7 +51,8 @@ export type TransferDto = RecordFields & { type: "transfer"; source_wallet_id: s
+ /** The persisted record (also the change-log snapshot). */
+ export type TransactionDto = EntryDto | TransferDto;
+ 
+-type RecordInput = { id: string; amount_minor: Minor; occurred_on: string; note?: string | null; merchant?: string | null };
++/** `source` is how the record was made; absent or null means none. Only a create sets it. */
++type RecordInput = { id: string; amount_minor: Minor; occurred_on: string; note?: string | null; merchant?: string | null; source?: TransactionSource | null };
+ /** POST /v1/transactions: a discriminated union on `type`. */
+ export type CreateTransactionRequest =
+   | (RecordInput & { type: EntryType; wallet_id: string; category_id: string })
+@@ -84,6 +98,17 @@ export function normalizeMerchant(value: unknown, field = "merchant"): string |
+   return optionalText(value, field, MERCHANT_MAX_CHARS, false);
+ }
+ 
++const isTransactionSource = (value: unknown): value is TransactionSource => (TRANSACTION_SOURCES as readonly unknown[]).includes(value);
++
++/** A create's `source`: absent or null is none (null); anything else must be one of TRANSACTION_SOURCES. */
++export function parseTransactionSource(value: unknown, field = "source"): TransactionSource | null {
++  if (value === undefined || value === null) return null;
++  if (!isTransactionSource(value)) {
++    throw new ContractValidationError("VALIDATION_FAILED", `Expected one of ${TRANSACTION_SOURCES.join(", ")}.`, field);
++  }
++  return value;
++}
++
+ const ENTRY_KEYS = ["amount_minor", "category_id", "deleted_at", "id", "merchant", "note", "occurred_on", "type", "version", "wallet_id"].join(",");
+ const TRANSFER_KEYS = ["amount_minor", "deleted_at", "destination_wallet_id", "id", "merchant", "note", "occurred_on", "source_wallet_id", "type", "version"].join(",");
+ const AMOUNT = /^[1-9][0-9]{0,10}$/;
+@@ -91,13 +116,15 @@ const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
+ 
+ /**
+  * True for exactly the persisted record shape of its type: with or without
+- * `attachment_id` (P2c), which when present is a lower-case UUID.
++ * `attachment_id` (P2c), which when present is a lower-case UUID, and with or
++ * without `source` (P3-T2), which when present is one of TRANSACTION_SOURCES.
+  */
+ export function isTransactionSnapshot(value: unknown): value is TransactionDto {
+   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+   const record = value as Record<string, unknown>;
+   if ("attachment_id" in record && !isUuid(record.attachment_id)) return false;
+-  const keys = Object.keys(record).filter((key) => key !== "attachment_id").sort().join(",");
++  if ("source" in record && !isTransactionSource(record.source)) return false;
++  const keys = Object.keys(record).filter((key) => key !== "attachment_id" && key !== "source").sort().join(",");
+   const shape =
+     record.type === "transfer"
+       ? keys === TRANSFER_KEYS && typeof record.source_wallet_id === "string" && typeof record.destination_wallet_id === "string" && record.source_wallet_id !== record.destination_wallet_id

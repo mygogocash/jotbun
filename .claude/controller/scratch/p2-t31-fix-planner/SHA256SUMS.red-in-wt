@@ -1,0 +1,5 @@
+76e73bfd883df9bb406cccff67139d19e9035eee1fb97b44a48fd9011510b066  apps/app/src/dev/catalogue/wallet/insightsSections.tsx
+30ad75c01c18dcf7b477a98e337d7c2a28e9861447f35db02079f45c93aaf67f  apps/app/src/ui/dateStep.test.ts
+1301b07b60947a4c769420a74057f18ab14911d49330a60a21c7c6daf62135d9  apps/app/src/ui/dateStep.ts
+cc6435337457506f9fe379d81f3a7d2c56e8ade2747d296da0a156e56b2d971b  apps/app/src/wallet/insights/WalletInsights.render.test.tsx
+73e42dc2427b73932037e40d0c6e570a1033d54fc7407f13e1be4ff47a1b5e08  apps/app/src/wallet/insights/WalletInsightsScreen.tsx

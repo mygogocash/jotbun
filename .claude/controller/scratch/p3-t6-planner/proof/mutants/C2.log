@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+ ❯ test/contracts-ai.test.ts (3 tests | 1 failed) 5ms
+     × every phone timeout outwaits its route's deadline by 5 seconds, and a slip's by 15 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts-ai.test.ts > the AI contract and the two models > every phone timeout outwaits its route's deadline by 5 seconds, and a slip's by 15
+AssertionError: expected { parse: 15000, slip: 45000, …(2) } to deeply equal { parse: 15000, slip: 45000, …(2) }
+
+- Expected
++ Received
+
+  {
+-   "ask": 55000,
++   "ask": 60000,
+    "note": 10000,
+    "parse": 15000,
+    "slip": 45000,
+  }
+
+ ❯ test/contracts-ai.test.ts:9:34
+      7| describe('the AI contract and the two models', () => {
+      8|   it("every phone timeout outwaits its route's deadline by 5 seconds, …
+      9|     expect(AI_ROUTE_DEADLINE_MS).toEqual({ parse: 15_000, slip: 45_000…
+       |                                  ^
+     10|     expect(AI_PHONE_TIMEOUT_MS).toEqual({ parse: 20_000, slip: 60_000,…
+     11|     const margins = Object.fromEntries(AI_FEATURES.map((feature) => [f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  08:32:42
+   Duration  241ms (transform 83ms, setup 0ms, import 106ms, tests 5ms, environment 0ms)
+

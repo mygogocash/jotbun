@@ -29,8 +29,6 @@ export type V1Env = {
   PARSER?: DurableObjectNamespace<StatementParser>
   /** The AI companion (1B-T7, B10): on only when this is `1` or `true` and ANTHROPIC_API_KEY is set; otherwise drafts come from the rules and slips and questions are 503 AI_PAUSED. */
   AI_ENABLED?: string
-  /** The model, when it is not DEFAULT_AI_MODEL. */
-  AI_MODEL?: string
   /** A secret. */
   ANTHROPIC_API_KEY?: string
   /** A secret for authenticated AI Gateway access (P3-T4). */

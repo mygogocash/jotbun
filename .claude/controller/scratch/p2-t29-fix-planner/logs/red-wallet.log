@@ -1,0 +1,556 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t29-fix-planner/red/apps/app
+
+(node:40316) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ × src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour 31ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items 10ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new 9ms
+   → categories-problem: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name 7ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme 0ms
+   → bw-categories: expected undefined to be defined
+ × src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order 1ms
+   → expected [] to deeply equal [ 'bw-categories', …(3) ]
+ × src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account 7ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV1): an unfilled ring is a stroke in the colour, 2 pt wide, with no fill 3ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 m2 (RV2): every stroke has round caps and joins 1ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV3): the tile's initial has Thai leading 3ms
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > P2-T11 n5 (RV4, RV4s): a glyph drawn alone is hidden from screen readers 1ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props 9ms
+   → a heading named หมวดใหม่: expected undefined to be defined
+ × src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ ✓ src/wallet/categories/WalletCategories.render.test.tsx > the draft table holds the plan's Thai lines 0ms
+ × src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why 9ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean 8ms
+   → categories-builtins: expected 0 to be greater than 0
+ × src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends 9ms
+   → categories-builtins: expected 0 to be greater than 0
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 33 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the grid shows each category's spending against its limit, over in the over colour
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:208:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the pack card names the first three missing C3 items
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:255:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the pack tray adds only the picked missing items, and marks the ones the person has
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:281:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a new category keeps its icon for the account only after Jotbun accepted it
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:324:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a limit that would pass the month's budget is refused in words
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:355:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > private mode hides the tiles' amounts
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:380:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > every glyph, swatch and checkbox is at least 44 pt and named
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:399:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed save keeps the frozen Try again, with the same id and key, and makes no second category
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:443:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > B4: an unconfirmed pack add keeps Try again with the same ids and keys, and adds nothing twice
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:471:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M8: a tray that is saving cannot be closed, and the save still lands
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:494:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M2: the screen reads again after a save, so a second change sends the new version
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:527:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M3: a read that fails says so with Try again, and shows no grid, no pack card and no new
+AssertionError: categories-problem: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:548:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M4: in dark mode the trays draw on the mode: tints for the preview, the swatches and the pack glyphs
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:575:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M5 and M6: names, never keys: the swatches by colour, a built-in's tray by its name
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:588:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M7: Back goes back, or to Budget when there is nothing to go back to
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:599:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M9: private mode leaks no amount in the category tray
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:609:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M10: problems with a field are said in words, never a code
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:627:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M11: a catalogue section draws in the catalogue's language and theme
+AssertionError: bw-categories: expected undefined to be defined
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:667:36
+    665| test("M11: a catalogue section draws in the catalogue's language and t…
+    666|   const section = WALLET_CATEGORY_SECTIONS.find((each) => each.id === …
+    667|   expect(section, 'bw-categories').toBeDefined();
+       |                                    ^
+    668|   mountInApp(
+    669|     <IntlProvider locale="en">
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > M12: the catalogue's four sections are wallet screens, in the plan's order
+AssertionError: expected [] to deeply equal [ 'bw-categories', …(3) ]
+
+- Expected
++ Received
+
+- [
+-   "bw-categories",
+-   "bw-category-new",
+-   "bw-category-limit",
+-   "bw-thai-pack",
+- ]
++ []
+
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:683:33
+    681|   const ids = WALLET_SECTIONS.map((each) => each.id);
+    682|   const at = ids.indexOf('bw-categories');
+    683|   expect(ids.slice(at, at + 4)).toEqual(['bw-categories', 'bw-category…
+       |                                 ^
+    684|   expect(ids.indexOf('bw-wallets'), 'after the wallets list').toBeLess…
+    685|   expect(WALLET_CATEGORY_SECTIONS.map((each) => [each.group, each.layo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m3: a new opening shows no failure from the last one
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:691:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m6: archive asks first, and an archived category comes back with Unarchive
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:704:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > R5 and R6: the type is chosen for a new category only, and a changed limit replaces the old one
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:730:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m10 and the followup: an icon is kept only when it changes, and only with an account
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:753:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m11: income tiles say what came in, never a limit
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:779:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m5: at AX5 each tile takes a row, grows with its words, and nothing is clamped
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:788:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the trays mount on their own with the plan's props
+AssertionError: a heading named หมวดใหม่: expected undefined to be defined
+ ❯ named src/wallet/categories/WalletCategories.render.test.tsx:150:54
+    148| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    149|   const element = within(inside).queryAllByRole(role, { name })[0];
+    150|   expect(element, `a ${role} named ${String(name)}`).toBeDefined();
+       |                                                      ^
+    151|   return element as HTMLElement;
+    152| }
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:839:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a change made elsewhere says so, and Reload closes the tray so the grid reads again
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:858:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > the limit switch: off removes the limit, and a month with no budget says why there is none
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:899:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a later refusal keeps what was accepted: the field says why, and saving again sends only what is left
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:957:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m6: unarchive is one at a time, keeps Try again when unconfirmed, and says a change made elsewhere
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:980:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > blocked (an update is needed): the trays and Unarchive wait, and say why
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:1010:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > a pack add that meets its own id with other fields says so, and the next opening starts clean
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:1041:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/33]⎯
+
+ FAIL  src/wallet/categories/WalletCategories.render.test.tsx > m6: the archive question cannot be left while it sends
+AssertionError: categories-builtins: expected 0 to be greater than 0
+ ❯ found src/wallet/categories/WalletCategories.render.test.tsx:157:35
+    155| function found(testID: string): HTMLElement {
+    156|   const elements = screen.queryAllByTestId(testID);
+    157|   expect(elements.length, testID).toBeGreaterThan(0);
+       |                                   ^
+    158|   return elements[elements.length - 1];
+    159| }
+ ❯ openScreen src/wallet/categories/WalletCategories.render.test.tsx:188:3
+ ❯ src/wallet/categories/WalletCategories.render.test.tsx:1056:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/33]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  33 failed | 5 passed (38)
+   Start at  09:34:54
+   Duration  2.44s (transform 1.28s, setup 92ms, import 1.71s, tests 306ms, environment 217ms)
+

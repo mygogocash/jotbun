@@ -3,26 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 export type MessageParams = Anthropic.Beta.Messages.MessageCreateParamsNonStreaming
 export type ModelMessage = Anthropic.Beta.Messages.BetaMessage
 
-/** D19: the default model; AI_MODEL can choose another after measuring. */
-export const DEFAULT_AI_MODEL = 'claude-opus-5-5'
-
+/** A route's effort. Each model's request base is in src/v1/ai/models.ts (P3-T6). */
 export type Effort = 'low' | 'medium' | 'high'
-
-/**
- * Settings every request shares: the model, server-side refusal fallbacks
- * (a declined request is retried on Anthropic's recommended model for that
- * category instead of failing) and the route's effort. Thinking is left to
- * the model's adaptive default.
- */
-export function requestBase(model: string, effort: Effort, maxTokens: number): Pick<MessageParams, 'model' | 'max_tokens' | 'betas' | 'fallbacks' | 'output_config'> {
-  return {
-    model,
-    max_tokens: maxTokens,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    output_config: { effort },
-  }
-}
 
 export class ModelUnavailable extends Error {
   constructor(readonly reason: 'refusal' | 'truncated' | 'malformed' | 'failed') {

@@ -1,0 +1,67 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 84ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 85ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 55ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 123ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 94ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 192ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 165ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 118ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 75ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 202ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 84ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 60ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 43ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 160ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 39ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 57ms
+   → expected <div class="css-view-g5y9jx" …(2)></div> to be null
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 92ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 74ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 22ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 33ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 25ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 63ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 72ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 57ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 41ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 529ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  08:56:58
+   Duration  7.18s (transform 3.20s, setup 110ms, import 4.04s, tests 2.64s, environment 239ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:26000) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day
+AssertionError: expected <div class="css-view-g5y9jx" …(2)></div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="css-view-g5y9jx"
+  data-testid="insights-categories"
+  style="background-color: rgba(255, 255, 255, 1.00); padding: 2px 14px; border-radius: 20px;"
+/>
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:511:55
+    509|   expect(named('heading', 'จดอีก 3 วัน กราฟจะขึ้นตรงนี้')).not.toBeNul…
+    510|   expect([0, 1, 2].map((index) => textOf(`insights-early-day-${index}`…
+    511|   expect(screen.queryByTestId('insights-categories')).toBeNull();
+       |                                                       ^
+    512| });
+    513|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

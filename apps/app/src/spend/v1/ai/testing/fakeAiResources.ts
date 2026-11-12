@@ -18,10 +18,10 @@ export function fakeAiResources(overrides: Partial<AiResources> = {}, preference
       current = { ...current, ...update, companion: update.companion ?? current.companion };
       return current;
     }),
-    parse: vi.fn(async () => ({ drafts: [], source: 'ai' as const })),
-    slip: vi.fn(async () => ({ drafts: [], bank: null, source: 'ai' as const })),
-    note: vi.fn(async (date) => ({ date, facts: [{ kind: 'no_records_today' as const }], text: 'Nothing logged yet today. Add your first one?', source: 'facts' as const })),
-    ask: vi.fn(async () => ({ answer: '', figures: [], source: 'ai' as const })),
+    parse: vi.fn(async () => ({ drafts: [], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+    slip: vi.fn(async () => ({ drafts: [], bank: null, source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+    note: vi.fn(async (date) => ({ date, facts: [{ kind: 'no_records_today' as const }], text: 'Nothing logged yet today. Add your first one?', source: 'facts' as const, model: 'rules' as const, escalated: false })),
+    ask: vi.fn(async () => ({ answer: '', figures: [], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
     cashbackCatalogue: vi.fn(async () => ({ source: 'builtin' as const, updated_at: null, home_href: GOGOCASH_HOME, brands: [...BUILTIN_CASHBACK_BRANDS] })),
     ...overrides,
   };

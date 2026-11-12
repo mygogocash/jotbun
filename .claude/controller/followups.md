@@ -632,3 +632,41 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - record analytics in the load-problem case, and expect `['recap_opened']` only after Try again succeeds (kills O3).
   - **n2 (efficiency only):** with `withRecords`, the first history page is read twice (`recapData.ts:44-51`), and the days logged could come from the records.
   - **n1 (housekeeping):** the fix receipt omits `9add4415` and the routes gate.
+- P3-T2 (#420, merged 12 Nov as 25ce266 at 182f3054; promotion #426). The first review is `reviews/P3-T2.md` (Opus, approved: m1, m2, n1 to n3) and the second is `reviews/P3-T2-second.md` (Claude Sonnet 5.5, approved: m1, n1 to n3; Gemini was out of quota). Carried:
+  - **The owner and P6C (release), m2: raise the server's client minimum before any build sends a source.** That is `MIN_CLIENT_VERSION_IOS` and `MIN_CLIENT_VERSION_ANDROID`, or the KV config's `client_versions`, to at least `0.2.0`. A 0.1.0 build's `isTransactionSnapshot` refuses a snapshot carrying `source`. The deploy is the owner's call.
+  - **P3-T13 (the first task that sets a source from the add tray), or the next task that edits `transaction-source.test.ts`, m1 (both reviews):** pin source preservation on the write paths that never name it.
+    - Restore (`transactions.ts:334`; the review's R4).
+    - A receipt's retain, replace and remove (`attachments.ts:222`; R5).
+    - An import confirmation (`confirmation.ts:473`). P4-T11 owns `statement` there.
+    - The reviews' probes pass today; only the pins are missing.
+  - **n1:** a transfer twin of the outbox's unknown-source case (`diaryRepository.test.ts:126`; kills R9).
+  - **n3:** `events.ts:6`'s inline `import('@gogospend/contracts').TransactionSource` can become an `import type`, now that #418 has merged.
+  - **Housekeeping:** the receipt's gate counts are the planner's, not the implementer's (1012 and 248 ms). `resources.ts` has no `| null`. `transaction-source.test.ts` has 9 cases. Fix them in the next receipt touch.
+- **P2-T37 (the private-mode sweep), from #427's reviews (12 Nov):** a "no digit in private mode" sweep cannot catch amounts written in words. Bun's parser reads Thai number words (`ห้าสิบ`, `สองพันห้าร้อย`) and scale words (`พัน`, `k`). The sweep must check that free text quoting the person, such as Bun's sentence, is not drawn at all in private mode (R114), not merely that it holds no digits.
+- P3-T6 (#428, merged 12 Nov as d0f1897 at 8b528df1; promotion #430). The first review is `reviews/P3-T6.md` (Opus, approved: m1, m2, n1, n2) and the second is `reviews/P3-T6-second.md` (Claude Sonnet 5.5, approved). CI took three attempts; the R-B flake hit twice. Carried:
+  - **P3-T8 (must carry, m1): fake-clock case 1's slip row breaks when P3-T8 lands.** `ai-routing.test.ts:244` scripts `json({ drafts: [] })` for every row, the slip row (`:238`) included. P3-T8's `slipNeedsOpus` is true for that reply, so Opus re-reads and the row records `[15000, 15000]`.
+    - The fix is one test line: script the slip row as a complete slip read (`kind: 'slip'`, one high-confidence draft). The review's FIX and T8F probes give 7 of 7 before and after.
+    - Also correct `receipts/P3-T6.md:37`.
+    - P3-T8's brief must list `ai-routing.test.ts` in its files.
+  - **P3-T8, n2:** the explicit `output_config: { effort, format }` at `service.ts:118-119`, `:143-144` and `:188-189` overwrites the base's effort, so `haikuRequest`'s effort does nothing on parse, slip and note. Spread the base's `output_config` and add `format`, or give the bases a `format` parameter.
+  - **P3-T7 (or the next task that edits `ai-routing.test.ts`), m2 part 1:** pin X4. In "the results name the model", add a parse whose Haiku reply is `json({ drafts: [] })`, answered `{ source: 'rules', model: 'rules', escalated: false }`. It passes today and kills X4.
+  - **P3-T9, m2 part 2:** `askWithEscalation`'s cases assert `model: 'rules'` on every facts answer, the five-turn path included (kills X1 and X2).
+  - **P3-T7, n1:** reword `AI_ROUTE_DEADLINE_MS`'s comment (`packages/contracts/src/v1/ai.ts:33-38`). The deadline bounds the model calls, and the vault steps count against it but are never cut. From P3-T7 the refund step runs after a timed-out call.
+- P2-T31 (#421, merged 12 Nov as ce165ed at f72ad233, after the R112 fix round; promotion #431). The confirming review is `reviews/P2-T31-confirm.md` (Opus, approved: m1, m2, n1 to n5). Carried by **an insights follow-up before E2-C's captures** (or the next task that edits `src/wallet/insights`):
+  - **m1 (before E2-C):** month names drift off their bars on phones wider than 375 pt, by 19 pt at 402 pt and 35 pt at 440 pt.
+    - The cause: `MonthBars.tsx:68` and `InOutTab.tsx:60-84` draw a fixed `viewBox="0 0 300 140"` (meet, centred), while the names are `flex: 1` columns across the card.
+    - The fix: the board's `flex: 1` columns with a 12 pt gap, with bars as Views (W4 allows it), or a viewBox as wide as the measured card. Run the budget line across the card. Add a Node test that each name's centre is its bar's.
+  - **m2:** pin the 14 survivors (`scratch/p2-t31-confirm/own_mutants.py`, probe `ReviewerProbes.render.test.tsx`). The code is right today.
+    - O12: private mode on the spending tab's category amounts.
+    - O11: a day's amount colour on dark steps.
+    - O1: the month row after stepping back.
+    - O9, O14, O10: `accessible` on the bars, pairs and legend, needed for iOS VoiceOver.
+    - O2, O3, O8: weekday initials and the legend unit at AX5, and the initials hidden from screen readers.
+    - O5: the safe area.
+  - **Nits:**
+    - n1: English drafts' number agreement (`{count} entries`, the early title);
+    - n2: a day under ฿1 draws "0";
+    - n3: an income-only day says "0 รายการ ฿0";
+    - n4: a past month keeps the early state;
+    - n5: on a 360 dp Android phone the calendar is 8 dp wider than the page (7 × 44 + 6 × 4 > 324).
+- **Owner, at E2-B, from #429's review (P2-T21 m3, 12 Nov):** in the wallet area a wallet's tracking start (เริ่มจด) cannot be changed anywhere. The new-wallet flow shows it as text, and today's screen with its date chip is not reachable while the `wallet` area is on. So a wallet made through the flow starts today, and earlier dates cannot be logged to it (the server refuses with `DATE_BEFORE_TRACKING_START`). The board (`wc-wallet-edit.dc.html:69`) draws it as a link. Decide: a date tray under today's `validateTrackingStart` rules, or text with the consequence stated (R115 keeps it as text for now).

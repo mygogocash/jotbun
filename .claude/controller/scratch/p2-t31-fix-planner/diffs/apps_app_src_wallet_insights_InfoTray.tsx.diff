@@ -1,0 +1,35 @@
+diff --git a/apps/app/src/wallet/insights/InfoTray.tsx b/apps/app/src/wallet/insights/InfoTray.tsx
+--- a/apps/app/src/wallet/insights/InfoTray.tsx
++++ b/apps/app/src/wallet/insights/InfoTray.tsx
+@@ -1,26 +1,17 @@
+-// Info tray explaining the spent amount number (P2-T31).
++// What the spent amount is (P2-T31): the wallet's tray, so its motion follows
++// the wallet's one reduced-motion answer, with the explanation in body text.
+ import type { ReactElement } from 'react';
+ 
+-import { useWalletColors } from '@mobile/theme/ThemeProvider';
+ import { useDraftCopy } from '../copy/useDraftCopy';
+ import { Tray } from '../tray/Tray';
+ import { WalletText } from '../WalletText';
+ import { COPY } from './copy';
+ 
+-export function InfoTray(props: { visible: boolean; onClose: () => void }): ReactElement {
++export function InfoTray({ visible, onClose }: { visible: boolean; onClose: () => void }): ReactElement {
+   const t = useDraftCopy(COPY);
+-  const colors = useWalletColors();
+-
+   return (
+-    <Tray
+-      visible={props.visible}
+-      onClose={props.onClose}
+-      title={t('insights.whatIsThis')}
+-      testID="insights-info-tray"
+-    >
+-      <WalletText style={{ fontSize: 15, lineHeight: 22, color: colors.quiet, paddingVertical: 8 }}>
+-        {t('insights.spentExplain')}
+-      </WalletText>
++    <Tray visible={visible} onClose={onClose} title={t('insights.whatIsThis')} testID="insights-info-tray">
++      <WalletText role="body" tone="quiet" style={{ paddingVertical: 8 }}>{t('insights.spentExplain')}</WalletText>
+     </Tray>
+   );
+ }
