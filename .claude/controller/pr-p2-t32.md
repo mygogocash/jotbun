@@ -36,7 +36,9 @@
   - Planned on Claude Opus (finished on Gemini 3.8 Flash after Claude's weekly limit), built on Gemini 3.8 Flash.
 - [x] Controller fix `9add4415`, found before the push: `InsightsRoutes.render.test.tsx` could not load, because the recap route imports the real `WalletRecapScreen`. It now stubs that screen, as it stubs every other. The four routes tests, `RecapScreen`, `SpendLayout`, `InsightsScreen` and `WalletRecap`: 126 of 126; `typecheck:app` clean.
 - [x] CI on this pull request is green at `9add4415`: 9 of 9, including the full render suite, `export:web` and the iOS export.
-- [ ] Confirming review (Opus) of the fix commits.
+- [x] Confirming review (Opus): **Approved** at `9add4415` (`.claude/controller/reviews/P2-T32-confirm.md`). It left three minors (m1: a month changed in place would celebrate on the previous month's data, which no path reaches today; m2: the route's wallet branch is untested; m3: two right behaviours unpinned) and three nits, which are carried in `followups.md`.
+- [x] The controller merged the integration head (with #416, P2-T20, and #418, P3-T5) as `764ea0ac`. `index.ts` takes the fix kit's proven file for #416 then #411 (`merge/index.t20-t32.ts`, sha256 `ddd2e6a0…`): ADD, LIST, RECAP, LOCK. On the merged tree: `typecheck:app` 0, and the recap, neighbour and routes tests 98 of 98.
+- [ ] CI on this pull request is green at `764ea0ac`.
 - [ ] SKIPPED: device checks (confetti and haptic on a phone, the share sheet).
 
 Closes #178 once merged (closed by hand, since the base is not the default branch).
