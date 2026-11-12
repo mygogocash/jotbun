@@ -59,6 +59,8 @@ export type VaultRouteId =
   | 'snapshots.request' | 'snapshots.status' | 'snapshots.chunk'
   // 1B-T7: the AI routes' step-only ids (the six routes are Worker routes).
   | 'ai.preferences' | 'ai.setPreferences' | 'ai.context' | 'ai.consume' | 'ai.facts' | 'ai.tool'
+  // P3-T7: the use a failed model call gives back.
+  | 'ai.refund'
 
 export type VaultCall = {
   route: VaultRouteId
