@@ -49,6 +49,10 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:50: #441 (P6A-T2) opened; Opus and Sonnet reviews and CI running.**
+  - The implementer reported DONE at `cf538e69` on `c7f947c5` (RED 20 of 32 on assertions; GREEN 32; 51 of 51 mutants, identical to the planner's; `test:app` 36, `test:unit` 1069, routes 15). 7 of 8 `real/` files byte-identical, the receipt differing only in its base SHA. PR body `pr-p6a-t2.md`, issue #269.
+  - Reviews (notes `scratch/dispatch/P6A-T2-review-notes.md`): Opus xhigh `mcp:launch:0cf9531fd1361da2de2fc162476de87ff9aaeb6395910485bdaf911e6bec4484`; Sonnet high `mcp:launch:0bc0f68e23cae5bef9d7fe692765992cb3abe0b6264f5655b5a266515a7c7222`.
+  - **Open task PRs:** #439 (P2-T16), #440 (P3-T14), #441 (P6A-T2), each with two reviews running. Planners still running: 1D-T11 and 1D-T7.
 - **20:45: P6A-T2 brief READY (Opus); its implementer is building (Haiku).**
   - Size M: `widgetSnapshot.ts`, `outsideCopy.draft.ts`, `useOutsideCopy.ts` and their tests (new), and `dateStep.ts` plus its test (shared; three functions appended after P2-T31's). RED 20 of 32 on assertions, GREEN 32, 51 of 51 mutants; a dry run of the brief on a fresh copy of the head.
   - `check_kit.sh` at `88f14203`: 24 of 24 sums, `orig/` 2 of 2; no code change since its base `7a29bc70`. **P1 to P20 accepted.** P17: with the Face ID lock on, every lock-screen face shows ฿•••• and no gauge figure; home-screen faces follow private mode only, and masking them under the lock is the owner's Q9.
