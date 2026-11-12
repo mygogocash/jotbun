@@ -1,6 +1,8 @@
 // The R6 routes: `/` and `/login` show the redesigned first run and sign-in
 // under the `account` area and today's screens without it; `/settings` and
 // `/settings/privacy` exist only under the area, and need a session.
+// `/settings/ai` (P3-T14) shows Bun and AI settings only while the wallet and
+// bunai areas are both on, and Settings otherwise.
 import { cleanup, render as renderRaw, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { IntlProvider } from 'react-intl';
@@ -13,6 +15,7 @@ import Login from '../../../../app/login';
 import SettingsLayout from '../../../../app/settings/_layout';
 import SettingsRoute from '../../../../app/settings/index';
 import PrivacyRoute from '../../../../app/settings/privacy';
+import AiSettingsRoute from '../../../../app/settings/ai';
 
 const auth = vi.hoisted(() => ({ isAuthed: true, ready: true }));
 vi.mock('@mobile/auth/useAuthGuardSession', () => ({ useAuthGuardSession: () => auth }));
@@ -48,6 +51,8 @@ vi.mock('@mobile/screens/redesign/account/OnboardingScreen', stub('OnboardingScr
 vi.mock('@mobile/screens/redesign/account/SignInScreen', stub('SignInScreen', 'redesigned sign-in'));
 vi.mock('@mobile/screens/redesign/account/SettingsScreen', stub('SettingsScreen', 'settings'));
 vi.mock('@mobile/screens/redesign/account/PrivacyScreen', stub('PrivacyScreen', 'privacy and data'));
+// The wallet screen loads the wallet's kit; the route only decides whether it shows.
+vi.mock('@mobile/wallet/bunai/WalletAiSettingsScreen', stub('WalletAiSettingsScreen', 'bun and ai settings'));
 // The app's own export and deletion wiring loads the real transport; the route only hands it to the screen.
 vi.mock('@mobile/screens/redesign/account/privacyServices', () => ({ appPrivacyServices: () => ({ marker: 'app privacy services' }) }));
 // Likewise the app's global sign-out wiring.
@@ -108,4 +113,21 @@ test('settings and privacy: only under the account area (on by default), and onl
   auth.isAuthed = false;
   render(<SettingsLayout />);
   expect(screen.getByText('redirect to /login')).toBeTruthy();
+});
+
+test('/settings/ai: Bun and AI settings only with the wallet and bunai areas, else Settings', () => {
+  for (const value of [undefined, 'wallet', 'bunai', 'account,companion', 'all,-wallet', 'all,-bunai']) {
+    flag(value);
+    render(<AiSettingsRoute />);
+    expect(screen.queryByText('redirect to /settings'), String(value)).not.toBeNull();
+    expect(screen.queryByText('bun and ai settings'), String(value)).toBeNull();
+    cleanup();
+  }
+  for (const value of ['wallet,bunai', 'all']) {
+    flag(value);
+    render(<AiSettingsRoute />);
+    expect(screen.queryByText('bun and ai settings'), value).not.toBeNull();
+    expect(screen.queryByText('redirect to /settings'), value).toBeNull();
+    cleanup();
+  }
 });
