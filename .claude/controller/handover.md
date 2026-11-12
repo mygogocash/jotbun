@@ -49,6 +49,10 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13:45: #421 (P2-T31) MERGED as `ce165ed`; the head is `ce165ed`.**
+  - The confirming review (Opus) approved after the R112 round, and CI was 9 of 9 at `f72ad233`.
+  - Issue #177 is closed, and it is promoted as **#431** (stack #379 holds 28). The insights follow-ups (m1 before E2-C, and 14 pins) are in followups.md.
+  - `index.ts` on the head is now ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. **#423 (P2-T29)** needs CATEGORY between RECORD and INSIGHTS when its fix lands.
 - **13:40: #428 (P3-T6) MERGED as `d0f1897`; the head is `d0f1897`.** Opus and Sonnet approved, and CI was 9 of 9 on attempt 3 (R-B twice). Issue #190 is closed, and it is promoted as **#430** (stack #379 holds 27). m1 must ride P3-T8 (followups.md).
 - **13:30: P2-T29 fix brief READY (Opus, R113); its fixer is building (Haiku).**
   - 119 of 119 mutants. The gate holds the 12 Nov rules. `index.ts` is unchanged (`911e4ce0…`), so the controller resolves RECORD and RECAP at merge.
