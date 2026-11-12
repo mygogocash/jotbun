@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **18:50: #429 (P2-T21) fix round in; confirming review (Opus high) and CI running.**
+  - The fixer reported DONE: `de3e6363` on `2411001e`, 6 files, all byte-identical to the kit; RED 5 of 31, GREEN 31, 134 of 134 mutants (the log identical to the planner's). Its thread is archived.
+  - The controller merged the head as `001babaa`. One conflict, in `PlanningRoutes.render.test.tsx`: the header comment, and two tests added at the same place (P2-T21's new-wallet and edit routes, P2-T29's categories route). Both kept whole.
+  - The gate on the merged tree (`scratch/p2-t21-merge/gate.out`), all passing:
+    - `typecheck:app` and `typecheck:routes` 0, `test:unit` 1047;
+    - the round and neighbours 143, the kit eight 141, the routes 15;
+    - catalogue `bw-` 90, and the registry rule;
+    - the head's wallet screens 121;
+    - `export:web`, and `git diff --check` on the range.
+  - Pushed; the PR body is updated.
+  - Confirming review: `mcp:launch:929604ab2ee0e99fe5bb66eea6f8f8a3d039cf5f61d64b036e86312a94af97c1` (notes `scratch/dispatch/P2-T21-confirm-notes.md`), writing `reviews/P2-T21-confirm.md`.
+  - Watchers: CI `b6c7ch3y4` (`ci_watch.sh 115 429`); the review file and the planners' kits `bafgl5y3u`.
+  - **On approval and green CI:** `merge_task_pr.sh 429 001babaa P2-T21`, then `promote_pr.sh P2-T21 429`, then remove the `p2-t21` worktree and branch. Record the minors in `followups.md`; m3 and the credit card's opening balance are already owner items for E2-B.
 - **18:20: the 5-hour window reset; work resumed.** The 13:20 window ran out at 14:36, two minutes after the planners started, and every Claude thread paused until 18:20.
   - At the reset T3 sent "Continue where you left off." to every thread the limit had paused, finished ones included. The controller stopped and archived the 8 finished ones (the P2-T15 planner, fixer and confirming review; the P2-T29 and P2-T31 confirming reviews; the P2-T21 planner, reviewer and second reviewer), and archived the two finished P3-T6 reviewers.
   - Live now: the P2-T21 fixer (Haiku, writing its gate logs in `scratch/p2-t21-fix`), and the P2-T16, P3-T7 and P5-T2 planners (Opus xhigh, their kits still empty).
