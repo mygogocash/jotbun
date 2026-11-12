@@ -1,0 +1,19 @@
+
+> gogospend@0.0.0 test:api
+> npm run test -w gogospend-api src/v1/contracts.spec.ts
+
+
+> gogospend-api@0.1.0 test
+> NODE_OPTIONS="$NODE_OPTIONS --experimental-vm-modules" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB src/v1/contracts.spec.ts
+
+watchman warning: Recrawled this watch 61 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/kunanonjarat/Developer/jotbun' ; watchman watch-project '/Users/kunanonjarat/Developer/jotbun'`
+
+Test Suites: 1 passed, 1 total
+Tests:       95 passed, 95 total
+Snapshots:   0 total
+Time:        0.254 s, estimated 1 s
+Ran all test suites matching src/v1/contracts.spec.ts.

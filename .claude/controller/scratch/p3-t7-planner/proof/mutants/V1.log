@@ -1,0 +1,106 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 3 failed) 2754ms
+     × a refund touches only the day it was counted on, and never goes below zero 22ms
+     × a use counted before Bangkok midnight goes back to that day when its call fails after midnight 20ms
+     × the refund step names one of the four features and a day, or changes nothing 22ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero
+AssertionError: expected [ { day: '2026-11-10', …(2) }, …(2) ] to deeply equal [ { day: '2026-11-10', …(2) }, …(2) ]
+
+- Expected
++ Received
+
+@@ -5,13 +5,13 @@
+      "uses": 2,
+    },
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 3,
++     "uses": 4,
+    },
+    {
+      "day": "2026-11-11",
+      "feature": "slip",
+-     "uses": 1,
++     "uses": 0,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:138:31
+    136|     // Given back after midnight: the day it was counted on drops by o…
+    137|     await expect(inVault(user, (c) => refundAi({ ...c, now: afterMidni…
+    138|     expect(await usage(user)).toEqual([
+       |                               ^
+    139|       { day: '2026-11-10', feature: 'parse', uses: 2 },
+    140|       { day: '2026-11-10', feature: 'slip', uses: 3 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+AssertionError: expected [ { day: '2026-11-10', …(2) } ] to deeply equal [ { day: '2026-11-10', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 0,
++     "uses": 1,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:169:31
+    167|     const late = await startV1(undefined, { transport })
+    168|     expect((await slip(late, user)).status).toBe(503)
+    169|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+       |                               ^
+    170|   })
+    171|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+AssertionError: expected [ { day: '2026-11-10', …(2) } ] to deeply equal [ { day: '2026-11-10', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 1,
++     "uses": 2,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:216:31
+    214|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+    215|     expect(await refund({ feature: 'slip', day: '2026-11-10' })).toMat…
+    216|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+       |                               ^
+    217|   })
+    218| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+   Start at  18:53:31
+   Duration  4.59s (transform 702ms, setup 1.36s, import 26ms, tests 2.75s, environment 0ms)
+

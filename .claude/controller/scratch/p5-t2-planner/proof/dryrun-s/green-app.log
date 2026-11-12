@@ -1,0 +1,48 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/spend/v1/resources.test.ts src/api/clientVersion.test.ts
+
+(node:18111) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/api/clientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18111) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/package.json.
+✔ this build is at least the minimum client version, which is above P3's and shared with no other (0.832833ms)
+(node:18112) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:18112) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (11.259333ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.275583ms)
+✔ commands send their key, the command schema and If-Match with the exact body (4.207208ms)
+✔ a lost response is retried as the same immutable command (255.472709ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (2.692167ms)
+✔ problems map to outcomes a screen can act on (9.564416ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.142042ms)
+✔ history builds its query from the filter; a month without a budget is null (1.283667ms)
+✔ totals may name their currency (1.200375ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (3.475875ms)
+✔ only https, or loopback http, API addresses are accepted (0.282125ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.881833ms)
+✔ a sign-out during a command retry stops resending (251.996458ms)
+✔ an acknowledgement for another command or entity is refused (1.12325ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.958625ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.0285ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.822708ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (2.230291ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (2.110708ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (3.382917ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.804584ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 725.455958

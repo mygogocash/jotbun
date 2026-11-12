@@ -1,0 +1,72 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 2 failed) 2718ms
+     × a use counted before Bangkok midnight goes back to that day when its call fails after midnight 17ms
+     × the refund step names one of the four features and a day, or changes nothing 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+AssertionError: expected [ { day: '2026-11-10', …(2) } ] to deeply equal [ { day: '2026-11-10', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 0,
++     "uses": 1,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:169:31
+    167|     const late = await startV1(undefined, { transport })
+    168|     expect((await slip(late, user)).status).toBe(503)
+    169|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+       |                               ^
+    170|   })
+    171|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+AssertionError: expected { Object (ok, status, ...) } to match object { ok: false, status: 422, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_DATE",
+-   "ok": false,
+-   "status": 422,
++   "ok": true,
++   "status": 200,
+  }
+
+ ❯ test/workers/ai-uses.test.ts:213:66
+    211|     const refund = (input: unknown) => vaultSession(env, claims, TEST_…
+    212|     expect(await refund({ feature: 'chat', day: '2026-11-10' })).toMat…
+    213|     expect(await refund({ feature: 'slip', day: '10/11/2026' })).toMat…
+       |                                                                  ^
+    214|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+    215|     expect(await refund({ feature: 'slip', day: '2026-11-10' })).toMat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  18:54:03
+   Duration  4.62s (transform 721ms, setup 1.39s, import 28ms, tests 2.72s, environment 0ms)
+

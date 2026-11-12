@@ -1,0 +1,16 @@
+
+> gogospend@0.0.0 typecheck:app
+> npm run typecheck -w gogospend-app
+
+
+> gogospend-app@0.1.0 typecheck
+> tsc --noEmit
+
+src/storage/diaryRepository.ts(182,7): error TS2740: Type '{ amount_minor: (value: unknown) => boolean; occurred_on: (value: unknown) => boolean; note: (value: unknown) => value is string | null; merchant: (value: unknown) => value is string | null; wallet_id: (value: unknown) => value is string; category_id: (value: unknown) => value is string; source_wallet_id: (value: un...' is missing the following properties from type 'Record<keyof UpdateTransactionRequest, (value: unknown) => boolean>': currency, home_amount_minor, rate, rate_source, and 3 more.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app
+npm error command failed
+npm error command sh -c tsc --noEmit

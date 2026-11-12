@@ -1,0 +1,182 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_refund_failed","feature":"parse","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_refund_failed","feature":"slip","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_refund_failed","feature":"note","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_refund_failed","feature":"ask","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_refund_failed","feature":"slip","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_refund_failed","feature":"slip","failure":"ProblemException"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 6 failed) 2717ms
+     × a parse whose Haiku call is rate limited answers by the rules and gives the use back 25ms
+     × a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back 16ms
+     × a note whose Haiku call times out gives plain facts and the use back 2525ms
+     × an ask that loses its second turn to a 500 answers with its figures and gives the use back 31ms
+     × a use counted before Bangkok midnight goes back to that day when its call fails after midnight 18ms
+     × the use comes back even when the session ended while the model was asked 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+AssertionError: expected 29 to be 30 // Object.is equality
+
+- Expected
++ Received
+
+- 30
++ 29
+
+ ❯ test/workers/ai-uses.test.ts:77:43
+     75|     expect(res.status).toBe(200)
+     76|     expect(await body(res)).toMatchObject({ source: 'rules', model: 'r…
+     77|     expect((await remaining(user)).parse).toBe(AI_DAILY_LIMITS.parse)
+       |                                           ^
+     78|   })
+     79|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+AssertionError: expected 9 to be 10 // Object.is equality
+
+- Expected
++ Received
+
+- 10
++ 9
+
+ ❯ test/workers/ai-uses.test.ts:93:42
+     91|     expect(res.status).toBe(503)
+     92|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+     93|     expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip)
+       |                                          ^
+     94|   })
+     95|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ test/workers/ai-uses.test.ts:107:42
+    105|     expect(await body(res)).toMatchObject({ date: today, source: 'fact…
+    106|     expect(ms).toBeLessThan(4_000)
+    107|     expect((await remaining(user)).note).toBe(AI_DAILY_LIMITS.note)
+       |                                          ^
+    108|   })
+    109|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ai-uses.test.ts:116:41
+    114|     expect(res.status).toBe(200)
+    115|     expect(await body(res)).toMatchObject({ source: 'facts', model: 'r…
+    116|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                         ^
+    117|   })
+    118|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+AssertionError: expected [ { day: '2026-11-10', …(2) } ] to deeply equal [ { day: '2026-11-10', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 0,
++     "uses": 1,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:169:31
+    167|     const late = await startV1(undefined, { transport })
+    168|     expect((await slip(late, user)).status).toBe(503)
+    169|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+       |                               ^
+    170|   })
+    171|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+AssertionError: expected [ { day: '2026-11-12', …(2) } ] to deeply equal [ { day: '2026-11-12', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-12",
+      "feature": "slip",
+-     "uses": 0,
++     "uses": 1,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:182:31
+    180|     const asking = await startV1(undefined, { transport })
+    181|     expect((await slip(asking, user)).status).toBe(503)
+    182|     expect(await usage(user)).toEqual([{ day: today, feature: 'slip', …
+       |                               ^
+    183|   })
+    184|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 6 passed (12)
+   Start at  18:53:58
+   Duration  4.74s (transform 747ms, setup 1.45s, import 25ms, tests 2.72s, environment 0ms)
+

@@ -1,0 +1,43 @@
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -72,6 +72,7 @@
+   ClientPlatform,
+   ClientVersion,
+ } from "./v1/auth.ts";
++export { CURRENCY_MIN_CLIENT_VERSION } from "./v1/auth.ts";
+ export { POLICY_KINDS } from "./v1/policies.ts";
+ export type {
+   PolicyKind,
+@@ -117,16 +118,23 @@
+ export type { MinorUnits, CurrencyCode, RateSource } from "./v1/currency.ts";
+ export { WALLET_CURRENCY, WALLET_CORRECTION_REASONS, isWalletSnapshot } from "./v1/wallets.ts";
+ export type { WalletCorrectionReason, WalletSnapshot, WalletDto, CreateWalletRequest, UpdateWalletRequest } from "./v1/wallets.ts";
++export { WALLET_KINDS, WALLET_MATERIALS, BUN_FACES } from "./v1/wallets.ts";
++export type { WalletKind, WalletMaterial, BunFaceName, WalletLookFields } from "./v1/wallets.ts";
+ export { CATEGORY_TYPES, CATEGORY_COLORS, BUILTIN_CATEGORIES, isCategorySnapshot } from "./v1/categories.ts";
+ export type { CategoryType, BuiltinCategoryKey, CategoryDto, CreateCategoryRequest, UpdateCategoryRequest } from "./v1/categories.ts";
++export { CATEGORY_PICKER_GLYPHS, PACK_KEYS } from "./v1/categories.ts";
++export type { PickerGlyph, PackKey } from "./v1/categories.ts";
+ export { TRANSACTION_TYPES, NOTE_MAX_CHARS, MERCHANT_MAX_CHARS, RESTORE_WINDOW_DAYS, normalizeNote, normalizeMerchant, isTransactionSnapshot } from "./v1/transactions.ts";
+ export type { TransactionType, EntryType, EntryDto, TransferDto, TransactionDto, CreateTransactionRequest, UpdateTransactionRequest } from "./v1/transactions.ts";
+ export { TRANSACTION_SOURCES, parseTransactionSource } from "./v1/transactions.ts";
+ export type { TransactionSource } from "./v1/transactions.ts";
++export { RECORD_MONEY_KEYS } from "./v1/transactions.ts";
++export type { RecordMoney } from "./v1/transactions.ts";
+ export { MAX_BUDGET_CATEGORY_LIMITS, parseMonth, isBudgetSnapshot } from "./v1/budgets.ts";
+ export type { BudgetCategoryLimit, BudgetDto, SetMonthlyBudgetRequest } from "./v1/budgets.ts";
+ export { HISTORY_SORTS, HISTORY_DEFAULT_LIMIT, HISTORY_MAX_LIMIT, HISTORY_QUERY_MAX_CHARS } from "./v1/history.ts";
+ export type { HistorySort, HistoryFilter, Totals, FilteredTotals, HistoryPage, DeletedTransactionDto, DeletedHistoryPage } from "./v1/history.ts";
++export { HISTORY_MAX_WALLETS } from "./v1/history.ts";
+ export type { CategoryTotal, BudgetCategoryUsage, BudgetUsage, MonthSummary } from "./v1/summary.ts";
+ export {
+   SYNC_DEFAULT_GROUPS,
+@@ -175,6 +183,8 @@
+   deletionShortCode,
+ } from "./v1/privacy.ts";
+ export type { ExportFailureReason, ExportStatus, ExportFilter, ExportRequest, ExportRequestSnapshot, ExportDto, ExportGrant, ExportCsvColumn, DeletionReceiptStatus, DeletionRequest, DeletionAccepted, DeletionReceiptRequest, DeletionReceipt } from "./v1/privacy.ts";
++export { VAULT_EXPORT_CSV_CURRENCY_COLUMNS, VAULT_EXPORT_CSV_COLUMNS } from "./v1/privacy.ts";
++export type { VaultExportCsvColumn } from "./v1/privacy.ts";
+ export {
+   IMPORT_UPLOAD_MAX_BYTES,
+   IMPORT_FILE_NAME_MAX_CHARS,

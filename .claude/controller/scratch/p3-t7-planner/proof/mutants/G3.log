@@ -1,0 +1,37 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 1 failed) 2888ms
+     × a note whose Haiku call times out gives plain facts and the use back 2527ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ test/workers/ai-uses.test.ts:107:42
+    105|     expect(await body(res)).toMatchObject({ date: today, source: 'fact…
+    106|     expect(ms).toBeLessThan(4_000)
+    107|     expect((await remaining(user)).note).toBe(AI_DAILY_LIMITS.note)
+       |                                          ^
+    108|   })
+    109|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  18:54:33
+   Duration  4.79s (transform 718ms, setup 1.38s, import 36ms, tests 2.89s, environment 0ms)
+

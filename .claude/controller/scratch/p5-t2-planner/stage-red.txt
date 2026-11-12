@@ -1,0 +1,12 @@
+S packages/contracts/src/v1/wallets.ts
+S packages/contracts/src/v1/categories.ts
+S packages/contracts/src/v1/transactions.ts
+S packages/contracts/src/v1/history.ts
+S packages/contracts/src/v1/privacy.ts
+R packages/contracts/src/v1/policies.ts
+R packages/contracts/src/v1/auth.ts
+R packages/contracts/src/index.ts
+R apps/app/src/storage/diaryRepository.ts
+R apps/edge/test/contracts/shapes.test.ts
+R apps/app/src/api/clientVersion.test.ts
+R apps/app/src/spend/v1/resources.test.ts

@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 1 failed) 2702ms
+     × the refund step names one of the four features and a day, or changes nothing 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+AssertionError: expected { Object (ok, status, ...) } to match object { ok: false, status: 422, …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "INVALID_DATE",
+-   "ok": false,
+-   "status": 422,
++   "ok": true,
++   "status": 200,
+  }
+
+ ❯ test/workers/ai-uses.test.ts:213:66
+    211|     const refund = (input: unknown) => vaultSession(env, claims, TEST_…
+    212|     expect(await refund({ feature: 'chat', day: '2026-11-10' })).toMat…
+    213|     expect(await refund({ feature: 'slip', day: '10/11/2026' })).toMat…
+       |                                                                  ^
+    214|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+    215|     expect(await refund({ feature: 'slip', day: '2026-11-10' })).toMat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  18:54:13
+   Duration  4.36s (transform 612ms, setup 1.19s, import 25ms, tests 2.70s, environment 0ms)
+

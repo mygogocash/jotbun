@@ -1,0 +1,134 @@
+--- a/apps/edge/src/v1/ai/service.ts
++++ b/apps/edge/src/v1/ai/service.ts
+@@ -34,6 +34,7 @@
+ import { ASK_TOOLS } from './tools'
+ import { AiDeadline, newTrace, tracedSend } from './transport'
+ import type { AiTrace, ModelTransport } from './transport'
++import { shouldRefund } from './uses'
+ 
+ // The AI companion on the vault (1B-T7): the PostgreSQL edge's AiService (retired at C1)
+ // with its reads and writes moved into the caller's vault as steps. The order
+@@ -43,6 +44,8 @@
+ // a current_policy route) before anything is read and before any model call.
+ // Since P3-T6 every call is Haiku 5.5's (models.ts), each request runs under
+ // one deadline (AI_ROUTE_DEADLINE_MS), and every result names its model (H4).
++// Since P3-T7 a call that fails with a rate limit, a 5xx, a timeout or no
++// connection gives its use back (H5, uses.ts) before the route answers.
+ 
+ /** Ask Bun's turns before it answers from the figures it read (AiService's ASK_MAX_TURNS). */
+ const ASK_MAX_TURNS = 5
+@@ -52,6 +55,9 @@
+ /** The offline rules or the plain facts wrote them. */
+ const BY_RULES: { model: AiModel; escalated: boolean } = { model: 'rules', escalated: false }
+ 
++/** A use the vault counted, on the Bangkok day it answered: the body of the step that gives it back (P3-T7). */
++type CountedUse = { feature: AiFeature; day: string }
++
+ /** The client's "today", unless it is more than a day from the server's Bangkok date (AiService's trustedToday). */
+ function trustedToday(clientToday: string, serverToday: string): string {
+   const gap = Math.abs(Date.parse(`${clientToday}T00:00:00Z`) - Date.parse(`${serverToday}T00:00:00Z`))
+@@ -109,7 +115,7 @@
+       return { drafts: draft ? [draft] : [], source: 'rules', ...BY_RULES }
+     }
+     if (!this.deps.transport) return rules()
+-    await this.consume(s, 'parse')
++    const use = await this.consume(s, 'parse')
+     try {
+       const message = await tracedSend(this.deps.transport, trace, deadline, {
+         feature: 'parse',
+@@ -125,6 +131,7 @@
+       return drafts.length > 0 ? { drafts, source: 'ai', ...BY_HAIKU } : rules()
+     } catch (error) {
+       this.logFailure('parse', error)
++      await this.giveBack(s, use, trace)
+       return rules()
+     }
+   }
+@@ -134,7 +141,7 @@
+     const { trace, deadline } = this.start('slip')
+     const ctx = await this.draftContext(s, request.today)
+     if (!this.deps.transport) throw this.paused()
+-    await this.consume(s, 'slip')
++    const use = await this.consume(s, 'slip')
+     try {
+       const message = await tracedSend(this.deps.transport, trace, deadline, {
+         feature: 'slip',
+@@ -159,6 +166,7 @@
+       return { drafts: sanitizeDrafts(raw, ctx), bank, source: 'ai', ...BY_HAIKU }
+     } catch (error) {
+       this.logFailure('slip', error)
++      await this.giveBack(s, use, trace)
+       throw this.paused()
+     }
+   }
+@@ -179,8 +187,9 @@
+       if (fact.amount_minor) allowed.addSatang(fact.amount_minor)
+       for (const n of [fact.count, fact.days, fact.percent]) if (n !== undefined) allowed.addCount(n)
+     }
++    let use: CountedUse | undefined
+     try {
+-      await this.consume(s, 'note')
++      use = await this.consume(s, 'note')
+       const message = await tracedSend(this.deps.transport, trace, deadline, {
+         feature: 'note',
+         escalated: false,
+@@ -197,6 +206,8 @@
+     } catch (error) {
+       if (error instanceof ProblemException) return plain
+       this.logFailure('note', error)
++      // No use when its step failed: then no call was made either.
++      if (use) await this.giveBack(s, use, trace)
+       return plain
+     }
+   }
+@@ -207,7 +218,7 @@
+     const ctx = await step<AiContext>(s, 'ai.context')
+     if (!ctx.consent) throw new ProblemException(403, 'AI_CONSENT_REQUIRED')
+     if (!this.deps.transport) throw this.paused()
+-    await this.consume(s, 'ask')
++    const use = await this.consume(s, 'ask')
+     const today = trustedToday(request.today, bangkokDate(this.now()))
+     const categories = ctx.categories.map((category) => ({ id: category.id, name: category.label ?? category.builtin_key }))
+     const allowed = new AllowedNumbers().addDate(today)
+@@ -250,6 +261,7 @@
+       return fromFigures()
+     } catch (error) {
+       this.logFailure('ask', error)
++      await this.giveBack(s, use, trace)
+       if (figures.length > 0) return fromFigures()
+       throw this.paused()
+     }
+@@ -274,11 +286,30 @@
+     return (await step<AiStoredPreferences>(s, 'ai.preferences')).companion
+   }
+ 
+-  /** Counts one use before the model runs (the vault refuses with 429 at the day's limit). */
+-  private async consume(s: VaultSession, feature: AiFeature): Promise<void> {
+-    await step<unknown>(s, 'ai.consume', { body: { feature } })
++  /** Counts one use before the model runs (the vault refuses with 429 at the day's limit), on the Bangkok day the vault answers. */
++  private async consume(s: VaultSession, feature: AiFeature): Promise<CountedUse> {
++    const { day } = await step<{ day: string }>(s, 'ai.consume', { body: { feature } })
++    return { feature, day }
+   }
+ 
++  /**
++   * H5 (P3-T7), on a route's path where a call threw, before it answers with
++   * the rules, the plain facts or 503: the use goes back to the day it was
++   * counted on when the request's last call failed with a rate limit, a 5xx, a
++   * timeout or no connection. A call that answered spends the use, whatever it
++   * said (a decline, an unusable or ungrounded answer). The vault runs the step
++   * even after the session ended; a refund that fails is logged by name and
++   * never fails the request.
++   */
++  private async giveBack(s: VaultSession, use: CountedUse, trace: AiTrace): Promise<void> {
++    if (!shouldRefund(trace.calls, false)) return
++    try {
++      await step<unknown>(s, 'ai.refund', { body: use })
++    } catch (error) {
++      console.warn(JSON.stringify({ level: 'warn', event: 'ai_refund_failed', feature: use.feature, failure: failureName(error) }))
++    }
++  }
++
+   /** AiService's requireConsent and draftContext in one step: consent first (403), then the lists a draft may name. */
+   private async draftContext(s: VaultSession, clientToday: string): Promise<DraftContext> {
+     const ctx = await step<AiContext>(s, 'ai.context')

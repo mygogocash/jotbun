@@ -1,0 +1,56 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/spend/v1/resources.test.ts src/api/clientVersion.test.ts src/api/aiClientVersion.test.ts
+
+(node:53413) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/api/aiClientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:53413) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/package.json.
+✔ this build is at least the minimum client version (0.400708ms)
+(node:53414) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/api/clientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:53414) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/package.json.
+✔ this build is at least the minimum client version, which is above P3's and shared with no other (0.680042ms)
+(node:53415) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:53415) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (10.131709ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.213167ms)
+✔ commands send their key, the command schema and If-Match with the exact body (3.347833ms)
+✔ a lost response is retried as the same immutable command (256.205ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (5.039833ms)
+✔ problems map to outcomes a screen can act on (7.923833ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.121958ms)
+✔ history builds its query from the filter; a month without a budget is null (0.706875ms)
+✔ totals may name their currency (0.872125ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (2.075ms)
+✔ only https, or loopback http, API addresses are accepted (0.209375ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.842667ms)
+✔ a sign-out during a command retry stops resending (251.38925ms)
+✔ an acknowledgement for another command or entity is refused (2.420875ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (1.409125ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.38ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.8345ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.079583ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.132291ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (1.978291ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.600042ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 703.709

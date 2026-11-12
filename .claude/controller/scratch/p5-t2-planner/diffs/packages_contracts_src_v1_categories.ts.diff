@@ -1,0 +1,87 @@
+--- a/packages/contracts/src/v1/categories.ts
++++ b/packages/contracts/src/v1/categories.ts
+@@ -3,6 +3,8 @@
+  * Built-in categories carry a stable key (the app localizes the name) and may
+  * be renamed with a custom label; custom categories always have a label.
+  * Renaming or archiving never changes the id, so history keeps its references.
++ * From phase 5 (P5-T2) a category also carries its icon and, when it was
++ * added from the Thai pack, its pack key: both keys or neither.
+  */
+ import { SPEND_CATEGORY_HUES } from "../spend.ts";
+ 
+@@ -31,7 +33,19 @@
+ ] as const satisfies readonly { key: string; type: CategoryType; color: (typeof SPEND_CATEGORY_HUES)[number] }[];
+ export type BuiltinCategoryKey = (typeof BUILTIN_CATEGORIES)[number]["key"];
+ 
+-/** The persisted category (also the change-log snapshot). */
++/** The icons a person picks for a category, in the picker's order. */
++export const CATEGORY_PICKER_GLYPHS = ["food", "coffee", "car", "bag", "home", "receipt", "heart", "lotus", "gift", "phone", "paw", "book"] as const;
++export type PickerGlyph = (typeof CATEGORY_PICKER_GLYPHS)[number];
++
++/** The Thai pack's categories, by key: a custom category added from the pack keeps its key. */
++export const PACK_KEYS = ["family_out", "merit", "delivery", "motorbike_rail", "topup", "seven", "lottery", "pets", "family_in"] as const;
++export type PackKey = (typeof PACK_KEYS)[number];
++
++/**
++ * The persisted category (also the change-log snapshot). `icon` and
++ * `pack_key` are optional in the type, as older snapshots lack them; the
++ * vault sends both from phase 5 on.
++ */
+ export type CategoryDto = {
+   id: string;
+   type: CategoryType;
+@@ -42,6 +56,10 @@
+   color: string | null;
+   archived: boolean;
+   version: number;
++  /** The icon the person picked, or null. */
++  icon?: PickerGlyph | null;
++  /** The Thai pack category it was added from, or null; never on a built-in. */
++  pack_key?: PackKey | null;
+ };
+ 
+ /** POST /v1/categories (custom only); `id` is a client-generated UUID. */
+@@ -50,23 +68,40 @@
+   type: CategoryType;
+   label: string;
+   color?: string | null;
++  icon?: PickerGlyph | null;
++  pack_key?: PackKey | null;
+ };
+ 
+-/** PATCH /v1/categories/:id with `If-Match`. The type can never change. */
++/** PATCH /v1/categories/:id with `If-Match`. The type can never change; a pack key is set only while it is null. */
+ export type UpdateCategoryRequest = {
+   label?: string | null;
+   color?: string | null;
++  icon?: PickerGlyph | null;
++  pack_key?: PackKey;
+ };
+ 
+ const CATEGORY_KEYS = ["archived", "builtin_key", "color", "id", "label", "type", "version"].join(",");
++const ICON_CATEGORY_KEYS = ["archived", "builtin_key", "color", "icon", "id", "label", "pack_key", "type", "version"].join(",");
+ const BUILTIN_KEYS: readonly string[] = BUILTIN_CATEGORIES.map((builtin) => builtin.key);
++const PICKER_GLYPHS: readonly unknown[] = CATEGORY_PICKER_GLYPHS;
++const PACK: readonly unknown[] = PACK_KEYS;
+ 
+-/** True for exactly the persisted category shape. */
++/**
++ * True for exactly a persisted category shape: today's seven keys, or those
++ * plus `icon` and `pack_key` (P5-T2), each null or one of its list, with no
++ * pack key on a built-in.
++ */
+ export function isCategorySnapshot(value: unknown): value is CategoryDto {
+   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+   const category = value as Record<string, unknown>;
++  const keys = Object.keys(category).sort().join(",");
++  const shape =
++    keys === CATEGORY_KEYS ||
++    (keys === ICON_CATEGORY_KEYS &&
++      (category.icon === null || PICKER_GLYPHS.includes(category.icon)) &&
++      (category.pack_key === null || (PACK.includes(category.pack_key) && category.builtin_key === null)));
+   return (
+-    Object.keys(category).sort().join(",") === CATEGORY_KEYS &&
++    shape &&
+     typeof category.id === "string" &&
+     CATEGORY_TYPES.includes(category.type as CategoryType) &&
+     (category.builtin_key === null || BUILTIN_KEYS.includes(category.builtin_key as string)) &&

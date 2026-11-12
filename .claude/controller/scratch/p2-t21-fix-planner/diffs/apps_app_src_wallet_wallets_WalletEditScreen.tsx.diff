@@ -1,0 +1,118 @@
+diff --git a/apps/app/src/wallet/wallets/WalletEditScreen.tsx b/apps/app/src/wallet/wallets/WalletEditScreen.tsx
+index 0f803e9ba02d52c98d9430788bf35bafaaf82786..cc68f35d14d0f314722faa69039b0f812d7a648c 100644
+--- a/apps/app/src/wallet/wallets/WalletEditScreen.tsx
++++ b/apps/app/src/wallet/wallets/WalletEditScreen.tsx
+@@ -19,10 +19,13 @@
+ //   person did not change is sent back. An archive refused because the
+ //   balance moved says so, and the wallet is read again.
+ // - An archived or unknown wallet says it is gone (wallet.gone).
++// - Once the person has left (back, a save or an archive that landed, or the
++//   screen gone, as the system back takes it), nothing navigates again, so a
++//   save that lands after that takes no one further (R115).
+ import { TRACKING_START_MIN } from '@gogospend/contracts';
+ import type { WalletCorrectionReason, WalletDto } from '@gogospend/contracts';
+ import { useRouter } from 'expo-router';
+-import { useRef, useState } from 'react';
++import { useEffect, useRef, useState } from 'react';
+ import type { ReactNode } from 'react';
+ import { Pressable, ScrollView, View } from 'react-native';
+ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+@@ -48,7 +51,7 @@ import { useDraftCopy } from '../copy/useDraftCopy';
+ import { IconButton } from '../controls/IconButton';
+ import { useWalletLooks } from '../looks/WalletLooksProvider';
+ import { WalletAmount } from '../money/WalletAmount';
+-import { spokenMoney, walletMoneyText } from '../money/walletMoney';
++import { HIDDEN_AMOUNT, spokenMoney, walletMoneyText } from '../money/walletMoney';
+ import { usePrivateMode } from '../privacy/PrivateModeProvider';
+ import { TextLink } from '../tray/TextLink';
+ import { WalletText } from '../WalletText';
+@@ -144,6 +147,15 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
+   const [archiveRefused, setArchiveRefused] = useState(false);
+   // One command at a time, held by a ref: two presses before React draws again send one.
+   const held = useRef(false);
++  // The person leaves once: back, a save or an archive that lands, or this screen gone. A save that lands after that,
++  // or a second press before React draws again, navigates nothing more (R115, m1).
++  const left = useRef(false);
++  useEffect(() => () => { left.current = true; }, []);
++  const leave = (go: () => void) => {
++    if (left.current) return;
++    left.current = true;
++    go();
++  };
+ 
+   const typed = evaluateKeypad(keypad, { allowZero: true });
+   const current: WalletForm = { ...form, openingMinor: typed.ok ? typed.minor : '' };
+@@ -167,8 +179,8 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
+       const outcome = await commands.send(command);
+       if (outcome.kind === 'done') {
+         setSending({ phase: 'idle' });
+-        if (command.kind === 'archive') onArchived();
+-        else onBack();
++        if (command.kind === 'archive') leave(onArchived);
++        else leave(onBack);
+       } else if (outcome.kind === 'unconfirmed') {
+         setSending({ phase: 'unconfirmed', command, message: outcome.message, blocked: outcome.blocked });
+       } else if (outcome.kind === 'conflict') {
+@@ -209,7 +221,7 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
+       return;
+     }
+     if (built.unchanged) {
+-      onBack();
++      leave(onBack);
+       return;
+     }
+     setErrors({});
+@@ -240,7 +252,7 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
+       >
+         <EditHeader
+           title={t('wallets.editTitle')}
+-          onBack={onBack}
++          onBack={() => leave(onBack)}
+           action={<SaveButton label={t('common.save')} busy={sending.phase === 'saving'} busyLabel={tc('Saving…')} disabled={locked || stuck} onPress={() => save()} />}
+         />
+         {notice === null ? null : <WalletText testID="wallet-edit-notice" role="label" accessibilityRole="alert">{notice}</WalletText>}
+@@ -323,16 +335,11 @@ function SaveButton({ label, busy, busyLabel, disabled, onPress }: { label: stri
+ /** Archive at exactly ฿0 (the server's rule); otherwise why not, with both amounts. */
+ function Archiving({ wallet, refused, disabled, onArchive }: { wallet: WalletDto; refused: boolean; disabled: boolean; onArchive(): void }) {
+   const colors = useWalletColors();
+-  const tc = useCopy();
+   const t = useDraftCopy(LINES);
+   const advice = archiveAdvice(wallet);
+   return (
+     <View style={{ gap: 4, paddingTop: 4 }}>
+-      {refused ? (
+-        <WalletText testID="wallet-archive-refused" role="label" accessibilityRole="alert">
+-          {tc("{name} wasn't archived: its balance is no longer {zero}.", { name: wallet.name, zero: walletMoneyText('0') })}
+-        </WalletText>
+-      ) : null}
++      {refused ? <ArchiveRefused name={wallet.name} /> : null}
+       {advice.kind === 'can_archive' ? (
+         <Pressable
+           testID="wallet-archive"
+@@ -359,6 +366,26 @@ function Archiving({ wallet, refused, disabled, onArchive }: { wallet: WalletDto
+   );
+ }
+ 
++/**
++ * An archive refused because the balance moved, in today's words. Its ฿0 is masked in private mode and said in words,
++ * as ArchiveLater's amounts are (R115, n2).
++ */
++function ArchiveRefused({ name }: { name: string }) {
++  const tc = useCopy();
++  const t = useDraftCopy(LINES);
++  const { hidden } = usePrivateMode();
++  return (
++    <WalletText
++      testID="wallet-archive-refused"
++      role="label"
++      accessibilityRole="alert"
++      accessibilityLabel={tc("{name} wasn't archived: its balance is no longer {zero}.", { name, zero: hidden ? t('common.amountHidden') : spokenMoney('0', t) })}
++    >
++      {tc("{name} wasn't archived: its balance is no longer {zero}.", { name, zero: hidden ? HIDDEN_AMOUNT : walletMoneyText('0') })}
++    </WalletText>
++  );
++}
++
+ /** เก็บได้เมื่อยอดเหลือ ฿0 ตอนนี้มี ฿24,860 ...: the sentence, with both amounts drawn as amounts, and its own spoken words. */
+ function ArchiveLater({ balanceMinor, below }: { balanceMinor: string; below: boolean }) {
+   const colors = useWalletColors();

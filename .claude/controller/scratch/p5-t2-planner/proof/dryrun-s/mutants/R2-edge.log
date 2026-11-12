@@ -1,0 +1,51 @@
+$ npx vitest run --reporter=verbose test/contracts/shapes.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/edge)
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/edge
+
+ ✓ test/contracts/shapes.test.ts > an older wallet is THB; a newer one carries its currency and its look 1ms
+ ✓ test/contracts/shapes.test.ts > a category has its icon and pack key, or neither 0ms
+ × test/contracts/shapes.test.ts > a record carries all of its money fields or none 3ms
+   → expected [ true, false, false, false, true ] to deeply equal [ false, false, false, false, false ]
+ ✓ test/contracts/shapes.test.ts > the vault's export header is today's 18 columns, then the 15 currency columns 0ms
+ ✓ test/contracts/shapes.test.ts > the contract's lists are the boards', in order, and a filter names at most 20 wallets 0ms
+ ✓ test/contracts/shapes.test.ts > each look is one of its list or none, and a wallet with its look takes any ISO currency, THB included 0ms
+ ✓ test/contracts/shapes.test.ts > a category's icon and pack key are each one of its list or none, and a built-in may have an icon 0ms
+ ✓ test/contracts/shapes.test.ts > each money field is checked: the currency, the rate and its day, the amounts and the trip 0ms
+ ✓ test/contracts/shapes.test.ts > an older record, as the P5-T4 migration filled its row, is baht at 1 and valid 0ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  19:00:03
+   Duration  247ms (transform 109ms, setup 0ms, import 129ms, tests 6ms, environment 0ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts/shapes.test.ts > a record carries all of its money fields or none
+AssertionError: expected [ true, false, false, false, true ] to deeply equal [ false, false, false, false, false ]
+
+- Expected
++ Received
+
+  [
+-   false,
+-   false,
++   true,
+    false,
+    false,
+    false,
++   true,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:65:6
+     63|     isTransactionSnapshot({ ...yen, home_amount_minor: '-1' }),
+     64|     isTransactionSnapshot({ ...yen, to_amount_minor: '43000' }),
+     65|   ]).toEqual([false, false, false, false, false])
+       |      ^
+     66|   expect([isTransactionSnapshot(exchange), isTransactionSnapshot({ ...…
+     67|   // The older shapes of apps/api's contract spec, with and without at…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+exit 1

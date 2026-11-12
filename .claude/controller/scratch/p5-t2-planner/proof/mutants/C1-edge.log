@@ -1,0 +1,75 @@
+$ npx vitest run --reporter=verbose test/contracts/shapes.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/edge)
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/edge
+
+ ✓ test/contracts/shapes.test.ts > an older wallet is THB; a newer one carries its currency and its look 2ms
+ × test/contracts/shapes.test.ts > a category has its icon and pack key, or neither 4ms
+   → expected [ false, false ] to deeply equal [ true, true ]
+ ✓ test/contracts/shapes.test.ts > a record carries all of its money fields or none 1ms
+ ✓ test/contracts/shapes.test.ts > the vault's export header is today's 18 columns, then the 15 currency columns 0ms
+ ✓ test/contracts/shapes.test.ts > the contract's lists are the boards', in order, and a filter names at most 20 wallets 0ms
+ ✓ test/contracts/shapes.test.ts > each look is one of its list or none, and a wallet with its look takes any ISO currency, THB included 0ms
+ × test/contracts/shapes.test.ts > a category's icon and pack key are each one of its list or none, and a built-in may have an icon 1ms
+   → expected [ { …(9) }, false ] to deeply equal [ { …(9) }, true ]
+ ✓ test/contracts/shapes.test.ts > each money field is checked: the currency, the rate and its day, the amounts and the trip 0ms
+ ✓ test/contracts/shapes.test.ts > an older record, as the P5-T4 migration filled its row, is baht at 1 and valid 0ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)
+   Start at  18:46:43
+   Duration  268ms (transform 100ms, setup 0ms, import 124ms, tests 9ms, environment 0ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts/shapes.test.ts > a category has its icon and pack key, or neither
+AssertionError: expected [ false, false ] to deeply equal [ true, true ]
+
+- Expected
++ Received
+
+  [
+-   true,
+-   true,
++   false,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:48:145
+     46|
+     47| it('a category has its icon and pack key, or neither', () => {
+     48|   expect([isCategorySnapshot({ ...custom, icon: 'lotus', pack_key: 'me…
+       |                                                                                                                                                 ^
+     49|   expect([
+     50|     isCategorySnapshot({ ...builtin, icon: null, pack_key: 'merit' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/contracts/shapes.test.ts > a category's icon and pack key are each one of its list or none, and a built-in may have an icon
+AssertionError: expected [ { …(9) }, false ] to deeply equal [ { …(9) }, true ]
+
+- Expected
++ Received
+
+@@ -8,7 +8,7 @@
+      "label": null,
+      "pack_key": null,
+      "type": "expense",
+      "version": 1,
+    },
+-   true,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:123:76
+    121|     ...PACK_KEYS.map((pack_key) => ({ ...custom, icon: null, pack_key …
+    122|   ]
+    123|   for (const shape of accepted) expect([shape, isCategorySnapshot(shap…
+       |                                                                            ^
+    124|   const refused = [
+    125|     { ...custom, icon: null, pack_key: 'temple' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+exit 1

@@ -1,0 +1,268 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/edge
+
+ × test/contracts/shapes.test.ts > an older wallet is THB; a newer one carries its currency and its look 4ms
+   → expected false to be true // Object.is equality
+ × test/contracts/shapes.test.ts > a category has its icon and pack key, or neither 1ms
+   → expected [ false, false ] to deeply equal [ true, true ]
+ × test/contracts/shapes.test.ts > a record carries all of its money fields or none 0ms
+   → expected [ false, false ] to deeply equal [ true, true ]
+ × test/contracts/shapes.test.ts > the vault's export header is today's 18 columns, then the 15 currency columns 0ms
+   → expected [] to deeply equal [ 'rate', 'rate_source', …(13) ]
+ × test/contracts/shapes.test.ts > the contract's lists are the boards', in order, and a filter names at most 20 wallets 0ms
+   → expected [ [], [], [] ] to deeply equal [ [ 'cash', 'bank', …(2) ], …(2) ]
+ × test/contracts/shapes.test.ts > each look is one of its list or none, and a wallet with its look takes any ISO currency, THB included 1ms
+   → expected [ { …(10) }, false ] to deeply equal [ { …(10) }, true ]
+ × test/contracts/shapes.test.ts > a category's icon and pack key are each one of its list or none, and a built-in may have an icon 0ms
+   → expected [ { …(9) }, false ] to deeply equal [ { …(9) }, true ]
+ × test/contracts/shapes.test.ts > each money field is checked: the currency, the rate and its day, the amounts and the trip 0ms
+   → expected [ { …(17) }, false ] to deeply equal [ { …(17) }, true ]
+ × test/contracts/shapes.test.ts > an older record, as the P5-T4 migration filled its row, is baht at 1 and valid 0ms
+   → expected [ false, false ] to deeply equal [ true, true ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contracts/shapes.test.ts > an older wallet is THB; a newer one carries its currency and its look
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/contracts/shapes.test.ts:43:34
+     41|   const { material: _material, ...noMaterial } = look
+     42|   expect([isWalletSnapshot(wallet), isWalletSnapshot({ ...wallet, curr…
+     43|   expect(isWalletSnapshot(look)).toBe(true)
+       |                                  ^
+     44|   expect([isWalletSnapshot({ ...look, type: 'ewallet' }), isWalletSnap…
+     45| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > a category has its icon and pack key, or neither
+AssertionError: expected [ false, false ] to deeply equal [ true, true ]
+
+- Expected
++ Received
+
+  [
+-   true,
+-   true,
++   false,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:48:145
+     46|
+     47| it('a category has its icon and pack key, or neither', () => {
+     48|   expect([isCategorySnapshot({ ...custom, icon: 'lotus', pack_key: 'me…
+       |                                                                                                                                                 ^
+     49|   expect([
+     50|     isCategorySnapshot({ ...builtin, icon: null, pack_key: 'merit' }),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > a record carries all of its money fields or none
+AssertionError: expected [ false, false ] to deeply equal [ true, true ]
+
+- Expected
++ Received
+
+  [
+-   true,
+-   true,
++   false,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:57:99
+     55|
+     56| it('a record carries all of its money fields or none', () => {
+     57|   expect([isTransactionSnapshot(yen), isTransactionSnapshot({ ...yen, …
+       |                                                                                                   ^
+     58|   const { trip_id: _trip, ...noTrip } = yen
+     59|   expect([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > the vault's export header is today's 18 columns, then the 15 currency columns
+AssertionError: expected [] to deeply equal [ 'rate', 'rate_source', …(13) ]
+
+- Expected
++ Received
+
+- [
+-   "rate",
+-   "rate_source",
+-   "rate_date",
+-   "home_amount",
+-   "home_amount_minor",
+-   "home_currency",
+-   "wallet_amount",
+-   "wallet_amount_minor",
+-   "wallet_currency",
+-   "to_amount",
+-   "to_amount_minor",
+-   "to_currency",
+-   "trip_id",
+-   "trip_name",
+-   "source",
+- ]
++ []
+
+ ❯ test/contracts/shapes.test.ts:79:46
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > the contract's lists are the boards', in order, and a filter names at most 20 wallets
+AssertionError: expected [ [], [], [] ] to deeply equal [ [ 'cash', 'bank', …(2) ], …(2) ]
+
+- Expected
++ Received
+
+  [
+-   [
+-     "cash",
+-     "bank",
+-     "credit_card",
+-     "transit",
+-   ],
+-   [
+-     "silk",
+-     "paper",
+-     "titanium",
+-     "sky",
+-     "peach",
+-   ],
+-   [
+-     "smile",
+-     "wink",
+-     "calm",
+-     "happy",
+-     "wow",
+-   ],
++   [],
++   [],
++   [],
+  ]
+
+ ❯ test/contracts/shapes.test.ts:85:70
+     83|
+     84| it("the contract's lists are the boards', in order, and a filter names…
+     85|   expect([[...WALLET_KINDS], [...WALLET_MATERIALS], [...BUN_FACES]]).t…
+       |                                                                      ^
+     86|     ['cash', 'bank', 'credit_card', 'transit'],
+     87|     ['silk', 'paper', 'titanium', 'sky', 'peach'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > each look is one of its list or none, and a wallet with its look takes any ISO currency, THB included
+AssertionError: expected [ { …(10) }, false ] to deeply equal [ { …(10) }, true ]
+
+- Expected
++ Received
+
+@@ -9,7 +9,7 @@
+      "opening_minor": "403200",
+      "tracking_start": "2026-09-01",
+      "type": null,
+      "version": 1,
+    },
+-   true,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:105:74
+    103|     ...BUN_FACES.map((bun_face) => ({ ...look, bun_face })),
+    104|   ]
+    105|   for (const shape of accepted) expect([shape, isWalletSnapshot(shape)…
+       |                                                                          ^
+    106|   const refused = [
+    107|     { ...look, material: 'gold' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > a category's icon and pack key are each one of its list or none, and a built-in may have an icon
+AssertionError: expected [ { …(9) }, false ] to deeply equal [ { …(9) }, true ]
+
+- Expected
++ Received
+
+@@ -8,7 +8,7 @@
+      "label": null,
+      "pack_key": null,
+      "type": "expense",
+      "version": 1,
+    },
+-   true,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:123:76
+    121|     ...PACK_KEYS.map((pack_key) => ({ ...custom, icon: null, pack_key …
+    122|   ]
+    123|   for (const shape of accepted) expect([shape, isCategorySnapshot(shap…
+       |                                                                            ^
+    124|   const refused = [
+    125|     { ...custom, icon: null, pack_key: 'temple' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > each money field is checked: the currency, the rate and its day, the amounts and the trip
+AssertionError: expected [ { …(17) }, false ] to deeply equal [ { …(17) }, true ]
+
+- Expected
++ Received
+
+@@ -16,7 +16,7 @@
+      "type": "expense",
+      "version": 1,
+      "wallet_amount_minor": null,
+      "wallet_id": "00000000-0000-4000-8000-000000000001",
+    },
+-   true,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:144:79
+    142|     { ...exchange, to_amount_minor: '1' },
+    143|   ]
+    144|   for (const shape of accepted) expect([shape, isTransactionSnapshot(s…
+       |                                                                               ^
+    145|   const refused = [
+    146|     { ...yen, currency: 'XAU' },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  test/contracts/shapes.test.ts > an older record, as the P5-T4 migration filled its row, is baht at 1 and valid
+AssertionError: expected [ false, false ] to deeply equal [ true, true ]
+
+- Expected
++ Received
+
+  [
+-   true,
+-   true,
++   false,
++   false,
+  ]
+
+ ❯ test/contracts/shapes.test.ts:167:6
+    165|     isTransactionSnapshot({ ...entry, ...baht, home_amount_minor: entr…
+    166|     isTransactionSnapshot({ ...transfer, ...baht, home_amount_minor: t…
+    167|   ]).toEqual([true, true])
+       |      ^
+    168| })
+    169|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed (9)
+   Start at  18:59:25
+   Duration  316ms (transform 109ms, setup 0ms, import 144ms, tests 9ms, environment 0ms)
+

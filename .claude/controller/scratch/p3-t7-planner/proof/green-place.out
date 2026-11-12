@@ -1,0 +1,12 @@
+green: real/packages/contracts/src/v1/ai.ts
+green: real/apps/edge/src/v1/ai/transport.ts
+green: real/apps/edge/src/v1/ai/uses.ts
+green: real/apps/edge/src/v1/ai/service.ts
+green: real/apps/edge/src/vault/ai.ts
+green: real/apps/edge/src/vault/routes.ts
+green: real/apps/edge/src/v1/protocol.ts
+green: real/apps/edge/src/v1/routes.ts
+green: real/apps/edge/test/ai-transport.test.ts
+green: real/apps/edge/test/workers/ai-routing.test.ts
+green: real/apps/edge/test/workers/ai-uses.test.ts
+green: 11 files placed

@@ -1,0 +1,34 @@
+--- a/packages/contracts/src/v1/privacy.ts
++++ b/packages/contracts/src/v1/privacy.ts
+@@ -97,6 +97,31 @@
+ export type ExportCsvColumn = (typeof EXPORT_CSV_COLUMNS)[number];
+ 
+ /**
++ * The columns the vault's export adds after today's 18 (X8; P5-T14 fills
++ * them), in this order. EXPORT_CSV_COLUMNS stays as it is for apps/api.
++ */
++export const VAULT_EXPORT_CSV_CURRENCY_COLUMNS = [
++  "rate",
++  "rate_source",
++  "rate_date",
++  "home_amount",
++  "home_amount_minor",
++  "home_currency",
++  "wallet_amount",
++  "wallet_amount_minor",
++  "wallet_currency",
++  "to_amount",
++  "to_amount_minor",
++  "to_currency",
++  "trip_id",
++  "trip_name",
++  "source",
++] as const;
++/** The vault's CSV header: today's 18 columns, then the 15 currency columns. */
++export const VAULT_EXPORT_CSV_COLUMNS = [...EXPORT_CSV_COLUMNS, ...VAULT_EXPORT_CSV_CURRENCY_COLUMNS] as const;
++export type VaultExportCsvColumn = (typeof VAULT_EXPORT_CSV_COLUMNS)[number];
++
++/**
+  * The file is UTF-8 and starts with this byte order mark, so spreadsheet apps
+  * read Thai text correctly. Text decoders usually drop it: put it back before
+  * checking a download's size and digest.

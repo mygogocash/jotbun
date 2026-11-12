@@ -1,0 +1,110 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/spend/v1/resources.test.ts src/api/clientVersion.test.ts
+
+(node:16796) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/api/clientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16796) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/package.json.
+✖ this build is at least the minimum client version, which is above P3's and shared with no other (0.60475ms)
+(node:16797) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16797) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (21.825708ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.296333ms)
+✔ commands send their key, the command schema and If-Match with the exact body (5.40775ms)
+✔ a lost response is retried as the same immutable command (255.744958ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (6.576875ms)
+✔ problems map to outcomes a screen can act on (13.693584ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.214583ms)
+✔ history builds its query from the filter; a month without a budget is null (2.707666ms)
+✖ totals may name their currency (2.358292ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (8.728167ms)
+✔ only https, or loopback http, API addresses are accepted (0.268042ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.879ms)
+✔ a sign-out during a command retry stops resending (250.298333ms)
+✔ an acknowledgement for another command or entity is refused (1.637542ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (1.272208ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.283708ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (4.236209ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (3.086208ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (3.660042ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (5.534875ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (1.222959ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 20
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 805.947334
+
+✖ failing tests:
+
+test at src/api/clientVersion.test.ts:13:1
+✖ this build is at least the minimum client version, which is above P3's and shared with no other (0.60475ms)
+  AssertionError [ERR_ASSERTION]: app.json's expo.version 0.2.0 is below 0.3.0
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/api/clientVersion.test.ts:15:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/resources.test.ts:186:1
+✖ totals may name their currency (2.358292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  -   {
+  -     balance_minor: '-106814',
+  -     by_wallet: {
+  -       '0b8a4d1e-6f0a-4c51-9a8e-2f5f6d1f9c11': '-106814'
+  -     },
+  -     count: 1,
+  -     currency: 'JPY',
+  -     expense_minor: '106814',
+  -     income_minor: '0'
+  -   },
+      'invalid_response',
+  +   'invalid_response',
+      {
+        balance_minor: '-106814',
+        by_wallet: {
+          '0b8a4d1e-6f0a-4c51-9a8e-2f5f6d1f9c11': '-106814'
+        },
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts:199:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'invalid_response', 'invalid_response', { income_minor: '0', expense_minor: '106814', balance_minor: '-106814', by_wallet: [Object], count: 1 } ],
+    expected: [ { income_minor: '0', expense_minor: '106814', balance_minor: '-106814', by_wallet: [Object], count: 1, currency: 'JPY' }, 'invalid_response', { income_minor: '0', expense_minor: '106814', balance_minor: '-106814', by_wallet: [Object], count: 1 } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/spend/v1/resources.test.ts src/api/clientVersion.test.ts

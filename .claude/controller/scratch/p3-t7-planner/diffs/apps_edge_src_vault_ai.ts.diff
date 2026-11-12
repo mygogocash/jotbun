@@ -1,0 +1,38 @@
+--- a/apps/edge/src/vault/ai.ts
++++ b/apps/edge/src/vault/ai.ts
+@@ -88,11 +88,12 @@
+ 
+ /**
+  * Counts one use against today's Bangkok limit (vault clock) before the model
+- * runs, so a failing call still costs a use. Over the limit it throws, the
+- * call's transaction rolls back (the count stays at the limit), and the answer
+- * is 429 until midnight. Uses older than 35 days are forgotten first.
++ * runs, so a failing call costs a use unless H5 gives it back (refundAi). Over
++ * the limit it throws, the call's transaction rolls back (the count stays at
++ * the limit), and the answer is 429 until midnight. Uses older than 35 days
++ * are forgotten first. Answers the Bangkok day it counted (P3-T7).
+  */
+-export function consumeAi(c: VaultContext, feature: AiFeature): void {
++export function consumeAi(c: VaultContext, feature: AiFeature): { day: string } {
+   const today = bangkokDate(c.now)
+   c.sql.exec(`DELETE FROM ai_usage WHERE day < date(?, '-${USAGE_KEEP_DAYS} days')`, today)
+   const { uses } = c.sql
+@@ -104,8 +105,18 @@
+     )
+     .one()
+   if (uses > AI_DAILY_LIMITS[feature]) throw new ProblemException(429, 'AI_LIMIT_REACHED', { retryAfterSeconds: secondsToBangkokMidnight(c.now) })
++  return { day: today }
+ }
+ 
++/**
++ * Gives back one use of `feature` (P3-T7, H5) on `day`, the day consumeAi
++ * counted it on, even after Bangkok midnight: that day's uses minus one, never
++ * below 0. With no row for that day nothing changes.
++ */
++export function refundAi(c: VaultContext, feature: AiFeature, day: string): void {
++  c.sql.exec('UPDATE ai_usage SET uses = uses - 1 WHERE day = ? AND feature = ? AND uses > 0', day, feature)
++}
++
+ type CategoryNames = ReadonlyMap<string, Pick<CategoryDto, 'builtin_key' | 'label'>>
+ 
+ /** Every category's built-in key and label, by id (AiService's categoryNames). */

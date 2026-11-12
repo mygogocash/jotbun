@@ -1,0 +1,17 @@
+--- a/packages/contracts/src/v1/ai.ts
++++ b/packages/contracts/src/v1/ai.ts
+@@ -31,9 +31,11 @@
+ export const AI_DAILY_LIMITS: Readonly<Record<AiFeature, number>> = { parse: 30, slip: 10, note: 3, ask: 20 };
+ 
+ /**
+- * Each AI route's deadline on the server (H3), from the start of its work:
+- * every vault step and model call of one request ends inside it, and the
+- * route then answers with what it has (the rules, the plain facts or 503).
++ * Each AI route's deadline on the server (H3), from the start of its work. It
++ * bounds the route's model calls; its vault steps count against it but are
++ * never cut short, so a step after a timed-out call (the use given back,
++ * P3-T7) ends just past it, inside the phone's extra seconds. The route then
++ * answers with what it has (the rules, the plain facts or 503).
+  */
+ export const AI_ROUTE_DEADLINE_MS: Readonly<Record<AiFeature, number>> = { parse: 15_000, slip: 45_000, note: 10_000, ask: 55_000 };
+ 

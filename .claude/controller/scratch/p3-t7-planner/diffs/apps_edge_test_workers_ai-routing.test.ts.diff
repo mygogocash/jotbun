@@ -1,0 +1,23 @@
+--- a/apps/edge/test/workers/ai-routing.test.ts
++++ b/apps/edge/test/workers/ai-routing.test.ts
+@@ -102,6 +102,9 @@
+     // A parse Haiku refuses is answered by the rules.
+     model.push(refusal())
+     expect(await body(await client.as(who.user).post('/v1/ai/parse', { text: 'ข้าวผัด 45', today, locale: 'th' }))).toMatchObject({ source: 'rules', model: 'rules', escalated: false })
++    // So is a parse whose Haiku reply has no usable draft (the P3-T6 review's X4).
++    model.push(json({ drafts: [] }))
++    expect(await body(await client.as(who.user).post('/v1/ai/parse', { text: 'ข้าวผัด 45', today, locale: 'th' }))).toMatchObject({ source: 'rules', model: 'rules', escalated: false })
+     // A note whose words stray from the facts is the plain facts.
+     model.push(json({ text: 'วันนี้ใช้ไป ฿65 แล้วนะ' }))
+     expect(await body(await client.as(who.user).get(`/v1/ai/note?date=${today}&locale=th`))).toMatchObject({ source: 'facts', model: 'rules', escalated: false })
+@@ -173,8 +176,9 @@
+ const CASH = '1a000000-0000-4000-8000-000000000001'
+ const FOOD = '2c000000-0000-4000-8000-000000000001'
+ 
+-/** What each AI step answers on the fake session. Any other step (the use, P3-T7's refund) answers `{}`. */
++/** What each AI step answers on the fake session: the use answers its day, as the vault's does (P3-T7). Any other step (P3-T7's refund) answers `{}`. */
+ const STEP_REPLIES: Partial<Record<VaultRouteId, unknown>> = {
++  'ai.consume': { day: DAY },
+   'ai.context': {
+     consent: true,
+     wallets: [{ id: CASH, name: 'เงินสด', archived: false }],

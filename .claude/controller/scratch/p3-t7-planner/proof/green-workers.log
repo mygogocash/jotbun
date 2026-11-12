@@ -1,0 +1,168 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back 54ms
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 35ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 40ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use 47ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back 33ms
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > parse, note, slip and ask call Haiku 5.5 with no betas, fallbacks, thinking, sampling or prefill 103ms
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model 87ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 41ms
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 36ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 48ms
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 38ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 40ms
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 33ms
+ ✓ test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 60ms
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 31ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 95ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 107ms
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 41ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 45ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 71ms
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 40ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 48ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 53ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 30ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 85ms
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 59ms
+ ✓ test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 72ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 38ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 47ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 76ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 41ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 45ms
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 81ms
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 51ms
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key 77ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 53ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 35ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 108ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 47ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 66ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 102ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 85ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 26ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 77ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 32ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step 82ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call 25ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent 32ms
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back 2541ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back 45ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use 40ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero 29ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight 49ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked 37ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_refund_failed","feature":"parse","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only 62ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing 30ms
+ ✓ test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 2ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs 10083ms
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > no prompt carries the account, the session or a balance 54ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most 1ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one 1ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second 0ms
+
+ Test Files  3 passed (3)
+      Tests  62 passed (62)
+   Start at  18:45:09
+   Duration  19.38s (transform 16.17s, setup 22.94s, import 399ms, tests 15.67s, environment 0ms)
+

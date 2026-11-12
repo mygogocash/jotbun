@@ -1,0 +1,6 @@
+1fb2be5ab99e257fcc6807e73c1f739c9189fe5340e9ecd8f5d099b322788614  apps/app/src/wallet/wallets/NewWalletFlow.tsx
+accf946e9a2190fdf4687e83fdab461bdbb3a66e4290340a98090a3371df897f  apps/app/src/wallet/wallets/WalletEditScreen.tsx
+e5ede024c25e4c7dd435162a9fec95d00c6208fa2562080d323e5b1b61bfa719  apps/app/src/wallet/wallets/NewWallet.render.test.tsx
+03a5906277faab27590f6febe5651b9111cf0a4916724cefb17583f67fe3c144  apps/app/src/wallet/wallets/WalletEdit.render.test.tsx
+f7a835a5997ed6d5918d97a2f019fdc8b332c46a2e194396e129adc7ce232635  docs/implementation/receipts/P2-T21.md
+133c78aa6cade6401b7532cba9c59ab178c29bc87c62da427fc6d1a4c86fbe4d  docs/implementation/receipts/P2-T21-fix.md
