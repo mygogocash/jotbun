@@ -16,6 +16,14 @@ import { assertKnownFields } from "./validation.ts";
 /** Bump when the AI notice text changes; consent to an older notice no longer counts. */
 export const AI_NOTICE_VERSION = 1;
 
+/**
+ * The oldest app build that reads phase 3's contract changes (C5), starting
+ * with a record's `source` (P3-T2). A release carrying them raises the
+ * server's minimum client versions to at least this, and the app's own
+ * version (app.json `expo.version`) is never below it.
+ */
+export const AI_MIN_CLIENT_VERSION = "0.2.0";
+
 export const AI_FEATURES = ["parse", "slip", "note", "ask"] as const;
 export type AiFeature = (typeof AI_FEATURES)[number];
 
