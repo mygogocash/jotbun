@@ -1,0 +1,30 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+ ❯ test/ai-transport.test.ts (10 tests | 1 failed) 4224ms
+     × callFailure names each failure 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure
+AssertionError: expected 'timeout' to be 'other' // Object.is equality
+
+Expected: "other"
+Received: "timeout"
+
+ ❯ test/ai-transport.test.ts:289:96
+    287|     expect(callFailure(new DOMException('This operation was aborted', …
+    288|     expect(callFailure(new DOMException('The operation timed out.', 'T…
+    289|     expect(callFailure(new DOMException('The object could not be clone…
+       |                                                                                                ^
+    290|   })
+    291|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  18:55:41
+   Duration  4.38s (transform 15ms, setup 0ms, import 51ms, tests 4.22s, environment 0ms)
+

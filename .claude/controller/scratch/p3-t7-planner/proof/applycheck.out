@@ -1,0 +1,10 @@
+rebuilt: packages/contracts/src/v1/ai.ts
+rebuilt: apps/edge/src/v1/ai/transport.ts
+rebuilt: apps/edge/src/v1/ai/service.ts
+rebuilt: apps/edge/src/vault/ai.ts
+rebuilt: apps/edge/src/vault/routes.ts
+rebuilt: apps/edge/src/v1/protocol.ts
+rebuilt: apps/edge/src/v1/routes.ts
+rebuilt: apps/edge/test/ai-transport.test.ts
+rebuilt: apps/edge/test/workers/ai-routing.test.ts
+applycheck: ok

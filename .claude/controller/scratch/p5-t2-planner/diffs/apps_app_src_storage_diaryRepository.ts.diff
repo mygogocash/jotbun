@@ -1,0 +1,26 @@
+--- a/apps/app/src/storage/diaryRepository.ts
++++ b/apps/app/src/storage/diaryRepository.ts
+@@ -178,8 +178,13 @@
+ 
+ const isInstant = (value: unknown): value is string => typeof value === 'string' && !Number.isNaN(Date.parse(value));
+ const isTextOrNull = (value: unknown) => value === null || typeof value === 'string';
++/**
++ * The fields this build's record edits send. The contract's phase 5 money
++ * fields (P5-T2) are not among them until the phone sends them.
++ */
++type EditedField = keyof Pick<UpdateTransactionRequest, 'amount_minor' | 'occurred_on' | 'note' | 'merchant' | 'wallet_id' | 'category_id' | 'source_wallet_id' | 'destination_wallet_id'>;
+ /** What each field of an update may hold: the values the edit command sends for it. */
+-const CHANGE_RULES: Record<keyof UpdateTransactionRequest, (value: unknown) => boolean> = {
++const CHANGE_RULES: Record<EditedField, (value: unknown) => boolean> = {
+   amount_minor: (value) => typeof value === 'string' && AMOUNT.test(value),
+   occurred_on: (value) => typeof value === 'string' && DAY.test(value),
+   note: isTextOrNull,
+@@ -195,7 +200,7 @@
+ function validChanges(changes: unknown): changes is UpdateTransactionRequest {
+   if (typeof changes !== 'object' || changes === null || Array.isArray(changes)) return false;
+   const entries = Object.entries(changes);
+-  return entries.length > 0 && entries.every(([field, value]) => CHANGE_FIELDS.has(field) && CHANGE_RULES[field as keyof UpdateTransactionRequest](value));
++  return entries.length > 0 && entries.every(([field, value]) => CHANGE_FIELDS.has(field) && CHANGE_RULES[field as EditedField](value));
+ }
+ 
+ /** Why a pending choice is not valid, or null: it names one record, and both copies are that record's snapshots. */

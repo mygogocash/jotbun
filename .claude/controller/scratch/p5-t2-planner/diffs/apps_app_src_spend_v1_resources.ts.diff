@@ -1,0 +1,25 @@
+--- a/apps/app/src/spend/v1/resources.ts
++++ b/apps/app/src/spend/v1/resources.ts
+@@ -8,6 +8,7 @@
+   SYNC_ENTITY_VALIDATORS,
+   isBudgetSnapshot,
+   isCategorySnapshot,
++  isCurrencyCode,
+   isSnapshotChunk,
+   isSnapshotChunkGrant,
+   isSnapshotDto,
+@@ -110,10 +111,12 @@
+   return isWalletSnapshot(snapshot);
+ }
+ 
++/** Totals may name their currency (P5-T2), an ISO code; servers before phase 5 leave it out. */
+ function isTotals(value: unknown, withCount: boolean): boolean {
+   if (!isObject(value)) return false;
+-  const keys = ['income_minor', 'expense_minor', 'balance_minor', 'by_wallet', ...(withCount ? ['count'] : [])];
+-  return hasExactly(value, keys) && isMinor(value.income_minor) && isMinor(value.expense_minor) && isMinor(value.balance_minor) &&
++  const named = 'currency' in value;
++  const keys = ['income_minor', 'expense_minor', 'balance_minor', 'by_wallet', ...(withCount ? ['count'] : []), ...(named ? ['currency'] : [])];
++  return hasExactly(value, keys) && (!named || isCurrencyCode(value.currency)) && isMinor(value.income_minor) && isMinor(value.expense_minor) && isMinor(value.balance_minor) &&
+     isObject(value.by_wallet) && Object.entries(value.by_wallet).every(([id, total]) => isUuid(id) && isMinor(total)) &&
+     (!withCount || (Number.isSafeInteger(value.count) && (value.count as number) >= 0));
+ }

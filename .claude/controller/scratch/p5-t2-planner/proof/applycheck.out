@@ -1,0 +1,13 @@
+OK packages/contracts/src/v1/wallets.ts
+OK packages/contracts/src/v1/categories.ts
+OK packages/contracts/src/v1/transactions.ts
+OK packages/contracts/src/v1/history.ts
+OK packages/contracts/src/v1/policies.ts
+OK packages/contracts/src/v1/privacy.ts
+OK packages/contracts/src/v1/auth.ts
+OK packages/contracts/src/index.ts
+OK apps/app/src/spend/v1/resources.ts
+OK apps/app/src/spend/v1/resources.test.ts
+OK apps/app/src/storage/diaryRepository.ts
+OK apps/app/app.json
+12 applied and match real/; 0 failed

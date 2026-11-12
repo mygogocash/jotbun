@@ -49,6 +49,22 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **19:05: P3-T7 brief READY (Opus); its implementer is building (Haiku).**
+  - Size S, edge only: `uses.ts` (new), `vault/ai.ts`, `vault/routes.ts` (the `ai.refund` step), `v1/protocol.ts`, `v1/routes.ts`, `ai/service.ts`, `ai/transport.ts`, and tests. RED on assertions, GREEN, 35 of 35 mutants. It carries P3-T4's m1 and P3-T6's X4 pin and n1 comment.
+  - `check_kit.sh` at `9e77a022`: 48 of 48 sums, `orig/` 9 of 9 identical. **P1 to P14 accepted.**
+    - P2: the refund step runs after the session ends; it has no HTTP route, and `ensureAccount` still refuses an erased vault.
+    - P4: the refund runs on the catch paths only. **P3-T9 must also call `giveBack`** where `askWithEscalation` returns facts after an outage (a followup).
+    - P14: no client minimum. A timed-out call may still be billed by Anthropic though its use comes back; B27 and P6C's spend alerts are the guards (owner FYI).
+  - Worktree `p3-t7` on `p3/t7-ai-use-refund` at `9e77a022`, installed with the edge. Implementer `mcp:launch:de1242b6e2007e5c0a4c4112f9f4e90964e6491000d74467a1d04c59efb6e439` (notes `scratch/dispatch/P3-T7-implementer-notes.md`). The planner thread is archived.
+  - **Reviews when it is done:** Opus (xhigh) and a Sonnet second review, as P3-T6 had (AI uses are counted per person per day).
+- **19:15: P5-T2 brief READY (Opus); its implementer is building (Haiku).**
+  - Size M: the currency fields in the contract (`wallets.ts`, `categories.ts`, `transactions.ts`, `history.ts`, `policies.ts`, `privacy.ts`, `auth.ts`, `index.ts`), the app's `resources.ts`, `diaryRepository.ts` (types only, P3) and `app.json` to 0.3.0, plus two new tests. RED on assertions, GREEN, 57 of 57 mutants, and a dry run of every brief command on a fresh copy of the head.
+  - `check_kit.sh` at `9e77a022`: 60 of 60 sums, `orig/` 12 of 12 identical. **P1 to P14 accepted.**
+  - The controller's pre-flight: `real/` over the new worktree passed the eight kit files (138) and `typecheck:app`, then the worktree was reset clean.
+  - Worktree `p5-t2` on `p5/t2-currency-fields` at `9e77a022`, installed with the edge. Implementer `mcp:launch:4cd560a5b0e38a7c4fa76f64aa1591e626da44d13ef16e1236621fead105f16b`. The planner thread is archived. Watcher `blg6eotl6`.
+  - **Reviews when it is done:** Opus (xhigh) and a Sonnet second review (money path).
+  - **New owner item (deploy time):** before any server sends a phase 5 key, raise the server's minimum client versions to at least 0.3.0. Builds 0.1.0 and 0.2.0 refuse those keys and stop syncing. This joins the 0.2.0 rule for sources.
+  - The planner added two notes to the controller's memory (`kit-tree-traps.md`: raw U+2028 from the Write and Edit tools, and dry-run path swaps).
 - **18:50: #429 (P2-T21) fix round in; confirming review (Opus high) and CI running.**
   - The fixer reported DONE: `de3e6363` on `2411001e`, 6 files, all byte-identical to the kit; RED 5 of 31, GREEN 31, 134 of 134 mutants (the log identical to the planner's). Its thread is archived.
   - The controller merged the head as `001babaa`. One conflict, in `PlanningRoutes.render.test.tsx`: the header comment, and two tests added at the same place (P2-T21's new-wallet and edit routes, P2-T29's categories route). Both kept whole.
@@ -1717,3 +1733,4 @@ Merge each PR when its CI on the current head is green; close its issue by hand 
 6. E2, from 1C-T8's P5: the new "Confirm it's you" sheet opens for every sign-in method, so Apple and Google take one more tap before their own sheet. Keep that, or skip the sheet for Apple and Google?
 5. Whether to run the plan's whole-1A-range review (1A-T10's P11). It is an expensive Opus pass; every 1A task had its own review, but the reviews of Tasks 1 to 6 and 8a were lost with /private/tmp.
 3. Before Q5's PostHog key is set (1D-T6 review m1): with crash reports on before consent (Q4's default), the native SDK sends native crash reports unscrubbed (outside `before_send`), and a feature-flags request at every launch carrying the stored analytics id. Native requests also carry no `$geoip_disable` (Q6). Nothing is sent today, because there is no key. Decide, with counsel, whether crash reports before consent stay on, or whether the native SDK must start only after a yes.
+7. Release rules for the server's minimum client version (deploy time): raise it to at least 0.2.0 before any build sends a source (P3-T2's m2), and to at least 0.3.0 before any server sends a phase 5 key (P5-T2's P14). Builds 0.1.0 and 0.2.0 refuse those keys with exact-key validators and stop syncing.

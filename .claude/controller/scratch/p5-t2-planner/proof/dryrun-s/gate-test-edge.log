@@ -1,0 +1,22 @@
+
+> gogospend@0.0.0 test:edge
+> npm test --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/sim/wt/apps/edge
+
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":200}
+{"level":"warn","event":"cashback_catalogue_rejected","status":503}
+{"level":"warn","event":"cashback_catalogue_unavailable","error":"TypeError"}
+
+ Test Files  20 passed (20)
+      Tests  204 passed (204)
+   Start at  19:00:29
+   Duration  2.44s (transform 1.95s, setup 0ms, import 3.86s, tests 3.65s, environment 1ms)
+

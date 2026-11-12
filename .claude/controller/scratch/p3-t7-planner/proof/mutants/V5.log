@@ -1,0 +1,65 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 2 failed) 2764ms
+     × a refund touches only the day it was counted on, and never goes below zero 22ms
+     × a use counted before Bangkok midnight goes back to that day when its call fails after midnight 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero
+AssertionError: expected { day: '2026-11-12' } to deeply equal { day: '2026-11-10' }
+
+- Expected
++ Received
+
+  {
+-   "day": "2026-11-10",
++   "day": "2026-11-12",
+  }
+
+ ❯ test/workers/ai-uses.test.ts:135:21
+    133|     await vaultExec(user, "INSERT INTO ai_usage (day, feature, uses) V…
+    134|     const counted = await inVault(user, (c) => consumeAi({ ...c, now: …
+    135|     expect(counted).toEqual({ day: '2026-11-10' })
+       |                     ^
+    136|     // Given back after midnight: the day it was counted on drops by o…
+    137|     await expect(inVault(user, (c) => refundAi({ ...c, now: afterMidni…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+AssertionError: expected [ { day: '2026-11-10', …(2) } ] to deeply equal [ { day: '2026-11-10', …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "day": "2026-11-10",
+      "feature": "slip",
+-     "uses": 0,
++     "uses": 1,
+    },
+  ]
+
+ ❯ test/workers/ai-uses.test.ts:169:31
+    167|     const late = await startV1(undefined, { transport })
+    168|     expect((await slip(late, user)).status).toBe(503)
+    169|     expect(await usage(user)).toEqual([{ day: '2026-11-10', feature: '…
+       |                               ^
+    170|   })
+    171|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  18:53:53
+   Duration  4.82s (transform 778ms, setup 1.52s, import 30ms, tests 2.76s, environment 0ms)
+

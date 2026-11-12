@@ -1,0 +1,9 @@
+c707df6ccb4b705ccfb356946c88e31769dd53cacfe6ac64964af479a2d1e46b  packages/contracts/src/v1/ai.ts
+ab163dbbe9fe0a2ea13b26792055b72d9f7ae4bb2b44a8c5c7b42af7fbbeeb45  apps/edge/src/v1/ai/transport.ts
+ca22710a22d17283008df9039da2219a614caa88e81fbb941bed22fb8d40b1d4  apps/edge/src/v1/ai/service.ts
+82ec81b7b50a457240480e3c98c5ae0a92e2fc87e5175471c711802851dc9a7f  apps/edge/src/vault/ai.ts
+590b17d9a4858035c1801a5f6bc7dd36756c291cdef16f027e77c1c16b85f87c  apps/edge/src/vault/routes.ts
+36f8033354e3030da4fa83f02e4115abe6f6b5be74069773aa636744b28beea6  apps/edge/src/v1/protocol.ts
+4f88e10c39871174243d863b29ea80ddcf8ceca287321fb348397a266cc0530e  apps/edge/src/v1/routes.ts
+91323ecc3b4c61d39b6aebbeeff46497e3f7b0da1199dfdd5f1b0d3e7648bf40  apps/edge/test/ai-transport.test.ts
+48b5e0ea65190566570a40f54be0ba2cad3e26893a8aa1939e8f778a77df0c86  apps/edge/test/workers/ai-routing.test.ts

@@ -1,0 +1,16 @@
+# P3-T7's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table.
+M real packages/contracts/src/v1/ai.ts
+M base apps/edge/src/v1/ai/transport.ts
+A stub apps/edge/src/v1/ai/uses.ts
+M real apps/edge/src/v1/ai/service.ts
+M stub apps/edge/src/vault/ai.ts
+M stub apps/edge/src/vault/routes.ts
+M real apps/edge/src/v1/protocol.ts
+M real apps/edge/src/v1/routes.ts
+M real apps/edge/test/ai-transport.test.ts
+M real apps/edge/test/workers/ai-routing.test.ts
+A real apps/edge/test/workers/ai-uses.test.ts
+A later docs/implementation/receipts/P3-T7.md

@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 2 failed) 2700ms
+     × an ask that loses its second turn to a 500 answers with its figures and gives the use back 30ms
+     × only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ai-uses.test.ts:116:41
+    114|     expect(res.status).toBe(200)
+    115|     expect(await body(res)).toMatchObject({ source: 'facts', model: 'r…
+    116|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                         ^
+    117|   })
+    118|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+AssertionError: a failed call, then one that answered: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/ai-uses.test.ts:251:116
+    249|       ['a model answered before the last call failed (a draft kept, A1…
+    250|     ]
+    251|     for (const [what, calls, answeredByModel, refunds] of rows) expect…
+       |                                                                                                                    ^
+    252|   })
+    253| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  18:52:50
+   Duration  4.45s (transform 650ms, setup 1.27s, import 25ms, tests 2.70s, environment 0ms)
+

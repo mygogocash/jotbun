@@ -1,0 +1,11 @@
+red: real/packages/contracts/src/v1/ai.ts
+red: stubs/apps/edge/src/v1/ai/uses.ts
+red: real/apps/edge/src/v1/ai/service.ts
+red: stubs/apps/edge/src/vault/ai.ts
+red: stubs/apps/edge/src/vault/routes.ts
+red: real/apps/edge/src/v1/protocol.ts
+red: real/apps/edge/src/v1/routes.ts
+red: real/apps/edge/test/ai-transport.test.ts
+red: real/apps/edge/test/workers/ai-routing.test.ts
+red: real/apps/edge/test/workers/ai-uses.test.ts
+red: 10 files placed

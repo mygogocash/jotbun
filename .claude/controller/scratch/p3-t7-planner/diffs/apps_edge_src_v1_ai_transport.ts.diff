@@ -1,0 +1,26 @@
+--- a/apps/edge/src/v1/ai/transport.ts
++++ b/apps/edge/src/v1/ai/transport.ts
+@@ -63,11 +63,22 @@
+   }
+ }
+ 
++/**
++ * A reply read that the call's own signal ended. SDK 1.2.0 clears its timer
++ * once the headers arrive, so a body that stalls is ended only by the
++ * AbortSignal, and the read rejects with the fetch's DOMException, not one of
++ * the SDK's errors (the P3-T4 review's m1).
++ */
++function endedBySignal(error: unknown): boolean {
++  return error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')
++}
++
+ export function callFailure(error: unknown): CallFailure {
+   if (
+     error instanceof DeadlinePassed ||
+     error instanceof Anthropic.APIUserAbortError ||
+-    error instanceof Anthropic.APIConnectionTimeoutError
++    error instanceof Anthropic.APIConnectionTimeoutError ||
++    endedBySignal(error)
+   ) {
+     return 'timeout'
+   }

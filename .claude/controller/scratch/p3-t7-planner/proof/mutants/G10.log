@@ -1,0 +1,37 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 1 failed) 2719ms
+     × a parse Haiku declines answers by the rules and spends the use 19ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+AssertionError: expected 30 to be 29 // Object.is equality
+
+- Expected
++ Received
+
+- 29
++ 30
+
+ ❯ test/workers/ai-uses.test.ts:84:43
+     82|     model.push(refusal())
+     83|     expect(await body(await parse(client, user))).toMatchObject({ sour…
+     84|     expect((await remaining(user)).parse).toBe(AI_DAILY_LIMITS.parse -…
+       |                                           ^
+     85|   })
+     86|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  18:55:09
+   Duration  4.91s (transform 878ms, setup 1.67s, import 28ms, tests 2.72s, environment 0ms)
+

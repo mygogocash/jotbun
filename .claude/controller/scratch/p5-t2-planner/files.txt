@@ -1,0 +1,15 @@
+M packages/contracts/src/v1/wallets.ts
+M packages/contracts/src/v1/categories.ts
+M packages/contracts/src/v1/transactions.ts
+M packages/contracts/src/v1/history.ts
+M packages/contracts/src/v1/policies.ts
+M packages/contracts/src/v1/privacy.ts
+M packages/contracts/src/v1/auth.ts
+M packages/contracts/src/index.ts
+M apps/app/src/spend/v1/resources.ts
+M apps/app/src/spend/v1/resources.test.ts
+M apps/app/src/storage/diaryRepository.ts
+M apps/app/app.json
+A apps/edge/test/contracts/shapes.test.ts
+A apps/app/src/api/clientVersion.test.ts
+A docs/implementation/receipts/P5-T2.md

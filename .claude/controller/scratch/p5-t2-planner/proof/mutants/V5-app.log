@@ -1,0 +1,76 @@
+$ node scripts/test-unit.mjs src/spend/v1/resources.test.ts src/api/clientVersion.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app)
+(node:78342) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/api/clientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78342) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/package.json.
+✖ this build is at least the minimum client version, which is above P3's and shared with no other (1.336625ms)
+(node:78343) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78343) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (14.3645ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.359958ms)
+✔ commands send their key, the command schema and If-Match with the exact body (5.625167ms)
+✔ a lost response is retried as the same immutable command (254.957625ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (4.058375ms)
+✔ problems map to outcomes a screen can act on (10.998458ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.206875ms)
+✔ history builds its query from the filter; a month without a budget is null (1.47625ms)
+✔ totals may name their currency (1.366791ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (4.19775ms)
+✔ only https, or loopback http, API addresses are accepted (0.330042ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.844041ms)
+✔ a sign-out during a command retry stops resending (251.218125ms)
+✔ an acknowledgement for another command or entity is refused (1.10725ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (3.050167ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (1.3385ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (2.489916ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (3.045709ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (3.154375ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (3.580709ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (1.343917ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 761.514833
+
+✖ failing tests:
+
+test at src/api/clientVersion.test.ts:13:1
+✖ this build is at least the minimum client version, which is above P3's and shared with no other (1.336625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   [
+  +     'PAYMENTS_MIN_CLIENT_VERSION',
+  +     '0.3.0'
+  +   ]
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/app/src/api/clientVersion.test.ts:19:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ 'PAYMENTS_MIN_CLIENT_VERSION', '0.3.0' ] ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

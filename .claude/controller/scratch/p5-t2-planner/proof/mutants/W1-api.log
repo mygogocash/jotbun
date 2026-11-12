@@ -1,0 +1,47 @@
+$ npm run test:api -- src/v1/contracts.spec.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree)
+
+> gogospend@0.0.0 test:api
+> npm run test -w gogospend-api src/v1/contracts.spec.ts
+
+
+> gogospend-api@0.1.0 test
+> NODE_OPTIONS="$NODE_OPTIONS --experimental-vm-modules" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB src/v1/contracts.spec.ts
+
+watchman warning: Recrawled this watch 61 times, most recently because:
+MustScanSubDirs UserDroppedTo resolve, please review the information on
+https://facebook.github.io/watchman/docs/troubleshooting.html#recrawl
+To clear this warning, run:
+`watchman watch-del '/Users/kunanonjarat/Developer/jotbun' ; watchman watch-project '/Users/kunanonjarat/Developer/jotbun'`
+
+FAIL src/v1/contracts.spec.ts
+  ● v1 wallets and categories › recognizes exactly the persisted wallet and category shapes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      268 |     expect(isWalletSnapshot({ ...wallet, balance_minor: '0' })).toBe(false);
+      269 |     expect(isWalletSnapshot({ ...wallet, opening_minor: '-1' })).toBe(false);
+    > 270 |     expect(isWalletSnapshot({ ...wallet, currency: 'USD' })).toBe(false);
+          |                                                              ^
+      271 |     const category = { id: 'b', type: 'expense', builtin_key: null, label: 'Pets', color: CATEGORY_COLORS[0], archived: false, version: 1 };
+      272 |     expect(isCategorySnapshot(category)).toBe(true);
+      273 |     expect(isCategorySnapshot({ ...category, label: null })).toBe(false);
+
+      at Object.toBe (v1/contracts.spec.ts:270:62)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 94 passed, 95 total
+Snapshots:   0 total
+Time:        0.258 s, estimated 1 s
+Ran all test suites matching src/v1/contracts.spec.ts.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/api
+npm error workspace gogospend-api@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t2-planner/tree/apps/api
+npm error command failed
+npm error command sh -c NODE_OPTIONS="$NODE_OPTIONS --experimental-vm-modules" jest --maxWorkers=2 --workerIdleMemoryLimit=1GB src/v1/contracts.spec.ts
+
+exit 1

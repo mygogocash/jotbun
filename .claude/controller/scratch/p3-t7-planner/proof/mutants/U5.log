@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 2 failed) 2702ms
+     × a note whose Haiku call times out gives plain facts and the use back 2524ms
+     × only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+AssertionError: expected 2 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 2
+
+ ❯ test/workers/ai-uses.test.ts:107:42
+    105|     expect(await body(res)).toMatchObject({ date: today, source: 'fact…
+    106|     expect(ms).toBeLessThan(4_000)
+    107|     expect((await remaining(user)).note).toBe(AI_DAILY_LIMITS.note)
+       |                                          ^
+    108|   })
+    109|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+AssertionError: a timeout: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/ai-uses.test.ts:251:116
+    249|       ['a model answered before the last call failed (a draft kept, A1…
+    250|     ]
+    251|     for (const [what, calls, answeredByModel, refunds] of rows) expect…
+       |                                                                                                                    ^
+    252|   })
+    253| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  18:53:05
+   Duration  4.45s (transform 654ms, setup 1.27s, import 26ms, tests 2.70s, environment 0ms)
+

@@ -1,0 +1,56 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > every request goes to the gateway with logging and caching off 21ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the gateway token is sent only when set 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a call that outlives its time fails as a timeout and is recorded 2104ms
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a reply whose body stalls past its time fails as a timeout, ended by the call's own signal 2104ms
+   → expected 'other' to be 'timeout' // Object.is equality
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a rate limit fails at once as rate_limited with its wait 1ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a request with less than 2 s left makes no call 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a child deadline ends at the earlier of its cap and its parent 0ms
+ × test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure 0ms
+   → expected 'other' to be 'timeout' // Object.is equality
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > the trace keeps the reply's model, status, stop reason and tokens 0ms
+ ✓ test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > transportFromEnv is null unless AI is on and keyed 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > a reply whose body stalls past its time fails as a timeout, ended by the call's own signal
+AssertionError: expected 'other' to be 'timeout' // Object.is equality
+
+Expected: "timeout"
+Received: "other"
+
+ ❯ test/ai-transport.test.ts:179:33
+    177|     expect(outcome).toBe('rejected')
+    178|     expect(Date.now() - start).toBeLessThan(3_000)
+    179|     expect(callFailure(caught)).toBe('timeout')
+       |                                 ^
+    180|     expect(trace.calls).toHaveLength(1)
+    181|     expect(trace.calls[0]).toMatchObject({ sent: true, failure: 'timeo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/ai-transport.test.ts > P3-T4: The gateway transport, one deadline per request and the call trace > callFailure names each failure
+AssertionError: expected 'other' to be 'timeout' // Object.is equality
+
+Expected: "timeout"
+Received: "other"
+
+ ❯ test/ai-transport.test.ts:287:87
+    285|     expect(callFailure(new Error('something else'))).toBe('other')
+    286|     // P3-T7 (the P3-T4 review's m1): a read the call's own signal end…
+    287|     expect(callFailure(new DOMException('This operation was aborted', …
+       |                                                                                       ^
+    288|     expect(callFailure(new DOMException('The operation timed out.', 'T…
+    289|     expect(callFailure(new DOMException('The object could not be clone…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  18:43:59
+   Duration  4.48s (transform 25ms, setup 0ms, import 108ms, tests 4.23s, environment 0ms)
+

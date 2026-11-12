@@ -1,0 +1,67 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ❯ test/workers/ai-uses.test.ts (12 tests | 2 failed) 2691ms
+     × a parse whose Haiku call is rate limited answers by the rules and gives the use back 24ms
+     × a refund the vault fails never changes the answer, and is logged by name only 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+AssertionError: expected 29 to be 30 // Object.is equality
+
+- Expected
++ Received
+
+- 30
++ 29
+
+ ❯ test/workers/ai-uses.test.ts:77:43
+     75|     expect(res.status).toBe(200)
+     76|     expect(await body(res)).toMatchObject({ source: 'rules', model: 'r…
+     77|     expect((await remaining(user)).parse).toBe(AI_DAILY_LIMITS.parse)
+       |                                           ^
+     78|   })
+     79|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "ProblemException",
+-     "feature": "parse",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ai-uses.test.ts:199:54
+    197|       expect(await body(res)).toMatchObject({ source: 'rules', model: …
+    198|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    199|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    200|     } finally {
+    201|       VAULT_HANDLERS['ai.refund'] = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  18:54:23
+   Duration  4.37s (transform 617ms, setup 1.20s, import 28ms, tests 2.69s, environment 0ms)
+
