@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **19:10: #429 (P2-T21) MERGED as `c053999`; the head is `c053999`.**
+  - The confirming review (Opus) approved with three minors and two nits (`reviews/P2-T21-confirm.md`), and CI was 9 of 9 at `001babaa`.
+  - Issue #167 is closed, the worktree and branch are removed, and it is promoted as **#434** (stack #379 holds 31).
+  - Followups: P2-T18 must carry m2 (the flow's once-only `leave()`) first, and with it m1 (the drop's `nativeID`), n1 and n2. P2-T22 gets the kind. m3 (a lost look on leaving) is an E2-B owner item.
+  - The review threads are archived.
 - **19:05: P3-T7 brief READY (Opus); its implementer is building (Haiku).**
   - Size S, edge only: `uses.ts` (new), `vault/ai.ts`, `vault/routes.ts` (the `ai.refund` step), `v1/protocol.ts`, `v1/routes.ts`, `ai/service.ts`, `ai/transport.ts`, and tests. RED on assertions, GREEN, 35 of 35 mutants. It carries P3-T4's m1 and P3-T6's X4 pin and n1 comment.
   - `check_kit.sh` at `9e77a022`: 48 of 48 sums, `orig/` 9 of 9 identical. **P1 to P14 accepted.**
