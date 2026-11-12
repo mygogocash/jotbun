@@ -642,3 +642,4 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **n1:** a transfer twin of the outbox's unknown-source case (`diaryRepository.test.ts:126`; kills R9).
   - **n3:** `events.ts:6`'s inline `import('@gogospend/contracts').TransactionSource` can become an `import type`, now that #418 has merged.
   - **Housekeeping:** the receipt's gate counts are the planner's, not the implementer's (1012 and 248 ms). `resources.ts` has no `| null`. `transaction-source.test.ts` has 9 cases. Fix them in the next receipt touch.
+- **P2-T37 (the private-mode sweep), from #427's reviews (12 Nov):** a "no digit in private mode" sweep cannot catch amounts written in words. Bun's parser reads Thai number words (`ห้าสิบ`, `สองพันห้าร้อย`) and scale words (`พัน`, `k`). The sweep must check that free text quoting the person, such as Bun's sentence, is not drawn at all in private mode (R114), not merely that it holds no digits.

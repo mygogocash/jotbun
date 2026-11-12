@@ -49,6 +49,35 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13:25: Claude Code's 5-hour limit stopped everything from about 09:41 to 13:20, the controller included.** At 13:20 T3 resumed every paused thread.
+  - **Stopped 7 resumed threads that had already finished:**
+    - the P3-T6, P2-T15 and P2-T21 implementers;
+    - the P2-T31 fix planner and the P2-T21 planner;
+    - both P2-T15 reviewers.
+  - Archived the old P2-T20 implementer, which was snoozed to resume on 14 Nov after its PR had merged.
+  - **Continuing legitimately:**
+    - Opus: P3-T6 reviewer, P2-T21 reviewer, P2-T31 confirmer, P2-T29 fix planner, and P2-T15 fix planner (`f193feb1`, run 3);
+    - Sonnet: the P3-T6 and P2-T21 second reviewers.
+  - That load (5 Opus plus 2 Sonnet plus the controller) is the one that ran the window out; launch no more Opus until some finish.
+  - Heavy lock free. Runners online. The `node --test` process seen is another project's.
+  - **CI:** #421 9 of 9 at `f72ad233` (waiting for the confirming review); #427 9 of 9 (fix round); #429 9 of 9 (reviews running).
+    - #428 hit R-B twice (attempts 1 and 2), and attempt 3 is running on idle runners.
+    - **R-B is the owner's item 0:** an `apps/api` migration `0020_receipt_copy_once.sql` that needs the API's migration step, so it is a deploy decision.
+  - Background watchers now run with `timeout 7200000`; the default 30 minutes killed the last ones.
+- **10:15: #429 (P2-T21) opened.** Head `2411001e`, built by Haiku. The controller checked all 18 `real/` files byte-identical; 109 of 109 mutants; the gate passed (routes, `export:web` and the kit files).
+  - Opus reviewer: thread "P2-T21 reviewer (#429)". It writes `reviews/P2-T21.md`.
+  - Sonnet second reviewer: thread "P2-T21 second reviewer (#429)". It writes `reviews/P2-T21-second.md`.
+- **10:10: #421 (P2-T31) fix round DONE and merged up.**
+  - Fix `91d7e926` (Haiku, R112): all 16 `real/` files byte-identical, 127 of 127 mutants.
+  - The controller merged the head as `f72ad233`. `index.ts` goes ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. On the merged tree: tsc 0, 217 of 217 focused, and `test:unit` 1042 of 1042.
+  - Pushed, and the PR body is updated. CI is running.
+  - Opus confirming review (Opus high, chosen over make_prompt's Sonnet because this round was big and money and privacy are at stake): see the thread titled "P2-T31 confirming review"; it writes `reviews/P2-T31-confirm.md`.
+- **#428 (P3-T6):** the SQL job hit the R-B flake again (P3-T6 touches no `apps/api`), so it was rerun once. **R-B now costs a rerun on most PRs**; the owner decision on the prepared `apps/api` migration fix is still open.
+- **10:00: #427 (P2-T15): both reviews say NEEDS FIXES** (CI green 9 of 9).
+  - **M1, in both:** private mode masks digits only, so Thai number words in Bun's sentence show the amount.
+  - Also: m1 (Next ignores an archived side), pins for survivors and accessibility, and nits including n4 (eager sections).
+  - **R114:** in private mode do not draw Bun's sentence at all (a line that does not quote it). Next waits on archived or unknown sides. Pin every survivor and gap. Load the sections lazily.
+  - The fix round went back to the original Opus planner `f193feb1…` (run 2), writing `briefs/P2-T15-fix.md` with the kit at `scratch/p2-t15-fix-planner/`, on `fd41909c`.
 - **09:50: #428 (P3-T6) opened.** Head `8b528df1`, built by Haiku. The controller checked 20 of 21 `real/` files byte-identical (the receipt only adds "as accepted by the controller"); 30 of 30 mutants.
   - Opus reviewer `mcp:launch:7af3cde0bab339da1916635e5abc6cb2713cd4fab4cfb1ad2caa7d968955eb0a` writes `reviews/P3-T6.md`.
   - Sonnet second reviewer `mcp:launch:7f8ac96f0cd5645510cb20962d374acd6306b633e8d67d1da87e4154feb9e037` writes `reviews/P3-T6-second.md`.
