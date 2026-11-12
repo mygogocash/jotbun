@@ -1,0 +1,77 @@
+diff --git a/apps/app/src/screens/redesign/record/recordActions.ts b/apps/app/src/screens/redesign/record/recordActions.ts
+index db6b19b1bf0a2d16f95168f49a4dca700e7c7572..07567f1088d0f183dc67137e4d045ef2c4348bdc 100644
+--- a/apps/app/src/screens/redesign/record/recordActions.ts
++++ b/apps/app/src/screens/redesign/record/recordActions.ts
+@@ -21,11 +21,17 @@
+ // the record first: a choice the server already holds clears itself.
+ // `editing.conflict` stays the signal that a conflict is up, so
+ // cancelEditing's notice rule holds for the choice too.
++//
++// Analytics (1D-T7, R61): each rule sends its one event once Jotbun has
++// acknowledged it: an edit (and "Use yours") record_edited, a delete
++// record_deleted, the undo bar's restore undo_used, and Restore
++// record_restored. A record's kind and category key only (recordProps).
+ import { isTransactionSnapshot } from '@gogospend/contracts';
+ import type { CategoryDto, TransactionDto, WalletDto } from '@gogospend/contracts';
+ import { useCallback, useEffect, useRef, useState } from 'react';
+ 
+-import { trackConflictShown } from '@mobile/analytics/events';
++import { trackConflictShown, trackRecordDeleted, trackRecordEdited, trackRecordRestored, trackUndoUsed } from '@mobile/analytics/events';
++import { recordEventOf } from '@mobile/analytics/recordProps';
+ import { V1Error } from '@mobile/api/client';
+ import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { useCopy } from '@mobile/i18n/useCopy';
+@@ -196,6 +202,9 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
+   /** C16: "Use the server's" was chosen here. A copy the diary failed to drop waits for the next open (P7), not this screen's reload. */
+   const declined = useRef(false);
+ 
++  /** The categories an event's key is read from: the last read's, else this phone's. */
++  const knownCategories = (): readonly CategoryDto[] => (loaded.state === 'ready' ? loaded.categories : diaryView.categories);
++
+   /** The record's stored choice, read from the diary now (never a render behind). */
+   const storedChoice = useCallback((): PendingChoice | null => {
+     const view = diary?.getView();
+@@ -315,6 +324,7 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
+     try {
+       await resources.updateTransaction(result.id, result.version, result.changes, key);
+       keys.settle(slot);
++      trackRecordEdited(recordEventOf(draft.original, knownCategories(), result.changes));
+       setEditing(null);
+       setNotice(null);
+     } catch (problem) {
+@@ -362,6 +372,8 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
+     try {
+       await resources.updateTransaction(sent.id, sent.version, sent.changes, key);
+       keys.settle(slot);
++      // The person's edit has landed: the one record_edited for it (the refusal before it sent none).
++      trackRecordEdited(recordEventOf(server, knownCategories(), sent.changes));
+       // Close the edit before the diary's drop: no conflict may stay on screen without the panel.
+       setEditing(null);
+       setNotice(null);
+@@ -424,6 +436,7 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
+     try {
+       const ack = await resources.deleteTransaction(record.id, record.version, key);
+       keys.settle(slot);
++      trackRecordDeleted(recordEventOf(record, knownCategories()));
+       setPending(null);
+       setDeleted({ id: record.id, version: ack.version });
+       setNotice(null);
+@@ -448,12 +461,18 @@ export function useRecordActions(input: { id: string; mode: 'view' | 'edit'; now
+   async function restore(target: { id: string; version: number }) {
+     if (acting.current) return;
+     acting.current = true;
++    // An undo is the restore of what this screen just deleted (the undo bar); any other is Restore.
++    const undo = deleted?.id === target.id;
+     const slot = `restore:${target.id}`;
+     const key = keys.keyFor(slot, target);
+     setBusy(true);
+     try {
+       await resources.restoreTransaction(target.id, target.version, key);
+       keys.settle(slot);
++      if (loaded.state === 'ready') {
++        if (undo) trackUndoUsed({ kind: loaded.record.type });
++        else trackRecordRestored({ kind: loaded.record.type });
++      }
+       setDeleted(null);
+       setGone(false);
+       setPending(null);

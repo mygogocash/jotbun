@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+ ❯ src/analytics/appAnalytics.render.test.tsx (1 test | 1 failed) 4ms
+   × an event tracked before the app's controller installs is held by it, and sent only after a yes 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/analytics/appAnalytics.render.test.tsx > an event tracked before the app's controller installs is held by it, and sent only after a yes
+AssertionError: expected [ { …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "name": "onboarding_step_viewed",
++     "properties": {
++       "step": "coffee",
++     },
++   },
++ ]
+
+ ❯ src/analytics/appAnalytics.render.test.tsx:59:29
+     57|   const analytics = await installAppAnalytics();
+     58|   expect(getAnalytics()).toBe(analytics);
+     59|   expect(takeEarlyEvents()).toEqual([]);
+       |                             ^
+     60|   // No account yet: held, not sent.
+     61|   expect(posthog.captured).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  20:51:08
+   Duration  695ms (transform 109ms, setup 93ms, import 273ms, tests 4ms, environment 172ms)
+

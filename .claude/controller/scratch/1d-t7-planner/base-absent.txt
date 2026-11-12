@@ -1,0 +1,9 @@
+apps/app/src/analytics/recordProps.ts
+apps/app/src/sync/syncTelemetry.ts
+apps/app/src/analytics/bus.test.ts
+apps/app/src/analytics/recordProps.test.ts
+apps/app/src/analytics/appAnalytics.render.test.tsx
+apps/app/src/sync/syncTelemetry.test.ts
+apps/app/src/sync/deviceSync.render.test.tsx
+apps/app/src/consent/systemPermissionTelemetry.test.ts
+docs/implementation/receipts/1D-T7.md

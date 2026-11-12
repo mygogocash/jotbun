@@ -1,0 +1,41 @@
+# 1D-T7's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table.
+M stub apps/app/src/analytics/bus.ts
+M base apps/app/src/analytics/appAnalytics.ts
+M base apps/app/src/analytics/controller.ts
+A stub apps/app/src/analytics/recordProps.ts
+A stub apps/app/src/sync/syncTelemetry.ts
+M real apps/app/src/sync/types.ts
+M base apps/app/src/sync/syncEngine.ts
+M base apps/app/src/sync/deviceSync.ts
+M stub apps/app/src/consent/systemPermissionTelemetry.ts
+M base apps/app/src/spend/spendTelemetry.ts
+M base apps/app/src/screens/redesign/entry/entrySave.ts
+M base apps/app/src/screens/redesign/QuickAddScreen.tsx
+M base apps/app/src/screens/redesign/record/recordActions.ts
+M base apps/app/src/screens/redesign/deleted/deletedData.ts
+M base apps/app/src/screens/redesign/HistoryScreen.tsx
+M base apps/app/src/screens/redesign/HomeScreen.tsx
+M base apps/app/src/screens/redesign/planning/BudgetScreen.tsx
+M base apps/app/src/screens/redesign/account/OnboardingScreen.tsx
+A real apps/app/src/analytics/bus.test.ts
+A real apps/app/src/analytics/recordProps.test.ts
+A real apps/app/src/analytics/appAnalytics.render.test.tsx
+M real apps/app/src/analytics/controller.test.ts
+A real apps/app/src/sync/syncTelemetry.test.ts
+M real apps/app/src/sync/syncEngine.test.ts
+A real apps/app/src/sync/deviceSync.render.test.tsx
+A real apps/app/src/consent/systemPermissionTelemetry.test.ts
+M real apps/app/src/screens/redesign/QuickAddScreen.render.test.tsx
+M real apps/app/src/screens/redesign/RecordScreen.render.test.tsx
+M real apps/app/src/screens/redesign/record/recordActions.render.test.tsx
+M real apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+M real apps/app/src/screens/redesign/RecentlyDeletedScreen.render.test.tsx
+M real apps/app/src/screens/redesign/HomeScreen.render.test.tsx
+M real apps/app/src/screens/redesign/planning/WalletsScreen.render.test.tsx
+M real apps/app/src/screens/redesign/planning/BudgetScreen.render.test.tsx
+M real apps/app/src/screens/redesign/account/OnboardingScreen.render.test.tsx
+M real apps/app/src/screens/redesign/SpendRoutes.render.test.tsx
+A later docs/implementation/receipts/1D-T7.md

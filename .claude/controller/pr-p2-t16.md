@@ -27,7 +27,7 @@
   - 12 focused render files, the eight kit files among them: 266;
   - the routes tests: 18;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the iOS export.
+- [x] CI at `81f66c0e`: 9 of 9, including the full render suite and the iOS export.
 - [ ] Independent review (Opus), and a second review: the save, the money and private mode.
 - [ ] SKIPPED: device checks (Tell Bun's sheet over the tray on iOS and its keyboard; a swipe during a save and Android's back on a phone; a quick reopen while UIKit's dismissal ends; whether UIKit sends a dismissal for a refused present; VoiceOver on the save's problem).
 

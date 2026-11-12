@@ -1,0 +1,22 @@
+diff --git a/apps/app/src/analytics/appAnalytics.ts b/apps/app/src/analytics/appAnalytics.ts
+index 004c31c4319a183c6be9e63bec1688fa499caae9..340cc0947d3fee81e95413b9cc5c3cf264205073 100644
+--- a/apps/app/src/analytics/appAnalytics.ts
++++ b/apps/app/src/analytics/appAnalytics.ts
+@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
+ 
+ import { getSharedAnalyticsServer, v1ClientVersion } from '@mobile/api/sharedV1';
+ import { getMobileEnv } from '@mobile/config/env';
+-import { getAnalytics, setAnalytics } from './bus';
++import { getAnalytics, setAnalytics, takeEarlyEvents } from './bus';
+ import { eraseStoredConsent, readStoredConsent, writeStoredConsent } from './consentStorage';
+ import { createAnalytics } from './controller';
+ import type { Analytics, PostHogLike } from './controller';
+@@ -56,5 +56,8 @@ async function install(): Promise<Analytics> {
+   const existing = getAnalytics();
+   if (existing) return existing;
+   setAnalytics(created);
++  // What was tracked before this install (onboarding's first step, at launch) is
++  // this controller's now: held until the answer like any other (1D-T6's review, m3).
++  for (const event of takeEarlyEvents()) created.track(event.name, event.properties);
+   return created;
+ }

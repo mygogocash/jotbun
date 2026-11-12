@@ -1,0 +1,12 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+
+ Test Files  2 passed (2)
+      Tests  224 passed | 438 skipped (662)
+   Start at  20:53:05
+   Duration  151.10s (transform 14.89s, setup 84ms, import 17.86s, tests 190.24s, environment 177ms)
+

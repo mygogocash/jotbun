@@ -32,7 +32,7 @@
   - the unchanged `CompanionSettings` and `TellBunSheet` suites 14;
   - `export:web` (the route is new);
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the iOS export.
+- [x] CI at `1247404f`: 9 of 9, including the full render suite and the iOS export. The SQL job's first attempt hit the known `retry_after` flake (181 against 180, frozen `apps/api`); the rerun passed.
 - [ ] Independent review (Opus), and a second review: consent, what is sent and when, and private mode.
 - [ ] SKIPPED: device checks (VoiceOver on the consent tray and the settings screen, AX5 by hand, the tray closing before Privacy and data opens).
 
