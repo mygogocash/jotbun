@@ -3,7 +3,7 @@
 import { trackClientEvent } from './bus.ts';
 
 export type RecordKind = 'expense' | 'income' | 'transfer';
-export type RecordSource = 'typed' | 'tell_bun';
+export type RecordSource = import('@gogospend/contracts').TransactionSource;
 export type SignInMethodName = 'apple' | 'google' | 'email' | 'passkey';
 
 function emit(name: string, properties?: Record<string, unknown>): void {
