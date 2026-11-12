@@ -203,9 +203,14 @@ function replyEvents(vault: VaultRouteId, reply: VaultReply): ServerEvent[] {
   return []
 }
 
-/** `X-GoGoSpend-Analytics: off`, which the phone sends unless its answer is yes (L4), stops server events for this request. */
+/**
+ * `X-GoGoSpend-Analytics: off`, which the phone sends unless its answer is yes (L4), stops server events for this
+ * request. It fails closed: any comma-separated value, trimmed and in any case, that is `off` counts, since a
+ * header sent twice reaches the Worker as one list (`off, off`).
+ */
 function analyticsOff(request: Request): boolean {
-  return request.headers.get('x-gogospend-analytics')?.toLowerCase() === 'off'
+  const header = request.headers.get('x-gogospend-analytics')
+  return header !== null && header.split(',').some((value) => value.trim().toLowerCase() === 'off')
 }
 
 /**

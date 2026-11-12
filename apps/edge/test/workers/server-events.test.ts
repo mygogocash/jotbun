@@ -10,6 +10,11 @@
 // would send, and no analytics secret is set in vitest.workers.config.ts.
 // Every case that checks nothing is sent also checks that something is sent
 // once the condition is lifted, so no case passes before the code exists.
+// The fix round (R121) adds the reviews' pins: the off header as a list and on
+// what a reply says, a 410 that is not RESYNC_REQUIRED, the Worker's two
+// never-throws guards, a client built only when there is something to send
+// (P8), and a failed consent read failing closed. They pin code that was
+// already right, but for the off header's list.
 import { randomUUID } from 'node:crypto'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -274,6 +279,54 @@ describe('server events', () => {
     expect(r.sent.map((message) => message.event)).toEqual(['record_saved'])
   })
 
+  it('an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3)', async () => {
+    const r = recording()
+    const client = await frontDoor(r)
+    const { user, wallet } = await ledger(client)
+    await answer(client, user, true)
+    // Two header lines reach the Worker as one list.
+    const twice = new Headers({ ...(await signedHeaders(user)), 'idempotency-key': randomUUID(), 'x-gogospend-command-schema': '1', 'content-type': 'application/json' })
+    twice.append('x-gogospend-analytics', 'off')
+    twice.append('x-gogospend-analytics', 'off')
+    expect(twice.get('x-gogospend-analytics')).toBe('off, off')
+    expect((await client.raw(new Request(`${BASE}/v1/transactions`, { method: 'POST', headers: twice, body: JSON.stringify(lunch(user, wallet)) }))).status).toBe(201)
+    await saved(client, user, wallet, { 'x-gogospend-analytics': 'on, Off' })
+    await r.settled()
+    expect(r.sent).toEqual([])
+    // A list with no value that is off is not off.
+    await saved(client, user, wallet, { 'x-gogospend-analytics': 'on, offline' })
+    await r.settled()
+    expect(r.sent.map((message) => message.event)).toEqual(['record_saved'])
+  })
+
+  it('the off header also stops what a reply says: a stale cursor and a failing sync read send nothing under the person', async () => {
+    const r = recording()
+    const client = await frontDoor(r)
+    const { user } = await ledger(client)
+    await answer(client, user, true)
+    await sqlExec(user, 'UPDATE sync_state SET pruned_through = revision WHERE id = 1')
+    const stale = `${BASE}/v1/sync/changes?cursor=${encodeURIComponent(encodeSyncCursor(user.sub, '0'))}`
+    const read = async (extra: Record<string, string>): Promise<Response> => client.raw(new Request(stale, { headers: { ...(await signedHeaders(user)), ...extra } }))
+    expect((await read({ 'x-gogospend-analytics': 'off' })).status).toBe(410)
+    const changes = vi.spyOn(VAULT_HANDLERS, 'sync.changes').mockImplementation(() => {
+      throw new SyntaxError('the read failed')
+    })
+    try {
+      await quietly(async () => {
+        expect((await read({ 'x-gogospend-analytics': 'off' })).status).toBe(500)
+      })
+    } finally {
+      changes.mockRestore()
+    }
+    await r.settled()
+    // The failure is counted, anonymously; nothing goes under the person.
+    expect(r.sent.map((message) => message.event)).toEqual(['$exception'])
+    // The same stale read, not marked off: resync_required.
+    expect((await read({})).status).toBe(410)
+    await r.settled()
+    expect(r.sent.map((message) => message.event)).toEqual(['$exception', 'resync_required'])
+  })
+
   it('an edit, a delete or an import is not a record_saved', async () => {
     const r = recording()
     const client = await frontDoor(r)
@@ -304,6 +357,25 @@ describe('server events', () => {
     expect(stale).toMatchObject({ status: 410, body: { code: 'RESYNC_REQUIRED' } })
     await r.settled()
     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), event: 'resync_required', properties: { reason_code: 'RESYNC_REQUIRED', origin: 'server' } }])
+  })
+
+  it('a 410 that is not RESYNC_REQUIRED (a create of a purged id) sends no resync_required', async () => {
+    const r = recording()
+    const client = await frontDoor(r)
+    const { user, wallet } = await ledger(client)
+    await answer(client, user, true)
+    // A record whose head is purged: the head enters active, then moves forward to purged (the heads' triggers).
+    const purged = randomUUID()
+    await sqlExec(user, "INSERT INTO entity_heads (entity, entity_id, version, state, revision) VALUES ('transaction', ?, 1, 'active', (SELECT revision FROM sync_state WHERE id = 1))", purged)
+    await sqlExec(user, "UPDATE entity_heads SET version = 2, state = 'purged', revision = (SELECT revision FROM sync_state WHERE id = 1) WHERE entity = 'transaction' AND entity_id = ?", purged)
+    expect(await json(await record(client, user, lunch(user, wallet, { id: purged })))).toMatchObject({ status: 410, body: { code: 'ENTITY_PURGED' } })
+    await r.settled()
+    expect(r.sent).toEqual([])
+    // A stale cursor's 410 on the same front door is a resync_required.
+    await sqlExec(user, 'UPDATE sync_state SET pruned_through = revision WHERE id = 1')
+    expect((await client.as(user).get(`/v1/sync/changes?cursor=${encodeURIComponent(encodeSyncCursor(user.sub, '0'))}`)).status).toBe(410)
+    await r.settled()
+    expect(r.sent.map((message) => message.event)).toEqual(['resync_required'])
   })
 
   it("a vault failure on the outbox's routes sends sync_failed, beside its anonymous count", async () => {
@@ -473,6 +545,75 @@ describe('server events', () => {
   })
 })
 
+describe('the Worker half: what analytics may never change, and when it costs anything', () => {
+  it('a port that throws while sending never changes a committed create, and is logged by its class name only', async () => {
+    const throwing: NonNullable<V1Deps['analytics']> = (env) =>
+      createServerAnalytics(env, () => undefined, () => ({
+        captureImmediate: () => {
+          throw new TypeError('ร้านป้าแดง ฿1,234')
+        },
+      }))
+    const client = await startV1(CONFIG, { env: ON, analytics: throwing })
+    const { user, wallet } = await ledger(client)
+    await answer(client, user, true)
+    let status = 0
+    const lines = await quietly(async () => {
+      status = (await record(client, user, lunch(user, wallet))).status
+    })
+    expect(status).toBe(201)
+    expect(lines.filter((line) => line.includes('"event":"server_events_failed"'))).toEqual(['{"level":"error","event":"server_events_failed","failure":"TypeError"}'])
+    expect(lines.join('\n')).not.toContain('ร้านป้าแดง')
+    expect(lines.join('\n')).not.toContain('1,234')
+  })
+
+  it("an analytics client that cannot be built never changes the Worker's own 500 problem", async () => {
+    const broken: NonNullable<V1Deps['analytics']> = () => {
+      throw new RangeError('ร้านป้าแดง ฿1,234')
+    }
+    const client = await startV1(CONFIG, { env: ON, analytics: broken })
+    const catalogue = vi.spyOn(WORKER_HANDLERS, 'bridge.catalogue').mockImplementation(async () => {
+      throw new TypeError('the catalogue failed')
+    })
+    let outcome: { status: number | 'rejected'; code?: unknown } = { status: 'rejected' }
+    let lines: string[] = []
+    try {
+      lines = await quietly(async () => {
+        // A request that rejects instead of answering is an assertion failure here, not an error.
+        outcome = await client.raw(new Request(`${BASE}/v1/bridge/gogocash/catalogue`)).then(
+          async (res) => ({ status: res.status, code: (await json(res)).body.code }),
+          () => ({ status: 'rejected' as const }),
+        )
+      })
+    } finally {
+      catalogue.mockRestore()
+    }
+    expect(outcome).toEqual({ status: 500, code: 'INTERNAL_ERROR' })
+    expect(lines.filter((line) => line.includes('"event":"server_events_failed"'))).toEqual(['{"level":"error","event":"server_events_failed","failure":"RangeError"}'])
+    expect(lines.join('\n')).not.toContain('ร้านป้าแดง')
+  })
+
+  it('a call with nothing to send builds no client (P8)', async () => {
+    const r = recording()
+    let built = 0
+    const client = await startV1(CONFIG, {
+      env: ON,
+      analytics: (env) => {
+        built += 1
+        return r.analytics(env)
+      },
+    })
+    const { user, wallet } = await ledger(client)
+    await answer(client, user, true)
+    expect((await client.as(user).get('/v1/wallets')).status).toBe(200)
+    expect((await client.as(user).get('/v1/me/analytics')).status).toBe(200)
+    expect(built).toBe(0)
+    await saved(client, user, wallet)
+    expect(built).toBe(1)
+    await r.settled()
+    expect(r.sent.map((message) => message.event)).toEqual(['record_saved'])
+  })
+})
+
 describe('the vault half', () => {
   it('a failed analytics read never changes the reply, and is logged by its class name only', async () => {
     const client = await frontDoor(recording())
@@ -483,6 +624,21 @@ describe('the vault half', () => {
     })
     expect(lines.filter((line) => line.includes('"event":"vault_analytics_failed"'))).toEqual(['{"level":"error","event":"vault_analytics_failed","failure":"Error"}'])
     expect(lines.join('\n')).not.toContain('consents')
+  })
+
+  it('a failed consent read fails closed: the failed create is counted, and nothing is sent under the person', async () => {
+    const r = recording()
+    const client = await frontDoor(r)
+    const { user, wallet } = await ledger(client)
+    await answer(client, user, true)
+    // Without the consents table the create's own policy check fails (500), and so does the read after it.
+    await sqlExec(user, 'DROP TABLE consents')
+    const lines = await quietly(async () => {
+      expect((await record(client, user, lunch(user, wallet))).status).toBe(500)
+    })
+    await r.settled()
+    expect(r.sent.map((message) => message.event)).toEqual(['$exception'])
+    expect(lines.filter((line) => line.includes('"event":"vault_analytics_failed"'))).toHaveLength(1)
   })
 
   it("callWithAnalytics answers call()'s reply, with the consent read after the block and no failure for a refusal", async () => {
