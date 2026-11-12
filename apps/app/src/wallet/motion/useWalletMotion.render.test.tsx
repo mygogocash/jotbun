@@ -96,6 +96,12 @@ test("a new wallet's card drops into the stack on the bouncy spring, or fades in
   expect(plays(walletAddedEntering(true))).toEqual({ driver: 'timing', config: { duration: fadeOf('walletAdded') }, reduceMotion: NEVER });
 });
 
+test("a new wallet's card drops from about one card's height above, not a whole screen, or fades in where it rests", () => {
+  // P2-T12's planner (P11), for P2-T21's ceremony: from a whole window height the bouncy spring overshot by about 190 pt.
+  expect(walletAddedEntering(false).initialValues).toEqual({ originY: -200 });
+  expect(walletAddedEntering(true).initialValues).toBeUndefined();
+});
+
 test('each call builds its own animation, so one part changing its copy never changes another', () => {
   // Every builder, both answers (P2-T9's review m-2; the tray, P2-T13, takes trayExiting).
   for (const reduced of [false, true]) {
