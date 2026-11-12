@@ -17,6 +17,7 @@ vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 vi.mock('react-native-safe-area-context', () => import('../../../dev/catalogue/safeAreaTestStub'));
 
 import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import { haptics } from '@mobile/lib/haptics';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
@@ -65,10 +66,14 @@ beforeAll(() => {
   installBrowserStorage();
 });
 
+// A case that installs an analytics recorder puts the previous controller back here.
+let restoreAnalytics: () => void = () => undefined;
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
   vi.restoreAllMocks();
+  restoreAnalytics();
+  restoreAnalytics = () => undefined;
 });
 
 function Probe({
@@ -119,6 +124,8 @@ const saveButton = () => screen.getByRole('button', { name: 'Save entry' });
 const resources = () => createFakeResources({ wallets: [...WALLETS], categories: [FOOD] }).resources;
 
 test('a device save calls onSaved once, after the diary kept it', async () => {
+  const recorded = await recordAnalytics();
+  restoreAnalytics = recorded.restore;
   const onSaved = vi.fn();
   const diary = createFakeDiary({ phase: 'ready', wallets: [...WALLETS], categories: [FOOD] });
   const original = diary.diary.saveDraft.bind(diary.diary);
@@ -134,6 +141,8 @@ test('a device save calls onSaved once, after the diary kept it', async () => {
   await act(async () => { release(); });
   await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
   expect(onSaved.mock.calls[0][0]).toMatchObject({ via: 'device', track: null });
+  // A save without a track sends no record_saved: the track is finish's contract (1D-T7's fix round, R119).
+  expect(recorded.sent.filter((event) => event.name === 'record_saved')).toEqual([]);
 
   cleanup();
   const rejected = vi.fn();

@@ -22,6 +22,9 @@
 //   yours and offers Reload; a create refused because the month already has
 //   exactly these figures counts as saved. A refusal says where it is.
 // - Set up: Wallets and Categories, until the Me tab holds them.
+// - Analytics (1D-T7, R61): a save Jotbun acknowledged, or one it already
+//   held with exactly these figures, sends one budget_set ('set'), never an
+//   amount.
 //
 // Copy is English through `tc()`, in the catalogs with Thai approved at E2
 // checkpoint 2. Nothing animates. The bun appears on the empty state
@@ -33,6 +36,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
+import { trackBudgetSet } from '@mobile/analytics/events';
 import { V1Error } from '@mobile/api/client';
 import { useCopy } from '@mobile/i18n/useCopy';
 import { Bun } from '@mobile/mascot/Bun';
@@ -367,6 +371,7 @@ function BudgetEditor({ month, existing, categories, prefill, onCancel, onSaved,
       await resources.setBudget(month, command.input, key, command.existing);
       keys.settle(slot);
       unconfirmed.current = null;
+      trackBudgetSet({ set: true });
       onSaved();
     } catch (error) {
       if (error instanceof V1Error && error.outcome === 'conflict') {
@@ -377,6 +382,7 @@ function BudgetEditor({ month, existing, categories, prefill, onCancel, onSaved,
         const current = error.current;
         if (isBudgetSnapshot(current) && current.month === month) {
           if (sameBudget(current, command.input)) {
+            trackBudgetSet({ set: true });
             onSaved();
             return;
           }

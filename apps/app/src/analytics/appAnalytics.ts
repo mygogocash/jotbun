@@ -7,7 +7,7 @@ import { Platform } from 'react-native';
 
 import { getSharedAnalyticsServer, v1ClientVersion } from '@mobile/api/sharedV1';
 import { getMobileEnv } from '@mobile/config/env';
-import { getAnalytics, setAnalytics } from './bus';
+import { getAnalytics, setAnalytics, takeEarlyEvents } from './bus';
 import { eraseStoredConsent, readStoredConsent, writeStoredConsent } from './consentStorage';
 import { createAnalytics } from './controller';
 import type { Analytics, PostHogLike } from './controller';
@@ -56,5 +56,8 @@ async function install(): Promise<Analytics> {
   const existing = getAnalytics();
   if (existing) return existing;
   setAnalytics(created);
+  // What was tracked before this install (onboarding's first step, at launch) is
+  // this controller's now: held until the answer like any other (1D-T6's review, m3).
+  for (const event of takeEarlyEvents()) created.track(event.name, event.properties);
   return created;
 }
