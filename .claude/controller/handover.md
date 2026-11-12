@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **20:00: #435 (P3-T7) MERGED as `bfce84e`; the head is `bfce84e`.**
+  - Both reviews approved with no blocker or major (Opus: m1, m2, n1; Sonnet: m1 to m3, n1, n2), and CI was 9 of 9 at `088b346a`. A person cannot abort a model call; only the transport's deadline and the SDK's timer can.
+  - Issue #191 is closed, the worktree and branch are removed, and it is promoted as **#438** (stack #379 holds 33).
+  - **R116:** a request whose last call is a `sent: false` timeout gives the use back only when no earlier call in it answered; P3-T9 pins it (followups).
+  - P3-T8 must carry the "refunds once" pin; P3-T9 the ask 503 refund, the rejection pin and R116. Refund caps and a per-refund log line are owner questions (followups).
+  - **1D-T11 is unblocked:** its kit is planned on P3-T7's `real/` files, which are byte-identical to the merge.
+  - Live now: the P2-T16, P3-T14 and 1D-T11 planners. No open task PR.
 - **19:45: #436 (P5-T2) MERGED as `f034185`; the head is `f034185`.**
   - Both reviews approved with no blocker or major (Opus: m1, m2, n1; Sonnet: m1 to m3, n1 to n4), and CI was 9 of 9 at `f4041406`.
   - Issue #235 is closed, the worktree and branch are removed, and it is promoted as **#437** (stack #379 holds 32). The promotion step was cut off once after pushing its branch; the rerun opened the PR.
