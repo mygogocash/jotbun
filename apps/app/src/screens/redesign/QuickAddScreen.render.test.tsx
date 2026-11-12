@@ -1179,7 +1179,8 @@ test('an income records kind income with its category key, and a move kind trans
     expect(await screen.findByText('Saved')).toBeTruthy();
     expect(savedEvents(recorded.sent).map((event) => [event.properties.kind, event.properties.category_key ?? null])).toEqual([['income', 'salary'], ['transfer', null]]);
     const json = JSON.stringify(recorded.sent);
-    for (const secret of ['2800000', '28,000', '150000', '1,500']) expect(json).not.toContain(secret);
+    // The amounts as typed, and as minor units and display text (R120: the confirming review's n1).
+    for (const secret of ['28000', '2800000', '28,000', '1500', '150000', '1,500']) expect(json).not.toContain(secret);
   } finally {
     recorded.restore();
   }

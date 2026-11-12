@@ -35,15 +35,22 @@ function accountFollower(analytics: Analytics): () => Promise<void> {
     const call = ++latest;
     const { binding, epoch } = getV1SessionSnapshot();
     if (binding === null) {
+      // A session seen since the last null has ended: a sign-out, which drops what is held
+      // even when its account was never read here (R120). With none seen yet, as at the
+      // launch, a plain null keeps it (R119).
+      const signedOut = seenEpoch !== null;
       seenEpoch = null;
       heldEpoch = null;
-      await analytics.setAccount(null);
+      if (signedOut) await analytics.setAccount(null, { signedOut: true });
+      else await analytics.setAccount(null);
       return;
     }
     if (heldEpoch === epoch) return;
     if (seenEpoch !== null && seenEpoch !== epoch) {
       heldEpoch = null;
-      await analytics.setAccount(null);
+      // The session seen has ended here too, with another in its place: it drops what is held,
+      // named or not (R120).
+      await analytics.setAccount(null, { signedOut: true });
     }
     seenEpoch = epoch;
     const accountId = await fetchAccountId();

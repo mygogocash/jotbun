@@ -3,7 +3,10 @@
 // PostHog's module, so onboarding's first step can come first. Its controller
 // then holds that event like any other, and sends it only after a yes. The
 // fix round (R119) runs the same path through AnalyticsUpkeep, which tells the
-// controller who is signed in: on a first launch, no one yet.
+// controller who is signed in: on a first launch, no one yet. The second fix
+// round (R120) adds a session whose account was never read, offline, that ends
+// by a sign-out or by another session in its place: what it held is dropped,
+// so the next account's yes never sends it.
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 import { AppState, Platform } from 'react-native';
@@ -29,13 +32,21 @@ vi.mock('expo-secure-store', () => ({
   deleteItemAsync: async (key: string) => { secure.values.delete(key); },
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when-unlocked-this-device-only',
 }));
-// The server answers yes for the signed-in account, and /v1/me names it.
+// The server answers yes for the signed-in account, and /v1/me names it. Offline, both fail.
+const net = vi.hoisted(() => ({ online: true, account: '00000000-0000-4000-8000-0000000000aa', accountReads: 0 }));
 vi.mock('@mobile/api/sharedV1', () => ({
   getSharedAnalyticsServer: () => ({
-    read: async () => ({ consent: 'yes', analyticsId: 'a'.repeat(64), weeksSinceSignup: 2 }),
+    read: async () => {
+      if (!net.online) throw new Error('offline');
+      return { consent: 'yes', analyticsId: 'a'.repeat(64), weeksSinceSignup: 2 };
+    },
     setConsent: async () => undefined,
   }),
-  fetchAccountId: async () => '00000000-0000-4000-8000-0000000000aa',
+  fetchAccountId: async () => {
+    net.accountReads += 1;
+    if (!net.online) throw new Error('offline');
+    return net.account;
+  },
   v1ClientVersion: () => null,
 }));
 vi.mock('expo-router', () => ({ useSegments: () => ['onboarding'] }));
@@ -44,9 +55,11 @@ import { setSession } from '@mobile/auth/session';
 import { AnalyticsUpkeep } from './AnalyticsUpkeep';
 import { installAppAnalytics } from './appAnalytics';
 import { getAnalytics, setAnalytics, takeEarlyEvents } from './bus';
-import { trackOnboardingStepViewed } from './events';
+import { ANALYTICS_CONSENT_KEY } from './consentStorage';
+import { trackOnboardingStepViewed, trackRecordSaved } from './events';
 
 const ACCOUNT = '00000000-0000-4000-8000-0000000000aa';
+const ACCOUNT_B = '00000000-0000-4000-8000-0000000000bb';
 const os = Platform.OS;
 
 afterEach(() => {
@@ -58,6 +71,9 @@ afterEach(() => {
   setAnalytics(null);
   posthog.captured.length = 0;
   secure.values.clear();
+  net.online = true;
+  net.account = ACCOUNT;
+  net.accountReads = 0;
 });
 
 /** A phone with a project key, before the install; AppState's listener is a stand-in. */
@@ -111,4 +127,69 @@ test('with a session already restored at launch, the step tracked before the ins
   render(<IntlProvider locale="th" messages={{}}><AnalyticsUpkeep /></IntlProvider>);
   await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
   expect(steps()).toEqual(['coffee']);
+});
+
+// R120: A's session, offline, so A's account is never read. A said no on this phone earlier.
+// A saves, signs out, and B signs in online; B's answer on the server is yes.
+const saveOffline = () => trackRecordSaved({ kind: 'expense', source: 'typed', categoryKey: 'food', offline: true, secondsToSave: 12 });
+const names = () => posthog.captured.map((event) => event.name);
+const flush = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+
+test("U1: A's session restored at launch, A's account unread offline; A saves and signs out, and B's yes does not send A's save", async () => {
+  phoneWithKey();
+  secure.values.set(ANALYTICS_CONSENT_KEY, JSON.stringify({ accountId: ACCOUNT, answer: 'no', pendingServer: false }));
+  net.online = false;
+  setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'session-a' });
+  render(<IntlProvider locale="th" messages={{}}><AnalyticsUpkeep /></IntlProvider>);
+  // AnalyticsUpkeep has seen A's session and tried to read A's account.
+  await waitFor(() => expect(net.accountReads).toBe(1));
+  await flush();
+  expect(getAnalytics()?.status()).toBe('loading');
+  saveOffline();
+  setSession(null);
+  await waitFor(() => expect(getAnalytics()?.status()).toBe('signed_out'));
+  net.online = true;
+  net.account = ACCOUNT_B;
+  setSession({ access_token: 'token-b', userId: ACCOUNT_B, binding: 'session-b' });
+  await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+  expect(names()).toEqual([]);
+});
+
+test("U2: a signed-out launch, then A's session with A's account unread offline; A saves and signs out, and B's yes does not send A's save", async () => {
+  phoneWithKey();
+  secure.values.set(ANALYTICS_CONSENT_KEY, JSON.stringify({ accountId: ACCOUNT, answer: 'no', pendingServer: false }));
+  net.online = false;
+  setSession(null);
+  render(<IntlProvider locale="th" messages={{}}><AnalyticsUpkeep /></IntlProvider>);
+  await waitFor(() => expect(getAnalytics()?.status()).toBe('signed_out'));
+  setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'session-a' });
+  await waitFor(() => expect(net.accountReads).toBe(1));
+  await flush();
+  expect(getAnalytics()?.status()).toBe('signed_out');
+  saveOffline();
+  setSession(null);
+  await flush();
+  net.online = true;
+  net.account = ACCOUNT_B;
+  setSession({ access_token: 'token-b', userId: ACCOUNT_B, binding: 'session-b' });
+  await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+  expect(names()).toEqual([]);
+});
+
+test("U3: A's session restored at launch, A's account unread offline; A saves, and B signs in in its place: B's yes does not send A's save", async () => {
+  phoneWithKey();
+  secure.values.set(ANALYTICS_CONSENT_KEY, JSON.stringify({ accountId: ACCOUNT, answer: 'no', pendingServer: false }));
+  net.online = false;
+  setSession({ access_token: 'token-a', userId: ACCOUNT, binding: 'session-a' });
+  render(<IntlProvider locale="th" messages={{}}><AnalyticsUpkeep /></IntlProvider>);
+  await waitFor(() => expect(net.accountReads).toBe(1));
+  await flush();
+  expect(getAnalytics()?.status()).toBe('loading');
+  saveOffline();
+  // A sign-in beside a session replaces it with no null between (sessionMachine's bootstrapped from active).
+  net.online = true;
+  net.account = ACCOUNT_B;
+  setSession({ access_token: 'token-b', userId: ACCOUNT_B, binding: 'session-b' });
+  await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
+  expect(names()).toEqual([]);
 });
