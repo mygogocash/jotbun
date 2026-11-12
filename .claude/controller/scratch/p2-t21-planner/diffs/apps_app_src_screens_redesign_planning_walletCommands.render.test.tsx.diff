@@ -1,0 +1,37 @@
+diff --git a/apps/app/src/screens/redesign/planning/walletCommands.render.test.tsx b/apps/app/src/screens/redesign/planning/walletCommands.render.test.tsx
+index 5f6d921f538422db1d44edde4029a626a4efc2a7..ef8d110645d81f2c02438e404163be54c4736094 100644
+--- a/apps/app/src/screens/redesign/planning/walletCommands.render.test.tsx
++++ b/apps/app/src/screens/redesign/planning/walletCommands.render.test.tsx
+@@ -16,6 +16,7 @@ vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID()
+ import type { CreateWalletRequest, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+ import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import type { Recorded } from '@mobile/analytics/testing/recordAnalytics';
++import { setConsentedTelemetrySink } from '@mobile/analytics/bus';
+ import { V1Error } from '@mobile/api/client';
+ import { router } from '@mobile/dev/catalogue/routerTestStub';
+ import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
+@@ -202,6 +203,24 @@ test('a refused create sends nothing', async () => {
+   expect(sent).toEqual([]);
+ });
+ 
++test('an emitter that throws never turns a saved wallet into a refusal, and the send still answers', async () => {
++  // P2-T19's review, m2: wallet_added goes once the outcome is decided, outside the save's try.
++  setConsentedTelemetrySink(() => {
++    throw new Error('sink');
++  });
++  try {
++    const fake = createFakeResources(goldenSeed());
++    const answers = mount(fake);
++    expect(await answer(answers, 'createJar with look')).toEqual({ kind: 'done' });
++    expect(fake.wallets.get(JAR.id)?.name).toBe('Jar');
++    expect(screen.getByTestId('sending').textContent).toBe('sending false');
++    // The same create again (a new key) meets its own wallet: done again, never a send that rejects.
++    expect(await answer(answers, 'createJar with look')).toEqual({ kind: 'done' });
++  } finally {
++    setConsentedTelemetrySink(null);
++  }
++});
++
+ // ---------------------------------------------------------------------------
+ // Every other rule the hook took from the two pages
+ 

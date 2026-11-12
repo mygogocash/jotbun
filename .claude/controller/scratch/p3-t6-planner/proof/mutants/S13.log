@@ -1,0 +1,36 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10193ms
+     × each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most
+AssertionError: parse after 0 ms: expected [ 10000 ] to deeply equal [ 15000 ]
+
+- Expected
++ Received
+
+  [
+-   15000,
++   10000,
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:247:93
+    245|       const service = new VaultAiService({ transport: model.transport,…
+    246|       await run(service, fakeVault(clock, firstStepMs), route)
+    247|       expect(model.calls.map((call) => call.timeoutMs), `${route} afte…
+       |                                                                                             ^
+    248|     }
+    249|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:35:23
+   Duration  13.07s (transform 1.14s, setup 2.29s, import 28ms, tests 10.19s, environment 0ms)
+

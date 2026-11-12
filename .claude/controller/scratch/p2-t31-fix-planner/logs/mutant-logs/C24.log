@@ -1,0 +1,117 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 78ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 51ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 44ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 42ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 57ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 29ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 34ms
+   → Expected a canonical integer string of satang.
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 53ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 55ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 19ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 18ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 18ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 16ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 19ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 17ms
+   → Expected a canonical integer string of satang.
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 56ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 55ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 19ms
+   → Expected a canonical integer string of satang.
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 24ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 38ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 26ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 89ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 76ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 28ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 17ms
+   → Expected a canonical integer string of satang.
+ × src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 406ms
+   → bw-calendar: expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 13 passed (26)
+   Start at  09:01:31
+   Duration  3.47s (transform 1.38s, setup 49ms, import 1.80s, tests 1.39s, environment 103ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:94167) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+TypeError: Expected a canonical integer string of satang.
+    at canonical (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/spend/v1/money.ts:23:11)
+    at formatMinor (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/spend/v1/money.ts:39:18)
+    at walletMoneyText (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/money/walletMoney.ts:27:16)
+    at perDayText (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/money/walletMoney.ts:43:10)
+    at dayBaht (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/insights/CalendarTab.tsx:60:43)
+    at legendValue (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/insights/CalendarTab.tsx:66:41)
+    at /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/insights/CalendarTab.tsx:230:127
+    at Array.map (<anonymous>)
+    at CalendarTab (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/insights/CalendarTab.tsx:222:16)
+    at Object.react_stack_bottom_frame (/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t31/node_modules/react-dom/cjs/react-dom-client.development.js:28571:20)
+An error occurred in the <CalendarTab> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut
+TypeError: Expected a canonical integer string of satang.
+ ❯ canonical src/spend/v1/money.ts:23:11
+     21| function canonical(value: unknown): bigint {
+     22|   if (typeof value !== 'string' || value.length > 40 || !CANONICAL.tes…
+     23|     throw new TypeError('Expected a canonical integer string of satang…
+       |           ^
+     24|   }
+     25|   return BigInt(value);
+ ❯ formatMinor src/spend/v1/money.ts:39:18
+ ❯ walletMoneyText src/wallet/money/walletMoney.ts:27:16
+ ❯ perDayText src/wallet/money/walletMoney.ts:43:10
+ ❯ dayBaht src/wallet/insights/CalendarTab.tsx:60:43
+ ❯ legendValue src/wallet/insights/CalendarTab.tsx:66:41
+ ❯ src/wallet/insights/CalendarTab.tsx:230:127
+ ❯ CalendarTab src/wallet/insights/CalendarTab.tsx:222:16
+ ❯ Object.react_stack_bottom_frame ../../../../../../worktrees/p2-t31/node_modules/react-dom/cjs/react-dom-client.development.js:28571:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+AssertionError: bw-calendar: expected null not to be null
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:761:76
+    759|     // The section's script runs its steps, then the stage says ready,…
+    760|     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-…
+    761|     expect(screen.queryByTestId('catalogue-screen-ready'), section.id)…
+       |                                                                            ^
+    762|     expect(states[section.id](), section.id).toEqual(expected[section.…
+    763|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+

@@ -1,0 +1,93 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 83ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 73ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 135ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 80ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 81ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 150ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 131ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 64ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 64ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 113ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 123ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 76ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 83ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 268ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 56ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 23ms
+   → expected [ 'เสาร์ 24 ต.ค.', …(2) ] to deeply equal [ Array(3) ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 147ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 116ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 39ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 48ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 35ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 122ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 153ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 176ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 124ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 526ms
+   → bw-insights-early: expected [ 'เสาร์ 24 ต.ค.', …(3) ] to deeply equal [ 'ศุกร์ 23 ต.ค.', …(3) ]
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  08:56:00
+   Duration  6.84s (transform 2.74s, setup 65ms, import 3.41s, tests 3.09s, environment 122ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:7987) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day
+AssertionError: expected [ 'เสาร์ 24 ต.ค.', …(2) ] to deeply equal [ Array(3) ]
+
+- Expected
++ Received
+
+  [
+-   "พฤหัส 1 ต.ค.",
+-   "ศุกร์ 2 ต.ค.",
++   "เสาร์ 24 ต.ค.",
++   "เสาร์ 24 ต.ค.",
+    "วันถัดไป",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:488:75
+    486|   expect(within(state).queryByText('กราฟต้องมีบันทึกอย่างน้อย 3 วัน ถึ…
+    487|   // es-empty-insights: each logged day by its own date, then the day …
+    488|   expect([0, 1, 2].map((index) => textOf(`insights-early-day-${index}`…
+       |                                                                           ^
+    489|   expect(screen.queryByTestId('insights-month-bars')).toBeNull();
+    490|   expect(named('heading', 'ที่จดไว้แล้ว')).not.toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+AssertionError: bw-insights-early: expected [ 'เสาร์ 24 ต.ค.', …(3) ] to deeply equal [ 'ศุกร์ 23 ต.ค.', …(3) ]
+
+- Expected
++ Received
+
+  [
+-   "ศุกร์ 23 ต.ค.",
++   "เสาร์ 24 ต.ค.",
+    "เสาร์ 24 ต.ค.",
+    "วันถัดไป",
+    "ยังไม่มีเดือนก่อนให้เทียบ",
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:762:46
+    760|     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-…
+    761|     expect(screen.queryByTestId('catalogue-screen-ready'), section.id)…
+    762|     expect(states[section.id](), section.id).toEqual(expected[section.…
+       |                                              ^
+    763|     cleanup();
+    764|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

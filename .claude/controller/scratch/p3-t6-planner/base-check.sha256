@@ -1,0 +1,16 @@
+d130c487d160d547d29b3183a97e2e9c5eba30582cb80a0072e5700c9a7fcf30  packages/contracts/src/v1/ai.ts
+5ea6234ecd1424f240272e0dd8bd39e64baa3a60485816c4536e03b82ac2757f  packages/contracts/src/index.ts
+559d733458a1a8c9b81655eb9df11258b034bb94c5cab520289a5e00c76967c7  apps/edge/src/v1/ai/service.ts
+b5fcc7bb896bbc017b6a91e788fb38222533ff936f2131a8d09977b3645fd0d4  apps/edge/src/v1/ai/routes.ts
+b2d7b6fdb1d9f7aa672054714d2afd640bd562b9dc236fa9b78d5774be22bd69  apps/edge/src/v1/env.ts
+f15494d88960182e0ad2c2bd40e48a65fd4d91099040043d011c66ef58c677d2  apps/edge/src/v1/handler.ts
+b8e888f5954118d2d895b717244736288ffb00b91f165e6263f451bbc215bc3c  apps/edge/src/v1/worker-routes.ts
+a3959243c8f7c76a8f544393d0d829932855f5ac5956a8c63897841b4168a0f3  apps/edge/src/server/ai/model.ts
+d925b6b259911ed90a75969af9a189eaba8ba879b16cfd0fd5a8a04d763883f3  apps/edge/test/workers/support/v1-client.ts
+6d94e244eb452e0cc20bfdbfb640cc36bdbdeb8b4f69cc067914ded3d787645d  apps/edge/test/workers/ai.test.ts
+7400ec3854d914b21071c0908998e2f50e247db35c30a8bf916fd1ed7d25e2f0  apps/app/src/spend/v1/ai/aiResources.ts
+b7d53104c1dd5afc5a26bc393b738aa47ca4970f64594abeae4411fdd168c48a  apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+a28bda4c58979b8be29c7b9ae18eb739c4a2a15cec21833e4ab2fd9219b6f251  apps/app/src/dev/catalogue/companion/companionSections.tsx
+f34b43339442d32c08ff94cee0e213598b4de06d2fda3566805c97029890a670  apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+94f0e73e5b1b96a2481a8bff673ac91351491f051573f51376c39f1b45f325d2  apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
+7ecca08f57055bb5b4f5e550d78d74f9d231dfe12ec9843fbfb59db3b6bda97f  apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx

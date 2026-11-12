@@ -1,0 +1,64 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/ui/dateStep.test.ts
+
+(node:62174) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62174) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t31/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t31/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.506667ms)
+✔ leap days follow the Gregorian rules (0.09725ms)
+✔ only real YYYY-MM-DD dates are accepted (0.190042ms)
+✔ never steps into the future (0.110125ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.073125ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.282125ms)
+✔ other days are written out, with the year only when it is not this year (0.325333ms)
+✔ Thai dates show Buddhist-era years (0.128708ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.097417ms)
+✔ weekday initials run Sunday first in each language (0.087583ms)
+✔ a month's short name has no year, in each language (0.123167ms)
+✖ a short date is written out for today and yesterday too, with the year only when it is not this year (0.768792ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 155.025042
+
+✖ failing tests:
+
+test at src/ui/dateStep.test.ts:124:1
+✖ a short date is written out for today and yesterday too, with the year only when it is not this year (0.768792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'วันนี้'
+  - 'เสาร์ 24 ต.ค.'
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/ui/dateStep.test.ts:126:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'วันนี้',
+    expected: 'เสาร์ 24 ต.ค.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+npm error workspace gogospend-app@0.1.0
+npm error location /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+npm error command failed
+npm error command sh -c node scripts/test-unit.mjs src/ui/dateStep.test.ts

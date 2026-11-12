@@ -1,0 +1,80 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 73ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 50ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 22ms
+   → th: expected [] to have a length of 1 but got +0
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 38ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 56ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 55ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 61ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 44ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 38ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 83ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 67ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 51ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 38ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 142ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 31ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 44ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 84ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 73ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 20ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 31ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 25ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 11ms
+   → light: expected 'ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม…' to be 'ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม…' // Object.is equality
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 64ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 52ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 33ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 523ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  08:58:02
+   Duration  3.71s (transform 1.25s, setup 46ms, import 1.64s, tests 1.81s, environment 91ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:46629) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount
+AssertionError: th: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:222:76
+    220|     mountInsights({ locale });
+    221|     await settle();
+    222|     expect(screen.queryAllByRole('img', { name: spoken[locale] }), loc…
+       |                                                                            ^
+    223|     expect(found('insights-month-bars').getAttribute('role'), locale).…
+    224|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values
+AssertionError: light: expected 'ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม…' to be 'ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม…' // Object.is equality
+
+Expected: "ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม 2569: พฤษภาคม 2569, มิถุนายน 2569, กรกฎาคม 2569, สิงหาคม 2569, กันยายน 2569, ตุลาคม 2569 ถึงตอนนี้"
+Received: "ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม 2569: พฤษภาคม 2569, มิถุนายน 2569, กรกฎาคม 2569, สิงหาคม 2569, กันยายน 2569"
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:648:57
+    646|     mountInsights({ mode, locale, device: { [PRIVATE_MODE_NAME]: '1' }…
+    647|     await settle();
+    648|     expect(labelOf(found('insights-month-bars')), mode).toBe(locale ==…
+       |                                                         ^
+    649|       ? 'ใช้จ่ายรายเดือน พฤษภาคม 2569ถึงตุลาคม 2569: พฤษภาคม 2569, มิถ…
+    650|       : 'Monthly spending, May 2026 to October 2026: May 2026, June 20…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

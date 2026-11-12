@@ -1,0 +1,13 @@
+diff --git a/apps/app/src/screens/redesign/ai/BunNote.render.test.tsx b/apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
+index fa4e30e..7912109 100644
+--- a/apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
++++ b/apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
+@@ -11,7 +11,7 @@ import { BunNote, forgetBunNotes } from './BunNote';
+ afterEach(cleanup);
+ beforeEach(forgetBunNotes);
+ 
+-const note = (text: string) => vi.fn(async (date: string) => ({ date, facts: [{ kind: 'spent_today' as const, amount_minor: '6000', count: 1 }], text, source: 'facts' as const }));
++const note = (text: string) => vi.fn(async (date: string) => ({ date, facts: [{ kind: 'spent_today' as const, amount_minor: '6000', count: 1 }], text, source: 'facts' as const, model: 'rules' as const, escalated: false }));
+ 
+ test('shows the day’s note from the person’s own numbers', async () => {
+   const ai = fakeAiResources({ note: note('1 logged today, ฿60 in all.') });

@@ -1,0 +1,65 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t6-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p3-t2/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 2 failed) 10200ms
+     × each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most 5ms
+     × Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most
+AssertionError: ask after 0 ms: expected [ 55000 ] to deeply equal [ 25000 ]
+
+- Expected
++ Received
+
+  [
+-   25000,
++   55000,
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:247:93
+    245|       const service = new VaultAiService({ transport: model.transport,…
+    246|       await run(service, fakeVault(clock, firstStepMs), route)
+    247|       expect(model.calls.map((call) => call.timeoutMs), `${route} afte…
+       |                                                                                             ^
+    248|     }
+    249|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second
+AssertionError: expected [ { …(2) }, { …(2) } ] to deeply equal [ { model: 'claude-haiku-5-5', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "model": "claude-haiku-5-5",
+-     "timeoutMs": 25000,
++     "timeoutMs": 55000,
++   },
++   {
++     "model": "claude-haiku-5-5",
++     "timeoutMs": 31000,
+    },
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:281:77
+    279|     const answer = await run(service, fakeVault(clock), 'ask')
+    280|     expect(answer.status).toBe(200)
+    281|     expect(model.calls.filter((call) => call.model === 'claude-haiku-5…
+       |                                                                             ^
+    282|   })
+    283| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  08:34:42
+   Duration  12.69s (transform 926ms, setup 1.89s, import 32ms, tests 10.20s, environment 0ms)
+

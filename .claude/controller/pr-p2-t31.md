@@ -33,8 +33,27 @@
   - the four routes tests 12.
 - [x] 23 of 23 mutants killed: the shading boundaries, private mode in each tab, the bar colours, the budget guide, the early state, and future days.
 - [x] R100's fast gate: `typecheck:app`, the focused files, the routes tests, `export:web` (the route changed) and `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review: the screen shows money, and private mode governs it.
+- [x] CI at `afc19276`: 9 of 9.
+- [x] Independent review (Opus): **Needs fixes** on `afc19276`, with 8 majors (`.claude/controller/reviews/P2-T31.md`): a diary sync blanked the screen; the budget line sat off the bars' scale; private mode marked empty days; wrong early-state dates; inexact money (`Math.round(Number())`); a failed compare month drawn as ฿0; hard-coded Thai; and 15 unheld guards. There were also 11 minors and 7 nits. The second review (Flash) had approved.
+- [x] **Fix round** (`91d7e926`, brief `.claude/controller/briefs/P2-T31-fix.md`; ruling R112 with the planner's P1 to P23). Every major and minor is fixed as the review proposed:
+  - one quiet load that a sync never blanks;
+  - the budget line on the bars' own scale;
+  - private mode marks no day by spending;
+  - every date through `dateStep` (new `monthShortLabel` and `shortDateLabel`);
+  - all money through the wallet's exact money text;
+  - a failed compare month told in Thai first, never drawn as ฿0;
+  - every line through the catalogs;
+  - the offline banner on `V1Error`'s codes;
+  - day buttons that speak their money;
+  - a named in-and-out chart;
+  - the catalogue draws the screen on fakes, loaded lazily;
+  - safe-area insets;
+  - calendar cells at least 44 pt.
+  - The proofs: RED 2 of 19 Node and 26 of 26 render, all assertions; GREEN render 26, routes 13, the eight kit files plus neighbours 210, catalogue `bw-` 54; **127 of 127 mutants killed**, the review's 15 included. All 16 fix-kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #412, #411, #420) as `f72ad233`. `index.ts` is in plan order: ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. On the merged tree: `typecheck:app` 0; insights, recap, deleted, the eight kit files and the four routes tests 217 of 217; `test:unit` 1042 of 1042.
+- [ ] CI on this pull request is green at `f72ad233`.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (VoiceOver over the bars and the calendar, AX5 by hand for E2-B).
 
 Closes #177 once merged (closed by hand, since the base is not the default branch).

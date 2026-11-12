@@ -1,0 +1,25 @@
+# P3-T6's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table.
+M stub packages/contracts/src/v1/ai.ts
+M real packages/contracts/src/index.ts
+A stub apps/edge/src/v1/ai/models.ts
+M stub apps/edge/src/v1/ai/service.ts
+M real apps/edge/src/v1/ai/routes.ts
+M real apps/edge/src/v1/env.ts
+M real apps/edge/src/v1/handler.ts
+M real apps/edge/src/v1/worker-routes.ts
+M real apps/edge/src/server/ai/model.ts
+M real apps/edge/test/workers/support/v1-client.ts
+M real apps/edge/test/workers/ai.test.ts
+A real apps/edge/test/contracts-ai.test.ts
+A real apps/edge/test/workers/ai-routing.test.ts
+M base apps/app/src/spend/v1/ai/aiResources.ts
+M real apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+A real apps/app/src/spend/v1/ai/aiResources.test.ts
+M real apps/app/src/dev/catalogue/companion/companionSections.tsx
+M real apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+M real apps/app/src/screens/redesign/ai/BunNote.render.test.tsx
+M real apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx
+A later docs/implementation/receipts/P3-T6.md

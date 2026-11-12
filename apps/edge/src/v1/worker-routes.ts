@@ -1,3 +1,5 @@
+import type { AiFeature } from '@gogospend/contracts'
+
 import type { FeatureGates } from '@api/common/feature-gates'
 
 import type { UserVault } from '../vault/user-vault'
@@ -40,6 +42,8 @@ export type WorkerContext = {
   waitUntil(promise: Promise<unknown>): void
   /** The AI routes' model transport (P3-T4), from the front door's deps or built from the env; null when AI is not configured. */
   transport?: ModelTransport | null
+  /** The AI routes' deadlines (P3-T6), from the front door's deps; absent, AI_ROUTE_DEADLINE_MS's. */
+  aiDeadlines?: Partial<Record<AiFeature, number>>
 }
 
 export type WorkerHandler = (w: WorkerContext) => Promise<Response | VaultReply>

@@ -1,0 +1,48 @@
+diff --git a/apps/app/src/screens/redesign/planning/walletCommands.ts b/apps/app/src/screens/redesign/planning/walletCommands.ts
+index 7333557213d2d71d537637ee12fa45287efc4c1b..2c22f8daf0808419296b14a8d3418bc659410df3 100644
+--- a/apps/app/src/screens/redesign/planning/walletCommands.ts
++++ b/apps/app/src/screens/redesign/planning/walletCommands.ts
+@@ -12,6 +12,9 @@
+ //
+ // Analytics (R61, W27): a create's acknowledgement, or its own wallet met
+ // again, sends one wallet_added with the look it was given; nothing else does.
++// It is sent once the outcome is decided, outside the save's try, and an
++// emitter that throws is caught there: analytics never turns a saved wallet
++// into a refusal, and never rejects the send (P2-T19's review, m2).
+ import type { CreateWalletRequest, UpdateWalletRequest, WalletDto } from '@gogospend/contracts';
+ import { useRef, useState } from 'react';
+ 
+@@ -48,6 +51,18 @@ export function useWalletCommand(): { sending: boolean; send(command: WalletComm
+   const pending = useRef<{ command: WalletCommand; track: WalletTrack | undefined } | null>(null);
+ 
+   async function send(command: WalletCommand, track?: WalletTrack): Promise<WalletOutcome> {
++    const outcome = await attempt(command, track);
++    if (command.kind === 'create' && outcome.kind === 'done') {
++      try {
++        trackWalletAdded(track ?? {});
++      } catch {
++        // The wallet is saved whatever the emitter does.
++      }
++    }
++    return outcome;
++  }
++
++  async function attempt(command: WalletCommand, track?: WalletTrack): Promise<WalletOutcome> {
+     const key = keys.keyFor(command.slot, payloadOf(command));
+     setSending(true);
+     try {
+@@ -57,14 +72,12 @@ export function useWalletCommand(): { sending: boolean; send(command: WalletComm
+       else await resources.unarchiveWallet(command.id, command.version, key);
+       keys.settle(command.slot);
+       pending.current = null;
+-      if (command.kind === 'create') trackWalletAdded(track ?? {});
+       return { kind: 'done' };
+     } catch (error) {
+       // This wallet's id already exists: an earlier attempt of this create committed.
+       if (command.kind === 'create' && isOwnCreate(error, command.input.id)) {
+         keys.settle(command.slot);
+         pending.current = null;
+-        trackWalletAdded(track ?? {});
+         return { kind: 'done' };
+       }
+       const problem = saveProblem(error, tc);
