@@ -1,0 +1,23 @@
+diff --git a/apps/app/src/wallet/motion/useWalletMotion.ts b/apps/app/src/wallet/motion/useWalletMotion.ts
+index e4c333e2a42671af2e5194db5873f10db14176da..b77cb4193ce254a2527a479fcd3c5377ff637f9c 100644
+--- a/apps/app/src/wallet/motion/useWalletMotion.ts
++++ b/apps/app/src/wallet/motion/useWalletMotion.ts
+@@ -65,9 +65,16 @@ export function stepLayout(reduced: boolean): LinearTransition | undefined {
+   return reduced ? undefined : sprung(new LinearTransition(), 'gentle').reduceMotion(ReduceMotion.Never);
+ }
+ 
+-/** A new wallet's card (walletAdded): it drops into the stack on the bouncy spring, or fades in. */
++/**
++ * How far a new wallet's card drops: about one card's height (the stack's and
++ * full card's 200 pt), not a whole screen, so the bouncy spring overshoots by
++ * about 44 pt, not about 190 (P2-T12's planner, P11; P2-T21's ceremony).
++ */
++const WALLET_DROP_PT = 200;
++
++/** A new wallet's card (walletAdded): it drops in from about one card's height above on the bouncy spring, or fades in. */
+ export function walletAddedEntering(reduced: boolean): FadeIn | SlideInUp {
+   return reduced
+     ? FadeIn.duration(FADE_MS).reduceMotion(ReduceMotion.Never)
+-    : sprung(new SlideInUp(), 'bouncy').reduceMotion(ReduceMotion.Never);
++    : sprung(new SlideInUp(), 'bouncy').withInitialValues({ originY: -WALLET_DROP_PT }).reduceMotion(ReduceMotion.Never);
+ }

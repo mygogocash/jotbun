@@ -1,0 +1,164 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app
+
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the spending tab draws six bars, this month in barNow and the others in barPast, with the budget line 88ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the budget line sits on the bars' own scale, from one baseline 81ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the chart is one named element that reads each month's amount 49ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the info button explains the number in a tray 49ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the categories are the month's totals in topCategories' order, each with its own count, opening History filtered to it 64ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a category no longer listed, a deleted record and money in are counted nowhere they do not belong 162ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each tab is a 44 pt tab and sends insights_viewed with spending, in_out or calendar 172ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the in-and-out tab shows money in in violet with a plus 51ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > more out than in, and in and out matched, are said in words 80ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar shades each day by its baht step, frames today and leaves future days inert 166ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > each day button says its date and its money out, today named and drafts said apart 178ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar's month line, legend and chosen day are wc-calendar's, every amount exact 76ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a record with no merchant or note is named by its category, and one whose wallet is no longer listed by its category alone 59ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > the calendar steps back a month and never draws October under September; next stops at this month 218ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > every page of the month is read 62ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day 67ms
+   → expected [ <div …(3)>…(2)</div>, false ] to deeply equal [ null, true ]
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a diary sync never blanks the screen or resets it, and reads nothing again 163ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a draft saved meanwhile shows at once, and one that resolves refreshes in place 108ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > a compare month that cannot be read is never drawn as ฿0: the problem says so with Try again 42ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > offline is said with the banner where a diary is open; a problem a retry cannot fix offers no Try again 49ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > entries changed meanwhile are said, with Refresh 29ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the chart's name carries no amount and the calendar is one neutral fill with no legend values 87ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in private mode the in-and-out tab masks every amount and keeps its words 94ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > in English the insights carry no Thai: weekdays, today, the per-day unit and entries are its own words 74ms
+ ✓ src/wallet/insights/WalletInsights.render.test.tsx > at AX5 the calendar's days stay 44 pt wide and grow taller, and nothing is cut 65ms
+ × src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each 8543ms
+   → bw-insights-large: expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  08:55:37
+   Duration  15.26s (transform 3.24s, setup 82ms, import 4.04s, tests 10.88s, environment 127ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:99692) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > with two logged days the early state asks for one more day
+AssertionError: expected [ <div …(3)>…(2)</div>, false ] to deeply equal [ null, true ]
+
+- Expected
++ Received
+
+  [
+-   null,
+-   true,
++   <div
++     class="css-view-g5y9jx"
++     data-testid="insights-early-state"
++     style="background-color: rgba(255, 255, 255, 1.00); gap: 12px; padding: 16px; border-radius: 20px;"
++   >
++     <div
++       class="css-view-g5y9jx"
++       style="gap: 2px;"
++     >
++       <h1
++         class="css-text-146c3p1"
++         dir="auto"
++         role="heading"
++         style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 23px; color: rgba(17, 16, 20, 1.00);"
++       >
++         จดอีก 0 วัน กราฟจะขึ้นตรงนี้
++       </h1>
++       <div
++         class="css-text-146c3p1"
++         dir="auto"
++         style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(107, 104, 120, 1.00);"
++       >
++         กราฟต้องมีบันทึกอย่างน้อย 3 วัน ถึงจะเทียบกันได้
++       </div>
++     </div>
++     <div
++       class="css-view-g5y9jx"
++       style="flex-direction: row; gap: 6px;"
++     >
++       <div
++         class="css-view-g5y9jx"
++         data-testid="insights-early-day-0"
++         style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++           style="height: 6px; background-color: rgba(17, 16, 20, 1.00); border-radius: 3px;"
++         />
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(17, 16, 20, 1.00);"
++         >
++           พฤหัส 1 ต.ค.
++         </div>
++       </div>
++       <div
++         class="css-view-g5y9jx"
++         data-testid="insights-early-day-1"
++         style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++           style="height: 6px; background-color: rgba(17, 16, 20, 1.00); border-radius: 3px;"
++         />
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(17, 16, 20, 1.00);"
++         >
++           ศุกร์ 2 ต.ค.
++         </div>
++       </div>
++       <div
++         class="css-view-g5y9jx"
++         data-testid="insights-early-day-2"
++         style="gap: 4px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"
++       >
++         <div
++           aria-hidden="true"
++           class="css-view-g5y9jx"
++           style="height: 6px; background-color: rgba(17, 16, 20, 1.00); border-radius: 3px;"
++         />
++         <div
++           class="css-text-146c3p1"
++           dir="auto"
++           style="font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 13px; font-weight: 400; line-height: 20px; color: rgba(17, 16, 20, 1.00);"
++         >
++           จันทร์ 5 ต.ค.
++         </div>
++       </div>
++     </div>
++   </div>,
++   false,
+  ]
+
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:503:112
+    501|   mountInsights({ resources: insightsFake({ records: [OCTOBER[0], OCTO…
+    502|   await settle();
+    503|   expect([screen.queryByTestId('insights-early-state'), screen.queryBy…
+       |                                                                                                                ^
+    504|   expect(named('heading', 'หมวดหมู่')).not.toBeNull();
+    505|   cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/insights/WalletInsights.render.test.tsx > the catalogue's insights sections draw the real screen on fakes, one state each
+AssertionError: bw-insights-large: expected null not to be null
+ ❯ src/wallet/insights/WalletInsights.render.test.tsx:761:76
+    759|     // The section's script runs its steps, then the stage says ready,…
+    760|     await waitFor(() => expect(screen.queryByTestId('catalogue-screen-…
+    761|     expect(screen.queryByTestId('catalogue-screen-ready'), section.id)…
+       |                                                                            ^
+    762|     expect(states[section.id](), section.id).toEqual(expected[section.…
+    763|     cleanup();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

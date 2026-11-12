@@ -1,0 +1,81 @@
+diff --git a/apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx b/apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx
+index e8bb7e168379bcfc1664bc8ad5d8faa2b6d24863..f031e698ec9a0021f945f4a585a7abe58c825d88 100644
+--- a/apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx
++++ b/apps/app/src/screens/redesign/planning/PlanningRoutes.render.test.tsx
+@@ -1,13 +1,17 @@
+ // The R4 Planning routes (app/spend/budget.tsx, wallets.tsx, categories.tsx):
+ // each shows its screen only under the `planning` area, never in the legacy
+ // build, and otherwise goes back to Home. While the `wallet` area is on,
+-// wallets.tsx shows the Bun Wallet's list instead (P2-T20).
++// wallets.tsx shows the Bun Wallet's list instead (P2-T20), and the Bun
++// Wallet's new-wallet and edit routes (P2-T21: wallet/new.tsx and
++// wallet/[id]/edit.tsx) show its screens; otherwise they go to the list.
+ import { cleanup, render, screen } from '@testing-library/react';
+ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+ 
+ import SpendBudgetRoute from '../../../../app/spend/budget';
+ import SpendCategoriesRoute from '../../../../app/spend/categories';
+ import SpendWalletsRoute from '../../../../app/spend/wallets';
++import SpendWalletEditRoute from '../../../../app/spend/wallet/[id]/edit';
++import SpendNewWalletRoute from '../../../../app/spend/wallet/new';
+ 
+ const route = vi.hoisted(() => ({ params: {} as Record<string, string> }));
+ vi.mock('expo-router', async () => {
+@@ -40,6 +44,25 @@ vi.mock('@mobile/wallet/wallets/WalletsListScreen', async () => {
+       createElement(Text, null, `wallet list${openReorder ? ' reordering' : ''} with ${String((useSpendV1() as unknown as { marker: string }).marker)}`),
+   };
+ });
++// The Bun Wallet's new-wallet flow and edit screen (P2-T21), which say where they return and which wallet they edit.
++vi.mock('@mobile/wallet/wallets/NewWalletFlow', async () => {
++  const { createElement } = await import('react');
++  const { Text } = await import('react-native');
++  const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
++  return {
++    NewWalletFlow: ({ returnTo }: { returnTo?: string }) =>
++      createElement(Text, null, `new wallet${returnTo ? ` back to ${returnTo}` : ''} with ${String((useSpendV1() as unknown as { marker: string }).marker)}`),
++  };
++});
++vi.mock('@mobile/wallet/wallets/WalletEditScreen', async () => {
++  const { createElement } = await import('react');
++  const { Text } = await import('react-native');
++  const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
++  return {
++    WalletEditScreen: ({ walletId }: { walletId: string }) =>
++      createElement(Text, null, `editing ${walletId} with ${String((useSpendV1() as unknown as { marker: string }).marker)}`),
++  };
++});
+ 
+ const ENV = { redesign: process.env.EXPO_PUBLIC_REDESIGN, legacy: process.env.EXPO_PUBLIC_LEGACY_SPEND };
+ function flags({ redesign, legacy }: { redesign?: string; legacy?: string }) {
+@@ -95,3 +118,31 @@ test('in the wallet area wallets.tsx shows the Bun Wallet list with the shared r
+   render(<SpendWalletsRoute />);
+   expect(screen.queryByText('redirect to /spend')).not.toBeNull();
+ });
++
++test('in the wallet area the new-wallet and edit routes show the Bun Wallet screens with the shared resources, ?setup=1 and the list return there, and otherwise they go to the wallets list', () => {
++  flags({ redesign: 'wallet' });
++  for (const [params, text] of [
++    [{}, 'new wallet with shared resources'],
++    [{ setup: '1' }, 'new wallet back to /spend/setup with shared resources'],
++    [{ returnTo: '/spend/wallets' }, 'new wallet back to /spend/wallets with shared resources'],
++    [{ setup: '0', returnTo: 'https://example.com' }, 'new wallet with shared resources'],
++  ] as const) {
++    route.params = { ...params };
++    render(<SpendNewWalletRoute />);
++    expect(screen.queryByText(text), text).not.toBeNull();
++    cleanup();
++  }
++  route.params = { id: '0000000a-0000-4000-8000-000000000001' };
++  render(<SpendWalletEditRoute />);
++  expect(screen.queryByText('editing 0000000a-0000-4000-8000-000000000001 with shared resources')).not.toBeNull();
++  cleanup();
++  // With the wallet area off, the wallets list; the legacy build goes back to Home.
++  for (const [redesign, legacy, to] of [[undefined, undefined, '/spend/wallets'], ['-wallet', undefined, '/spend/wallets'], ['wallet', '1', '/spend']] as const) {
++    flags({ redesign, legacy });
++    for (const Route of [SpendNewWalletRoute, SpendWalletEditRoute]) {
++      render(<Route />);
++      expect(screen.queryByText(`redirect to ${to}`), `${redesign} ${legacy}`).not.toBeNull();
++      cleanup();
++    }
++  }
++});

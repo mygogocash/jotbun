@@ -1,0 +1,46 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/ui/dateStep.test.ts src/wallet/insights/calendarShade.test.ts src/wallet/copy/draftText.test.ts
+
+(node:73273) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:73273) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t31/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p2-t31/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.587167ms)
+✔ leap days follow the Gregorian rules (0.091333ms)
+✔ only real YYYY-MM-DD dates are accepted (0.211958ms)
+✔ never steps into the future (0.117875ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.06175ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.330875ms)
+✔ other days are written out, with the year only when it is not this year (0.386667ms)
+✔ Thai dates show Buddhist-era years (0.159292ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.09125ms)
+✔ weekday initials run Sunday first in each language (0.174667ms)
+✔ a month's short name has no year, in each language (0.126542ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.0895ms)
+(node:73274) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/copy/draftText.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every draft line has Thai and English, with the same placeholders (31.717625ms)
+✔ no draft line has an emoji or a dash used as punctuation (2.510791ms)
+✔ every key is unique across every table and has an area prefix (2.047375ms)
+✔ draftText picks Thai for th and English for en and vi, then fills placeholders (0.165083ms)
+(node:73275) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/src/wallet/insights/calendarShade.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t31-fix-planner/work/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ calendarShade maps satang amounts to steps 0 through 5 (0.62775ms)
+✔ negative satang amounts map to step 0 (0.06925ms)
+✔ exact boundary limits: 200, 500, 1000, 2000 baht (0.053583ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.874166

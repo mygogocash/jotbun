@@ -1,0 +1,101 @@
+diff --git a/apps/app/src/wallet/wallets/WalletsList.render.test.tsx b/apps/app/src/wallet/wallets/WalletsList.render.test.tsx
+index 85760f8880d01e051ec0c48466837a5aab4a0233..78d7c271aded1d87cfcb9251e1c9b3b04a616208 100644
+--- a/apps/app/src/wallet/wallets/WalletsList.render.test.tsx
++++ b/apps/app/src/wallet/wallets/WalletsList.render.test.tsx
+@@ -35,6 +35,7 @@ vi.mock('@mobile/theme/AppText', async (importOriginal) => {
+ 
+ import type { WalletSnapshot } from '@gogospend/contracts';
+ import type { ReactElement } from 'react';
++import { Text } from 'react-native';
+ 
+ import SpendWalletsRoute from '../../../app/spend/wallets';
+ import { rgba } from '@mobile/dev/catalogue/catalogueTestHarness';
+@@ -44,7 +45,7 @@ import { translateCopy } from '@mobile/i18n/messages';
+ import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
+ import { createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
+ import { materialPaint, walletDark, walletLight } from '@mobile/theme/walletPalette';
+-import { LOOKS_NAME, WALLET_ORDER_NAME } from '../looks/WalletLooksProvider';
++import { LOOKS_NAME, useWalletLooks, WALLET_ORDER_NAME } from '../looks/WalletLooksProvider';
+ import type { WalletLook } from '../looks/walletLooks';
+ import { PRIVATE_MODE_NAME } from '../privacy/PrivateModeProvider';
+ import { AX5, mountWallet, TEST_ACCOUNT_ID } from '../testing/walletHarness';
+@@ -396,12 +397,13 @@ test('when the credit cards have spent more than is held, the total is below zer
+   expect([found('wallets-held-amount').textContent, found('wallets-credit-used').textContent]).toEqual(['฿1,200', '฿3,920']);
+ });
+ 
+-test('a row opens its wallet, the add tile a new wallet, and back goes back or home', async () => {
++test('a row opens its wallet, the add tile a new wallet that comes back here, and back goes back or home', async () => {
+   mountWallet(<WalletsListScreen />, { resources: board().resources, account: KEPT });
+   await settle();
+   fireEvent.click(found(`wallet-row-${W.card}`));
+   fireEvent.click(found('wallets-add'));
+-  expect(router.push.mock.calls).toEqual([[`/spend/wallet/${W.card}`], ['/spend/wallet/new']]);
++  // P2-T21's flow returns to the list it was opened from (P2-T20's review).
++  expect(router.push.mock.calls).toEqual([[`/spend/wallet/${W.card}`], [{ pathname: '/spend/wallet/new', params: { returnTo: '/spend/wallets' } }]]);
+   fireEvent.click(named('button', 'กลับ'));
+   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
+   router.canGoBack.mockReturnValue(false);
+@@ -498,3 +500,63 @@ test("the wallets list's sections come right after the add tray's, and each open
+     cleanup();
+   }
+ }, 60_000);
++
++// P2-T20's review pins (reviews/P2-T20.md: PA, PB and PF), carried by the next task that edits this file (P2-T21).
++
++test('opening and closing the reorder tray keeps nothing; each press keeps the order once', async () => {
++  // The kept order also names an unknown id and an archived one: a write of what the tray shows would drop them.
++  const keptOrder = JSON.stringify([W.main, W.cash, W.card, W.transit, 'gone', W.old]);
++  const view = mountWallet(<WalletsListScreen />, { resources: board().resources, account: { [LOOKS_NAME]: JSON.stringify(LOOKS), [WALLET_ORDER_NAME]: keptOrder } });
++  const writes: string[] = [];
++  const set = view.stored.set.bind(view.stored);
++  view.stored.set = (key: string, value: string) => {
++    if (key === ORDER_KEY) writes.push(value);
++    return set(key, value);
++  };
++  await settle();
++  fireEvent.click(named('button', 'จัดเรียง'));
++  await settle();
++  startAnimations();
++  expect(screen.queryAllByRole('dialog', { name: 'จัดเรียง' })).toHaveLength(1);
++  fireEvent.click(named('button', 'ปิด'));
++  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
++  expect(writes).toEqual([]);
++  expect(view.stored.get(ORDER_KEY)).toBe(keptOrder);
++  fireEvent.click(named('button', 'จัดเรียง'));
++  await settle();
++  startAnimations();
++  fireEvent.click(named('button', 'ย้ายเงินสดขึ้น'));
++  await settle();
++  expect(writes.map((value) => JSON.parse(value) as unknown)).toEqual([[W.cash, W.main, W.card, W.transit]]);
++});
++
++function OrderProbe() {
++  const { order } = useWalletLooks();
++  return <Text testID="order-probe">{order.join(',')}</Text>;
++}
++
++test('the route mounts no looks provider of its own, so a press reaches the provider around it', async () => {
++  vi.stubEnv('EXPO_PUBLIC_REDESIGN', 'wallet');
++  const fake = board();
++  shared.resources = fake.resources;
++  mountWallet(
++    <LocalRouteParamsContext.Provider value={{ reorder: '1' }}>
++      <SpendWalletsRoute />
++      <OrderProbe />
++    </LocalRouteParamsContext.Provider>,
++    { resources: fake.resources, account: KEPT },
++  );
++  await settle();
++  startAnimations();
++  expect(screen.getByTestId('order-probe').textContent).toBe([W.main, W.cash, W.card, W.transit].join(','));
++  fireEvent.click(named('button', 'ย้ายเงินสดขึ้น'));
++  await settle();
++  expect(screen.getByTestId('order-probe').textContent).toBe([W.cash, W.main, W.card, W.transit].join(','));
++});
++
++test('wallets the kept order does not name follow by name, as the device diary sorts names', async () => {
++  mountWallet(<WalletsListScreen />, { resources: board().resources, account: { [LOOKS_NAME]: JSON.stringify(LOOKS) } });
++  await settle();
++  // localeCompare (spendDiary.ts:105): เงินสด, บัญชีหลัก, บัตรเครดิต, บัตรเดินทาง; by code point เงินสด would come last.
++  expect(rowIds()).toEqual([W.cash, W.main, W.card, W.transit]);
++});

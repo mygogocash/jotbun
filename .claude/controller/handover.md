@@ -49,6 +49,23 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **09:50: #428 (P3-T6) opened.** Head `8b528df1`, built by Haiku. The controller checked 20 of 21 `real/` files byte-identical (the receipt only adds "as accepted by the controller"); 30 of 30 mutants.
+  - Opus reviewer `mcp:launch:7af3cde0bab339da1916635e5abc6cb2713cd4fab4cfb1ad2caa7d968955eb0a` writes `reviews/P3-T6.md`.
+  - Sonnet second reviewer `mcp:launch:7f8ac96f0cd5645510cb20962d374acd6306b633e8d67d1da87e4154feb9e037` writes `reviews/P3-T6-second.md`.
+  - CI is running (`ci_watch.sh 115 427 428`).
+- **09:40: P2-T31 fix brief READY (Opus, R112); its fixer is building (Haiku).**
+  - 127 of 127 mutants. The gate includes the catalogue-index kit files and `test:unit`. Sections load lazily. `dateStep.ts` gains `monthShortLabel` and `shortDateLabel` (additive).
+  - Fixer on worktree `p2-t31` at `afc19276`, with no sync merge. P1 to P23 accepted.
+  - **After its commit:** check the kit, push, then merge the head into the branch. `index.ts` goes KIT, STACK, TRAY, ADD, LIST, RECORD, (CATEGORY when #423 lands), INSIGHTS, RECAP, LOCK. Then CI, then the Opus confirming review.
+- **09:35: #427 (P2-T15) opened; P2-T21 building.**
+  - **#427 (P2-T15):** head `fd41909c`, built by Haiku. The controller checked all 7 `real/` files byte-identical; 104 of 104 mutants, matching the planner.
+    - Opus reviewer `mcp:launch:4b36bd564c682ce13a5243d00f8858d781da321e1c4af0788974d581bdae37b2` writes `reviews/P2-T15.md`.
+    - Sonnet second reviewer `mcp:launch:62f8743d31ad1a4718ee4ef32ae02cd8c170392370e42a1a3c34397c9e024d28` writes `reviews/P2-T15-second.md`.
+    - CI is running.
+  - **P2-T21 brief READY (Opus):** kit sums 55 of 55, 109 of 109 mutants, new routes `app/spend/wallet/new.tsx` and `[id]/edit.tsx`.
+    - The controller's pre-flight on the kit over the head: tsc 0; the eight catalogue-index kit files, the new suites and the routes 175 of 175; `test:unit` 1037 of 1037. Then the worktree was reset.
+    - Worktree `p2-t21` (`p2/t21-wallet-edit`) at `150cfb82`, installed. P1 to P21 accepted. Implementer: Haiku 5.5 max.
+  - **The pre-flight is now routine for UI briefs.** Lay `real/` over a fresh worktree, run the catalogue-index files, the routes and `test:unit`, then `git checkout -- . && git clean -fd apps docs` before dispatch.
 - **09:20: #420 (P3-T2) MERGED as `25ce266`; the head is `25ce266`.**
   - Opus approved, the second review (Claude Sonnet 5.5) approved, and CI was 9 of 9.
   - Issue #186 is closed and it is promoted as **#426** (stack #379 holds 26). The release rule (client minimum 0.2.0) is in followups.md for the owner and P6C.
