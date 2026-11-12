@@ -25,8 +25,8 @@ import type { ScreenFixture, Translate } from '../screenSection';
 
 type CompanionFixture = ScreenFixture & { readonly ai: AiResources };
 
-/** AI resources that answer at once from fixed data. */
-function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Partial<AiResources> = {}): AiResources {
+/** AI resources that answer at once from fixed data. The wallet recap's cashback state uses them too (P2-T32). */
+export function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrides: Partial<AiResources> = {}): AiResources {
   let current: AiPreferencesDto = { companion: false, cashback_tips: false, notice_version: null, current_notice_version: 1, remaining: { ...AI_DAILY_LIMITS }, available: true, ...preferences };
   return {
     preferences: async () => current,
