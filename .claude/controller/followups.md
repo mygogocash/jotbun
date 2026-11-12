@@ -598,7 +598,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `?reorder=1` is read once at mount, so push a new list instance from Home's จัดเรียง.
     - With no account open, `?reorder=1` opens the tray once the account opens (probe PD). It is not pinned.
   - **E2-B:** a paid-ahead card reads ยอดที่ใช้ไป above a positive balance. A card's row says spending twice; that row is drawn as on the board.
-- P2-T25 (#412): the confirming review is `reviews/P2-T25-confirm.md` (Opus, approved at `272aa84b`: m1, n1 to n3). The merge is recorded below once it lands. Carried by the next task that edits `SpendRoutes.render.test.tsx` or `WalletDeleted.render.test.tsx` (P2-T27, or 1D-T7 for the event):
+- P2-T25 (#412, merged 12 Nov as 82b9669 at 6e2541a2, after the R109 fix round; promotion #425): the confirming review is `reviews/P2-T25-confirm.md` (Opus, approved at `272aa84b`: m1, n1 to n3). Carried by the next task that edits `SpendRoutes.render.test.tsx` or `WalletDeleted.render.test.tsx` (P2-T27, or 1D-T7 for the event):
   - **m1:** nothing checks that the `wallet` area shows `WalletDeletedScreen` on the shared resources. Let the wallet stub read `useSpendV1()`, as the old screen's stub does, and add the review's probe cases. They kill X3a and X3b.
   - **n1:** pin "a restore, then private mode turned on", which is handled right.
   - **n2:** pin a transfer's amount on a row.

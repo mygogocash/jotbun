@@ -49,6 +49,20 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **08:50: #412 (P2-T25) MERGED as `82b9669`; the head is `82b9669`.**
+  - The confirming review approved, and CI was 9 of 9 at `6e2541a2`.
+  - Issue #171 is closed and it is promoted as **#425** (stack #379 holds 25).
+  - `index.ts` on the head is now ADD, LIST, RECORD, RECAP, LOCK (`a07ed204…`). #421 (P2-T31) and #423 (P2-T29) each need a merge of the head once their fix rounds land: CATEGORY goes after RECORD, and INSIGHTS after CATEGORY, before RECAP.
+- **08:40: #423 (P2-T29): Opus says NEEDS FIXES**, with 4 blockers and 12 majors (`reviews/P2-T29.md`).
+  - The blockers:
+    - B1: the Hermes guard (`globalThis.crypto`) fails `test:unit`;
+    - B2: eight kit render files can't load the eager catalogue import of `expo-crypto`;
+    - B3: unnamed text fields;
+    - B4: an unconfirmed save makes a duplicate category.
+  - CI was red; the run was cancelled.
+  - **R113:** fix every blocker, major and minor; m2 and m6 are required; the files may be rewritten. The gate is widened: `test:unit`, the eight kit files, the catalogue's `bw-categor` suites and the routes tests.
+  - Fix planner (Opus): `mcp:launch:aba488d99e4d62e1879dd2e40b416acd0351c31a6dded1e13b422ad157f50fd5`, writing `briefs/P2-T29-fix.md` with the kit at `scratch/p2-t29-fix-planner/`, on `cee7eff5`.
+  - **Routing (lessons.md):** UI screens are planned on Opus from now on. A Flash brief review is not enough.
 - **08:30: #411 (P2-T32) MERGED as `ab9f2c1`; the head is `ab9f2c1`.**
   - The confirming review approved, and CI was 9 of 9 at `764ea0ac`.
   - Issue #178 is closed and it is promoted as **#424** (stack #379 holds 24). Its carriers are in followups.md (n3 must land before E2-C).
