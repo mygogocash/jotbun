@@ -5,6 +5,7 @@
  * opening balances and transfers.
  */
 import type { Minor, Revision } from "./common.ts";
+import type { CurrencyCode } from "./currency.ts";
 import type { TransactionDto, TransactionType } from "./transactions.ts";
 
 export const HISTORY_SORTS = ["date_desc", "date_asc"] as const;
@@ -12,6 +13,8 @@ export type HistorySort = (typeof HISTORY_SORTS)[number];
 export const HISTORY_DEFAULT_LIMIT = 50;
 export const HISTORY_MAX_LIMIT = 200;
 export const HISTORY_QUERY_MAX_CHARS = 100;
+/** The most wallets one filter's `wallet_ids` names (P5-T2). */
+export const HISTORY_MAX_WALLETS = 20;
 
 /** Inclusive Gregorian date bounds plus optional scope. */
 export type HistoryFilter = {
@@ -23,6 +26,12 @@ export type HistoryFilter = {
   /** Case-insensitive text in the note or merchant. */
   query?: string;
   sort: HistorySort;
+  /** P5-T2: the records of one trip. */
+  trip_id?: string;
+  /** P5-T2: the records in one currency. */
+  currency?: CurrencyCode;
+  /** P5-T2: the records of any of these wallets, 1 to HISTORY_MAX_WALLETS; never with `wallet_id`. */
+  wallet_ids?: string[];
 };
 
 export type Totals = {
@@ -36,6 +45,12 @@ export type Totals = {
    * shows only that transfer, not the other wallet's net change.
    */
   by_wallet: Readonly<Record<string, Minor>>;
+  /**
+   * P5-T2: the home currency of every amount here but `by_wallet`, whose
+   * amounts are each in its wallet's currency. Totals read before phase 5
+   * leave it out, and their amounts are baht.
+   */
+  currency?: CurrencyCode;
 };
 
 export type FilteredTotals = Totals & { count: number };
