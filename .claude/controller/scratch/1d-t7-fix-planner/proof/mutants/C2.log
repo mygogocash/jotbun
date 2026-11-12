@@ -1,0 +1,73 @@
+(node:59228) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app/src/analytics/controller.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59228) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/packages/contracts/package.json.
+✔ signed out, events are held and never sent (0.583708ms)
+✔ events tracked before sign-in are held across the sign-in and sent after a yes (0.433292ms)
+✔ held events are dropped when another account signs in, and on no (0.154916ms)
+✔ what was held before the launch's first answer survives it, also when no one is signed in, and is sent after a sign-in and a yes (0.090625ms)
+✔ signing out still drops what was held, so the next sign-in starts with nothing (P14, L4) (0.085167ms)
+✔ the server's yes sends at once, identifies with the analytics id and starts replay (0.152625ms)
+✔ replay never starts when it is not allowed (0.086042ms)
+✔ never asked: the question is open, events wait in memory, and the identity is reset (0.059708ms)
+✔ a no read at launch after an earlier yes resets the identity (0.070042ms)
+✔ a no given on another phone stops this phone at its next foreground (0.104083ms)
+✔ a pending no is kept until the server has it (0.11975ms)
+✔ saying no stops replay and resets the identity (0.0705ms)
+✔ a no from another phone is not asked again on this one (0.278792ms)
+✔ a yes the server could not save rejects and changes nothing (0.145125ms)
+✔ offline with nothing known waits, then asks (0.098709ms)
+✔ the held events stop at 50, oldest first out (0.090083ms)
+✔ screens are sent only as patterns and only after yes (0.198ms)
+✖ the screen on display when the answer turns yes is sent then, once, and only when it has a pattern (0.381667ms)
+✔ without an analytics id the person stays anonymous, and a later refresh identifies them (0.055458ms)
+✔ a stored yes with the server unreachable enters yes without an identity (0.045292ms)
+✔ without a client, nothing is sent and consent still resolves (0.02725ms)
+✔ recordAnalytics installs a consented recorder and restores the previous one (0.105ms)
+✔ a no from the server stops capture before this phone stores it (0.049791ms)
+✔ an answer gone from the server stops capture before this phone erases its own (0.038416ms)
+✔ a yes still on its way cannot outlast a later no at the server (6.327208ms)
+✔ a yes being stored when the person says no cannot replace the no (3.75275ms)
+✔ a foreground refresh waiting behind a yes cannot undo a later no (3.7475ms)
+✔ a yes waiting behind another call is refused once another account has signed in (2.911458ms)
+✔ a yes on its way when another account signs in is never stored or applied for the next one (5.09075ms)
+✔ a yes still waiting when the person says no is never sent (2.854ms)
+✔ a refresh after a yes does not keep the yes from the server (3.834ms)
+✔ a no given while a refresh is on its way is stored at once (4.9385ms)
+✔ the no stored at the call lands before the queue writes and sends it (1.350083ms)
+✔ a yes waiting while the same account signs out and in again is still sent for it (2.493375ms)
+✔ a no is pending from the call until the server takes it, and listeners hear when it lands (0.101625ms)
+✔ a no the server takes at once is pending only while its call is on its way (3.576458ms)
+✔ at a load, only a stored no this phone has not delivered is pending (0.095084ms)
+✔ a yes, or a sign-out, ends a pending no (0.047042ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 37
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 177.6965
+
+✖ failing tests:
+
+test at src/analytics/controller.test.ts:402:1
+✖ the screen on display when the answer turns yes is sent then, once, and only when it has a pattern (0.381667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app/src/analytics/controller.test.ts:412:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

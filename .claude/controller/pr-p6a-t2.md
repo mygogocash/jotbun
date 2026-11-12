@@ -21,7 +21,7 @@
   - `test:app` 36 and `test:unit` 1069;
   - the four routes tests (route screens load `dateStep.ts`): 15;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs.
+- [x] CI at `cf538e69`: 9 of 9.
 - [ ] Independent review (Opus), and a second review: the lock faces, the money and the midnight and month-end entries.
 - [ ] SKIPPED: device checks (nothing native draws the snapshot until P6A-T8).
 

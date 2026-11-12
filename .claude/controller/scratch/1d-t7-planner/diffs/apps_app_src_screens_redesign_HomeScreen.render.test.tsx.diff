@@ -1,0 +1,66 @@
+diff --git a/apps/app/src/screens/redesign/HomeScreen.render.test.tsx b/apps/app/src/screens/redesign/HomeScreen.render.test.tsx
+index 54ab7eca7eccd717f17f8d9d66ff1d986872c54b..46391a55b098e2c8e2f86dd59826c3b061125e4a 100644
+--- a/apps/app/src/screens/redesign/HomeScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/HomeScreen.render.test.tsx
+@@ -11,6 +11,8 @@ import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
+ // the mascot and kit tests).
+ 
+ import type { BudgetDto, CreateWalletRequest, TransactionDto } from '@gogospend/contracts';
++import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
++import type { Recorded } from '@mobile/analytics/testing/recordAnalytics';
+ 
+ import type { Locale } from '@mobile/i18n/locales';
+ import { translateCopy } from '@mobile/i18n/messages';
+@@ -815,3 +817,52 @@ test('with Account on, Home has Settings in its header; switched off, it has non
+     vi.unstubAllEnvs();
+   }
+ });
++
++// ---------------------------------------------------------------------------
++// Analytics (1D-T7, R61): Home's first-wallet form keeps its own wallet_added.
++
++const capturedNames = (sent: Recorded[]) => sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
++
++test('creating a wallet records one wallet_added, without its name or opening balance', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const fake = createFakeResources();
++    fake.loseResponse('createWallet');
++    mountHome(fake.resources);
++    await openFirstWallet();
++    type('Wallet name', 'กระเป๋าเงินสด');
++    type('Opening balance', '1,234.50');
++    fireEvent.click(screen.getByRole('button', { name: 'Create wallet' }));
++    expect(await screen.findByText('Not confirmed yet. Your entry is kept; try again.')).toBeTruthy();
++    expect(capturedNames(recorded.sent)).toEqual([]);
++    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
++    expect(await screen.findByLabelText('กระเป๋าเงินสด ฿1,234.50')).toBeTruthy();
++    expect(capturedNames(recorded.sent)).toEqual([{ name: 'wallet_added', properties: { origin: 'app' } }]);
++    const json = JSON.stringify(recorded.sent);
++    for (const secret of ['กระเป๋าเงินสด', '123450', '1,234.50']) expect(json).not.toContain(secret);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('a first wallet an earlier attempt had already made records one wallet_added; a refused one records none', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const fake = createFakeResources();
++    fake.fail('createWallet', 'invalid', { status: 422, code: 'NAME_TAKEN', fields: { name: 'x' } });
++    mountHome(fake.resources);
++    await openFirstWallet();
++    type('Wallet name', 'Cash');
++    fireEvent.click(screen.getByRole('button', { name: 'Create wallet' }));
++    expect(await screen.findByText('Check this and try again.')).toBeTruthy();
++    expect(capturedNames(recorded.sent)).toEqual([]);
++    // An earlier attempt of this same wallet had in fact committed.
++    const [input] = fake.callsOf('createWallet')[0].args as [CreateWalletRequest, string];
++    fake.wallets.set(input.id, { ...input, currency: 'THB', archived: false, version: 1 });
++    fireEvent.click(screen.getByRole('button', { name: 'Create wallet' }));
++    expect(await screen.findByLabelText('Cash ฿0.00')).toBeTruthy();
++    expect(capturedNames(recorded.sent)).toEqual([{ name: 'wallet_added', properties: { origin: 'app' } }]);
++  } finally {
++    recorded.restore();
++  }
++});

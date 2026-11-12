@@ -1,0 +1,43 @@
+diff --git a/apps/app/src/analytics/controller.test.ts b/apps/app/src/analytics/controller.test.ts
+index d3e2e134728940979970178d92b97244c8bd0adc..0361a6426f39bc77399d73184da77de287c498c2 100644
+--- a/apps/app/src/analytics/controller.test.ts
++++ b/apps/app/src/analytics/controller.test.ts
+@@ -353,8 +353,8 @@ test('screens are sent only as patterns and only after yes', async () => {
+   h.analytics.setCommon({ app_version: '1.2.3', platform: 'ios', language: 'en', home_currency: 'THB', ai_enabled: false });
+   h.analytics.screen(['spend', 'record', '[id]']);
+   assert.equal(h.screens().length, 0);
++  // The screen on display when the answer turns yes is sent then (1D-T6's review, m3).
+   await h.analytics.setAccount(ACCOUNT_A);
+-  h.analytics.screen(['spend', 'record', '[id]']);
+   assert.equal(h.screens().length, 1);
+   assert.equal(h.screens()[0]?.name, '/spend/record/[id]');
+   assert.deepEqual(h.screens()[0]?.properties, {
+@@ -377,6 +377,28 @@ test('screens are sent only as patterns and only after yes', async () => {
+   assert.equal(h.screens().length, before);
+ });
+ 
++test('the screen on display when the answer turns yes is sent then, once, and only when it has a pattern', async () => {
++  const h = harness({ consent: 'unasked' });
++  h.analytics.screen(['(tabs)', 'settings', 'privacy']);
++  await h.analytics.setAccount(ACCOUNT_A);
++  assert.equal(h.analytics.status(), 'unanswered');
++  assert.equal(h.screens().length, 0);
++  await h.analytics.answer('yes');
++  assert.deepEqual(h.screens().map((event) => event.name), ['/settings/privacy']);
++  // Already yes: a refresh is not a new screen.
++  await h.analytics.refresh();
++  assert.equal(h.screens().length, 1);
++  // A screen whose route holds a real value has no pattern, so turning yes again sends nothing for it.
++  h.analytics.screen(['spend', 'record', '0b3f2c1e-6a4d-4f6e-9a51-2f3c4d5e6f70']);
++  await h.analytics.answer('no');
++  await h.analytics.answer('yes');
++  assert.equal(h.screens().length, 1);
++  h.analytics.screen(['(tabs)', 'home']);
++  await h.analytics.answer('no');
++  await h.analytics.answer('yes');
++  assert.deepEqual(h.screens().map((event) => event.name), ['/settings/privacy', '/home', '/home']);
++});
++
+ test('without an analytics id the person stays anonymous, and a later refresh identifies them', async () => {
+   const h = harness({ consent: 'yes', analyticsId: null, weeks: 2 });
+   await h.analytics.setAccount(ACCOUNT_A);

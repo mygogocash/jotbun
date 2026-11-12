@@ -1,0 +1,38 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+ ❯ src/screens/redesign/QuickAddScreen.render.test.tsx (85 tests | 1 failed | 84 skipped) 329ms
+   × a save kept on this phone is offline unless the last sync ended synced 326ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/QuickAddScreen.render.test.tsx > a save kept on this phone is offline unless the last sync ended synced
+AssertionError: synced: expected [ true ] to deeply equal [ false ]
+
+- Expected
++ Received
+
+  [
+-   false,
++   true,
+  ]
+
+ ❯ src/screens/redesign/QuickAddScreen.render.test.tsx:1132:108
+    1130|       save();
+    1131|       expect(await screen.findByText('Saved on this device')).toBeTrut…
+    1132|       expect(savedEvents(recorded.sent).map((event) => event.propertie…
+       |                                                                                                            ^
+    1133|     } finally {
+    1134|       recorded.restore();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 84 skipped (85)
+   Start at  20:51:22
+   Duration  1.37s (transform 509ms, setup 57ms, import 739ms, tests 329ms, environment 111ms)
+

@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx (65 tests | 1 failed | 64 skipped) 65ms
+   × Restore of an income records record_restored with kind income 62ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/RecordScreen.render.test.tsx > Restore of an income records record_restored with kind income
+AssertionError: expected [ { name: 'record_restored', …(1) } ] to deeply equal [ { name: 'record_restored', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "name": "record_restored",
+      "properties": {
+-       "kind": "income",
++       "kind": "expense",
+        "origin": "app",
+      },
+    },
+  ]
+
+ ❯ src/screens/redesign/RecordScreen.render.test.tsx:1073:37
+    1071|     expect(await screen.findByRole('button', { name: 'Edit' })).toBeTr…
+    1072|     expect(fake.callsOf('restoreTransaction')).toHaveLength(1);
+    1073|     expect(captures(recorded.sent)).toEqual([{ name: 'record_restored'…
+       |                                     ^
+    1074|     const json = JSON.stringify(recorded.sent);
+    1075|     for (const secret of ['2800000', '28,000', 'September salary', 'Da…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 64 skipped (65)
+   Start at  21:51:13
+   Duration  772ms (transform 326ms, setup 41ms, import 477ms, tests 65ms, environment 83ms)
+

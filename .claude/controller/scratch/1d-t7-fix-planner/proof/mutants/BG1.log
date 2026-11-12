@@ -1,0 +1,44 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-fix-planner/tree/apps/app
+
+ ❯ src/screens/redesign/planning/BudgetScreen.render.test.tsx (39 tests | 1 failed | 38 skipped) 182ms
+   × saving the month's budget records one budget_set, without the amount 179ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/planning/BudgetScreen.render.test.tsx > saving the month's budget records one budget_set, without the amount
+AssertionError: expected [] to deeply equal [ { name: 'budget_set', …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "name": "budget_set",
+-     "properties": {
+-       "budget": "set",
+-       "origin": "app",
+-     },
+-   },
+- ]
++ []
+
+ ❯ src/screens/redesign/planning/BudgetScreen.render.test.tsx:600:24
+    598|     click('Try again');
+    599|     expect(await screen.findByText('Budget saved')).toBeTruthy();
+    600|     expect(captured()).toEqual([{ name: 'budget_set', properties: { bu…
+       |                        ^
+    601|     const json = JSON.stringify(recorded.sent);
+    602|     for (const secret of ['1800000', '18000', '18,000']) expect(json).…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 38 skipped (39)
+   Start at  21:50:50
+   Duration  1.03s (transform 349ms, setup 68ms, import 517ms, tests 182ms, environment 142ms)
+

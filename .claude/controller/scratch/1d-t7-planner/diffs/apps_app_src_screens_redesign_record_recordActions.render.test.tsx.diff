@@ -1,0 +1,45 @@
+diff --git a/apps/app/src/screens/redesign/record/recordActions.render.test.tsx b/apps/app/src/screens/redesign/record/recordActions.render.test.tsx
+index 2d7ca4ec0adb9d92aaa3b87e4438297eee6b842b..7207ebb6278d14acb23a1b92689259070688520b 100644
+--- a/apps/app/src/screens/redesign/record/recordActions.render.test.tsx
++++ b/apps/app/src/screens/redesign/record/recordActions.render.test.tsx
+@@ -11,8 +11,9 @@ vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ t
+ vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
+ 
+ import type { TransactionDto } from '@gogospend/contracts';
++import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
+-import { createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
++import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
+ import { NOW, RENT, mountScreen } from '../HistoryTestHarness';
+ import { useRecordActions } from './recordActions';
+ 
+@@ -57,6 +58,7 @@ function Probe({ id, mode = 'view' }: { id: string; mode?: 'view' | 'edit' }) {
+       <Pressable accessibilityRole="button" accessibilityLabel="Try again" onPress={() => void actions.submitEdit()}><Text>Try again</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Digit" onPress={() => actions.pressKey('5')}><Text>Digit</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Note" onPress={() => actions.changeEditing((current) => ({ ...current, draft: { ...current.draft, note: 'Changed here' } }))}><Text>Note</Text></Pressable>
++      <Pressable accessibilityRole="button" accessibilityLabel="Food" onPress={() => actions.changeEditing((current) => ({ ...current, draft: { ...current.draft, categoryByType: { ...current.draft.categoryByType, expense: BUILTINS[0].id } } }))}><Text>Food</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Restore" onPress={() => { if (record) void actions.restore({ id: record.id, version: record.version }); }}><Text>Restore</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Edit" onPress={() => actions.startEditing()}><Text>Edit</Text></Pressable>
+       <Pressable accessibilityRole="button" accessibilityLabel="Cancel" onPress={() => actions.cancelEditing()}><Text>Cancel</Text></Pressable>
+@@ -165,3 +167,21 @@ test('starting an edit clears the notice', async () => {
+   expect(state()).toContain('editing base 3');
+   expect(state()).toContain('notice none');
+ });
++
++test("an acknowledged edit that moves the entry to another category records the new category's key (1D-T7)", async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const fake = mount(RENT);
++    await waitFor(() => expect(state()).toContain('loaded ready'));
++    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
++    fireEvent.click(screen.getByRole('button', { name: 'Food' }));
++    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
++    await waitFor(() => expect(fake.callsOf('updateTransaction')).toHaveLength(1));
++    expect(fake.callsOf('updateTransaction')[0].args[2]).toEqual({ category_id: BUILTINS[0].id });
++    await waitFor(() => expect(state()).toContain('editing none'));
++    const captured = recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => [name, properties]);
++    expect(captured).toEqual([['record_edited', { kind: 'expense', category_key: 'food', origin: 'app' }]]);
++  } finally {
++    recorded.restore();
++  }
++});

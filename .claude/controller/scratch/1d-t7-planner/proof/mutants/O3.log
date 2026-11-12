@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t7-planner/tree/apps/app
+
+ ❯ src/screens/redesign/account/OnboardingScreen.render.test.tsx (31 tests | 1 failed | 30 skipped) 92ms
+   × each story step records onboarding_step_viewed, in the order coffee, private, first_coffee, reminder 89ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/account/OnboardingScreen.render.test.tsx > each story step records onboarding_step_viewed, in the order coffee, private, first_coffee, reminder
+AssertionError: expected [ …(6) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+@@ -13,6 +13,14 @@
+    ],
+    [
+      "onboarding_step_viewed",
+      "reminder",
+    ],
++   [
++     "onboarding_step_viewed",
++     "reminder",
++   ],
++   [
++     "onboarding_step_viewed",
++     "reminder",
++   ],
+  ]
+
+ ❯ src/screens/redesign/account/OnboardingScreen.render.test.tsx:558:19
+    556|     expect(screen.getByRole('button', { name: COPY.continue })).toBeTr…
+    557|     const steps = recorded.sent.filter((event) => event.kind === 'capt…
+    558|     expect(steps).toEqual([
+       |                   ^
+    559|       ['onboarding_step_viewed', 'coffee'],
+    560|       ['onboarding_step_viewed', 'private'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 30 skipped (31)
+   Start at  20:52:17
+   Duration  842ms (transform 325ms, setup 50ms, import 491ms, tests 92ms, environment 92ms)
+

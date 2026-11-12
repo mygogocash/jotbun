@@ -1,0 +1,28 @@
+diff --git a/apps/app/src/screens/redesign/HistoryScreen.render.test.tsx b/apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+index d3807fa0e38954f93b3eb06b69c747b786361bb0..c28e2714e1111b24dc34db0c5bf8976b365cbb2f 100644
+--- a/apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/HistoryScreen.render.test.tsx
+@@ -581,3 +581,23 @@ test('a delete from History records record_deleted, and its undo undo_used, each
+     recorded.restore();
+   }
+ });
++
++test('a move deleted from History, and its undo, record kind transfer with no category (the fix round, R119)', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    await golden();
++    rowAction(ROWS.move, 'Delete');
++    await screen.findByText('Entry deleted');
++    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
++    expect(await screen.findByRole('button', { name: ROWS.move })).toBeTruthy();
++    const captures = recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
++    expect(captures).toEqual([
++      { name: 'record_deleted', properties: { kind: 'transfer', origin: 'app' } },
++      { name: 'undo_used', properties: { kind: 'transfer', origin: 'app' } },
++    ]);
++    const json = JSON.stringify(recorded.sent);
++    for (const secret of ['150000', '1,500', 'Cash', 'Daily account']) expect(json).not.toContain(secret);
++  } finally {
++    recorded.restore();
++  }
++});
