@@ -26,7 +26,16 @@
   - `test:app` 36 and `test:unit` 1063;
   - `git diff --check`.
 - [x] CI at `78f91ca5`: 9 of 9, including the full render suite.
-- [ ] Independent review (Opus), and a second review: privacy (what each event carries) and the bus guard.
+- [x] Independent review (Opus) and second review (Sonnet): **both Needs fixes** on `78f91ca5` (`.claude/controller/reviews/1D-T7.md`, `reviews/1D-T7-second.md`). The privacy boundary holds: no event can carry an amount, a note, a name or typed text. Both found M1: on a signed-out launch, the early events (P13) were dropped at `AnalyticsUpkeep`'s first `setAccount(null)`, so onboarding's first step never reached PostHog. Also unpinned guards, and the sync's hand-over order.
+- [x] **Fix round** (`f09af7a1`, brief `.claude/controller/briefs/1D-T7-fix.md`; ruling R119 with the planner's P21 to P33):
+  - the launch's first account answer keeps what is held, whether it says signed out or names an account; a sign-out and an account switch still drop it (L4, P14), pinned through `AnalyticsUpkeep`'s real signed-out start and the controller;
+  - `deviceSync.ts` hands each outcome to the diary before its events;
+  - pins for a save with no track sending nothing, "Use yours" reporting the server copy's category, and the kind of an income and a move at Quick add, History, Recently deleted and the record screen's Restore.
+  - The proofs: RED 1 of 38 Node and 2 of 220 render, all assertions; GREEN 38 and 220; **75 of 75 mutants killed** (QE equivalent). All 12 fix-kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #441) as `d8d7364a`, with no conflicts. On the merged tree: `typecheck:app` 0; `test:unit` 1085; `test:app` 36; the task's render files 422; the eight kit files and the four routes tests 158; `git diff --check` on the range.
+- [ ] CI on this pull request is green at `d8d7364a`.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (events on a real PostHog EU project, for 1D-T15's two-phone run).
 
 Closes #138 once merged (closed by hand, since the base is not the default branch).
