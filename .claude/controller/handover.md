@@ -49,6 +49,24 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **19:20: #435 (P3-T7) and #436 (P5-T2) opened; four reviews and CI running.**
+  - P3-T7: the implementer reported DONE at `088b346a` (RED 2 of 10 Node and 10 of 62 workers, all assertions; GREEN 10 and 62; 35 of 35 mutants; `test:edge` 196; all 12 `real/` files byte-identical). PR body `pr-p3-t7.md`, issue #191.
+  - P5-T2: DONE at `f4041406` (RED 9 of 9 and 2, all assertions; GREEN; the API contract spec 95; 57 of 57 mutants; `test:edge` 204, `test:app` 36, `test:unit` 1049, the routes tests; 14 of 15 `real/` files byte-identical, the receipt differing only in its base SHA `54e889b5`). PR body `pr-p5-t2.md`, issue #235.
+  - Reviews (notes `scratch/dispatch/P3-T7-review-notes.md` and `P5-T2-review-notes.md`):
+    - P3-T7 Opus xhigh `mcp:launch:7dcf75a7f1e9dc736f49abf0306d6ba098a96e05cd31d18d9c063eaeea434c43`; Sonnet high `mcp:launch:0f28e064fb0947cad941e338005f4c4d8440da9913bbcbc2b20b565fe3ef80d5`.
+    - P5-T2 Opus xhigh `mcp:launch:5045ae39d7fda101002e18a8ff27564e8160bfc13de44915270e4edbc1980567`; Sonnet high `mcp:launch:976e93424e3099f790bb845261ec64262b0e998a35aa08b19281a52324ad73eb`.
+  - Watchers: CI `br0i27tc5` (`ci_watch.sh 115 435 436`, exits on the first to finish); verdicts and the three planners' kits `b85mh7vzf`.
+  - The implementer threads are archived.
+- **19:15: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261112d.md`, head `27256cba`):
+  - P3-T14, AI consent and settings in the Bun Wallet look (depth 9, App): `mcp:launch:f1aeaa9d8dbec3da51b62c5e5e19ee71c01815a2dfb50b11ced4142ca7b91ea7`, WT `p3-t14` on `p3/t14-ai-consent-settings`.
+  - 1D-T11, server events and the analytics id (depth 8, Server): `mcp:launch:51bcdaff8cfb191a6cb11997a097b7f8d56ff29bfc4ddb8a2f1a51833e7c927b`, WT `p1-1d-t11` on `p1/1d-t11-server-events`. It shares `vault/routes.ts`, `v1/protocol.ts` and `v1/routes.ts` with P3-T7, so it plans on P3-T7's `real/` files and builds only after P3-T7 merges.
+  - Live now: the P2-T16, P3-T14 and 1D-T11 planners (Opus xhigh), and the P3-T7 and P5-T2 implementers (Haiku). Next Opus work: the reviews of P3-T7 and P5-T2 (Opus and Sonnet each).
+  - Not started, because they share hot edge files with P3-T7: P4-T3, P3-T3, P4-T2 and P5-T9. Ready with no overlap: 1D-T7 and P6A-T2 (depth 7).
+- **19:10: #429 (P2-T21) MERGED as `c053999`; the head is `c053999`.**
+  - The confirming review (Opus) approved with three minors and two nits (`reviews/P2-T21-confirm.md`), and CI was 9 of 9 at `001babaa`.
+  - Issue #167 is closed, the worktree and branch are removed, and it is promoted as **#434** (stack #379 holds 31).
+  - Followups: P2-T18 must carry m2 (the flow's once-only `leave()`) first, and with it m1 (the drop's `nativeID`), n1 and n2. P2-T22 gets the kind. m3 (a lost look on leaving) is an E2-B owner item.
+  - The review threads are archived.
 - **19:05: P3-T7 brief READY (Opus); its implementer is building (Haiku).**
   - Size S, edge only: `uses.ts` (new), `vault/ai.ts`, `vault/routes.ts` (the `ai.refund` step), `v1/protocol.ts`, `v1/routes.ts`, `ai/service.ts`, `ai/transport.ts`, and tests. RED on assertions, GREEN, 35 of 35 mutants. It carries P3-T4's m1 and P3-T6's X4 pin and n1 comment.
   - `check_kit.sh` at `9e77a022`: 48 of 48 sums, `orig/` 9 of 9 identical. **P1 to P14 accepted.**

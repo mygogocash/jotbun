@@ -696,3 +696,20 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n2: another tile opens the frozen tray (show at E2-C);
     - n3: say a landed change to screen readers (E2-C or P2-T37).
   - **Known risk:** no route mounts `WalletLooksProvider` until P2-T18, so a picked icon is not kept on a phone before then.
+- P2-T21 (#429, merged 12 Nov as c053999 at 001babaa, after the R115 fix round; promotion #434). The reviews are `reviews/P2-T21.md` (Opus), `reviews/P2-T21-second.md` (Sonnet, approved) and the confirming `reviews/P2-T21-confirm.md` (Opus, approved: m1 to m3, n1, n2). Each fix below has a fix check and a probe in `scratch/p2-t21-confirm/` (`tools/review_mutants.py`, `NewWalletConfirm.render.test.tsx`, `WalletEditConfirm.render.test.tsx`). Carried by **P2-T18** (it must land m2 first; see below), or by the next task that edits `src/wallet/wallets`:
+  - **P2-T18 (must carry, m2): the new-wallet flow's `leave()` is not once-only.** Two quick presses on step 2's back once a create's answer is unknown pop two screens, and so do two on step 1's back (`NewWalletFlow.tsx:128-131`).
+    - Once P2-T18 hides the bar on `/spend/wallet/*`, step 2's back is the flow's only way out while an answer is unknown, so land this guard first or with it.
+    - The fix: a `left` ref in `leave()`, as `WalletEditScreen.tsx:150-158` has (fix check FX1; probes CP1 and CP2 become cases).
+    - The case "opened with ?setup=1 the ceremony returns to /spend/setup" then fails by design: it presses step 1's back twice on one mount. Split it with a fresh mount.
+  - **m1: the new card's drop (n1) is not fixed on a phone.** On Fabric a `testID` makes the place a host view, but the card is mounted beside it, so it still falls about `insets.top + 268` pt.
+    - The fix: `nativeID="new-wallet-card-place"` on the place (`NewWalletFlow.tsx:385`), which forms a stacking context (fix check FX3). Probe CP7 (`place.id === 'new-wallet-card-place'`) becomes a case.
+    - Correct the comment at `NewWalletFlow.tsx:381-384`, and the receipts' lines `P2-T21-fix.md:34-35` and `P2-T21.md:67`, `:80`.
+  - **n1:** pin step 2's back after a refusal (P24): probes CP3 (refused as `signed_out`) and CP4 (`upgrade_required`) become cases. They kill Z1 and Z2.
+  - **n2:** the editor's unmount ref breaks under React's StrictMode (`WalletEditScreen.tsx:153`). The fix is one line: `useEffect(() => { left.current = false; return () => { left.current = true; }; }, [])` (fix check FX2; probe CE2). Not live today: nothing wraps the app in StrictMode.
+  - **P2-T22:** a wallet's kind can only be chosen in the new-wallet flow (m3). The editor offers none.
+  - **Housekeeping:** add m3 to `P2-T21-fix.md`'s Risks, next to line 78.
+- **Owner, at E2-B, from #429's confirming review (P2-T21 m3, 12 Nov):** leaving the new-wallet flow while a create's answer is unknown loses the chosen look for good if the create had in fact committed.
+  - The look carries the kind, and the kind exists nowhere else, so the wallet shows as a plain wallet, not, say, the credit card the person chose. Its `wallet_added` is never sent.
+  - Try again keeps both; only leaving loses them.
+  - The owner may want the look kept on leaving, or a kind in the editor (P2-T22).
+  - Also at E2-B: until m1 is fixed, the simulator's drop falls about `insets.top + 268` pt.
