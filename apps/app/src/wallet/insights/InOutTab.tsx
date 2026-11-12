@@ -1,198 +1,116 @@
-// In & Out tab of Bun Wallet insights (P2-T31, W21).
-// Money in (violet, plus), money out (ink), kept/short from keptOf, six paired bars.
-import { useMemo } from 'react';
+// The in-and-out tab (P2-T31, W21: no board, a draft for E2-C).
+//
+// - The month's money in (violet, with a plus) and money out (ink), in the
+//   wallet's money text (W9).
+// - What was kept, or how much more went out, as a sentence from keptOf's
+//   kind. Private mode masks the amount, never the sentence (W10).
+// - Six paired bars on one scale, money in (violet) beside money out (ink).
+//   One accessible element named `insights.inOutName` that reads each month's
+//   money in and out, or in private mode only the name and the months (R65).
+import type { MonthSummary } from '@gogospend/contracts';
+import { Fragment } from 'react';
 import type { ReactElement } from 'react';
 import { View } from 'react-native';
-import Svg, { G, Rect } from 'react-native-svg';
+import Svg, { Rect } from 'react-native-svg';
 
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+import { useMoneyLocale } from '@mobile/screens/v1/parts';
+import { formatMinor } from '@mobile/spend/v1/money';
 import { keptOf } from '@mobile/spend/v1/redesign/insights/recapModel';
-import { monthLabel } from '@mobile/ui/dateStep';
+import type { Kept } from '@mobile/spend/v1/redesign/insights/recapModel';
+import type { Translate } from '@mobile/spend/v1/redesign/shared';
 import { useWalletColors } from '@mobile/theme/ThemeProvider';
+import { monthLabel, monthShortLabel } from '@mobile/ui/dateStep';
+import type { WalletT } from '../copy/draftText';
 import { useDraftCopy } from '../copy/useDraftCopy';
 import { WalletAmount } from '../money/WalletAmount';
+import { HIDDEN_AMOUNT, walletMoneyText } from '../money/walletMoney';
 import { usePrivateMode } from '../privacy/PrivateModeProvider';
 import { WalletText } from '../WalletText';
 import { COPY } from './copy';
-import type { InsightsData } from './insightsData';
+import type { CompareMonth, InsightsData } from './insightsData';
+import { CHART, larger, riseOf } from './MonthBars';
 
-export function InOutTab({
-  data,
-  month,
-  today,
-}: {
-  data: InsightsData;
-  month: string;
-  today: string;
-}): ReactElement {
+/** "เก็บได้ ฿21,027.50", "จ่ายออกมากกว่ารับเข้า ฿1,200" or the even line, with the amount masked in private mode. */
+function keptLine(kept: Kept, hidden: boolean, t: WalletT, tc: Translate): string {
+  if (kept.kind === 'even') return kept.text;
+  // A short month's difference is below zero; the money text with no sign draws its size.
+  const amount = hidden ? HIDDEN_AMOUNT : walletMoneyText(kept.minor);
+  return kept.kind === 'kept' ? t('insights.kept', { amount }) : tc('{amount} more went out than came in', { amount });
+}
+
+function PairedBars({ compare, month, hidden }: { compare: readonly CompareMonth[]; month: string; hidden: boolean }) {
+  const colors = useWalletColors();
+  const t = useDraftCopy(COPY);
+  const dateLocale = useActiveLocale();
+  const locale = useMoneyLocale();
+  const ceiling = compare.reduce((top, other) => larger(larger(top, BigInt(other.incomeMinor)), BigInt(other.expenseMinor)), 0n);
+  const name = t('insights.inOutName', { from: monthLabel(compare[0].month, dateLocale), to: monthLabel(compare[compare.length - 1].month, dateLocale) });
+  const months = compare.map((other) => (hidden
+    ? monthLabel(other.month, dateLocale)
+    : t('insights.inOutMonth', { month: monthLabel(other.month, dateLocale), in: formatMinor(other.incomeMinor, locale), out: formatMinor(other.expenseMinor, locale) })));
+  return (
+    <View
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={`${name}: ${months.join(', ')}`}
+      testID="in-out-paired-bars"
+      style={{ backgroundColor: colors.card, borderRadius: 20, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, gap: 6 }}
+    >
+      <Svg width="100%" height={CHART.height} viewBox={`0 0 ${CHART.width} ${CHART.height}`}>
+        {compare.map((other, index) => {
+          const x = 14 + index * 48;
+          const inRise = riseOf(other.incomeMinor, ceiling);
+          const outRise = riseOf(other.expenseMinor, ceiling);
+          return (
+            <Fragment key={other.month}>
+              <Rect testID={`paired-in-${other.month}`} x={x} y={CHART.baseline - inRise} width={15} height={inRise} rx={4} fill={colors.violet} />
+              <Rect testID={`paired-out-${other.month}`} x={x + 17} y={CHART.baseline - outRise} width={15} height={outRise} rx={4} fill={colors.barNow} />
+            </Fragment>
+          );
+        })}
+      </Svg>
+      <View style={{ flexDirection: 'row' }}>
+        {compare.map((other) => (
+          <WalletText
+            key={other.month}
+            role="caption"
+            tone={other.month === month ? 'ink' : 'quiet'}
+            style={{ flex: 1, textAlign: 'center', fontWeight: other.month === month ? '700' : '400' }}
+          >
+            {monthShortLabel(other.month, dateLocale)}
+          </WalletText>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+export function InOutTab({ data }: { data: InsightsData }): ReactElement {
   const colors = useWalletColors();
   const tc = useCopy();
-  const dateLocale = useActiveLocale();
   const t = useDraftCopy(COPY);
+  const locale = useMoneyLocale();
   const { hidden } = usePrivateMode();
-
-  const incomeMinor = data.summary?.income_minor ?? '0';
-  const expenseMinor = data.summary?.expense_minor ?? '0';
-
-  const kept = useMemo(
-    () => keptOf(incomeMinor, expenseMinor, tc, 'th'),
-    [incomeMinor, expenseMinor, tc],
-  );
-
-  // Maximum value among all months' income and expense for chart scaling
-  const maxMinor = useMemo(() => {
-    let top = 0n;
-    for (const s of data.compare) {
-      const inc = BigInt(s.income_minor);
-      const exp = BigInt(s.expense_minor);
-      if (inc > top) top = inc;
-      if (exp > top) top = exp;
-    }
-    return top === 0n ? 1n : top;
-  }, [data.compare]);
-
+  const summary: MonthSummary = data.summary;
+  const kept = keptOf(summary.income_minor, summary.expense_minor, tc, locale);
+  const card = { flexGrow: 1, flexBasis: 140, backgroundColor: colors.card, borderRadius: 20, padding: 16, gap: 4 } as const;
   return (
-    <View testID="in-out-tab" style={{ gap: 14 }}>
-      {/* Cards for Money In and Money Out */}
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        {/* Money In: violet, plus */}
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.card,
-            borderRadius: 20,
-            padding: 16,
-            gap: 6,
-          }}
-        >
-          <WalletText style={{ fontSize: 13, color: colors.quiet }}>
-            {t('insights.moneyIn')}
-          </WalletText>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <WalletText style={{ fontSize: 28, fontWeight: '700', color: colors.violet }}>
-              +
-            </WalletText>
-            <WalletAmount minor={incomeMinor} size={28} tone="violet" />
-          </View>
+    <View testID="in-out-tab" style={{ gap: 12 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+        <View style={card}>
+          <WalletText role="caption" tone="quiet">{t('insights.moneyIn')}</WalletText>
+          <WalletAmount minor={summary.income_minor} sign="income" size={28} testID="in-out-income" />
         </View>
-
-        {/* Money Out: ink */}
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: colors.card,
-            borderRadius: 20,
-            padding: 16,
-            gap: 6,
-          }}
-        >
-          <WalletText style={{ fontSize: 13, color: colors.quiet }}>
-            {t('insights.moneyOut')}
-          </WalletText>
-          <WalletAmount minor={expenseMinor} size={28} tone="ink" />
+        <View style={card}>
+          <WalletText role="caption" tone="quiet">{t('insights.moneyOut')}</WalletText>
+          <WalletAmount minor={summary.expense_minor} size={28} testID="in-out-expense" />
         </View>
       </View>
-
-      {/* Kept or short banner */}
-      <View
-        style={{
-          backgroundColor: colors.card,
-          borderRadius: 16,
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        }}
-      >
-        <WalletText style={{ fontSize: 14, color: colors.ink }}>
-          {hidden ? '฿••••' : kept.text}
-        </WalletText>
+      <View style={{ backgroundColor: colors.card, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
+        <WalletText role="label" testID="in-out-kept">{keptLine(kept, hidden, t, tc)}</WalletText>
       </View>
-
-      {/* Six paired bars */}
-      <View
-        accessible={true}
-        accessibilityRole="image"
-        testID="in-out-paired-bars"
-        style={{
-          backgroundColor: colors.card,
-          borderRadius: 20,
-          padding: 16,
-        }}
-      >
-        <Svg width="100%" height={140} viewBox="0 0 300 140" aria-hidden={true}>
-          {data.compare.map((s, index) => {
-            const pairWidth = 36;
-            const barWidth = 14;
-            const gap = 4;
-            const spacing = 12;
-            const x = 8 + index * (pairWidth + spacing);
-
-            const incRatio = Number((BigInt(s.income_minor) * 1000n) / maxMinor) / 1000;
-            const expRatio = Number((BigInt(s.expense_minor) * 1000n) / maxMinor) / 1000;
-
-            const incHeight = Math.max(4, Math.round(incRatio * 110));
-            const expHeight = Math.max(4, Math.round(expRatio * 110));
-
-            const isCurrent = s.month === month;
-
-            return (
-              <G key={s.month}>
-                {/* Money In bar: violet */}
-                <Rect
-                  x={x}
-                  y={130 - incHeight}
-                  width={barWidth}
-                  height={incHeight}
-                  rx={4}
-                  ry={4}
-                  fill={colors.violet}
-                  testID={`paired-in-${s.month}`}
-                />
-                {/* Money Out bar: ink/barNow for current, barPast for others */}
-                <Rect
-                  x={x + barWidth + gap}
-                  y={130 - expHeight}
-                  width={barWidth}
-                  height={expHeight}
-                  rx={4}
-                  ry={4}
-                  fill={isCurrent ? colors.barNow : colors.barPast}
-                  testID={`paired-out-${s.month}`}
-                />
-              </G>
-            );
-          })}
-        </Svg>
-
-        {/* Month labels */}
-        <View
-          aria-hidden={true}
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 6,
-            paddingHorizontal: 8,
-          }}
-        >
-          {data.compare.map((s) => {
-            const shortName = monthLabel(s.month, dateLocale).slice(0, 4);
-            const isCurrent = s.month === month;
-            return (
-              <WalletText
-                key={s.month}
-                style={{
-                  fontSize: 12,
-                  color: isCurrent ? colors.ink : colors.quiet,
-                  fontWeight: isCurrent ? '700' : '400',
-                  textAlign: 'center',
-                  width: 36,
-                }}
-              >
-                {shortName}
-              </WalletText>
-            );
-          })}
-        </View>
-      </View>
+      <PairedBars compare={data.compare} month={data.month} hidden={hidden} />
     </View>
   );
 }

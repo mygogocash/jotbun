@@ -1,20 +1,15 @@
-// Calendar shade step calculation for Bun Wallet insights (P2-T31).
-// Pure function: maps money out in satang (Minor) to a CalendarStep 0..5.
-// 0: nothing spent (outMinor <= 0)
-// 1: up to ฿200 inclusive (outMinor <= 20000)
-// 2: up to ฿500 inclusive (outMinor <= 50000)
-// 3: up to ฿1,000 inclusive (outMinor <= 100000)
-// 4: up to ฿2,000 inclusive (outMinor <= 200000)
-// 5: above ฿2,000 (outMinor > 200000)
+// A calendar day's step from its money out (P2-T31, wc-calendar, W22): 0 for
+// nothing spent, then up to ฿200, ฿500, ฿1,000 and ฿2,000 a day (each
+// inclusive) from CALENDAR_STEP_LIMITS_BAHT, and 5 above that. Exact: satang
+// through BigInt only. Pure: a Node test reads it, so it imports by relative
+// path.
 import type { Minor } from '@gogospend/contracts';
-import type { CalendarStep } from '@mobile/theme/walletPalette';
+
+import { CALENDAR_STEP_LIMITS_BAHT } from '../../theme/walletPalette.ts';
+import type { CalendarStep } from '../../theme/walletPalette.ts';
 
 export function calendarShade(outMinor: Minor): CalendarStep {
-  const satang = BigInt(outMinor);
-  if (satang <= 0n) return 0;
-  if (satang <= 20000n) return 1;
-  if (satang <= 50000n) return 2;
-  if (satang <= 100000n) return 3;
-  if (satang <= 200000n) return 4;
-  return 5;
+  const out = BigInt(outMinor);
+  const step = CALENDAR_STEP_LIMITS_BAHT.findIndex((baht) => out <= BigInt(baht) * 100n);
+  return (step === -1 ? CALENDAR_STEP_LIMITS_BAHT.length : step) as CalendarStep;
 }
