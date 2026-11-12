@@ -38,7 +38,7 @@
   - The proofs: RED 3 of 22, all assertions; GREEN 22; **126 of 126 mutants killed**; the kit eight 142, routes 15, neighbours 110, `test:unit` 1049. All 5 fix-kit files are byte-identical.
   - Planned on Claude Opus, built on Claude Haiku 5.5.
 - [x] The controller merged the integration head (with #440 and #441) as `530ac033`, with no conflicts. On the merged tree: `typecheck:app` 0; `test:unit` 1072; `AddTray`, `AddSteps` and the eight kit files 181; the routes 16; catalogue `bw-` 102; P3-T14's consent and settings suites 101; `git diff --check` on the range.
-- [ ] CI on this pull request is green at `530ac033`.
+- [x] CI at `530ac033`: 9 of 9.
 - [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (Tell Bun's sheet over the tray on iOS and its keyboard; a swipe during a save and Android's back on a phone; a quick reopen while UIKit's dismissal ends; whether UIKit sends a dismissal for a refused present; VoiceOver on the save's problem).
 
