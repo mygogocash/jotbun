@@ -1,0 +1,49 @@
+diff --git a/apps/app/src/wallet/add/ConfirmStep.tsx b/apps/app/src/wallet/add/ConfirmStep.tsx
+index 84e2953d77a0b3b1ac397094f75a6ba25495e746..6c4a89de8ebcb466f9ffc4e5d18014063e9c80fa 100644
+--- a/apps/app/src/wallet/add/ConfirmStep.tsx
++++ b/apps/app/src/wallet/add/ConfirmStep.tsx
+@@ -17,8 +17,11 @@
+ // - Private mode (W10): the amount follows the amount step's rule (R106): what
+ //   the person typed shows, and a fill (Bun's reading, a chip, move all) is
+ //   ฿•••• and says only that it is hidden. Bun's sentence is the person's own
+-//   words, but it holds the amount Bun read, so every number in it is masked
+-//   too: “ข้าวมันไก่ 50” reads “ข้าวมันไก่ ฿••••” (Review Focus 2).
++//   words, but it holds the amount Bun read, in any form Bun reads: digits,
++//   Thai or English number words, scale words such as พัน or k. No mask keeps
++//   up with every form, so in private mode none of it is drawn: the violet line
++//   says only that Bun read it from what the person told it (R114; Review
++//   Focus 2).
+ // - Income's amount is violet with a plus (§2); spending and a move are ink.
+ // - At the largest text sizes the summary and each row stack, and nothing is
+ //   clamped (Review Focus 3).
+@@ -56,9 +59,6 @@ const AMOUNT = 44;
+ /** The summary's tile (bw-tray-confirm). */
+ const TILE = 52;
+ 
+-/** Every number in Bun's sentence, with a ฿ before it: masked in private mode. */
+-const NUMBER = /(?:฿\s?)?[0-9๐-๙]+(?:[.,][0-9๐-๙]+)*/g;
+-
+ /**
+  * The confirm step's title (bw-tray-confirm): the merchant, else the note,
+  * else the category's name (its row's value), else the tray's title. `t` reads
+@@ -89,7 +89,6 @@ export function ConfirmStep({ draft, keypad, onStep, rows, title, bunSentence, t
+   const categoryId = type === 'transfer' ? null : draft.categoryByType[type];
+   const category = categoryId === null ? undefined : lookups.categories.get(categoryId);
+   const categoryName = rows.find((row) => row.key === 'category')?.value ?? '';
+-  const sentence = bunSentence === null ? null : hidden ? bunSentence.replace(NUMBER, HIDDEN_AMOUNT) : bunSentence;
+   const walletOf = (key: ConfirmRow['key']) => (key === 'wallet' ? draft.walletId : key === 'from' ? draft.fromWalletId : key === 'to' ? draft.toWalletId : null);
+   return (
+     <View testID="confirm-step" style={{ gap: 14 }}>
+@@ -104,8 +103,10 @@ export function ConfirmStep({ draft, keypad, onStep, rows, title, bunSentence, t
+           )}
+           <View style={{ flex: 1, gap: 2 }}>
+             <WalletText testID="confirm-title" role="h2">{title}</WalletText>
+-            {sentence === null ? null : (
+-              <WalletText testID="confirm-bun" role="caption" tone="violet">{t('add.bunReadFrom', { sentence })}</WalletText>
++            {bunSentence === null ? null : (
++              <WalletText testID="confirm-bun" role="caption" tone="violet">
++                {hidden ? t('add.bunReadHidden') : t('add.bunReadFrom', { sentence: bunSentence })}
++              </WalletText>
+             )}
+           </View>
+         </View>

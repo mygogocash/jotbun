@@ -24,8 +24,18 @@
   - the routes tests: 15 of 15;
   - neighbours 138, and the catalogue's wallet sections;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, including the full render suite, `export:web` and the iOS export.
-- [ ] Independent review (Opus), and a second review: transfers move money between wallets, and private mode masks it.
+- [x] CI at `fd41909c`: 9 of 9.
+- [x] Independent review (Opus) and second review (Sonnet): **both Needs fixes** on `fd41909c` (`.claude/controller/reviews/P2-T15.md`, `reviews/P2-T15-second.md`). Both found M1: private mode masked digits only, so Thai number words in Bun's sentence showed the amount. Also m1 (Next ignored an archived side), unpinned survivors and accessibility behaviours, and nits.
+- [x] **Fix round** (`a4947e62`, brief `.claude/controller/briefs/P2-T15-fix.md`; ruling R114 with the planner's P1 to P33):
+  - in private mode Bun's sentence is not drawn at all; the violet line reads บันอ่านจากที่คุณบอก and quotes none of it;
+  - the cards and Next share one rule (`inUse`), so Next waits on an archived or unknown wallet;
+  - every survivor and named gap is pinned;
+  - the step sections load lazily (`addStepsSection.tsx`).
+  - The proofs: RED 4 of 17 render and 1 of 15 Node, all assertions; GREEN 17 and 15; **120 of 120 mutants killed**. All 9 fix-kit files are byte-identical.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (with #420, #428, #421) as `334847d3`, with no conflicts. On the merged tree: `typecheck:app` 0; `AddSteps`, the eight kit files and the routes 168 of 168; `test:unit` 1047 of 1047.
+- [ ] CI on this pull request is green at `334847d3`.
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (VoiceOver on the cards, rows and pick groups; the swap on a phone; the note field with the Thai keyboard; Android back on a pick).
 
 Closes #161 once merged (closed by hand, since the base is not the default branch).

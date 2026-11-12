@@ -1,0 +1,28 @@
+light {"hue":"#F0A868","tint":"#FBE7D5","ink":"15.79","quiet":"4.51","quietOnGround":"7.52","over":"4.88"}
+light {"hue":"#F2857E","tint":"#FBDDDB","ink":"14.86","quiet":"4.25","quietOnGround":"7.08","over":"4.60"}
+light {"hue":"#F291C4","tint":"#FBE0EE","ink":"15.34","quiet":"4.39","quietOnGround":"7.31","over":"4.75"}
+light {"hue":"#F2CE5C","tint":"#FBF1D1","ink":"16.79","quiet":"4.80","quietOnGround":"8.00","over":"5.20"}
+light {"hue":"#6FB3F2","tint":"#D7EAFB","ink":"15.39","quiet":"4.40","quietOnGround":"7.33","over":"4.76"}
+light {"hue":"#B49BE8","tint":"#EAE3F9","ink":"15.21","quiet":"4.35","quietOnGround":"7.24","over":"4.71"}
+light {"hue":"#9CD4F5","tint":"#E3F3FC","ink":"16.69","quiet":"4.77","quietOnGround":"7.95","over":"5.16"}
+light {"hue":"#4E93D9","tint":"#CDE1F4","ink":"14.14","quiet":"4.04","quietOnGround":"6.74","over":"4.38"}
+light {"hue":"#D3C2F2","tint":"#F3EEFB","ink":"16.64","quiet":"4.76","quietOnGround":"7.92","over":"5.15"}
+light {"hue":"#9B7EDB","tint":"#E3DBF5","ink":"14.18","quiet":"4.05","quietOnGround":"6.75","over":"4.39"}
+light {"hue":"#D6EE8A","tint":"#F4FADE","ink":"17.67","quiet":"5.05","quietOnGround":"8.41","over":"5.47"}
+light {"hue":"#A8CC4A","tint":"#E7F1CC","ink":"16.11","quiet":"4.61","quietOnGround":"7.67","over":"4.98"}
+light worst on a tint {"ink":"14.14","quiet":"4.04","quietOnGround":"6.74","over":"4.38"}
+light over on card 5.86 quietOnGround on raised (no colour) 8.18 ink on raised 17.18
+dark {"hue":"#F0A868","tint":"#41332D","ink":"10.90","quiet":"5.08","quietOnGround":"5.08","over":"4.69"}
+dark {"hue":"#F2857E","tint":"#412C31","ink":"11.62","quiet":"5.41","quietOnGround":"5.41","over":"5.00"}
+dark {"hue":"#F291C4","tint":"#412F3E","ink":"11.13","quiet":"5.18","quietOnGround":"5.18","over":"4.79"}
+dark {"hue":"#F2CE5C","tint":"#413A2B","ink":"10.15","quiet":"4.73","quietOnGround":"4.73","over":"4.37"}
+dark {"hue":"#6FB3F2","tint":"#293546","ink":"11.19","quiet":"5.21","quietOnGround":"5.21","over":"4.82"}
+dark {"hue":"#B49BE8","tint":"#363044","ink":"11.38","quiet":"5.30","quietOnGround":"5.30","over":"4.90"}
+dark {"hue":"#9CD4F5","tint":"#313B46","ink":"10.26","quiet":"4.78","quietOnGround":"4.78","over":"4.42"}
+dark {"hue":"#4E93D9","tint":"#232F41","ink":"12.18","quiet":"5.67","quietOnGround":"5.67","over":"5.24"}
+dark {"hue":"#D3C2F2","tint":"#3B3746","ink":"10.39","quiet":"4.84","quietOnGround":"4.84","over":"4.48"}
+dark {"hue":"#9B7EDB","tint":"#312B42","ink":"12.17","quiet":"5.67","quietOnGround":"5.67","over":"5.24"}
+dark {"hue":"#D6EE8A","tint":"#3C3F33","ink":"9.70","quiet":"4.52","quietOnGround":"4.52","over":"4.18"}
+dark {"hue":"#A8CC4A","tint":"#343928","ink":"10.74","quiet":"5.00","quietOnGround":"5.00","over":"4.63"}
+dark worst on a tint {"ink":"9.70","quiet":"4.52","quietOnGround":"4.52","over":"4.18"}
+dark over on card 6.77 quietOnGround on raised (no colour) 5.93 ink on raised 12.74

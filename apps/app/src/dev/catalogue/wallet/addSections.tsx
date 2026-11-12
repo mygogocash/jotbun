@@ -1,19 +1,30 @@
-// The add tray's catalogue sections (P2-T14, development only): the amount
-// step for spending (bw-tray-amount) and for income (rh-income), each inside a
-// Tray with the type switch as its header (at the largest text sizes, in the
-// step under the amount, R106) and the keys and Next pinned in its footer,
-// starting from fixed sample props as the boards draw them. Each tray opens at
-// once, so a screenshot of its section shows it over the page; the keys, the
-// switch, the chips and the name field work (a chip fills the amount as a
-// fill, which private mode masks until a key is pressed), the keypad's problem
-// shows in today's words under the amount (as the host shows it, P2-T16), the
-// name field's focus leaves Next alone in the footer, and Open the tray brings
-// it back as it started. Next, the wallet chip and บอกบัน go nowhere here: the
-// steps after the amount and Tell Bun's sheet are P2-T15's and P2-T16's. Their
-// own list, spread after the tray's in ./index.ts. The sample words are
+// The add tray's catalogue sections (P2-T14, P2-T15; development only).
+//
+// P2-T14's two: the amount step for spending (bw-tray-amount) and for income
+// (rh-income), each inside a Tray with the type switch as its header (at the
+// largest text sizes, in the step under the amount, R106) and the keys and
+// Next pinned in its footer, starting from fixed sample props as the boards
+// draw them. Each tray opens at once, so a screenshot of its section shows it
+// over the page; the keys, the switch, the chips and the name field work (a
+// chip fills the amount as a fill, which private mode masks until a key is
+// pressed), the keypad's problem shows in today's words under the amount (as
+// the host shows it, P2-T16), the name field's focus leaves Next alone in the
+// footer, and Open the tray brings it back as it started. Next, the wallet
+// chip and บอกบัน go nowhere here: the steps after the amount and Tell Bun's
+// sheet are P2-T15's and P2-T16's.
+//
+// P2-T15's four: the transfer step (rh-transfer's numbers), the confirm step
+// (bw-tray-confirm) typed and as Tell Bun filled it, and the category pick.
+// Their host, StepsTray, is addStepsSection.tsx, loaded lazily (the
+// controller's rule for sections, as recordSections.tsx loads its screen), so
+// this list never loads the steps. While it loads, the section reads
+// `catalogue-screen-running`, as a screen section's stage does while its
+// script runs, so the catalogue's suites wait for it.
+//
+// Their own list, spread after the tray's in ./index.ts. The sample words are
 // catalogue samples, not app copy. A section never imports the wallet test
 // harness, which loads vitest.
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { View } from 'react-native';
 
 import { useCopy } from '@mobile/i18n/useCopy';
@@ -34,6 +45,9 @@ import { TextLink } from '@mobile/wallet/tray/TextLink';
 import { Tray } from '@mobile/wallet/tray/Tray';
 import { SpecimenLabel } from '../parts';
 import type { CatalogueSection } from '../registry';
+import type { StepStart } from './addStepsSection';
+
+const StepsTray = lazy(() => import('./addStepsSection'));
 
 const SAMPLES = {
   ...COPY,
@@ -123,6 +137,15 @@ function AmountTray({ label, start }: { label: string; start: Start }) {
   );
 }
 
+/** One of P2-T15's sections: its steps load lazily, and until they do the section reads `catalogue-screen-running`. */
+function stepsSection(label: string, start: StepStart) {
+  return (
+    <Suspense fallback={<View testID="catalogue-screen-running" style={{ flex: 1 }} />}>
+      <StepsTray label={label} start={start} />
+    </Suspense>
+  );
+}
+
 export const WALLET_ADD_SECTIONS: readonly CatalogueSection[] = [
   {
     id: 'bw-tray-amount',
@@ -144,6 +167,42 @@ export const WALLET_ADD_SECTIONS: readonly CatalogueSection[] = [
         label="Income: ฿35,000 into the wallet, its name, and that income is not counted in the budget"
         start={{ type: 'income', amountMinor: '3500000', named: true, chips: false, tellBun: false }}
       />
+    ),
+  },
+  {
+    id: 'bw-tray-transfer',
+    title: 'Bun Wallet: add tray, transfer',
+    group: 'Kit',
+    render: () => stepsSection(
+      "Move: ฿500 from the main account to cash, each card's balance after the move, swap and move all, over the note and Next",
+      { step: 'transfer', type: 'transfer', amountMinor: '50000', filled: false, merchant: '', bunSaid: false, guessed: [] },
+    ),
+  },
+  {
+    id: 'bw-tray-confirm',
+    title: 'Bun Wallet: add tray, confirm',
+    group: 'Kit',
+    render: () => stepsSection(
+      'Confirm: ฿50 of food from the main account today, each row opening its pick (Save goes nowhere here)',
+      { step: 'confirm', type: 'expense', amountMinor: '5000', filled: false, merchant: '', bunSaid: false, guessed: [] },
+    ),
+  },
+  {
+    id: 'bw-tray-confirm-bun',
+    title: "Bun Wallet: add tray, confirm with Bun's reading",
+    group: 'Kit',
+    render: () => stepsSection(
+      "Confirm as Tell Bun filled it: what Bun read, ฿50 as Bun's fill, and the category marked as Bun's guess",
+      { step: 'confirm', type: 'expense', amountMinor: '5000', filled: true, merchant: 'sample.chickenRice', bunSaid: true, guessed: ['category'] },
+    ),
+  },
+  {
+    id: 'bw-tray-pick-category',
+    title: 'Bun Wallet: add tray, choose a category',
+    group: 'Kit',
+    render: () => stepsSection(
+      "The category pick: spending's categories in ranked order, food chosen; a tap goes back to confirm with the choice",
+      { step: 'category', type: 'expense', amountMinor: '5000', filled: false, merchant: '', bunSaid: false, guessed: [] },
     ),
   },
 ];

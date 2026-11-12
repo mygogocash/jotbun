@@ -49,6 +49,29 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14:15: #427 (P2-T15) fix round DONE and merged up.**
+  - Fix `a4947e62` (Haiku, R114; amended once for the receipt line): all 9 `real/` files byte-identical, 120 of 120 mutants.
+  - The controller merged the head as `334847d3`, with no conflicts. On the merged tree: tsc 0, 168 of 168, and `test:unit` 1047 of 1047.
+  - Pushed, and the body is updated. CI is running.
+  - Opus confirming review (Opus high): thread "P2-T15 confirming review (#427 fix)". It writes `reviews/P2-T15-confirm.md`.
+- **14:05: #423 (P2-T29) fix round DONE and merged up.**
+  - Fix `ed1da2aa` (Haiku, R113): all 12 `real/` files byte-identical, 119 of 119 mutants; gate kit 138, routes 13, `export:web`.
+  - The controller merged the head as `f7f47fa4`. `index.ts` goes ADD, LIST, RECORD, CATEGORY, INSIGHTS, RECAP, LOCK. On the merged tree: tsc 0, 312 of 312, and `test:unit` 1044 of 1044.
+  - Pushed, and the body is updated. CI is running.
+  - Opus confirming review (Opus high): thread "P2-T29 confirming review (#423 fix)". It writes `reviews/P2-T29-confirm.md`.
+- **13:55: P2-T15 fix brief READY (Opus, R114); its fixer is building (Haiku).**
+  - Private mode quotes none of Bun's sentence. Next waits on archived or unknown wallets (`inUse`; `TransferFooter` takes `wallets`, which P2-T16 must pass). Every gap is pinned, and the sections are lazy.
+  - 120 of 120 mutants. Kit sums 32 of 32.
+  - Fixer on worktree `p2-t15` at `fd41909c`, with no sync merge. P1 to P33 accepted.
+- **13:50: #429 (P2-T21): Opus says NEEDS FIXES** (Sonnet approved; CI 9 of 9).
+  - **M1:** after an unconfirmed create, especially with a blocked resend, every control on step 2 is held, and on iOS in the wallet area nothing leaves the screen.
+  - The minors: m1 (a late save goes back twice), m2 (six unheld guards, Y7 on money), m3 (the tracking start cannot be changed in the wallet area, an owner call at E2-B), n1 (the card drop) and n2 (a ฿0 in private mode).
+  - **R115:** back is held only while saving and leaves the flow while unconfirmed or blocked; one navigation; the pins PR1, PR4, PR7, PR8, Y6, Y8 and Y9; m3 stays text with the consequence stated (owner); n1 and n2 fixed.
+  - The fix round went back to the original Opus planner `a35bacd7…` (run 4), writing `briefs/P2-T21-fix.md` with the kit at `scratch/p2-t21-fix-planner/`, on `2411001e`.
+- **13:45: #421 (P2-T31) MERGED as `ce165ed`; the head is `ce165ed`.**
+  - The confirming review (Opus) approved after the R112 round, and CI was 9 of 9 at `f72ad233`.
+  - Issue #177 is closed, and it is promoted as **#431** (stack #379 holds 28). The insights follow-ups (m1 before E2-C, and 14 pins) are in followups.md.
+  - `index.ts` on the head is now ADD, LIST, RECORD, INSIGHTS, RECAP, LOCK. **#423 (P2-T29)** needs CATEGORY between RECORD and INSIGHTS when its fix lands.
 - **13:40: #428 (P3-T6) MERGED as `d0f1897`; the head is `d0f1897`.** Opus and Sonnet approved, and CI was 9 of 9 on attempt 3 (R-B twice). Issue #190 is closed, and it is promoted as **#430** (stack #379 holds 27). m1 must ride P3-T8 (followups.md).
 - **13:30: P2-T29 fix brief READY (Opus, R113); its fixer is building (Haiku).**
   - 119 of 119 mutants. The gate holds the 12 Nov rules. `index.ts` is unchanged (`911e4ce0…`), so the controller resolves RECORD and RECAP at merge.
