@@ -49,6 +49,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14:40: P2-T21 fix brief READY (Opus, R115); its fixer is building (Haiku).** Size S, 134 of 134 mutants. The fixer is on worktree `p2-t21` at `2411001e`, with no sync merge. P22 to P35 accepted; the round continues the first round's numbering. P25 chooses leave-once over holding back, and receipts list the risk.
 - **14:35: #423 (P2-T29) MERGED as `59edd56`; the head is `59edd56`.** The confirming review (Opus) approved after R113, and CI was 9 of 9 at `f7f47fa4`. Issue #175 is closed, and it is promoted as **#433** (stack #379 holds 30). The categories follow-ups are in followups.md. `index.ts` on the head now has ADD, LIST, RECORD, CATEGORY, INSIGHTS, RECAP, LOCK.
 - **14:30: #427 (P2-T15) MERGED as `9860750`; the head is `9860750`.** The confirming review (Opus) approved after R114, and CI was 9 of 9 at `334847d3`. Issue #161 is closed, and it is promoted as **#432** (stack #379 holds 29). The confirm's m1 pin rides P2-T16 (followups.md).
 - **14:15: #427 (P2-T15) fix round DONE and merged up.**

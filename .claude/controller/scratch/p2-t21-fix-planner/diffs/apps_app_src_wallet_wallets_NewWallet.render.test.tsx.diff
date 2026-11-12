@@ -1,0 +1,133 @@
+diff --git a/apps/app/src/wallet/wallets/NewWallet.render.test.tsx b/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
+index 303923f77f9b0dc8b6d088c3545bcff21d4e47e2..aeda1a035b71b6cb6e792f15da1d5fb151dbcab5 100644
+--- a/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
++++ b/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
+@@ -10,6 +10,11 @@
+ // props that reach the app's Text are recorded, as WalletCard.render.test.tsx
+ // does. expo-router is the catalogue's recorded router, and the route's shared
+ // resources are the case's own fake.
++//
++// The fix round (R115) adds the cases for #429's review: step 2's back once a
++// create's answer is unknown (M1, the probe PR2, the survivor Y1), the look
++// held while it is (PR8, Y2 and Y3), one wallet id per flow (Y8) and the
++// card's own place to drop in (n1).
+ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { afterEach, expect, test, vi } from 'vitest';
+ 
+@@ -419,6 +424,97 @@ test('two presses on เพิ่มกระเป๋า send one create and on
+   }
+ });
+ 
++test("step 2's back is held only while the create is out; once its answer is unknown, or its resend is blocked, back leaves the flow and keeps no look", async () => {
++  // While the create is out, back is held, and a press changes nothing.
++  const out = createFakeResources();
++  const release = out.hold('createWallet');
++  mountWallet(<NewWalletFlow now={NOW} />, { resources: out.resources });
++  await settle();
++  fillBank();
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  expect(named('button', 'กลับ').getAttribute('aria-disabled')).toBe('true');
++  fireEvent.click(named('button', 'กลับ'));
++  expect([found('new-wallet-step').textContent, router.back.mock.calls.length, router.replace.mock.calls]).toEqual([WORDS.th.step(2), 0, []]);
++  await act(async () => { release(); });
++  await settle();
++  expect(screen.queryByTestId('new-wallet-added')).not.toBeNull();
++  cleanup();
++
++  // The answer is lost: back leaves the flow, as step 1's back does, and no look is kept (the list reads again on return).
++  const lost = createFakeResources();
++  lost.loseResponse('createWallet');
++  const view = mountWallet(<NewWalletFlow now={NOW} />, { resources: lost.resources });
++  await settle();
++  fillBank();
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  expect(named('button', 'กลับ').getAttribute('aria-disabled')).toBeNull();
++  fireEvent.click(named('button', 'กลับ'));
++  expect([router.back.mock.calls.length, router.replace.mock.calls, keptLooks(view.stored)]).toEqual([1, [], {}]);
++  cleanup();
++  router.back.mockReset();
++
++  // The review's PR2: a resend blocked because the session changed holds every other control, and back still leaves,
++  // here with nothing to go back to, so to the list the flow was opened from.
++  const blocked = createFakeResources();
++  blocked.loseResponse('createWallet');
++  const again = mountWallet(<NewWalletFlow returnTo="/spend/wallets" now={NOW} />, { resources: blocked.resources });
++  await settle();
++  fillBank();
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  blocked.fail('createWallet', 'session_changed');
++  fireEvent.click(named('button', 'ลองอีกครั้ง'));
++  await settle();
++  expect([screen.queryByRole('button', { name: 'ลองอีกครั้ง' }), named('button', 'เพิ่มกระเป๋า').getAttribute('aria-disabled')]).toEqual([null, 'true']);
++  router.canGoBack.mockReturnValue(false);
++  fireEvent.click(named('button', 'กลับ'));
++  expect([router.back.mock.calls.length, router.replace.mock.calls, keptLooks(again.stored)]).toEqual([0, [['/spend/wallets']], {}]);
++});
++
++test("while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported", async () => {
++  const { sent, restore } = await recordAnalytics();
++  try {
++    const lost = createFakeResources();
++    lost.loseResponse('createWallet');
++    const view = mountWallet(<NewWalletFlow now={NOW} />, { resources: lost.resources });
++    await settle();
++    fillBank();
++    fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++    await settle();
++    // The review's PR8, for the faces and the materials: all ten are held, and a press on one changes nothing.
++    expect(screen.queryAllByRole('radio').map((radio) => radio.getAttribute('aria-disabled'))).toEqual(Array<string>(10).fill('true'));
++    fireEvent.click(found('look-face-wink'));
++    fireEvent.click(found('look-material-sky'));
++    expect([checked('look-face-smile'), checked('look-face-wink'), checked('look-material-silk'), checked('look-material-sky')]).toEqual(['true', 'false', 'true', 'false']);
++    fireEvent.click(named('button', 'ลองอีกครั้ง'));
++    await settle();
++    const walletId = (lost.callsOf('createWallet')[0].args[0] as { id: string }).id;
++    expect([keptLooks(view.stored)[walletId], added(sent)]).toEqual([{ kind: 'bank', material: 'silk', face: 'smile' }, [{ wallet_type: 'bank', material: 'silk', bun_face: 'smile' }]]);
++  } finally {
++    restore();
++  }
++});
++
++test('one wallet id per flow, however often the flow draws: the card it shows is the wallet it creates', async () => {
++  // With no account open the card shows the look derived from the wallet's id, so a new id would change it as keys are pressed.
++  const ids = vi.spyOn(globalThis.crypto, 'randomUUID');
++  const fake = createFakeResources();
++  mountWallet(<NewWalletFlow now={NOW} />, { resources: fake.resources, diary: null });
++  await settle();
++  fillBank();
++  const gradient = () => found('wallet-preview').querySelector('linearGradient')?.getAttribute('id');
++  const [asked, drawn] = [ids.mock.calls.length, gradient()];
++  press('ลบตัวเลข', 'ลบตัวเลข', '1', '5');
++  typeName('ชื่อกระเป๋า', 'บัญชีเงินเดือน');
++  expect([ids.mock.calls.length, gradient(), found('wallet-opening').textContent]).toEqual([asked, drawn, '฿24,815']);
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  const walletId = (fake.callsOf('createWallet')[0].args[0] as { id: string }).id;
++  expect(`wallet-material-${derivedLook(walletId).material}-light`).toBe(drawn);
++});
++
+ test('a name or an opening balance the create cannot take says so on its field, and sends nothing', async () => {
+   const fake = createFakeResources();
+   mountWallet(<NewWalletFlow now={NOW} />, { resources: fake.resources });
+@@ -495,6 +591,18 @@ test('under Reduce Motion the card fades in, and walletAdded still plays once',
+   expect([drops.asked, haptics.played.filter((moment) => moment === 'walletAdded')]).toEqual([[true], ['walletAdded']]);
+ });
+ 
++test("the new card drops in a place of its own, so it falls about one card's height to where it rests", async () => {
++  mountWallet(<NewWalletFlow now={NOW} />);
++  await settle();
++  fillBank();
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  // Reanimated's originY is in the parent's coordinates: the card's parent holds only the card, so -200 is one card's
++  // height above where it rests, not above the scroll view's top (the review's n1).
++  const place = found('new-wallet-card-place');
++  expect([found('new-wallet-card').parentElement === place, place.children.length, drops.asked]).toEqual([true, 1, [false]]);
++});
++
+ test('at AX5 nothing is clamped to a line, and the kinds and the looks wrap', async () => {
+   const LONG_NAME = 'บัญชีออมทรัพย์สำหรับค่าเทอมลูกและค่าใช้จ่ายในบ้านของครอบครัวใหญ่ทุกเดือนตลอดปีนะ';
+   mountWallet(<NewWalletFlow now={NOW} />, { fontScale: AX5 });
