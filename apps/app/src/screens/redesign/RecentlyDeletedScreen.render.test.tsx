@@ -8,6 +8,7 @@ vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ t
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
 
 import type { DeletedHistoryPage, TransactionDto } from '@gogospend/contracts';
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import { translateCopy } from '@mobile/i18n/messages';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
@@ -256,4 +257,26 @@ test.each(MATRIX)('reads in $locale, $mode: palette ground, the stage, the notic
   const restore = screen.getAllByRole('button', { name: new RegExp(`^${t('Restore')} `) });
   expect(restore).toHaveLength(2);
   expect(within(restore[0]).getByText(t('Restore'))).toBeTruthy();
+});
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7, R61)
+
+test('a restore records record_restored once Jotbun has it, with the kind only', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const fake = await mount();
+    fake.loseResponse('restoreTransaction');
+    fireEvent.click(await screen.findByRole('button', { name: RESTORE.rent }));
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    const captures = () => recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+    expect(captures()).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Bills ฿12,268.00 is back in History.')).toBeTruthy();
+    expect(captures()).toEqual([{ name: 'record_restored', properties: { kind: 'expense', origin: 'app' } }]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['1226800', '12,268', 'Rent', 'Daily account', 'Bills']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
 });

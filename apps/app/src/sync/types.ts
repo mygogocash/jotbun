@@ -39,6 +39,13 @@ export type SyncOutcome = {
   nextAttemptAt: number | null;
   uncertain: number;
   needsReview: number;
+  /**
+   * The V1Error code of the run's failure (NETWORK_ERROR, TIMEOUT, HTTP_502,
+   * INTERNAL_ERROR, LOCAL_ERROR, ...), else null (1D-T7: sync_failed's
+   * reason_code). The engine always sets it; an outcome made elsewhere (the
+   * scheduler's flush that threw, a fixture) may leave it out.
+   */
+  reason?: string | null;
 };
 
 /** The session a flush runs for (F5): the store must belong to the same account. */

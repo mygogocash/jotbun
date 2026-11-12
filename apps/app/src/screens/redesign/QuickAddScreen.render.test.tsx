@@ -26,6 +26,8 @@ vi.mock('@mobile/api/sharedV1', () => ({ getSharedV1Resources: () => shared.reso
 // react-native-svg's asset registry is stubbed for every render test by the shared alias in vitest.render.config.ts.
 
 import type { CategoryDto, TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+import type { Recorded } from '@mobile/analytics/testing/recordAnalytics';
 import { translateCopy } from '@mobile/i18n/messages';
 import type { Locale } from '@mobile/i18n/locales';
 import type { BunIntensity } from '@mobile/mascot/bunIntensity';
@@ -40,6 +42,7 @@ import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { BUILTINS, createFakeResources, goldenSeed } from '@mobile/spend/v1/testing/fakeResources';
 import { DiaryLocked, DraftReferenceUnavailable } from '@mobile/storage/types';
 import type { OutboxCommand, PendingEntry } from '@mobile/storage/types';
+import type { SyncOutcome } from '@mobile/sync/types';
 import { bunDark, bunLight } from '@mobile/theme/bunPalette';
 import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
 import { rgb } from '@mobile/ui/entryKitTestHarness';
@@ -1060,4 +1063,102 @@ test('Tell Bun is not offered for a move between wallets, or with the companion 
   vi.stubEnv('EXPO_PUBLIC_REDESIGN', '-companion');
   await open();
   expect(screen.queryByTestId('quick-add-tell-bun')).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7, R61): one record_started per entry, and one record_saved
+// per save from useEntrySave's finish. Never the amount, a note or a name.
+
+const captured = (sent: Recorded[]) => sent.filter((event) => event.kind === 'capture');
+const savedEvents = (sent: Recorded[]) => captured(sent).filter((event) => event.name === 'record_saved');
+const outcomeOf = (status: SyncOutcome['status']): SyncOutcome => ({ status, progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0, reason: null });
+
+test('saving an expense records record_started then one record_saved with its kind and category, and never the amount or the note', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const fake = await open();
+    typeAmount('45');
+    choose('Food');
+    fireEvent.click(screen.getByRole('button', { name: 'More details' }));
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'ข้าวมันไก่' } });
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(createCalls(fake)).toHaveLength(1);
+    const events = captured(recorded.sent);
+    expect(events.map((event) => event.name)).toEqual(['record_started', 'record_saved']);
+    expect(events[0]?.properties).toEqual({ source: 'typed', origin: 'app' });
+    expect(events[1]?.properties).toEqual({ kind: 'expense', source: 'typed', category_key: 'food', has_photo: false, offline: false, seconds_to_save: expect.any(Number), origin: 'app' });
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['45', 'ข้าวมันไก่', cash.name]) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('a save that Tell Bun filled records source tell_bun, without its sentence; the next entry is typed again', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    await open();
+    fireEvent.click(screen.getByTestId('quick-add-tell-bun'));
+    fireEvent.change(await screen.findByLabelText('What did you spend or receive?'), { target: { value: 'ข้าวมันไก่ 50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Read it' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this' }));
+    await waitFor(() => expect(screen.getByTestId('quick-add-amount').textContent).toContain('50'));
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add another' }));
+    expect(await screen.findByLabelText('Expense ฿0.00')).toBeTruthy();
+    typeAmount('12');
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(savedEvents(recorded.sent).map((event) => [event.properties.source, event.properties.category_key])).toEqual([['tell_bun', 'food'], ['typed', 'food']]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['ข้าวมันไก่', '5000', '1200']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('a save kept on this phone is offline unless the last sync ended synced', async () => {
+  const cases: readonly (readonly [SyncOutcome | null, boolean])[] = [[null, true], [outcomeOf('waiting'), true], [outcomeOf('synced'), false]];
+  for (const [outcome, offline] of cases) {
+    const recorded = await recordAnalytics();
+    try {
+      const diary = createFakeDiary({ outcome });
+      await open({ diary: diary.diary });
+      typeAmount('65');
+      save();
+      expect(await screen.findByText('Saved on this device')).toBeTruthy();
+      expect(savedEvents(recorded.sent).map((event) => event.properties.offline), String(outcome?.status)).toEqual([offline]);
+    } finally {
+      recorded.restore();
+      cleanup();
+    }
+  }
+});
+
+test('Add another starts a new entry: one more record_started, and its seconds count from there', async () => {
+  let now = Date.UTC(2026, 8, 29, 3, 0, 0);
+  const clock = vi.spyOn(Date, 'now').mockImplementation(() => now);
+  const recorded = await recordAnalytics();
+  try {
+    await open();
+    now += 30_000;
+    typeAmount('65');
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    // The saved moment stays up for ten minutes before Add another.
+    now += 600_000;
+    fireEvent.click(screen.getByRole('button', { name: 'Add another' }));
+    expect(await screen.findByLabelText('Expense ฿0.00')).toBeTruthy();
+    now += 5_000;
+    typeAmount('12');
+    save();
+    expect(await screen.findByText('Saved')).toBeTruthy();
+    expect(captured(recorded.sent).map((event) => event.name)).toEqual(['record_started', 'record_saved', 'record_started', 'record_saved']);
+    expect(savedEvents(recorded.sent).map((event) => event.properties.seconds_to_save)).toEqual([30, 5]);
+  } finally {
+    recorded.restore();
+    clock.mockRestore();
+  }
 });

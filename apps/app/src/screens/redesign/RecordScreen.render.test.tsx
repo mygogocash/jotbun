@@ -9,6 +9,7 @@ vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID()
 
 import type { TransactionDto } from '@gogospend/contracts';
 import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+import type { Recorded } from '@mobile/analytics/testing/recordAnalytics';
 import { translateCopy } from '@mobile/i18n/messages';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
 import type { SpendDiary } from '@mobile/spend/v1/spendDiary';
@@ -949,4 +950,90 @@ test('an edit refused for a record deleted elsewhere keeps no choice (R94)', asy
   expect(kept(diary)).toHaveLength(0);
   expect(screen.queryByRole('button', { name: 'Discard my change' })).toBeNull();
   expect(screen.queryByTestId('choice-panel')).toBeNull();
+});
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7, R61): each rule sends its one event once Jotbun has acknowledged it, with the record's kind and
+// category key only: never an amount, the note, the wallet or a name.
+
+const captures = (sent: Recorded[]) => sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+/** The rent's amounts (before and after the edit), its note and its wallet: none may be sent. */
+function sendsNothingOfTheRent(sent: Recorded[]) {
+  const json = JSON.stringify(sent);
+  for (const secret of ['1226800', '12,268', '1200000', 'Rent', 'Daily account']) expect(json).not.toContain(secret);
+}
+
+test('an acknowledged edit records record_edited, and an unconfirmed one nothing until it is', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const fake = await editRent();
+    fake.loseResponse('updateTransaction');
+    press('Clear', '1', '2', '0', '0', '0');
+    save();
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([{ name: 'record_edited', properties: { kind: 'expense', category_key: 'bills', origin: 'app' } }]);
+    sendsNothingOfTheRent(recorded.sent);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('a delete records record_deleted and its undo records undo_used, each once Jotbun has it', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const fake = mountRecord(RENT);
+    fake.loseResponse('deleteTransaction');
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByText('Entry deleted');
+    const deleted = { name: 'record_deleted', properties: { kind: 'expense', category_key: 'bills', origin: 'app' } };
+    expect(captures(recorded.sent)).toEqual([deleted]);
+    fake.loseResponse('restoreTransaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([deleted]);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([deleted, { name: 'undo_used', properties: { kind: 'expense', origin: 'app' } }]);
+    sendsNothingOfTheRent(recorded.sent);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('Restore records record_restored, never undo_used', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    // The rent was deleted yesterday, on another phone.
+    const fake = mountRecord(RENT, { patch: (records) => { records.set(RENT, { ...RENT_RECORD(), deleted_at: '2026-09-28T03:00:00.000Z', version: 2 } as TransactionDto); } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    expect(await screen.findByRole('button', { name: 'Edit' })).toBeTruthy();
+    expect(fake.callsOf('restoreTransaction')).toHaveLength(1);
+    expect(captures(recorded.sent)).toEqual([{ name: 'record_restored', properties: { kind: 'expense', origin: 'app' } }]);
+    sendsNothingOfTheRent(recorded.sent);
+  } finally {
+    recorded.restore();
+  }
+});
+
+test('an acknowledged "use yours" records one record_edited; the refused edit before it records none', async () => {
+  conflictArea();
+  const recorded = await recordAnalytics();
+  try {
+    const diary = createFakeDiary({ ...DIARY_REFERENCES });
+    await refuseAnEdit(diary.diary);
+    const shown = { name: 'conflict_shown', properties: { reason_code: 'VERSION_CONFLICT', screen: '/spend/record/[id]', origin: 'app' } };
+    expect(captures(recorded.sent)).toEqual([shown]);
+    fireEvent.click(screen.getByRole('button', { name: 'Use yours' }));
+    expect(await screen.findByLabelText('Amount, Expense ฿12,000.00')).toBeTruthy();
+    expect(captures(recorded.sent)).toEqual([shown, { name: 'record_edited', properties: { kind: 'expense', category_key: 'bills', origin: 'app' } }]);
+    sendsNothingOfTheRent(recorded.sent);
+  } finally {
+    recorded.restore();
+  }
 });

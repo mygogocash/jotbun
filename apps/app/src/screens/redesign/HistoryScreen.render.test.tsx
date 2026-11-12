@@ -21,6 +21,7 @@ vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ t
 vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
 
 import type { HistoryPage, TransactionDto } from '@gogospend/contracts';
+import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import type { Locale } from '@mobile/i18n/locales';
 import { translateCopy } from '@mobile/i18n/messages';
 import { BUN_INTENSITY_STORAGE_KEY } from '@mobile/mascot/bunIntensityStorage';
@@ -549,4 +550,34 @@ test.each(MATRIX)('reads in $locale, $mode: palette ground, the stage, the month
   expect(within(screen.getByRole('button', { name: /฿12,268\.00/ })).getByText('−฿12,268.00').style.color).toEqual(rgb(colors.ink));
   expect(screen.getByRole('radio', { name: translateCopy('Expense', locale) })).toBeTruthy();
   expect(screen.getByLabelText(`${translateCopy('Money out', locale)} ฿12,450.00`)).toBeTruthy();
+});
+
+// ---------------------------------------------------------------------------
+// Analytics (1D-T7, R61)
+
+test('a delete from History records record_deleted, and its undo undo_used, each once Jotbun has it', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    const { fake } = await golden();
+    fake.loseResponse('deleteTransaction');
+    rowAction(ROWS.rent, 'Delete');
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    const captures = () => recorded.sent.filter((event) => event.kind === 'capture').map(({ name, properties }) => ({ name, properties }));
+    expect(captures()).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByText('Entry deleted');
+    const deleted = { name: 'record_deleted', properties: { kind: 'expense', category_key: 'bills', origin: 'app' } };
+    expect(captures()).toEqual([deleted]);
+    fake.loseResponse('restoreTransaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByText(NOT_CONFIRMED)).toBeTruthy();
+    expect(captures()).toEqual([deleted]);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('button', { name: ROWS.rent })).toBeTruthy();
+    expect(captures()).toEqual([deleted, { name: 'undo_used', properties: { kind: 'expense', origin: 'app' } }]);
+    const json = JSON.stringify(recorded.sent);
+    for (const secret of ['1226800', '12,268', 'Rent', 'Daily account']) expect(json).not.toContain(secret);
+  } finally {
+    recorded.restore();
+  }
 });
