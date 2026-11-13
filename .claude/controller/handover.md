@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 20:15: CI IS BLOCKED ORG-WIDE (owner's call).**
+  - Every GitHub Actions run in mygogocash has been queued without a runner since about 09:30: jotbun 3, gogocash-monorepo 5, NotNotch 3, nothing in progress. GitHub's status page says Actions is operational.
+  - The org's billing usage shows 2,924 Linux minutes used in November against what looks like a 3,000-minute included allowance, and November storage is now charged. So the included minutes are very likely used up, with a $0 limit.
+  - The last jotbun run to complete was promotion #458's at 09:21. Its SQL job failed, probably the `retry_after` flake; rerun it once runners return.
+  - **Owner:**
+    - raise the org's Actions budget or spending limit, or wait for the 1 Dec reset, or approve a self-hosted runner (an infra change);
+    - the controller buys nothing (standing rule).
+  - **Until then:** builds and reviews go on locally, and merges wait for green CI.
+  - Queued: #460 (P3-T13; both reviews approved), #461 (P3-T9), promotion #459.
 - **13 Nov 20:10: #461 (P3-T9) opened; source-pins and P4-T2 building; #460's Opus review approved.**
   - **#461 (P3-T9, issue #193)** at `5cb1055e`: all 20 `real/` files byte-identical. RED was phone 3 of 4, edge Node 6 of 46 and Workers 26 of 126. Mutants: 79 of 79 in six batches, each identical to the planner's.
     - Reviews: Opus `mcp:launch:585ae86cc8c795e7b9408bbe54d85f51228361ee34ab13782d3fb13d3ad47946`, Sonnet `mcp:launch:9f345364b995bb1e1d5196f13a324e2c91df3c08ee4bd73380171da441fc532a`.
