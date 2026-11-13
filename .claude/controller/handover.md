@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 19:35: #460 (P3-T13, issue #197) opened at `14da2b4e`.**
+  - All 10 `real/` files are byte-identical. RED was Node 3 of 17 and render 7 of 38, all assertions. GREEN was Node 77 and render 38. Mutants 48 of 48, identical to the planner's. Gate: `test:unit` 1112, kit eight 142, routes 17.
+  - The implementer noted `app.json` is 0.3.0, not 0.2.0 as the brief says; P10's 0.2.0 client minimum still holds. It also noted `fromSheet` has no lock check (reasoned unreachable); the reviews are asked about it.
+  - Reviews (notes `scratch/dispatch/P3-T13-review-notes.md`): Opus `mcp:launch:372a9900f8ed3b73fc7ac31e81105c5742b6ebc5bedb4e8bca96ca7662cdd82c`, Sonnet `mcp:launch:dba8ee736316abacdeb75070acbb05bc2b8a5b9796acc639b4ffa3f22a6325b0`. The implementer thread is archived.
+  - **Live now:** reviews on #460; the P3-T9, P2-T26-fix, P4-T2 and source-pins planners (Opus).
 - **13 Nov 19:25: #457 (P3-T3) MERGED as `ab350e4`; the source-pins follow-up is planning.**
   - **#457:** both reviews approved `2c642055` with no blocker, major or minor (nits and notes only), and CI was 9 of 9.
     - The probes are in `scratch/p3-t3-review/probes/` and `scratch/p3-t3-second/probes/`.
