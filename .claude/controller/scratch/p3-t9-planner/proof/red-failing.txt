@@ -1,0 +1,26 @@
+ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)
+ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use
+ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read
+ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check
+ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures
+ai.test.ts > Tell Bun > a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1)
+ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return
+ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a question neither model grounds, with no figures, answers that Bun could not find it
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > the prompts carry no account, session or device identifier (both conversations)
+ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > a draft the sanitizer cannot read leaves the answer unusable, so Opus reads it again and nothing crashes (the P3-T8 second review's m1)
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without input tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without output tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+slip-read.test.ts > reading one slip through the front door > a Haiku date of 0000-00-00, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+slip-read.test.ts > reading one slip through the front door > a Haiku date of 2026-10-32, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)

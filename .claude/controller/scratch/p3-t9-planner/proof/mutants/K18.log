@@ -1,0 +1,83 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 464ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected [ …(2) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+@@ -71,47 +71,6 @@
+        "type": "object",
+      },
+      "name": "category_totals",
+      "strict": true,
+    },
+-   {
+-     "description": "The places or descriptions the person spent most at between two dates (up to 8), with totals and counts.",
+-     "input_schema": {
+-       "additionalProperties": false,
+-       "properties": {
+-         "from": {
+-           "description": "First day, YYYY-MM-DD (Bangkok calendar).",
+-           "type": "string",
+-         },
+-         "through": {
+-           "description": "Last day, YYYY-MM-DD, inclusive.",
+-           "type": "string",
+-         },
+-       },
+-       "required": [
+-         "from",
+-         "through",
+-       ],
+-       "type": "object",
+-     },
+-     "name": "top_merchants",
+-     "strict": true,
+-   },
+-   {
+-     "description": "The month’s budget: limit, spent and left, overall and per category. Null when no budget is set.",
+-     "input_schema": {
+-       "additionalProperties": false,
+-       "properties": {
+-         "month": {
+-           "description": "YYYY-MM",
+-           "type": "string",
+-         },
+-       },
+-       "required": [
+-         "month",
+-       ],
+-       "type": "object",
+-     },
+-     "name": "budget_status",
+-     "strict": true,
+-   },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:97:24
+     95|     expect(opus.messages[0]).toMatchObject({ role: 'user' })
+     96|     expect(opus.system).toEqual(haiku.system)
+     97|     expect(opus.tools).toEqual(haiku.tools)
+       |                        ^
+     98|     // Opus's own base (H2) at Ask Bun's effort and length, and no thi…
+     99|     expect(opus).toMatchObject({ model: OPUS, max_tokens: 12_000, beta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:30:37
+   Duration  4.37s (transform 1.85s, setup 3.22s, import 75ms, tests 464ms, environment 0ms)
+

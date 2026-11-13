@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 19:50: P3-T9's brief is READY and its implementer is building (Haiku).**
+  - Size L, 20 files. It carries every P3-T8 review item (P14): the `isRealDate` guard, the `readOnce` catch, the MO2 rows, PC2, one `draftChoices` and the test pins.
+  - **P6, R116 extended to every route through `shouldRefund`** (the slip's "Haiku answered, Opus never started" is now spent): **accepted** by the controller.
+  - `check_kit` at `fb6aa0bd`: 76 of 76, `orig/` 16 of 16. **P1 to P16 accepted.** Client minimum 0.2.0 (owner item 7).
+  - Worktree `p3-t9` on `p3/t9-ask-escalation`, `install-edge`, heavy lock. Implementer `mcp:launch:124faaff65d8b8c9f09c9bb0320623119e62b87eeaebc1e904944472096cd5e9`. The planner thread is archived.
+  - **source-pins:** its kit and brief exist (19:49), and the planner is finishing its report.
+  - **Live now:** the P3-T9 implementer (Haiku); reviews on #460 (P3-T13); the P2-T26-fix, P4-T2 and source-pins planners (Opus).
 - **13 Nov 19:35: #460 (P3-T13, issue #197) opened at `14da2b4e`.**
   - All 10 `real/` files are byte-identical. RED was Node 3 of 17 and render 7 of 38, all assertions. GREEN was Node 77 and render 38. Mutants 48 of 48, identical to the planner's. Gate: `test:unit` 1112, kit eight 142, routes 17.
   - The implementer noted `app.json` is 0.3.0, not 0.2.0 as the brief says; P10's 0.2.0 client minimum still holds. It also noted `fromSheet` has no lock check (reasoned unreachable); the reviews are asked about it.

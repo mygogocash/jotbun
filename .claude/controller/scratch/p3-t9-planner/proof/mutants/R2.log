@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 2 failed) 763ms
+     × a usage without input tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1) 3ms
+     × a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without input tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: NaN, output: 7 } to deeply equal { input: +0, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 0,
++   "input": NaN,
+    "output": 7,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: -5, output: 7 } to deeply equal { input: +0, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 0,
++   "input": -5,
+    "output": 7,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 44 passed (46)
+   Start at  19:34:33
+   Duration  3.01s (transform 841ms, setup 1.70s, import 30ms, tests 763ms, environment 0ms)
+

@@ -1,0 +1,100 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+stderr | test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ❯ test/ask-deadline.test.ts (12 tests | 1 failed) 9ms
+     × a slow Haiku conversation is cut at 25 s and Opus still answers 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+@@ -1,9 +1,53 @@
+  {
+-   "answer": "เดือนนี้ใช้กับอาหารไป ฿60",
++   "answer": "จากบันทึกของคุณ — อาหาร: ฿60; อาหาร: ฿60; อาหาร: ฿60; อาหาร: ฿60",
+    "escalated": true,
+    "figures": [
++     {
++       "amount_minor": "6000",
++       "count": 1,
++       "label": "อาหาร",
++       "scope": {
++         "category_id": "2c000000-0000-4000-8000-000000000001",
++         "from": "2026-11-01",
++         "through": "2026-11-12",
++         "type": "expense",
++       },
++     },
++     {
++       "amount_minor": "6000",
++       "count": 1,
++       "label": "อาหาร",
++       "scope": {
++         "category_id": "2c000000-0000-4000-8000-000000000001",
++         "from": "2026-11-01",
++         "through": "2026-11-12",
++         "type": "expense",
++       },
++     },
++     {
++       "amount_minor": "6000",
++       "count": 1,
++       "label": "อาหาร",
++       "scope": {
++         "category_id": "2c000000-0000-4000-8000-000000000001",
++         "from": "2026-11-01",
++         "through": "2026-11-12",
++         "type": "expense",
++       },
++     },
++     {
++       "amount_minor": "6000",
++       "count": 1,
++       "label": "อาหาร",
++       "scope": {
++         "category_id": "2c000000-0000-4000-8000-000000000001",
++         "from": "2026-11-01",
++         "through": "2026-11-12",
++         "type": "expense",
++       },
++     },
+      {
+        "amount_minor": "6000",
+        "count": 1,
+        "label": "อาหาร",
+        "scope": {
+@@ -12,8 +56,8 @@
+          "through": "2026-11-12",
+          "type": "expense",
+        },
+      },
+    ],
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "model": "rules",
++   "source": "facts",
+  }
+
+ ❯ test/ask-deadline.test.ts:47:20
+     45|     const trace = newTrace()
+     46|     const answer = await askWithEscalation(input, { transport, trace, …
+     47|     expect(answer).toEqual({ answer: GROUNDED, figures: [FIGURE], sour…
+       |                    ^
+     48|     // Two 12 s turns use 24 of Haiku's 25 s, so its third cannot star…
+     49|     expect(given).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  19:29:31
+   Duration  285ms (transform 83ms, setup 0ms, import 150ms, tests 9ms, environment 0ms)
+

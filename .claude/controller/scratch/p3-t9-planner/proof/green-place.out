@@ -1,0 +1,19 @@
+green: real/packages/contracts/src/v1/ai.ts
+green: real/packages/contracts/src/index.ts
+green: real/apps/edge/src/server/ai/drafts.ts
+green: real/apps/edge/src/v1/ai/ask.ts
+green: real/apps/edge/src/v1/ai/service.ts
+green: real/apps/edge/src/v1/ai/slip-read.ts
+green: real/apps/edge/src/v1/ai/uses.ts
+green: real/apps/edge/src/vault/ai.ts
+green: real/apps/edge/test/workers/ask-escalation.test.ts
+green: real/apps/edge/test/ask-deadline.test.ts
+green: real/apps/edge/test/workers/ai.test.ts
+green: real/apps/edge/test/workers/ai-uses.test.ts
+green: real/apps/edge/test/workers/slip-read.test.ts
+green: real/apps/edge/test/ai-grounding.test.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.test.ts
+green: real/apps/app/src/dev/catalogue/companion/companionSections.tsx
+green: real/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+green: 18 files placed

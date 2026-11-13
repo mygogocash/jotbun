@@ -1,0 +1,70 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 401ms
+     × figures carry their record count and scope 32ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "amount_minor": "21000",
+      "count": 21,
+-     "scope": null,
++     "scope": {
++       "category_id": null,
++       "from": "2026-10-01",
++       "through": "2026-10-24",
++       "type": "expense",
+      },
++   },
+    {
+      "amount_minor": "20000",
+      "count": 20,
+-     "scope": null,
++     "scope": {
++       "category_id": null,
++       "from": "2026-10-01",
++       "through": "2026-10-24",
++       "type": "expense",
+      },
++   },
+    {
+      "amount_minor": "7000",
+      "count": 1,
+-     "scope": null,
++     "scope": {
++       "category_id": null,
++       "from": "2026-10-01",
++       "through": "2026-10-24",
++       "type": "expense",
++     },
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:286:145
+    284|     ])
+    285|     // A place's total has its count and no scope.
+    286|     expect(figuresOf(await tool(who.user, 'top_merchants', october)).m…
+       |                                                                                                                                                 ^
+    287|       { amount_minor: '21000', count: 21, scope: null },
+    288|       { amount_minor: '20000', count: 20, scope: null },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:34:06
+   Duration  2.84s (transform 931ms, setup 1.85s, import 33ms, tests 401ms, environment 1ms)
+

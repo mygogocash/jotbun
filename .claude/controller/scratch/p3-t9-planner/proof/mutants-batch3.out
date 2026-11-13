@@ -1,0 +1,12 @@
+K28 killed (assertion): Haiku's grounded answer says escalated [routing] -> 1 failed | 6 passed (7)
+S1 killed (assertion): Ask Bun never gives its use back [escalation] -> 5 failed | 8 passed (13)
+S2 killed (assertion): nothing to answer with is not a 503 [escalation] -> 3 failed | 10 passed (13)
+S3 killed (assertion): the plain figures after an outage keep the use (only the 503 gives it back) [escalation] -> 2 failed | 11 passed (13)
+S4 killed (assertion): the refund is not awaited before the answer [escalation] -> 1 failed | 12 passed (13)
+S5 killed (assertion): the tools answer in English whatever the question's language [aitest] -> 1 failed | 43 passed (44)
+S6 killed (assertion): a refund whose vault call rejects fails the request (the P3-T7 second review's M9) [escalation] -> 1 failed | 12 passed (13)
+U1 killed (assertion): a turn the deadline never let start always gives the use back (R116 dropped) [uses] -> 3 failed | 13 passed (16)
+U2 killed (assertion): a turn the deadline never let start always spends [uses] -> 1 failed | 15 passed (16)
+U3 killed (assertion): any earlier call, not an answered one, spends a turn that never started [uses] -> 1 failed | 15 passed (16)
+U4 killed (assertion): a sent last call that failed spends once an earlier call answered [uses] -> 3 failed | 13 passed (16)
+11 of 11 killed; survivors []; other failures []; not restored []

@@ -1,0 +1,53 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 418ms
+     × an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 44ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { source: 'facts', …(3) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
+-   "figures": [
+-     {
+-       "amount_minor": "6000",
+-     },
+-   ],
+-   "model": "rules",
+-   "source": "facts",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "8f26886e-b084-41b4-b6e3-c04240896da5",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:162:45
+    160|     const who = await person()
+    161|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+       |                                             ^
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:30:56
+   Duration  2.56s (transform 824ms, setup 1.65s, import 23ms, tests 418ms, environment 0ms)
+

@@ -1,0 +1,29 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ❯ test/ask-deadline.test.ts (12 tests | 1 failed) 7ms
+     × a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ask-deadline.test.ts > how one conversation ends (D28) > a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer
+AssertionError: expected { …(2) } to be an instance of ProblemException
+ ❯ test/ask-deadline.test.ts:117:20
+    115|     }
+    116|     const thrown = await conversation([total()], { tool: refusing }).c…
+    117|     expect(thrown).toBeInstanceOf(ProblemException)
+       |                    ^
+    118|     expect(thrown).toMatchObject({ code: 'SESSION_REQUIRED' })
+    119|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  19:29:34
+   Duration  246ms (transform 77ms, setup 0ms, import 135ms, tests 7ms, environment 0ms)
+
