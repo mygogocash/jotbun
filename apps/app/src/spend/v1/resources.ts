@@ -9,11 +9,15 @@ import {
   isBudgetSnapshot,
   isCategorySnapshot,
   isCurrencyCode,
+  isHomeCurrencyPreview,
+  isRatesTodayDto,
   isSnapshotChunk,
   isSnapshotChunkGrant,
   isSnapshotDto,
   isSyncChangesPage,
   isTransactionSnapshot,
+  isTripSnapshot,
+  isTripSummaryDto,
   isUuid,
   isWalletSnapshot,
 } from '@gogospend/contracts';
@@ -23,21 +27,30 @@ import type {
   CommandAck,
   CommandStatus,
   CreateCategoryRequest,
+  CreateTripRequest,
   CreateWalletRequest,
+  CurrencyCode,
   DeletedHistoryPage,
   HistoryFilter,
   HistoryPage,
+  HomeCurrencyPreview,
+  Minor,
   MonthSummary,
+  RateSource,
+  RatesTodayDto,
   SetMonthlyBudgetRequest,
   TransactionDto,
   TransactionSource,
+  TripDto,
+  TripSummaryDto,
   UpdateCategoryRequest,
   UpdateTransactionRequest,
+  UpdateTripRequest,
   UpdateWalletRequest,
   WalletDto,
 } from '@gogospend/contracts';
 
-import { V1Error } from '../../api/client.ts';
+import { NOT_MODIFIED, V1Error } from '../../api/client.ts';
 import type { V1Transport } from '../../api/client.ts';
 import type { SyncRemote } from '../../sync/types.ts';
 
@@ -47,9 +60,18 @@ export const V1_COMMAND_SCHEMA = 1;
 /** Sync pages and chunks may carry entity types a newer server added; this build skips them instead of failing the page. */
 const SKIP_UNKNOWN_ENTITIES = { unknownEntities: 'skip' } as const;
 
+/**
+ * A record's money on a create (P5-T2, P5-T17), every key optional: its
+ * currency and rate source; an own or exchange rate, or the home amount it
+ * charged, with `home_currency` naming the home that figure is against; and
+ * its trip. The phone sends none until P5-T21, and a draft holding one is
+ * refused by the outbox until P5-T18a.
+ */
+type MoneyInput = { currency?: CurrencyCode; rate_source?: RateSource; rate?: string; home_amount_minor?: Minor; home_currency?: CurrencyCode; trip_id?: string | null };
 /** `source` is how the record was made (P3-T2): a create names one or leaves the key out. */
-export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
-export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource };
+export type CreateEntryInput = { id: string; type: 'expense' | 'income'; amount_minor: string; occurred_on: string; wallet_id: string; category_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource } & MoneyInput;
+/** An exchange between currencies also names what its destination received (`to_amount_minor`). */
+export type CreateTransferInput = { id: string; amount_minor: string; occurred_on: string; source_wallet_id: string; destination_wallet_id: string; note?: string | null; merchant?: string | null; source?: TransactionSource; to_amount_minor?: Minor } & MoneyInput;
 
 /** The app's typed port to the v1 API: owned ids only, no name-based ownership, no legacy fallback. */
 export type SpendV1Resources = {
@@ -86,6 +108,23 @@ export type SpendV1Resources = {
   archiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
   unarchiveCategory(id: string, version: number, commandId: string): Promise<CommandAck>;
   commandStatus(ids: readonly string[]): Promise<CommandStatus[]>;
+  /** Live trips, the latest first (P5-T9). */
+  trips(): Promise<TripDto[]>;
+  createTrip(input: CreateTripRequest, commandId: string): Promise<CommandAck>;
+  updateTrip(id: string, version: number, changes: UpdateTripRequest, commandId: string): Promise<CommandAck>;
+  deleteTrip(id: string, version: number, commandId: string): Promise<CommandAck>;
+  /** A trip's exact sums of its records' stored amounts (P5-T12, X17). */
+  tripSummary(id: string): Promise<TripSummaryDto>;
+  /**
+   * Today's reference rates (P5-T6). Given the cached set's ETag, 'unchanged'
+   * while the server still holds that set (304); otherwise the set and its
+   * ETag, or null when the server sent none.
+   */
+  ratesToday(etag?: string): Promise<{ etag: string | null; rates: RatesTodayDto } | 'unchanged'>;
+  /** What changing the home currency to `currency` would convert (P5-T13). */
+  homeCurrencyPreview(currency: CurrencyCode): Promise<HomeCurrencyPreview>;
+  /** C8 (P5-T13): If-Match with the settings' version, and none while no change has been made. */
+  setHomeCurrency(currency: CurrencyCode, version: number | null, commandId: string): Promise<CommandAck>;
 };
 
 type Json = Record<string, unknown>;
@@ -241,6 +280,26 @@ export function createSpendV1Resources(transport: V1Transport): SpendV1Resources
     unarchiveCategory: async (id, version, commandId) =>
       transport.request('POST', `/v1/categories/${segment(id)}/unarchive`, { body: {}, command: command(commandId, version), validate: ackFor(commandId, id) }),
     commandStatus: (ids) => fetchCommandStatus(transport, ids),
+    trips: async () => transport.request('GET', '/v1/trips', { validate: listOf(isTripSnapshot) }),
+    createTrip: async (input, commandId) => transport.request('POST', '/v1/trips', { body: input, command: command(commandId), validate: ackFor(commandId, input.id) }),
+    updateTrip: async (id, version, changes, commandId) =>
+      transport.request('PATCH', `/v1/trips/${segment(id)}`, { body: changes, command: command(commandId, version), validate: ackFor(commandId, id) }),
+    deleteTrip: async (id, version, commandId) => transport.request('DELETE', `/v1/trips/${segment(id)}`, { command: command(commandId, version), validate: ackFor(commandId, id) }),
+    tripSummary: async (id) => transport.request('GET', `/v1/trips/${segment(id)}/summary`, { validate: isTripSummaryDto }),
+    ratesToday: async (etag) => {
+      const heard: { etag: string | null } = { etag: null };
+      const answer = await transport.request('GET', '/v1/rates/today', {
+        ifNoneMatch: etag,
+        etag: (value) => { heard.etag = value; },
+        validate: (value): value is RatesTodayDto | typeof NOT_MODIFIED => value === NOT_MODIFIED || isRatesTodayDto(value),
+      });
+      return answer === NOT_MODIFIED ? 'unchanged' : { etag: heard.etag, rates: answer };
+    },
+    homeCurrencyPreview: async (currency) =>
+      transport.request('GET', `/v1/me/home-currency/preview?currency=${encodeURIComponent(currency)}`, { validate: isHomeCurrencyPreview }),
+    // The settings' id is the server's (derived from the account), so the acknowledgement is matched by its command.
+    setHomeCurrency: async (currency, version, commandId) =>
+      transport.request('PUT', '/v1/me/home-currency', { body: { currency }, command: command(commandId, version ?? undefined), validate: ackForCommand(commandId) }),
   };
 }
 
