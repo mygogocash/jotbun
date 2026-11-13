@@ -16,7 +16,8 @@
 //   (`settleDeviceCopy`: erased only after a confirmed acceptance, locked
 //   after a refusal, otherwise kept). A fresh sign-in that does not go
 //   through sends nothing and leaves the copy as it is. A confirmed erase
-//   also forgets this account's kept wallet looks. Done signs this device out.
+//   also forgets this account's kept wallet looks. Done signs this device out,
+//   with no `signed_out` event (R125).
 // - Help improve Jotbun (1D-T8, D34), only while the `analytics` area is on:
 //   the analytics answer as one switch, draft copy until E2.
 //
@@ -433,7 +434,8 @@ function DeleteCard({ services }: { services: PrivacyServices }) {
 
   async function done(device: DeviceCopyOutcome) {
     if (device === 'erase_failed') await diary?.eraseForSignOut().catch(() => undefined);
-    await services.signOut().catch(() => undefined);
+    // No signed_out: under this account's analytics id it could bring back the PostHog person the deletion removes (R125).
+    await services.signOut({ event: false }).catch(() => undefined);
   }
 
   let body: ReactNode;

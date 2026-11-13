@@ -1,7 +1,7 @@
 // The services Privacy and data runs on (R6). The app's own wiring of them
 // lives in privacyServices.ts, which only the route imports, so importing the
 // screen (tests, the catalogue) never loads the app's transport.
-import type { FreshOutcome, RequestCredentials } from '@mobile/auth/credentialProvider';
+import type { FreshOutcome, RequestCredentials, SignOutOptions } from '@mobile/auth/credentialProvider';
 import type { DeletionResources } from '@mobile/spend/v1/deletion';
 import type { PrivacyResources } from '@mobile/spend/v1/privacy';
 
@@ -20,8 +20,8 @@ export type PrivacyServices = {
   newId(): string;
   /** Hands the verified CSV to the person. True once they sent it somewhere; false when they closed the sheet. */
   saveExport(file: { csv: string; fileName: string }): Promise<boolean>;
-  /** Ends the session on this device, after a deletion was accepted. */
-  signOut(): Promise<void>;
+  /** Ends the session on this device, after a deletion was accepted: with `{ event: false }`, so no `signed_out` goes out under the deleted account (R125). */
+  signOut(options?: SignOutOptions): Promise<void>;
   /** The status checks' pace (privacy.ts's defaults: every 2 s, 30 checks). */
   readonly sleep?: (ms: number) => Promise<void>;
   readonly pollMs?: number;
