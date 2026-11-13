@@ -5,8 +5,10 @@
 // call is read through `outcome`, so a call that throws fails on an assertion.
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { parseDeviceRegistration } from '@gogospend/contracts';
 import type { DeviceRegistration } from '@gogospend/contracts';
@@ -247,4 +249,18 @@ test("the app's config adds expo-notifications' plugin with its defaults", () =>
   const config = JSON.parse(readFileSync(new URL('../../../app.json', import.meta.url), 'utf8')) as { expo: { plugins: unknown[] } };
   const entries = config.expo.plugins.filter((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin) === 'expo-notifications');
   assert.deepEqual(entries, ['expo-notifications']);
+});
+
+test('the push host is the only place that sets a notification handler, so a reminder stays silent while the app is open', () => {
+  // SDK 58 keeps only the last handler set, so a second call anywhere would undo the host's (R126).
+  const appRoot = fileURLToPath(new URL('../../../', import.meta.url));
+  const sources = (dir: string): string[] => readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) return name === 'node_modules' ? [] : sources(path);
+    return /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) ? [path] : [];
+  });
+  const setters = [...sources(join(appRoot, 'app')), ...sources(join(appRoot, 'src'))]
+    .filter((path) => readFileSync(path, 'utf8').includes('setNotificationHandler('))
+    .map((path) => relative(appRoot, path).split(sep).join('/'));
+  assert.deepEqual(setters, ['src/slips/push/PushHost.tsx']);
 });

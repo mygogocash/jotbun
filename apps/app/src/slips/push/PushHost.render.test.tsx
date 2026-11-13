@@ -41,6 +41,8 @@ const phone = vi.hoisted(() => ({
   registered: [] as unknown[],
   refuse: false,
   refused: 0,
+  hold: false,
+  held: [] as (() => void)[],
 }));
 
 vi.mock('expo-notifications', () => ({
@@ -106,6 +108,8 @@ vi.mock('@mobile/api/sharedV1', () => ({
         throw new Error('refused');
       }
       phone.registered.push(registration);
+      // A held answer, so a case can change things while a PUT is out.
+      if (phone.hold) await new Promise<void>((resolve) => { phone.held.push(resolve); });
     },
   }),
 }));
@@ -141,7 +145,7 @@ beforeEach(() => {
   Object.assign(phone, {
     handler: null, handlers: 0, opened: null, openedThrows: false, cleared: 0, answer: GRANTED, reads: 0, readThrows: false,
     requests: [], requestThrows: false, tokens: [], extra: { eas: { projectId: PROJECT } }, configReads: 0, configThrows: false,
-    pushed: [], settings: 0, settingsThrow: false, registered: [], refuse: false, refused: 0,
+    pushed: [], settings: 0, settingsThrow: false, registered: [], refuse: false, refused: 0, hold: false, held: [],
   });
   phone.listeners.clear();
   stored.clear();
@@ -418,4 +422,21 @@ test('the root layout mounts the push host once, as the first child inside the w
   expect(layout).toContain("import { PushHost } from '@mobile/slips/push/PushHost';");
   expect(layout.match(/<PushHost \/>/g) ?? []).toHaveLength(1);
   expect(layout).toMatch(/<WalletRoot>\n\s*<PushHost \/>\n\s*<LocaleUpkeep \/>/);
+});
+
+test('registrations run one at a time, in order: a second waits for the first to answer, so the last language sent is the newest', async () => {
+  // The first PUT is held while the language changes: two at once could leave the server on the old language while
+  // the record says the new one, and every later run would answer unchanged for a week.
+  phone.hold = true;
+  signIn('session-a');
+  const view = render(<Host />);
+  await waitFor(() => expect(registered()).toHaveLength(1), WAIT);
+  view.rerender(<Host locale="en" />);
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+  expect(registered().map((registration) => registration.language)).toEqual(['th']);
+  phone.hold = false;
+  await act(async () => { phone.held[0]?.(); });
+  await waitFor(() => expect(registered()).toHaveLength(2), WAIT);
+  expect(registered().map((registration) => registration.language)).toEqual(['th', 'en']);
+  await waitFor(() => expect(JSON.parse(stored.get(RECORD_KEY) ?? 'null')?.language).toBe('en'), WAIT);
 });
