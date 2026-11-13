@@ -49,6 +49,14 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 06:03: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114c.md`, head `730cd20f`):
+  - **1C-T7, native Apple and Google sign-in** (critical path, depth 6): `mcp:launch:476d249645df1a2cc08b97ae7c81bb4a67f475a2ab834a565138f2e710d10b1a`, WT `p1-1c-t7` on `p1/1c-t7-native-sign-in`.
+    - Packages and the lockfile change (none in flight changes either).
+    - A new `app.config.js` that must not hardcode `app.json`'s plugins, which #466 changes.
+    - It carries followups lines 62, 98 to 105 and 235.
+    - It may report BLOCKED if it needs owner credentials.
+  - **P6B-T14, remote flags and the rollout layer** (depth 4): `mcp:launch:c73b05aceef7e8fa100bad93b86b362d8e2bac964090eb078bbc93f4874c06e1`, WT `p6b-t14` on `p6b/t14-remote-flags`. It touches `analytics/controller.ts` and the shared `testing/recordAnalytics.ts`.
+  - **Live now:** the 1C-T7 and P6B-T14 planners.
 - **14 Nov 06:01: #467 fully approved (the confirmation of `e3c2ae74` approves). Nine PRs are fully approved and wait only on CI. Disk recovered to 218 GiB free.**
   - **Merge order once runners return:**
 
