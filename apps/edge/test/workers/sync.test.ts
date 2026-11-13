@@ -295,14 +295,14 @@ describe('ordered deltas, ported from sync-query.integration.spec.ts', () => {
 
 describe('GET /v1/sync/changes, ported from sync-api.integration.spec.ts', () => {
   it('snapshots validate exactly the entities the API registers', () => {
-    // Partly ported: 1B-T6 registers export and 1B-T10 import_review and import_selection; phase 4 registers slip_inbox.
+    // Partly ported: 1B-T6 registers export, 1B-T10 import_review and import_selection, and P4-T3 slip_inbox; phase 5 registers trip.
     // Until then, every entity the vault registers is checked by exactly its sync validator.
     const registry = buildVaultRegistry()
-    expect(registry.entityNames().sort()).toEqual(['budget', 'category', 'export', 'import_review', 'import_selection', 'transaction', 'wallet'])
+    expect(registry.entityNames().sort()).toEqual(['budget', 'category', 'export', 'import_review', 'import_selection', 'slip_inbox', 'transaction', 'wallet'])
     for (const name of registry.entityNames()) expect(registry.entity(name)?.validate).toBe(SYNC_ENTITY_VALIDATORS[name])
   })
 
-  it.todo('snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once 1B and phase 4 register theirs')
+  it.todo('snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once phase 5 registers trip (P5-T9)')
 
   it('requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas', async () => {
     // 1B-T8: SnapshotWorkflow builds the snapshot after the 202, as the API's job worker built it.
