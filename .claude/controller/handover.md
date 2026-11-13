@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 03:19: #466 (P4-T17, closes #226) opened at `7cdb3d9f`; its two reviews started. CI is still blocked.**
+  - The implementer reported DONE in about 10 minutes. The controller checked the commit: all 9 `real/` files are byte-identical.
+    - RED: Node 13 of 13 and render 13 of 21, on assertions only. GREEN: 13 and 21. Mutants: 92 killed, 2 equivalent (H33, M2), every outcome equal to the planner's.
+    - Gate: both typechecks, `test:app`, `test:unit`, the routes render gate 38 of 38, and `export:web`.
+    - The commit's base is `aad380d2` (a fast-forward over controller state). The implementer thread is archived.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:105418bd28cc1ad6ff9224a21fcc57402a9ebdbeaba596716c6eb25b8c4b36d9`, writing `reviews/P4-T17.md`;
+    - Sonnet: `mcp:launch:982a483697e6b9f1b4ffe33b08293ea53072f1531222fb1bc73e980bb206287d`, writing `reviews/P4-T17-second.md`.
+
+    Notes: `scratch/dispatch/P4-T17-review-notes.md`.
+  - **CI:** the watcher hit its cap with no run started. It is re-armed over all seven approved PRs (456 and 460 to 465). #466 joins the queue.
+  - **Live now:** the #466 reviews (Opus and Sonnet); the 1D-T14 planner (R125 rework).
 - **14 Nov 03:07: P4-T17 READY and building (Haiku); the disk is tight.**
   - **P4-T17 planner done** (thread archived). Brief `briefs/P4-T17.md`, kit `scratch/p4-t17-planner/` (43 of 43 sums, `orig/` 2 of 2 at the head).
     - RED was 13 of 13 Node cases and 13 render cases. GREEN passes, mutants 92 of 94 killed with 2 equivalent, and the dry run matched every Expected line.
