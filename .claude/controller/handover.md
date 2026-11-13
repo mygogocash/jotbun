@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 03:07: P4-T17 READY and building (Haiku); the disk is tight.**
+  - **P4-T17 planner done** (thread archived). Brief `briefs/P4-T17.md`, kit `scratch/p4-t17-planner/` (43 of 43 sums, `orig/` 2 of 2 at the head).
+    - RED was 13 of 13 Node cases and 13 render cases. GREEN passes, mutants 92 of 94 killed with 2 equivalent, and the dry run matched every Expected line.
+    - **P1 to P17 accepted.**
+    - **R126 (its P3 (a)):** SDK 58 shows a notification that arrives while the app is open unless a handler says otherwise, so today a local reminder shows in the foreground with a sound. The plan says it shows nothing, and the brief follows the plan: the host hides it. This changes today's foreground reminder. The owner may reverse it with one line in `presentation` and mutants H3 and H4. It is listed as an owner note.
+    - P3 (c): the plain `expo-notifications` plugin adds the iOS entitlement `aps-environment: development`. A store build may need `mode: production` (D33, P6C), and a local device build signed by a team without the push capability will not sign.
+  - **Implementer (Haiku max):** `mcp:launch:55b3ad680e789f019ec74708f53552d799e67cc67955357631bd47b5c36f691e`, in worktree `p4-t17` on `p4/t17-push`, installed, `--lock`. Notes: `scratch/dispatch/P4-T17-implementer-notes.md`.
+  - **Disk: 5.3 GiB free** after the install, down from 6.7.
+    - Ours: 9 task and integration worktrees of 1.2 to 1.7 GB each, which stay until their PRs merge. The scratch folder is 9.1 GB, spread over old review folders whose probes followups cite.
+    - The 9.8 GB `.claude/controller-stale-20261108-1710` folder is still there. The 9 Nov takeover said to delete it "when nothing more is wanted from it". It is kept until the probes the old followups cite are checked against it.
+    - `agent-a4e4cbbb8ea6b2a9c` holds 11 uncommitted edits and is left for the owner.
+    - A new worktree costs about 1.2 GB. Check `df` before each one.
+  - **Live now:** the P4-T17 implementer; the 1D-T14 planner (R125 rework).
 - **14 Nov 02:45: 1D-T14's planner reported READY. The controller accepted P1 to P9 and sent the brief back for R125.**
   - The kit is `scratch/1d-t14-planner/`: 23 of 23 sums OK, and its 2 `orig/` files match the head. RED was 8 of 46, GREEN 46 of 46, mutants 7 of 7.
   - **P4, the planner's guard:** `signed_out` is sent only from an active session. Without it, Settings' Sign out from an ended session would hold the event and send it under the next account's yes (M5). Accepted.
