@@ -49,6 +49,12 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 20:25: #463 (P4-T2, issue #210) opened at `4e95b987`.**
+  - 14 of 15 `real/` files are byte-identical; the receipt adds the install line. RED was Node 2 of 14 and Workers 10 of 10, all assertions.
+  - Mutants: 70 of 70 (SQL 8, code 42, Node 20), each batch identical to the planner's. Neighbours 168; `test:edge` 215; `build:edge` binds `CATALOG_DB`.
+  - One Opus review (public catalog data, so no second review): `mcp:launch:51afe0596bf025013f64f39956a18627a7a16ad4de7a7816b1b7cff48edffa0f`. CI is queued. The implementer thread is archived.
+  - **Live now:** reviews on #461 (P3-T9, both), #462 (source-pins) and #463 (P4-T2); the P2-T26 fix planner (Opus). No builder is running.
+  - **Next to plan:** P5-T9 (routes lane: trips in the vault). It shares `v1/routes.ts`, `protocol.ts`, `vault/routes.ts` and `registry.ts` with P4-T2's files, so it builds on P4-T2's `real/`. It must carry the P4-T3 followup to add `trip` to `sync.test.ts`.
 - **13 Nov 20:20: #462 (source-pins) opened at `a5d93d8a`.**
   - Both `real/` files are byte-identical. RED was exactly the three new cases failing on assertions; mutants 3 of 3, identical to the planner's. Gate: `test:edge` 214, `test:unit` 1109.
   - One Opus review, since it is test-only: `mcp:launch:58da09d717c1a431e33a66d7695fa18c41bd36b26d8dec5d084d6d50d4ef32e0`. CI is queued, as for every PR. The implementer thread is archived.
