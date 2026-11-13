@@ -1,0 +1,14 @@
+rebuilt: packages/contracts/src/v1/ai.ts
+rebuilt: packages/contracts/src/index.ts
+rebuilt: apps/edge/src/server/ai/prompts.ts
+rebuilt: apps/edge/src/v1/ai/service.ts
+rebuilt: apps/edge/test/workers/ai.test.ts
+rebuilt: apps/edge/test/workers/ai-routing.test.ts
+rebuilt: apps/edge/test/workers/ai-uses.test.ts
+rebuilt: apps/app/src/spend/v1/ai/aiResources.ts
+rebuilt: apps/app/src/spend/v1/ai/aiResources.test.ts
+rebuilt: apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+rebuilt: apps/app/src/dev/catalogue/companion/companionSections.tsx
+rebuilt: apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx
+rebuilt: docs/implementation/receipts/P3-T6.md
+applycheck: ok

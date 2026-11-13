@@ -1,0 +1,184 @@
+import { ClientVersionGuard, minimumClientVersionsFromEnv } from '@api/common/client-version.guard'
+import type { MinimumClientVersions } from '@api/common/client-version.guard'
+import { ProblemException } from '@api/common/api-problem.filter'
+import { POLICY_KINDS } from '@gogospend/contracts'
+import type { PolicyVersionDto } from '@gogospend/contracts'
+
+import { flag } from '../server/env'
+import type { V1Env } from './env'
+import { EDGE_GATE_SCOPES, EdgeGates } from './gates'
+import type { EdgeGateScope } from './gates'
+import { logFailure } from './log'
+import type { PublishedPolicies } from './protocol'
+
+/** The settings readEdgeConfig reads. Uploads stay hidden unless the release flag is on. */
+type ConfigEnv = Partial<Pick<V1Env, 'MIN_CLIENT_VERSION_IOS' | 'MIN_CLIENT_VERSION_ANDROID' | 'IMPORT_UPLOADS_ENABLED'>>
+
+export const EDGE_CONFIG_KEY = 'config:v1'
+
+/** The JSON stored under config:v1. Every part is optional; a malformed config fails closed. */
+export type EdgeConfigJson = {
+  gates?: { paused?: EdgeGateScope[]; retry_after_seconds?: number }
+  policies?: PolicyVersionDto[]
+  client_versions?: { ios: string; android: string }
+}
+
+export type EdgeConfig = {
+  gates: EdgeGates
+  policies: PublishedPolicies
+  /** Only `check` is used, so a fail-closed guard can stand in for ClientVersionGuard. */
+  clientVersions: Pick<ClientVersionGuard, 'check'>
+}
+
+/** The retry a fail-closed config asks for (C12). */
+const FAIL_CLOSED_RETRY_SECONDS = 30
+
+/**
+ * Client minimums missing from both config:v1 and the env. Every non-public call
+ * is 503 with a retry, never 426, so a server misconfiguration never shows
+ * phones the update-required screen (C5, R13).
+ */
+const MINIMUMS_UNAVAILABLE: Pick<ClientVersionGuard, 'check'> = {
+  check(access) {
+    if (access === 'public') return
+    throw new ProblemException(503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS })
+  },
+}
+
+const VERSION = /^(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})$/
+
+/** An ISO 8601 date and time with a zone, the form the API writes published_at in. */
+const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+
+type ParsedConfig = {
+  gates: { paused: EdgeGateScope[]; retryAfterSeconds?: number }
+  policies: PolicyVersionDto[] | null
+  clientVersions: MinimumClientVersions | null
+}
+
+/**
+ * Reads config:v1 and the env minimums. It never throws: an unreadable or
+ * malformed config pauses every gate scope, `ai` included (P3-T3), with a
+ * retry and publishes no policies, while an absent config leaves gates open
+ * and policies unpublished.
+ * Uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on
+ * both paths, so a pause never reveals an unreleased route.
+ */
+export async function readEdgeConfig(kv: KVNamespace, env: ConfigEnv): Promise<EdgeConfig> {
+  const fromEnv = minimumsFromEnv(env)
+  let stored: unknown
+  try {
+    stored = await kv.get(EDGE_CONFIG_KEY, 'json')
+  } catch (error) {
+    logFailure('config_unreadable', error)
+    return failClosed(fromEnv, env)
+  }
+  if (stored === null) return { gates: gatesFor(env), policies: null, clientVersions: guardFor(fromEnv) }
+  const parsed = parseConfig(stored)
+  if (!parsed) {
+    logFailure('config_malformed', new Error('config:v1 does not match its shape'))
+    return failClosed(fromEnv, env)
+  }
+  return {
+    gates: gatesFor(env, { paused: parsed.gates.paused, retryAfterSeconds: parsed.gates.retryAfterSeconds }),
+    policies: parsed.policies,
+    clientVersions: guardFor(parsed.clientVersions ?? fromEnv),
+  }
+}
+
+/**
+ * The versions in force at `now`. A version published later is not yet in force:
+ * the API's row-level security hides it, so it is neither listed nor accepted
+ * until its time comes. The Worker drops such versions once per request, so the
+ * public list and the vault both see only the live ones.
+ */
+export function livePolicies(policies: PublishedPolicies, now: Date): PublishedPolicies {
+  return policies === null ? null : policies.filter((policy) => Date.parse(policy.published_at) <= now.getTime())
+}
+
+/**
+ * Only the gates of config:v1, for background work (1B-T4): readEdgeConfig's
+ * gates, failing closed the same way, so an unreadable or malformed config
+ * pauses `jobs` and holds every start.
+ */
+export async function readGates(kv: KVNamespace): Promise<EdgeGates> {
+  return (await readEdgeConfig(kv, {})).gates
+}
+
+/** Uploads are unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on the open path and the fail-closed path. */
+function gatesFor(env: ConfigEnv, options: { paused?: readonly EdgeGateScope[]; retryAfterSeconds?: number } = {}): EdgeGates {
+  return new EdgeGates({
+    paused: options.paused,
+    retryAfterSeconds: options.retryAfterSeconds,
+    unexposed: flag(env.IMPORT_UPLOADS_ENABLED) ? undefined : ['uploads'],
+  })
+}
+
+function failClosed(fromEnv: MinimumClientVersions | null, env: ConfigEnv): EdgeConfig {
+  return { gates: gatesFor(env, { paused: [...EDGE_GATE_SCOPES], retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS }), policies: null, clientVersions: guardFor(fromEnv) }
+}
+
+function guardFor(minimums: MinimumClientVersions | null): Pick<ClientVersionGuard, 'check'> {
+  return minimums ? new ClientVersionGuard(minimums) : MINIMUMS_UNAVAILABLE
+}
+
+/** MIN_CLIENT_VERSION_IOS and _ANDROID from the env, or null when either is missing or malformed. */
+function minimumsFromEnv(env: ConfigEnv): MinimumClientVersions | null {
+  try {
+    return minimumClientVersionsFromEnv({ MIN_CLIENT_VERSION_IOS: env.MIN_CLIENT_VERSION_IOS, MIN_CLIENT_VERSION_ANDROID: env.MIN_CLIENT_VERSION_ANDROID })
+  } catch {
+    return null
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value)
+const onlyKeys = (value: Record<string, unknown>, allowed: readonly string[]): boolean => Object.keys(value).every((key) => allowed.includes(key))
+
+function parseConfig(value: unknown): ParsedConfig | null {
+  if (!isRecord(value) || !onlyKeys(value, ['gates', 'policies', 'client_versions'])) return null
+  const gates = value.gates === undefined ? { paused: [] } : gatesOf(value.gates)
+  if (!gates) return null
+  const policies = value.policies === undefined ? null : policiesOf(value.policies)
+  if (value.policies !== undefined && !policies) return null
+  const clientVersions = value.client_versions === undefined ? null : clientVersionsOf(value.client_versions)
+  if (value.client_versions !== undefined && !clientVersions) return null
+  return { gates, policies, clientVersions }
+}
+
+/** A scope outside the edge's list (the API's five and `ai`, P3-T3) makes the config malformed. */
+function gatesOf(value: unknown): ParsedConfig['gates'] | null {
+  if (!isRecord(value) || !onlyKeys(value, ['paused', 'retry_after_seconds'])) return null
+  const paused = value.paused ?? []
+  if (!Array.isArray(paused) || !paused.every((scope) => (EDGE_GATE_SCOPES as readonly unknown[]).includes(scope))) return null
+  const retry = value.retry_after_seconds
+  if (retry !== undefined && (!Number.isInteger(retry) || (retry as number) < 30 || (retry as number) > 3600)) return null
+  return retry === undefined ? { paused: paused as EdgeGateScope[] } : { paused: paused as EdgeGateScope[], retryAfterSeconds: retry as number }
+}
+
+function policiesOf(value: unknown): PolicyVersionDto[] | null {
+  return Array.isArray(value) && value.every(isPolicy) ? (value as PolicyVersionDto[]) : null
+}
+
+function isPolicy(value: unknown): boolean {
+  if (!isRecord(value) || !onlyKeys(value, ['kind', 'version', 'required', 'published_at', 'text'])) return false
+  const text = value.text
+  return (
+    (POLICY_KINDS as readonly unknown[]).includes(value.kind) &&
+    Number.isSafeInteger(value.version) &&
+    (value.version as number) >= 1 &&
+    typeof value.required === 'boolean' &&
+    typeof value.published_at === 'string' &&
+    ISO_DATE_TIME.test(value.published_at) &&
+    !Number.isNaN(Date.parse(value.published_at)) &&
+    isRecord(text) &&
+    onlyKeys(text, ['th', 'en']) &&
+    typeof text.th === 'string' &&
+    typeof text.en === 'string'
+  )
+}
+
+function clientVersionsOf(value: unknown): MinimumClientVersions | null {
+  if (!isRecord(value) || !onlyKeys(value, ['ios', 'android'])) return null
+  const { ios, android } = value
+  return typeof ios === 'string' && typeof android === 'string' && VERSION.test(ios) && VERSION.test(android) ? { ios, android } : null
+}

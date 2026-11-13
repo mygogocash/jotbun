@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 1 failed) 592ms
+     × a complete slip is read once by Haiku 35ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+AssertionError: expected { today: '2026-11-13', locale: 'th' } to deeply equal { today: '2026-11-13', …(3) }
+
+- Expected
++ Received
+
+  {
+-   "categories": ArrayContaining [
+-     {
+-       "id": "17a5fae4-8e06-86fe-8133-767a98c2850f",
+-       "name": "food",
+-       "type": "expense",
+-     },
+-   ],
+    "locale": "th",
+    "today": "2026-11-13",
+-   "wallets": [
+-     {
+-       "id": "bd66f90b-629a-46c7-a989-33495585d670",
+-       "name": "เงินสด",
+-     },
+-   ],
+  }
+
+ ❯ test/workers/slip-read.test.ts:123:49
+    121|     expect(imageOf(haiku)).toBe(tinyPng)
+    122|     // Beside the image, the day and the names to choose from: never a…
+    123|     expect(JSON.parse(textOf(haiku) ?? 'null')).toEqual({
+       |                                                 ^
+    124|       today,
+    125|       locale: 'th',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  08:04:40
+   Duration  3.29s (transform 1.13s, setup 2.13s, import 31ms, tests 592ms, environment 0ms)
+

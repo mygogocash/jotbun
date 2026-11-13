@@ -1,0 +1,98 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ × src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 69ms
+   → th light: the amount: expected [ '฿50', 'รายจ่าย 50 บาท', …(2) ] to deeply equal [ '฿50.00', 'รายจ่าย 50 บาท', …(2) ]
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 846ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 166ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 122ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 1435ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 120ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 178ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 123ms
+ × src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 13ms
+   → th light: income: expected [ '+฿28,000', …(2) ] to deeply equal [ '+฿28,000.00', …(2) ]
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 66ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 73ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 62ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 112ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 46ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 32ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 11ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 7ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 129ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 19ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 50ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 27ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 375ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 42ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 70ms
+ × src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 335ms
+   → expected '฿50' to be '฿50.00' // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 22 passed (25)
+   Start at  08:06:25
+   Duration  6.60s (transform 1.26s, setup 87ms, import 1.64s, tests 4.53s, environment 198ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:16615) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569)
+AssertionError: th light: the amount: expected [ '฿50', 'รายจ่าย 50 บาท', …(2) ] to deeply equal [ '฿50.00', 'รายจ่าย 50 บาท', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "฿50.00",
++   "฿50",
+    "รายจ่าย 50 บาท",
+    "44px",
+    "rgba(17, 16, 20, 1.00)",
+  ]
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:317:147
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial
+AssertionError: th light: income: expected [ '+฿28,000', …(2) ] to deeply equal [ '+฿28,000.00', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "+฿28,000.00",
++   "+฿28,000",
+    "rgba(106, 75, 212, 1.00)",
+    "รายรับ 28,000 บาท",
+  ]
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:567:120
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes
+AssertionError: expected '฿50' to be '฿50.00' // Object.is equality
+
+Expected: "฿50.00"
+Received: "฿50"
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:915:55
+    913|     await findFound('catalogue-screen-ready', LAZY);
+    914|     named('heading', 'ข้าวมันไก่');
+    915|     expect(found('wallet-record-amount').textContent).toBe('฿50.00');
+       |                                                       ^
+    916|     cleanup();
+    917|     mountWallet(<>{section('bw-record-draft').render()}</>, { locale }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

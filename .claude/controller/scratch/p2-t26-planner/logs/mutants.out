@@ -1,0 +1,107 @@
+S1 KILLED: the date shows a time (the plan's mutant) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S2 KILLED: Undo restores with version 1 (the plan's mutant) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+S3 KILLED: Undo restores with the record's version, not the delete's [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+S4 KILLED: the merchant is the title in private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S5 KILLED: the title is never the merchant [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 10 failed | 15 passed (25); 10 AssertionError; restored sha256 equal
+S6 KILLED: income drawn as an expense [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S7 KILLED: an entry already deleted reads as live [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S8 KILLED: an unconfirmed delete is not frozen [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S9 KILLED: a tray opened again keeps the action it was leaving for [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S10 KILLED: the tray's copy opens the add tray at once (R69) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S11 KILLED: the tray's edit starts at once (R69) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S12 KILLED: the tray's copy never runs [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S13 KILLED: the tray's edit never runs [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S14 KILLED: the tray's delete leaves the tray open [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S15 KILLED: the tray's delete deletes nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S16 KILLED: any draft can be removed [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S17 KILLED: any draft can be discarded [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S18 KILLED: Remove discards [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S19 KILLED: Discard removes [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S20 KILLED: a draft's ทำซ้ำวันนี้ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S21 KILLED: the page's ทำซ้ำวันนี้ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S22 KILLED: the page's แก้ไข does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S23 KILLED: the page's ลบ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 7 failed | 18 passed (25); 7 AssertionError; restored sha256 equal
+S24 KILLED: แก้ไข works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S25 KILLED: ลบ works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S26 KILLED: more works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S27 KILLED: ทำซ้ำวันนี้ waits for a delete on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S28 KILLED: the buttons never stack [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S29 KILLED: stacked, แก้ไข still shares the row [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S30 KILLED: more on every entry, live or not [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 4 failed | 21 passed (25); 4 AssertionError; restored sha256 equal
+S31 KILLED: the undo bar never goes [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S32 KILLED: the undo bar goes while its undo is unconfirmed [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S33 KILLED: the undo bar goes while its undo is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S34 KILLED: nothing says the entry was deleted once the bar has gone [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S35 KILLED: the page says the entry was deleted beside the bar [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S36 KILLED: the bar's words ignore private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S37 KILLED: the bar's amount keeps its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S38 KILLED: private mode's words carry the amount [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S39 KILLED: the ghost ignores private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S40 KILLED: the ghost is read [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S41 KILLED: the ghost drops its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S42 KILLED: the amount drops its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S43 KILLED: the amount does not say its kind [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S44 KILLED: the note is drawn in private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S45 KILLED: a note row with no note [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S46 KILLED: no category row [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S47 KILLED: a category row for a move [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S48 KILLED: a move's two wallets are not said [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S49 KILLED: a move draws a swatch [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S50 KILLED: the swatch ignores the wallet's kept look [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S51 KILLED: a fact is not read as one [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S52 KILLED: a saved entry says no status [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S53 KILLED: a draft says it is saved [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S54 KILLED: no saved check [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S55 KILLED: a draft has the saved check [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S56 KILLED: the tile is never the category's [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S57 KILLED: a move's tile is an initial [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S58 KILLED: the last day reads as days left [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S59 KILLED: Restore sends version 1 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S60 KILLED: an unconfirmed Restore still says Restore [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S61 KILLED: a frozen delete's Try again sends nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S62 KILLED: a missing entry reads as a load problem [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S63 KILLED: a failed load has no Try again [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S64 KILLED: no receipt section (W15) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S65 KILLED: a receipt change does not read the record again [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S66 KILLED: the receipt section is not told the record's receipt [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T1 KILLED: rows of 60 pt [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+T2 KILLED: the copy row says the amount in private mode [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T3 KILLED: the copy row says no amount [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+T4 KILLED: the drawn title is read again [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T5 KILLED: no tile in the header [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T6 KILLED: the header's amount ignores the sign [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T7 KILLED: the copy row's amount ignores the sign [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T8 KILLED: the edit row copies [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T9 KILLED: the copy row edits [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T10 KILLED: the delete row does nothing [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+T11 KILLED: the tray never says it has gone [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+T12 KILLED: the header's amount at 22 pt [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T13 KILLED: no wallet and day in the header [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U1 KILLED: the bar's time is the short toast's [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+U2 KILLED: the time runs under a screen reader [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+U3 KILLED: no answer counts as a screen reader [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U4 KILLED: the bar never hears a change [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U5 KILLED: the listener outlives the bar [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U6 KILLED: the first onDismiss for good [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U7 KILLED: drawing it again restarts the time [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+U8 KILLED: the time is never stopped [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U9 KILLED: Undo plays no haptic [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U10 KILLED: Undo does nothing [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 6 failed | 19 passed (25); 6 AssertionError; restored sha256 equal
+U11 KILLED: not a live region [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+U12 KILLED: not said on iOS [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U13 KILLED: a 40 pt Undo [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+U14 KILLED: Undo's words in ink [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U15 KILLED: the words in ink [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U16 KILLED: the bar on the card colour [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+K1 KILLED: ทำซ้ำวันนี้ loses its Thai [copy.ts / WalletRecord.render.test.tsx] -> Tests 6 failed | 19 passed (25); 6 AssertionError; restored sha256 equal
+K2 KILLED: private mode's bar words keep an amount [copy.ts / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+C1 KILLED: the record's sections load at once, not lazily [recordSections.tsx / walletHarness.render.test.tsx] -> Tests no tests; no failing case; restored sha256 equal
+C2 KILLED: the tray and the bar as screens [recordSections.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C3 KILLED: the draft section has no draft [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C4 KILLED: the undo section's words ignore private mode [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C5 KILLED: the actions section opens closed [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+R1 KILLED: the wallet area shows today's record [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+R2 KILLED: the wallet record opens in view mode only [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+R3 KILLED: one wallet record kept across entries [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+D1 KILLED: a record's day drops this year's year [dateStep.ts / dateStep.test.ts] -> Tests tests 15 pass 14 fail 1; 1 AssertionError; restored sha256 equal
+106 killed, 0 survived, 0 not as expected

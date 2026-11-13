@@ -1,0 +1,31 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+ ✓ test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry 2ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes 0ms
+ × test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it 2ms
+   → expected function to throw an error, but it didn't
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it
+AssertionError: expected function to throw an error, but it didn't
+ ❯ test/edge-gates.test.ts:91:78
+     89|
+     90|   it('an unknown scope is still refused, as FeatureGates refuses it', …
+     91|     expect(() => new EdgeGates({ paused: ['ai', 'nope' as EdgeGateScop…
+       |                                                                              ^
+     92|   })
+     93| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  08:23:37
+   Duration  404ms (transform 176ms, setup 0ms, import 229ms, tests 6ms, environment 0ms)
+

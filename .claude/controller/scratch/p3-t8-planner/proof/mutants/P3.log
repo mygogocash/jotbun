@@ -1,0 +1,108 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ❯ test/workers/slip-read.test.ts (30 tests | 4 failed) 733ms
+     × an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back 29ms
+     × a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14) 28ms
+     × slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 1ms
+     × when no model read the slip, SlipNotRead carries the last call's failure (A16) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+AssertionError: expected [ 'claude-haiku-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5' ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
++   "claude-opus-5-5",
+  ]
+
+ ❯ test/workers/slip-read.test.ts:282:27
+    280|     expect(res.status).toBe(503)
+    281|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+    282|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+       |                           ^
+    283|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip)
+    284|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14)
+AssertionError: expected [ 'claude-haiku-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5' ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
++   "claude-opus-5-5",
+  ]
+
+ ❯ test/workers/slip-read.test.ts:290:27
+    288|     model.push(apiFailure(400))
+    289|     expect((await readSlip(who.user)).status).toBe(503)
+    290|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+       |                           ^
+    291|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip…
+    292|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing
+AssertionError: an outage: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/slip-read.test.ts:409:84
+    407|       ['a second draft with no amount', answer('receipt', [draft(), dr…
+    408|     ]
+    409|     for (const [what, outcome, opus] of rows) expect(slipNeedsOpus(out…
+       |                                                                                    ^
+    410|   })
+    411|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16)
+AssertionError: expected SlipNotRead: No model read the slip (othe… { failure: '…' } to match object { name: 'SlipNotRead', …(1) }
+
+- Expected
++ Received
+
+- {
+-   "failure": "server_error",
++ SlipNotRead {
++   "failure": "other",
+    "name": "SlipNotRead",
+  }
+
+ ❯ test/workers/slip-read.test.ts:461:40
+    459|       readSlipImage({ image, context, locale: 'th' }, { transport: fak…
+    460|     // Haiku's outage or timeout: Opus is never asked.
+    461|     await expect(read(apiFailure(529))).rejects.toMatchObject({ name: …
+       |                                        ^
+    462|     await expect(read(new Anthropic.APIConnectionTimeoutError({ messag…
+    463|     await expect(read(apiFailure(400))).rejects.toMatchObject({ name: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 26 passed (30)
+   Start at  08:02:16
+   Duration  3.39s (transform 1.07s, setup 2.07s, import 32ms, tests 733ms, environment 0ms)
+

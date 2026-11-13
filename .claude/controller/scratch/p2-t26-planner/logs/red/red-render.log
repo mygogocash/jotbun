@@ -1,0 +1,919 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > History: the legacy flag wins, then the redesign under the flag, else the current list 15ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > a record: only under the flag, with an id; otherwise back to the list 3ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted: only under the flag; otherwise back to the list 1ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list 5ms
+ × src/screens/redesign/SpendRoutes.render.test.tsx > a record under the wallet area: the wallet screen on the shared resources, with its id and mode; switched off, the old screen; legacy, -core or no id, back to the list 4ms
+   → [{"redesign":"wallet"},{"id":"r1"}]: expected [] to have a length of 1 but got +0
+(node:22144) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ × src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 4025ms
+   → one heading named ข้าวมันไก่: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 4005ms
+   → one button named ทำซ้ำวันนี้: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 4003ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 4004ms
+   → one button named ตัวเลือกเพิ่มเติม: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 4003ms
+   → one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 4005ms
+   → one heading named ข้าวมันไก่: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 4004ms
+   → one heading named อาหาร: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 4004ms
+   → one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 4004ms
+   → one heading named เงินเดือน: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 4003ms
+   → one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 4004ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 4002ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 4003ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 4002ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 3ms
+   → one testID wallet-undo-bar: expected [] to have a length of 1 but got +0
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 3ms
+   → no answer: the time runs: expected [] to have a length of 1 but got +0
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 6ms
+   → expected [] to deeply equal [ 'ลบ ข้าวมันไก่ ฿50 แล้ว' ]
+ × src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 4002ms
+   → one text "รายการนี้ถูกลบไปแล้ว": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 4005ms
+   → one text "receipt of 0000000b-0000-4000-8000-000000000701 at 3 holding null": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 4002ms
+   → one text "โหลดบันทึกของคุณไม่สำเร็จ": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 4001ms
+   → one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 4003ms
+   → one button named ตัวเลือกเพิ่มเติม: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 4002ms
+   → one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 4004ms
+   → one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+ × src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 1ms
+   → expected [ 'bw-deleted', 'bw-categories', …(4) ] to deeply equal [ 'bw-deleted', 'bw-record', …(4) ]
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendRoutes.render.test.tsx > a record under the wallet area: the wallet screen on the shared resources, with its id and mode; switched off, the old screen; legacy, -core or no id, back to the list
+AssertionError: [{"redesign":"wallet"},{"id":"r1"}]: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/screens/redesign/SpendRoutes.render.test.tsx:197:73
+    195|     // A screen drawn outside the route's provider throws while it ren…
+    196|     expect(() => render(<SpendRecordRoute />), JSON.stringify([flag, p…
+    197|     expect(screen.queryAllByText(text), JSON.stringify([flag, params])…
+       |                                                                         ^
+    198|     cleanup();
+    199|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569)
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited
+AssertionError: one heading named ข้าวมันไก่: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69)
+AssertionError: one button named ทำซ้ำวันนี้: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words
+AssertionError: one button named ลบ: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for
+AssertionError: one button named ตัวเลือกเพิ่มเติม: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped
+AssertionError: one button named แก้ไข: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words
+AssertionError: one heading named อาหาร: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial
+AssertionError: one heading named เงินเดือน: expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/records/WalletRecord.render.test.tsx:192:49
+    190| function named(role: string, name: string | RegExp, inside: HTMLElemen…
+    191|   const elements = within(inside).queryAllByRole(role, { name });
+    192|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    193|   return elements[0] as HTMLElement;
+    194| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:219:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs
+AssertionError: one testID wallet-undo-bar: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ found src/wallet/records/WalletRecord.render.test.tsx:199:44
+    197| function found(testID: string): HTMLElement {
+    198|   const elements = screen.queryAllByTestId(testID);
+    199|   expect(elements, `one testID ${testID}`).toHaveLength(1);
+       |                                            ^
+    200|   return elements[0] as HTMLElement;
+    201| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:703:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it
+AssertionError: no answer: the time runs: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:743:57
+    741|   const view = mountWallet(<WalletUndoBar message={WORDS.th.deletedBar…
+    742|   await settle();
+    743|   expect(barTimers(timers), 'no answer: the time runs').toHaveLength(1…
+       |                                                         ^
+    744|   // Drawn again with a new onDismiss: the same time, and the latest o…
+    745|   view.rerender(<WalletUndoBar message={WORDS.th.deletedBar} onUndo={v…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS
+AssertionError: expected [] to deeply equal [ 'ลบ ข้าวมันไก่ ฿50 แล้ว' ]
+
+- Expected
++ Received
+
+- [
+-   "ลบ ข้าวมันไก่ ฿50 แล้ว",
+- ]
++ []
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:770:49
+    768|   view.rerender(<WalletUndoBar message={WORDS.th.deletedBar} onUndo={v…
+    769|   await settle();
+    770|   expect(said.mock.calls.map(([text]) => text)).toEqual([WORDS.th.dele…
+       |                                                 ^
+    771| });
+    772|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version
+AssertionError: one text "รายการนี้ถูกลบไปแล้ว": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ shown src/wallet/records/WalletRecord.render.test.tsx:206:43
+    204| function shown(words: string | RegExp, inside: HTMLElement = document.…
+    205|   const elements = within(inside).queryAllByText(words);
+    206|   expect(elements, `one text "${words}"`).toHaveLength(1);
+       |                                           ^
+    207|   return elements[0] as HTMLElement;
+    208| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:228:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again
+AssertionError: one text "receipt of 0000000b-0000-4000-8000-000000000701 at 3 holding null": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ shown src/wallet/records/WalletRecord.render.test.tsx:206:43
+    204| function shown(words: string | RegExp, inside: HTMLElement = document.…
+    205|   const elements = within(inside).queryAllByText(words);
+    206|   expect(elements, `one text "${words}"`).toHaveLength(1);
+       |                                           ^
+    207|   return elements[0] as HTMLElement;
+    208| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:228:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so
+AssertionError: one text "โหลดบันทึกของคุณไม่สำเร็จ": expected [] to have a length of 1 but got +0
+
+Ignored nodes: comments, script, style
+[36m<html[39m
+  [33mdata-theme[39m=[32m"light"[39m
+  [33mstyle[39m=[32m"color-scheme: light;"[39m
+[36m>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m/>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ shown src/wallet/records/WalletRecord.render.test.tsx:206:43
+    204| function shown(words: string | RegExp, inside: HTMLElement = document.…
+    205|   const elements = within(inside).queryAllByText(words);
+    206|   expect(elements, `one text "${words}"`).toHaveLength(1);
+       |                                           ^
+    207|   return elements[0] as HTMLElement;
+    208| }
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:228:15
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/26]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes
+AssertionError: expected [ 'bw-deleted', 'bw-categories', …(4) ] to deeply equal [ 'bw-deleted', 'bw-record', …(4) ]
+
+- Expected
++ Received
+
+  [
+    "bw-deleted",
+-   "bw-record",
+-   "bw-record-draft",
+-   "bw-record-deleted",
+-   "bw-record-actions",
+-   "bw-record-undo",
++   "bw-categories",
++   "bw-category-new",
++   "bw-category-limit",
++   "bw-thai-pack",
++   "bw-insights",
+  ]
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:895:33
+    893|   const ids = WALLET_SECTIONS.map((section) => section.id);
+    894|   const at = ids.indexOf('bw-deleted');
+    895|   expect(ids.slice(at, at + 6)).toEqual(['bw-deleted', 'bw-record', 'b…
+       |                                 ^
+    896|   const section = (id: string) => {
+    897|     const match = WALLET_SECTIONS.find((each) => each.id === id);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/26]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  26 failed | 4 passed (30)
+   Start at  07:57:28
+   Duration  86.59s (transform 1.69s, setup 147ms, import 2.34s, tests 84.13s, environment 298ms)
+

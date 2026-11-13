@@ -1,0 +1,43 @@
+--- a/apps/edge/src/v1/ai/routes.ts
++++ b/apps/edge/src/v1/ai/routes.ts
+@@ -1,4 +1,5 @@
+ import { assertKnownFields, parseAiAskRequest, parseAiDate, parseAiLocale, parseAiParseRequest, parseAiPreferencesUpdate, parseAiSlipRequest } from '@gogospend/contracts'
++import type { AiPreferencesDto } from '@gogospend/contracts'
+ 
+ import type { VaultReply } from '../protocol'
+ import type { VaultSession, WorkerContext } from '../worker-routes'
+@@ -6,8 +7,9 @@
+ 
+ // The six AI routes (1B-T7), Worker routes that call the vault in steps. Each
+ // reads its input as the PostgreSQL edge's route does, before its first step.
+-// No gate is added (owner answer 3): the `ai` gate comes with AI Gateway in
+-// phase 3, and until then AI_ENABLED is the switch (B10).
++// The four that call a model carry the `ai` gate (P3-T3, routes.ts), so a
++// paused `ai` answers 503 AI_PAUSED before they run. The preferences stay open
++// (default pending owner Q5) and say `available: false` while `ai` is paused.
+ 
+ function aiOf(w: WorkerContext): { service: VaultAiService; vault: VaultSession } {
+   if (!w.vault) throw new Error('an AI route needs a session')
+@@ -17,17 +19,20 @@
+ /** Every AI route answers 200 (the PostgreSQL routes' statuses: GET and PUT by default, the three POSTs by their `status: 200`). */
+ const answer = (body: unknown): VaultReply => ({ ok: true, status: 200, body })
+ 
++/** AI is available when a model is configured (the service's answer) and the `ai` gate is open (P3-T3). */
++const gated = (w: WorkerContext, preferences: AiPreferencesDto): AiPreferencesDto => ({ ...preferences, available: preferences.available && !w.gates.isPaused('ai') })
++
+ /** GET /v1/me/ai-preferences */
+ export async function aiPreferencesRoute(w: WorkerContext): Promise<VaultReply> {
+   const { service, vault } = aiOf(w)
+-  return answer(await service.preferences(vault))
++  return answer(gated(w, await service.preferences(vault)))
+ }
+ 
+ /** PUT /v1/me/ai-preferences */
+ export async function aiSetPreferencesRoute(w: WorkerContext): Promise<VaultReply> {
+   const update = parseAiPreferencesUpdate(w.body)
+   const { service, vault } = aiOf(w)
+-  return answer(await service.setPreferences(vault, update))
++  return answer(gated(w, await service.setPreferences(vault, update)))
+ }
+ 
+ /** POST /v1/ai/parse */

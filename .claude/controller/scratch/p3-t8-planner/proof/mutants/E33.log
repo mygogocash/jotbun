@@ -1,0 +1,59 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai.test.ts (43 tests | 1 failed) 1233ms
+     × a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { source: 'ai', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": "กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุง",
++   "bank": "กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไทย กรุงไ",
+    "escalated": false,
+    "kind": "slip",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ai.test.ts:370:26
+    368|     const cut = `${'กรุงไทย '.repeat(7)}กรุง`
+    369|     expect(cut).toHaveLength(60)
+    370|     expect(await slip()).toMatchObject({ source: 'ai', bank: cut, kind…
+       |                          ^
+    371|     expect(await slip()).toMatchObject({ source: 'ai', bank: null })
+    372|     expect(await slip()).toMatchObject({ source: 'ai', bank: null })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null
+AssertionError: expected 2 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ test/workers/ai.test.ts:39:24
+     37| afterEach(() => {
+     38|   // Every scripted reply was asked for.
+     39|   expect(model.left()).toBe(0)
+       |                        ^
+     40| })
+     41|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 42 passed (43)
+   Start at  08:04:32
+   Duration  3.53s (transform 907ms, setup 1.73s, import 53ms, tests 1.23s, environment 0ms)
+

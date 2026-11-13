@@ -1,0 +1,15 @@
+U6 KILLED: the first onDismiss for good [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U7 KILLED: drawing it again restarts the time [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+U8 KILLED: the time is never stopped [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U9 KILLED: Undo plays no haptic [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U10 KILLED: Undo does nothing [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 6 failed | 19 passed (25); 6 AssertionError; restored sha256 equal
+U11 KILLED: not a live region [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+U12 KILLED: not said on iOS [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U13 KILLED: a 40 pt Undo [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+U14 KILLED: Undo's words in ink [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U15 KILLED: the words in ink [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+U16 KILLED: the bar on the card colour [WalletUndoBar.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+K1 KILLED: ทำซ้ำวันนี้ loses its Thai [copy.ts / WalletRecord.render.test.tsx] -> Tests 6 failed | 19 passed (25); 6 AssertionError; restored sha256 equal
+K2 KILLED: private mode's bar words keep an amount [copy.ts / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+C1 KILLED: the record's sections load at once, not lazily [recordSections.tsx / walletHarness.render.test.tsx] -> Tests no tests; no failing case; restored sha256 equal
+14 killed, 0 survived, 0 not as expected

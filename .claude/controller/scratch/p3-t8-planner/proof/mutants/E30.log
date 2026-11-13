@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 1 failed) 723ms
+     × a complete slip is read once by Haiku 41ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+AssertionError: expected { model: 'claude-haiku-5-5', …(4) } to match object { model: 'claude-haiku-5-5', …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "max_tokens": 8000,
+    "model": "claude-haiku-5-5",
+    "output_config": {
+-     "effort": "medium",
++     "effort": "high",
+      "format": {
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "bank": {
+
+ ❯ test/workers/slip-read.test.ts:118:19
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  08:04:24
+   Duration  3.31s (transform 973ms, setup 1.88s, import 40ms, tests 723ms, environment 0ms)
+

@@ -1,0 +1,123 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+ × test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry 5ms
+   → expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+ × test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates 0ms
+   → expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+ × test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes 0ms
+   → expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+ × test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed 0ms
+   → expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+ × test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes 0ms
+   → expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+ ✓ test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry
+AssertionError: expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope ai"
+
+ ❯ gatesOf test/edge-gates.test.ts:16:10
+     14|   expect(() => {
+     15|     made = new EdgeGates(config)
+     16|   }).not.toThrow()
+       |          ^
+     17|   return made as unknown as EdgeGates
+     18| }
+ ❯ test/edge-gates.test.ts:36:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates
+AssertionError: expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope ai"
+
+ ❯ gatesOf test/edge-gates.test.ts:16:10
+     14|   expect(() => {
+     15|     made = new EdgeGates(config)
+     16|   }).not.toThrow()
+       |          ^
+     17|   return made as unknown as EdgeGates
+     18| }
+ ❯ test/edge-gates.test.ts:51:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes
+AssertionError: expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope ai"
+
+ ❯ gatesOf test/edge-gates.test.ts:16:10
+     14|   expect(() => {
+     15|     made = new EdgeGates(config)
+     16|   }).not.toThrow()
+       |          ^
+     17|   return made as unknown as EdgeGates
+     18| }
+ ❯ test/edge-gates.test.ts:64:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed
+AssertionError: expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope ai"
+
+ ❯ gatesOf test/edge-gates.test.ts:16:10
+     14|   expect(() => {
+     15|     made = new EdgeGates(config)
+     16|   }).not.toThrow()
+       |          ^
+     17|   return made as unknown as EdgeGates
+     18| }
+ ❯ test/edge-gates.test.ts:74:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes
+AssertionError: expected [Function] to not throw an error but 'RangeError: unknown gate scope ai' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope ai"
+
+ ❯ gatesOf test/edge-gates.test.ts:16:10
+     14|   expect(() => {
+     15|     made = new EdgeGates(config)
+     16|   }).not.toThrow()
+       |          ^
+     17|   return made as unknown as EdgeGates
+     18| }
+ ❯ test/edge-gates.test.ts:82:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  08:23:36
+   Duration  432ms (transform 192ms, setup 0ms, import 252ms, tests 7ms, environment 0ms)
+

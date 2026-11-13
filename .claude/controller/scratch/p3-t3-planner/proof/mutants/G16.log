@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+ ✓ test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry 2ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates 0ms
+ × test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes 4ms
+   → expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal [ 'writes', 'imports', 'ocr', …(3) ]
+ ✓ test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes
+AssertionError: expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal [ 'writes', 'imports', 'ocr', …(3) ]
+
+- Expected
++ Received
+
+@@ -2,7 +2,6 @@
+    "writes",
+    "imports",
+    "ocr",
+    "uploads",
+    "jobs",
+-   "ai",
+  ]
+
+ ❯ test/edge-gates.test.ts:70:30
+     68|     expect(gatesOf({ paused: ['jobs'] }).pausedEdgeScopes()).toEqual([…
+     69|     expect(gatesOf({ paused: ['ai'] }).pausedEdgeScopes()).toEqual(['a…
+     70|     expect(EDGE_GATE_SCOPES).toEqual(['writes', 'imports', 'ocr', 'upl…
+       |                              ^
+     71|   })
+     72|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  08:23:46
+   Duration  352ms (transform 161ms, setup 0ms, import 204ms, tests 7ms, environment 0ms)
+

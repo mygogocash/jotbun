@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication
+ × test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused 42ms
+   → expected { companion: true, …(5) } to match object { available: false }
+(9 matching properties omitted from actual)
+ ↓ test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused
+AssertionError: expected { companion: true, …(5) } to match object { available: false }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "available": false,
++   "available": true,
+  }
+
+ ❯ test/workers/ai-gate.test.ts:87:85
+     85|     // With the gate open, AI still needs a configured model.
+     86|     const unconfigured = await startV1(OPEN, { transport: null })
+     87|     expect(await (await unconfigured.as(user).get('/v1/me/ai-preferenc…
+       |                                                                                     ^
+     88|     expect(model.calls).toHaveLength(0)
+     89|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  08:24:17
+   Duration  3.00s (transform 1.23s, setup 2.30s, import 14ms, tests 43ms, environment 1ms)
+

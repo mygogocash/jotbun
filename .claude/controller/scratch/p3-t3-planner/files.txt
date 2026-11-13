@@ -1,0 +1,18 @@
+# P3-T3's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table. The base is the integration head
+# 2062b89a (code 437743e2, #449's merge) with P4-T3's real/ files laid over it,
+# which is the head once P4-T3 merges.
+A stub apps/edge/src/v1/gates.ts
+M stub apps/edge/src/v1/config.ts
+M stub apps/edge/src/v1/routes.ts
+M real apps/edge/src/v1/worker-routes.ts
+M base apps/edge/src/v1/ai/routes.ts
+A real apps/edge/test/edge-gates.test.ts
+M real apps/edge/test/route-coverage.test.ts
+A real apps/edge/test/workers/ai-gate.test.ts
+M real apps/edge/test/workers/config.test.ts
+M real apps/edge/test/workers/files-front-door.test.ts
+M real apps/edge/test/workers/imports-review.test.ts
+A later docs/implementation/receipts/P3-T3.md

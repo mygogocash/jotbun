@@ -1,0 +1,89 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config whose published_at is not a date is malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unknown scope still fails the config closed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry 3ms
+ ✓ test/workers/config.test.ts > an absent config leaves gates open and policies unpublished 0ms
+ ✓ test/workers/config.test.ts > client minimums missing from both config and env answer 503 with a retry, never 426 0ms
+ ✓ test/workers/config.test.ts > a config whose published_at is not a date is malformed 0ms
+ ✓ test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too 1ms
+ ✓ test/workers/config.test.ts > GET /v1/policies answers the published policies from KV 21ms
+ ✓ test/workers/config.test.ts > a config that pauses ai is read, not malformed 0ms
+ × test/workers/config.test.ts > an unreadable or malformed config pauses ai too 3ms
+   → expected false to be true // Object.is equality
+ × test/workers/config.test.ts > an unknown scope still fails the config closed 1ms
+   → expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal [ 'writes', 'imports', 'ocr', …(3) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/config.test.ts:114:41
+    112|   for (const read of stored) {
+    113|     const config = await configFor(read)
+    114|     expect(config.gates.isPaused('ai')).toBe(true)
+       |                                         ^
+    115|     expect(config.gates.pausedEdgeScopes()).toEqual([...EDGE_GATE_SCOP…
+    116|     expect(refusalOf(() => config.gates.assertOpen('ai'))).toEqual({ s…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/config.test.ts > an unknown scope still fails the config closed
+AssertionError: expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal [ 'writes', 'imports', 'ocr', …(3) ]
+
+- Expected
++ Received
+
+@@ -2,7 +2,6 @@
+    "writes",
+    "imports",
+    "ocr",
+    "uploads",
+    "jobs",
+-   "ai",
+  ]
+
+ ❯ test/workers/config.test.ts:122:43
+    120| it('an unknown scope still fails the config closed', async () => {
+    121|   const config = await configFor(async () => ({ gates: { paused: ['ai'…
+    122|   expect(config.gates.pausedEdgeScopes()).toEqual([...EDGE_GATE_SCOPES…
+       |                                           ^
+    123|   expect(config.gates.retryAfterSeconds).toBe(30)
+    124|   expect(config.policies).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)
+   Start at  08:24:00
+   Duration  4.35s (transform 1.91s, setup 3.21s, import 18ms, tests 32ms, environment 0ms)
+

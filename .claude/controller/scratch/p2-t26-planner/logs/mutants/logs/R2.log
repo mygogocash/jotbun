@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > History: the legacy flag wins, then the redesign under the flag, else the current list 11ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > a record: only under the flag, with an id; otherwise back to the list 2ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted: only under the flag; otherwise back to the list 1ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list 3ms
+ × src/screens/redesign/SpendRoutes.render.test.tsx > a record under the wallet area: the wallet screen on the shared resources, with its id and mode; switched off, the old screen; legacy, -core or no id, back to the list 3ms
+   → [{"redesign":"wallet"},{"id":"r1"}]: expected [] to have a length of 1 but got +0
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  08:14:20
+   Duration  413ms (transform 36ms, setup 50ms, import 132ms, tests 20ms, environment 100ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendRoutes.render.test.tsx > a record under the wallet area: the wallet screen on the shared resources, with its id and mode; switched off, the old screen; legacy, -core or no id, back to the list
+AssertionError: [{"redesign":"wallet"},{"id":"r1"}]: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/screens/redesign/SpendRoutes.render.test.tsx:197:73
+    195|     // A screen drawn outside the route's provider throws while it ren…
+    196|     expect(() => render(<SpendRecordRoute />), JSON.stringify([flag, p…
+    197|     expect(screen.queryAllByText(text), JSON.stringify([flag, params])…
+       |                                                                         ^
+    198|     cleanup();
+    199|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

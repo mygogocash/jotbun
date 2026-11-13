@@ -1,0 +1,58 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 4 failed) 677ms
+     × Opus re-reads when the amount does not parse 24ms
+     × Opus re-reads when the date is implausible (next year) 24ms
+     × Opus re-reads when a slip has no receiver 35ms
+     × both requests carry the same bytes through the gateway, and nothing is kept 28ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver
+AssertionError: expected undefined to be 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAA…' // Object.is equality
+
+- Expected:
+"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
++ Received:
+undefined
+
+ ❯ test/workers/slip-read.test.ts:152:27
+    150|     })
+    151|     // The same bytes and the same words as Haiku's.
+    152|     expect(imageOf(opus)).toBe(tinyPng)
+       |                           ^
+    153|     expect(opus.messages).toEqual(haiku.messages)
+    154|     expect(opus.system).toBe(haiku.system)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept
+AssertionError: expected undefined to be 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAA…' // Object.is equality
+
+- Expected:
+"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
++ Received:
+undefined
+
+ ❯ test/workers/slip-read.test.ts:333:37
+    331|       expect(request.headers.get('cf-aig-collect-log')).toBe('false')
+    332|       expect(request.headers.get('cf-aig-skip-cache')).toBe('true')
+    333|       expect(imageOf(request.body)).toBe(tinyPng)
+       |                                     ^
+    334|     }
+    335|     // Only Opus's request names the fallback beta (H2).
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 26 passed (30)
+   Start at  08:02:12
+   Duration  3.33s (transform 1.07s, setup 2.05s, import 33ms, tests 677ms, environment 1ms)
+

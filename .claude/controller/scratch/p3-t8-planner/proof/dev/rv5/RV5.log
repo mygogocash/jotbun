@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ❯ test/workers/ai-uses.test.ts (14 tests | 1 failed) 2736ms
+     × a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1) 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "ProblemException",
+-     "feature": "slip",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ai-uses.test.ts:222:54
+    220|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    221|       expect(res.status).toBe(503)
+    222|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    223|     } finally {
+    224|       VAULT_HANDLERS['ai.refund'] = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  08:10:17
+   Duration  4.90s (transform 821ms, setup 1.62s, import 30ms, tests 2.74s, environment 0ms)
+
