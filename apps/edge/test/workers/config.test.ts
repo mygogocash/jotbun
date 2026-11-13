@@ -3,8 +3,31 @@ import { GATE_SCOPES } from '@api/common/feature-gates'
 import { expect, it } from 'vitest'
 
 import { readEdgeConfig } from '../../src/v1/config'
+import type { EdgeConfig } from '../../src/v1/config'
 import type { V1Env } from '../../src/v1/env'
+import { EDGE_GATE_SCOPES } from '../../src/v1/gates'
 import { TEST_POLICIES, startV1 } from './support/v1-client'
+
+/** readEdgeConfig's answer for what KV holds. It never throws, so a throw fails here as an assertion. */
+async function configFor(stored: () => Promise<unknown>): Promise<EdgeConfig> {
+  const read = await readEdgeConfig({ get: stored } as unknown as KVNamespace, {} as V1Env).then(
+    (config) => ({ config }),
+    (error: unknown) => ({ error: String(error) }),
+  )
+  expect(read).not.toHaveProperty('error')
+  return (read as { config: EdgeConfig }).config
+}
+
+/** What assertOpen threw, as plain data, or null when it threw nothing. */
+function refusalOf(open: () => void): { status: number; code: string; retryAfterSeconds?: number; messageKey?: string } | null {
+  try {
+    open()
+    return null
+  } catch (e) {
+    expect(e).toBeInstanceOf(ProblemException)
+    return { status: (e as ProblemException).getStatus(), code: (e as ProblemException).code, ...(e as ProblemException).problem }
+  }
+}
 
 it('an unreadable or malformed config pauses every gate scope, with a retry', async () => {
   for (const kv of [{ get: async () => { throw new Error('kv down') } }, { get: async () => ({ gates: 'nope' }) }]) {
@@ -68,4 +91,35 @@ it('GET /v1/policies answers the published policies from KV', async () => {
   const res = await (await startV1()).raw(new Request('http://vault.test/v1/policies'))
   expect(res.status).toBe(200)
   expect(await res.json()).toEqual(TEST_POLICIES)
+})
+
+// The ai gate (P3-T3): config:v1 may pause `ai`, and a config that fails closed pauses it too.
+it('a config that pauses ai is read, not malformed', async () => {
+  const config = await configFor(async () => ({ gates: { paused: ['ai'] }, policies: TEST_POLICIES }))
+  expect(config.gates.isPaused('ai')).toBe(true)
+  expect(config.gates.pausedScopes()).toEqual([])
+  expect(refusalOf(() => config.gates.assertOpen('writes'))).toBeNull()
+  expect(config.policies).toEqual(TEST_POLICIES)
+})
+
+it('an unreadable or malformed config pauses ai too', async () => {
+  const stored = [
+    async () => {
+      throw new Error('kv down')
+    },
+    async () => ({ gates: 'nope' }),
+  ]
+  for (const read of stored) {
+    const config = await configFor(read)
+    expect(config.gates.isPaused('ai')).toBe(true)
+    expect(config.gates.pausedEdgeScopes()).toEqual([...EDGE_GATE_SCOPES])
+    expect(refusalOf(() => config.gates.assertOpen('ai'))).toEqual({ status: 503, code: 'AI_PAUSED', retryAfterSeconds: 30, messageKey: 'errors.ai_paused' })
+  }
+})
+
+it('an unknown scope still fails the config closed', async () => {
+  const config = await configFor(async () => ({ gates: { paused: ['ai', 'nope'] }, policies: TEST_POLICIES }))
+  expect(config.gates.pausedEdgeScopes()).toEqual([...EDGE_GATE_SCOPES])
+  expect(config.gates.retryAfterSeconds).toBe(30)
+  expect(config.policies).toBeNull()
 })

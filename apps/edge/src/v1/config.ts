@@ -1,13 +1,13 @@
 import { ClientVersionGuard, minimumClientVersionsFromEnv } from '@api/common/client-version.guard'
 import type { MinimumClientVersions } from '@api/common/client-version.guard'
 import { ProblemException } from '@api/common/api-problem.filter'
-import { FeatureGates, GATE_SCOPES } from '@api/common/feature-gates'
-import type { GateScope } from '@api/common/feature-gates'
 import { POLICY_KINDS } from '@gogospend/contracts'
 import type { PolicyVersionDto } from '@gogospend/contracts'
 
 import { flag } from '../server/env'
 import type { V1Env } from './env'
+import { EDGE_GATE_SCOPES, EdgeGates } from './gates'
+import type { EdgeGateScope } from './gates'
 import { logFailure } from './log'
 import type { PublishedPolicies } from './protocol'
 
@@ -18,13 +18,13 @@ export const EDGE_CONFIG_KEY = 'config:v1'
 
 /** The JSON stored under config:v1. Every part is optional; a malformed config fails closed. */
 export type EdgeConfigJson = {
-  gates?: { paused?: GateScope[]; retry_after_seconds?: number }
+  gates?: { paused?: EdgeGateScope[]; retry_after_seconds?: number }
   policies?: PolicyVersionDto[]
   client_versions?: { ios: string; android: string }
 }
 
 export type EdgeConfig = {
-  gates: FeatureGates
+  gates: EdgeGates
   policies: PublishedPolicies
   /** Only `check` is used, so a fail-closed guard can stand in for ClientVersionGuard. */
   clientVersions: Pick<ClientVersionGuard, 'check'>
@@ -51,15 +51,16 @@ const VERSION = /^(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{0,5})\.(?:0|[1-9][0-9]{
 const ISO_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
 
 type ParsedConfig = {
-  gates: { paused: GateScope[]; retryAfterSeconds?: number }
+  gates: { paused: EdgeGateScope[]; retryAfterSeconds?: number }
   policies: PolicyVersionDto[] | null
   clientVersions: MinimumClientVersions | null
 }
 
 /**
  * Reads config:v1 and the env minimums. It never throws: an unreadable or
- * malformed config pauses every gate scope with a retry and publishes no
- * policies, while an absent config leaves gates open and policies unpublished.
+ * malformed config pauses every gate scope, `ai` included (P3-T3), with a
+ * retry and publishes no policies, while an absent config leaves gates open
+ * and policies unpublished.
  * Uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on
  * both paths, so a pause never reveals an unreleased route.
  */
@@ -100,13 +101,13 @@ export function livePolicies(policies: PublishedPolicies, now: Date): PublishedP
  * gates, failing closed the same way, so an unreadable or malformed config
  * pauses `jobs` and holds every start.
  */
-export async function readGates(kv: KVNamespace): Promise<FeatureGates> {
+export async function readGates(kv: KVNamespace): Promise<EdgeGates> {
   return (await readEdgeConfig(kv, {})).gates
 }
 
 /** Uploads are unexposed unless IMPORT_UPLOADS_ENABLED is `1` or `true`, on the open path and the fail-closed path. */
-function gatesFor(env: ConfigEnv, options: { paused?: readonly GateScope[]; retryAfterSeconds?: number } = {}): FeatureGates {
-  return new FeatureGates({
+function gatesFor(env: ConfigEnv, options: { paused?: readonly EdgeGateScope[]; retryAfterSeconds?: number } = {}): EdgeGates {
+  return new EdgeGates({
     paused: options.paused,
     retryAfterSeconds: options.retryAfterSeconds,
     unexposed: flag(env.IMPORT_UPLOADS_ENABLED) ? undefined : ['uploads'],
@@ -114,7 +115,7 @@ function gatesFor(env: ConfigEnv, options: { paused?: readonly GateScope[]; retr
 }
 
 function failClosed(fromEnv: MinimumClientVersions | null, env: ConfigEnv): EdgeConfig {
-  return { gates: gatesFor(env, { paused: [...GATE_SCOPES], retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS }), policies: null, clientVersions: guardFor(fromEnv) }
+  return { gates: gatesFor(env, { paused: [...EDGE_GATE_SCOPES], retryAfterSeconds: FAIL_CLOSED_RETRY_SECONDS }), policies: null, clientVersions: guardFor(fromEnv) }
 }
 
 function guardFor(minimums: MinimumClientVersions | null): Pick<ClientVersionGuard, 'check'> {
@@ -144,13 +145,14 @@ function parseConfig(value: unknown): ParsedConfig | null {
   return { gates, policies, clientVersions }
 }
 
+/** A scope outside the edge's list (the API's five and `ai`, P3-T3) makes the config malformed. */
 function gatesOf(value: unknown): ParsedConfig['gates'] | null {
   if (!isRecord(value) || !onlyKeys(value, ['paused', 'retry_after_seconds'])) return null
   const paused = value.paused ?? []
-  if (!Array.isArray(paused) || !paused.every((scope) => (GATE_SCOPES as readonly unknown[]).includes(scope))) return null
+  if (!Array.isArray(paused) || !paused.every((scope) => (EDGE_GATE_SCOPES as readonly unknown[]).includes(scope))) return null
   const retry = value.retry_after_seconds
   if (retry !== undefined && (!Number.isInteger(retry) || (retry as number) < 30 || (retry as number) > 3600)) return null
-  return retry === undefined ? { paused: paused as GateScope[] } : { paused: paused as GateScope[], retryAfterSeconds: retry as number }
+  return retry === undefined ? { paused: paused as EdgeGateScope[] } : { paused: paused as EdgeGateScope[], retryAfterSeconds: retry as number }
 }
 
 function policiesOf(value: unknown): PolicyVersionDto[] | null {

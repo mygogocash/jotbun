@@ -18,13 +18,13 @@ import { IMPORT_CONFIRM_BATCH_MAX_ROWS, RECEIPT_RETENTION_CONSENT, bangkokDate, 
 import type { CommandAck, ConfirmImportBatchResult, ImportMapping, ImportPreview, ImportSelectionProgress } from '@gogospend/contracts'
 
 import { derivedUuid } from '@api/commands/derived-id'
-import { FeatureGates } from '@api/common/feature-gates'
 import { toPreviewRecord } from '@api/imports/parse-outcome'
 import type { CandidateRecord } from '@api/imports/parse-outcome'
 import type { ParsedRow } from '@api/imports/parsers/protocol'
 
 import { handleParseBatch } from '../../src/background/parse-consumer'
 import { confirmRoute } from '../../src/v1/files/receipts'
+import { EdgeGates } from '../../src/v1/gates'
 import type { VaultCall, VaultReply } from '../../src/v1/protocol'
 import { vaultSession } from '../../src/v1/worker-routes'
 import type { VaultSession } from '../../src/v1/worker-routes'
@@ -800,7 +800,7 @@ describe('receipts (P2c) kept with a confirmed image row', () => {
       request: new Request(`${BASE}/v1/imports/${s.jobId}/confirmations`, { method: 'POST' }),
       claims,
       policies: TEST_POLICIES,
-      gates: new FeatureGates(),
+      gates: new EdgeGates(),
       params: { id: s.jobId },
       query: {},
       headers: commandHeaders(),

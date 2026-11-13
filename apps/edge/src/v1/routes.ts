@@ -2,8 +2,7 @@
 // sits in exactly one place: served here (VAULT_V1_ROUTES), deferred to 1C, or
 // retired by §6.4; the routes NestJS never had are the edge-only and the added
 // ones. route-coverage.test.ts checks that against the NestJS controllers.
-import type { GateScope } from '@api/common/feature-gates'
-
+import type { EdgeGateScope } from './gates'
 import type { VaultRouteId, WorkerRouteId } from './protocol'
 
 /**
@@ -20,7 +19,8 @@ export type VaultRoute = {
   vault?: VaultRouteId
   /** A Worker-run route. It calls the vault in steps, through `VAULT_STEP_ROUTES`. */
   worker?: WorkerRouteId
-  gates?: readonly GateScope[]
+  /** The gates that must all be open (C12): the API's scopes, and `ai` on every route that calls a model (P3-T3). */
+  gates?: readonly EdgeGateScope[]
   /** The status a success answers with, when it is not the method's default. */
   status?: number
   /** How the body is read. The default is `json`. `stream` leaves the body unread. */
@@ -43,7 +43,7 @@ export function vaultStatus(r: VaultRoute): number {
 }
 
 /** Writes to wallets are commands, and every mutating route carries the writes gate (C12). */
-const WRITES: readonly GateScope[] = ['writes']
+const WRITES: readonly EdgeGateScope[] = ['writes']
 
 /** Every route the vault serves: each NestJS v1 route but the two 1C defers and the six §6.4 retires, the edge-only routes and the added ones. */
 export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
@@ -122,13 +122,14 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/sync/snapshots/:id', access: 'bound_session', vault: 'snapshots.status' },
   { method: 'GET', path: '/v1/sync/snapshot-chunks/:grant', access: 'bound_session', worker: 'snapshot.chunk.download' },
   // The AI companion (1B-T7): the PostgreSQL edge's own routes, run in the Worker with the vault's `ai.*` steps.
-  // No gate (owner answer 3): AI_ENABLED is the switch until phase 3's `ai` gate.
+  // The four that call a model carry the `ai` gate (P3-T3): paused, they answer 503 AI_PAUSED before the token.
+  // The preferences stay open (default pending owner Q5) and say `available: false` while `ai` is paused.
   { method: 'GET', path: '/v1/me/ai-preferences', access: 'bound_session', worker: 'ai.preferences.get' },
   { method: 'PUT', path: '/v1/me/ai-preferences', access: 'bound_session', worker: 'ai.preferences.put' },
-  { method: 'POST', path: '/v1/ai/parse', access: 'current_policy', worker: 'ai.parse', status: 200 },
-  { method: 'POST', path: '/v1/ai/slip', access: 'current_policy', worker: 'ai.slip', status: 200 },
-  { method: 'GET', path: '/v1/ai/note', access: 'bound_session', worker: 'ai.note' },
-  { method: 'POST', path: '/v1/ai/ask', access: 'current_policy', worker: 'ai.ask', status: 200 },
+  { method: 'POST', path: '/v1/ai/parse', access: 'current_policy', worker: 'ai.parse', gates: ['ai'], status: 200 },
+  { method: 'POST', path: '/v1/ai/slip', access: 'current_policy', worker: 'ai.slip', gates: ['ai'], status: 200 },
+  { method: 'GET', path: '/v1/ai/note', access: 'bound_session', worker: 'ai.note', gates: ['ai'] },
+  { method: 'POST', path: '/v1/ai/ask', access: 'current_policy', worker: 'ai.ask', gates: ['ai'], status: 200 },
   // Slip import (P4-T3, S13): the salt answers before slip import opens (a single read's slip ref needs it); the
   // slip accounts are 404 until SLIP_IMPORT_ENABLED is on. Mapping an account is a plain write (S1).
   { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },

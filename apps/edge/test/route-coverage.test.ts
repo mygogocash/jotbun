@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { MODEL_ROUTE_WORKERS } from '../src/v1/gates'
 import { matchRoute } from '../src/v1/match'
 import type { VaultRouteId } from '../src/v1/protocol'
 import { VAULT_ADDED_ROUTES, VAULT_DEFERRED_ROUTES, VAULT_EDGE_ONLY_ROUTES, VAULT_PENDING_ROUTES, VAULT_RETIRED_ROUTES, VAULT_STEP_ROUTES, VAULT_V1_ROUTES, vaultStatus } from '../src/v1/routes'
@@ -182,5 +183,24 @@ describe('the one Worker covers every NestJS v1 route', () => {
     expect(released.map(keyOf)).toEqual(['GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id'])
     const vars = wranglerVars()
     for (const route of released) expect(vars[route.release as string], keyOf(route)).toBe('false')
+  })
+
+  it('every route that calls a model carries the ai gate (P3-T3), and no other route does', () => {
+    expect([...MODEL_ROUTE_WORKERS].sort()).toEqual(['ai.ask', 'ai.note', 'ai.parse', 'ai.slip'])
+    const gated = VAULT_V1_ROUTES.filter((route) => route.gates?.includes('ai'))
+    expect(gated.map((route) => route.worker ?? keyOf(route)).sort()).toEqual([...MODEL_ROUTE_WORKERS].sort())
+    // AI's four need only the ai gate, so pausing writes leaves Bun open (ai-gate.test.ts).
+    expect(gated.filter((route) => route.worker?.startsWith('ai.')).map((route) => [keyOf(route), route.gates])).toEqual([
+      ['POST /v1/ai/parse', ['ai']],
+      ['POST /v1/ai/slip', ['ai']],
+      ['GET /v1/ai/note', ['ai']],
+      ['POST /v1/ai/ask', ['ai']],
+    ])
+    // The preferences stay open (default pending owner Q5).
+    for (const key of ['GET /v1/me/ai-preferences', 'PUT /v1/me/ai-preferences']) {
+      const route = VAULT_V1_ROUTES.find((r) => keyOf(r) === key)
+      expect(route, key).toBeDefined()
+      expect(route?.gates, key).toBeUndefined()
+    }
   })
 })
