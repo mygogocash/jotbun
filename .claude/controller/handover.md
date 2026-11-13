@@ -49,6 +49,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 02:40: #465's Opus review approves; two planners started (P4-T17, 1D-T14).**
+  - **#465 (P2-T18), `reviews/P2-T18.md`:** no blocker or major.
+    - Test-only pins, each proved in the reviewer's scratch: m2 (the chip reads `อาหาร−฿50`, `WalletShell.render.test.tsx:336`, kills V1 and V2), n1 (a sixth `spendLayoutOrder.test.ts` case scanning `<WalletShell\b`, kills V9) and n3 (the + at `0.4` opacity while blocked, kills V4).
+    - m1: Settings' diary links push a second spend layout, so each has its own shell, tray host and looks provider, and looks changed under Settings are stale below.
+    - **The controller adds m2, n1, n3's V4 and m1's receipt correction itself** once the Sonnet second review lands, then asks the Opus reviewer (`mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, kept open) to confirm.
+    - **m1's carry is the controller's** (settle before P2-T24's card stack, at the latest before P2-T38). Its leaning: share the looks between providers, one store per account with subscribers as `DeviceDiaryProvider` shares its diary. That keeps today's Back; the other option, one spend layout, changes Back and would be the owner's call.
+    - n2: Insights under the + overlaps 18 pt with a 34 pt inset and 52 pt without; name an owner (P2-T24 or a small follow-up).
+  - **Planners (Opus xhigh)**, common notes `scratch/dispatch/planner-common-notes-20261114b.md`, head `988669e7`:
+    - **P4-T17, push on the phone** (critical path, depth 6): `mcp:launch:8fecf2cdbd19737baaec6aeb76665a3c7819fa03cfc3b8bfdda6607e7a94f449`, WT `p4-t17` on `p4/t17-push`. It shares no file with anything in flight; `expo-notifications` ~58.1.4 is already installed.
+    - **1D-T14, the account events** (size S): `mcp:launch:be2008fe0f8556f9d69a56d0100a74eeffa078534354318b690700999ffa6726`, WT `p1-1d-t14` on `p1/1d-t14-account-events`. It carries followups line 770 (`signed_out` first).
+  - **Live now:** the P4-T17 and 1D-T14 planners; the #465 Sonnet second review; the #464 confirmation (Opus).
 - **14 Nov 02:25: #464's pins pushed as `7e2ae0dc` (the Opus reviewer confirms); P4-T7's brief READY (waits on #463).**
   - **#464 (P2-T18a):** the controller's commit `7e2ae0dc` holds both reviews' pins and the comment, test-only plus the comment. Proof `scratch/p2-t18a-pins/`, all under the heavy lock:
     - the three render files 56 of 56, and `typecheck:app`;
