@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { handleBankAlbums } from '../src/catalog/catalog'
 import { MODEL_ROUTE_WORKERS } from '../src/v1/gates'
 import { matchRoute } from '../src/v1/match'
 import type { VaultRouteId } from '../src/v1/protocol'
@@ -171,7 +172,7 @@ describe('the one Worker covers every NestJS v1 route', () => {
   })
 
   it('the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13)', () => {
-    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analytics', 'GET /v1/slip-accounts', 'GET /v1/slips/salt', 'GET /v1/sync/live', 'PUT /v1/slip-accounts/:id'])
+    for (const key of ['GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id']) expect(VAULT_ADDED_ROUTES).toContain(key)
     expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v1/slip'))).toEqual([
       { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
       { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
@@ -202,5 +203,11 @@ describe('the one Worker covers every NestJS v1 route', () => {
       expect(route, key).toBeDefined()
       expect(route?.gates, key).toBeUndefined()
     }
+  })
+
+  it('the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2)', () => {
+    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/catalog/bank-albums', 'GET /v1/me/analytics', 'GET /v1/slip-accounts', 'GET /v1/slips/salt', 'GET /v1/sync/live', 'PUT /v1/slip-accounts/:id'])
+    expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v1/catalog'))).toEqual([{ method: 'GET', path: '/v1/catalog/bank-albums', access: 'public', worker: 'catalog.bankAlbums' }])
+    expect(WORKER_HANDLERS['catalog.bankAlbums']).toBe(handleBankAlbums)
   })
 })
