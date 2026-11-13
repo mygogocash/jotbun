@@ -8,7 +8,7 @@ import { useWalletColors } from '@mobile/theme/ThemeProvider';
 import { THAI_UI_FONT_FAMILY } from '@mobile/theme/uiFontFamily';
 import { WALLET_TYPE, walletLineHeight, type WalletTextRole } from '@mobile/theme/walletType';
 
-export type WalletTone = 'ink' | 'quiet' | 'quietOnGround' | 'violet' | 'under' | 'over' | 'onPrimary' | 'onToast';
+export type WalletTone = 'ink' | 'quiet' | 'quietOnGround' | 'violet' | 'under' | 'over' | 'onPrimary' | 'onToast' | 'toastLink';
 
 // TextProps.role is the ARIA role. This role is the type scale, so the two
 // cannot share one property: their intersection is never.
