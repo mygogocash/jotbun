@@ -266,6 +266,10 @@ describe('merchant patterns (S3, A30)', () => {
       ['Big  C Extra', 'shopping'],
       ["LOTUS'S GO FRESH", 'shopping'],
       ['Makrobiotic', null],
+      // The review's m1: a Latin pattern matches whole words at both ends, also in a name with Thai in it.
+      ['SUPERMAKRO', null],
+      ['ร้าน Makrobiotic', null],
+      ['ร้าน MAKRO บางนา', 'shopping'],
       [null, null],
     ]
     expect(() => cases.map(([name]) => matchMerchant(name, seed))).not.toThrow()
