@@ -1,0 +1,24 @@
+--- a/apps/app/src/spend/v1/ai/aiResources.ts
++++ b/apps/app/src/spend/v1/ai/aiResources.ts
+@@ -6,7 +6,7 @@
+ // use, and a draft that never arrived is simply asked for again by the person.
+ // Each AI route waits its own AI_PHONE_TIMEOUT_MS, longer than the route's
+ // deadline on the server, so the phone hears the route's answer (H3).
+-import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
++import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, SLIP_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
+ import type {
+   AiAskRequest,
+   AiAskResult,
+@@ -60,8 +60,11 @@
+   return isObject(value) && hasExactly(value, ['drafts', 'source', 'model', 'escalated']) && isDrafts(value.drafts) && (value.source === 'ai' || value.source === 'rules') && namesItsModel(value);
+ }
+ 
++/** A slip read also says what it found, whether a model refused, and the tokens its calls used (P3-T8). */
+ export function isAiSlipResult(value: unknown): value is AiSlipResult {
+-  return isObject(value) && hasExactly(value, ['drafts', 'bank', 'source', 'model', 'escalated']) && isDrafts(value.drafts) && isTextOrNull(value.bank, 60) && value.source === 'ai' && namesItsModel(value);
++  return isObject(value) && hasExactly(value, ['drafts', 'bank', 'source', 'model', 'escalated', 'kind', 'declined', 'tokens']) && isDrafts(value.drafts) && isTextOrNull(value.bank, 60) && value.source === 'ai' && namesItsModel(value) &&
++    (SLIP_KINDS as readonly unknown[]).includes(value.kind) && typeof value.declined === 'boolean' &&
++    isObject(value.tokens) && hasExactly(value.tokens, ['input', 'output']) && isCount(value.tokens.input) && isCount(value.tokens.output);
+ }
+ 
+ const FACT_KEYS = ['kind', 'amount_minor', 'count', 'days', 'percent', 'category_key', 'category_label'];

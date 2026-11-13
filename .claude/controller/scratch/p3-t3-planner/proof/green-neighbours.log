@@ -1,0 +1,14 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: unreadable
+    at Object.unstarted (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/test/workers/files-objects.test.ts:642:13)
+    at startPendingWork (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/src/vault/files/work.ts:87:30)
+    at UserVault.rearming (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/src/vault/user-vault.ts:458:14)
+
+ Test Files  11 passed (11)
+      Tests  382 passed (382)
+   Start at  08:29:01
+   Duration  20.29s (transform 45.11s, setup 87.96s, import 3.87s, tests 41.10s, environment 1ms)
+

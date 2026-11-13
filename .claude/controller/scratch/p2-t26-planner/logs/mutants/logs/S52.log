@@ -1,0 +1,76 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ × src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 53ms
+   → th light: the facts: expected 'สถานะกระเป๋าบัญชีหลักหมวดอาหารโน้ตกับ…' to be 'สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดอา…' // Object.is equality
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 808ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 111ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 97ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 1424ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 80ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 136ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 84ms
+ × src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 9ms
+   → th light: income's facts: expected 'สถานะกระเป๋าบัญชีหลักหมวดเงินเดือน' to be 'สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดเง…' // Object.is equality
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 46ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 46ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 40ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 62ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 27ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 16ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 5ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 4ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 64ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 12ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 39ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 30ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 353ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 29ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 49ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 475ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 23 passed (25)
+   Start at  08:07:33
+   Duration  5.68s (transform 1.02s, setup 41ms, import 1.33s, tests 4.10s, environment 89ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:29889) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569)
+AssertionError: th light: the facts: expected 'สถานะกระเป๋าบัญชีหลักหมวดอาหารโน้ตกับ…' to be 'สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดอา…' // Object.is equality
+
+Expected: "สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดอาหารโน้ตกับเพื่อนที่ออฟฟิศ"
+Received: "สถานะกระเป๋าบัญชีหลักหมวดอาหารโน้ตกับเพื่อนที่ออฟฟิศ"
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:321:65
+    319|       // Status, wallet, category and note, in that order: no merchant…
+    320|       const facts = found('wallet-record-facts');
+    321|       expect(facts.textContent, `${locale} ${mode}: the facts`).toBe(`…
+       |                                                                 ^
+    322|       expect(facts.querySelectorAll(CHECK), `${locale} ${mode}: the sa…
+    323|       // Each fact is read as one: its label, then its value.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial
+AssertionError: th light: income's facts: expected 'สถานะกระเป๋าบัญชีหลักหมวดเงินเดือน' to be 'สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดเง…' // Object.is equality
+
+Expected: "สถานะบันทึกแล้วกระเป๋าบัญชีหลักหมวดเงินเดือน"
+Received: "สถานะกระเป๋าบัญชีหลักหมวดเงินเดือน"
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:570:93
+    568|       expect(tilePaths('wallet-record-tile'), `${locale} ${mode}: inco…
+    569|       // No note, no note row.
+    570|       expect(found('wallet-record-facts').textContent, `${locale} ${mo…
+       |                                                                                             ^
+    571|       const tray = await openActions(locale, words.salary);
+    572|       expect(within(tray).queryAllByText('+฿28,000').map((each) => eac…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

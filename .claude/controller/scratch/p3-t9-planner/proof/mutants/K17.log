@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai-routing.test.ts (7 tests | 1 failed) 10170ms
+     × parse, note, slip and ask call Haiku 5.5 with no betas, fallbacks, thinking, sampling or prefill 46ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > Haiku first, and results that name their model > parse, note, slip and ask call Haiku 5.5 with no betas, fallbacks, thinking, sampling or prefill
+AssertionError: expected [ [ 'claude-haiku-5-5', …(2) ], …(4) ] to deeply equal [ [ 'claude-haiku-5-5', …(2) ], …(4) ]
+
+- Expected
++ Received
+
+@@ -14,14 +14,14 @@
+      "medium",
+      8000,
+    ],
+    [
+      "claude-haiku-5-5",
+-     "medium",
++     "low",
+      12000,
+    ],
+    [
+      "claude-haiku-5-5",
+-     "medium",
++     "low",
+      12000,
+    ],
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:79:98
+     77|     for (const [route, res] of Object.entries(answered)) expect(res.st…
+     78|     // Parse, note, slip, then Ask Bun's two turns.
+     79|     expect(model.calls.map((call) => [call.model, call.output_config?.…
+       |                                                                                                  ^
+     80|       ['claude-haiku-5-5', 'low', 8_000],
+     81|       ['claude-haiku-5-5', 'low', 4_000],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  19:30:24
+   Duration  12.52s (transform 922ms, setup 1.82s, import 24ms, tests 10.17s, environment 0ms)
+

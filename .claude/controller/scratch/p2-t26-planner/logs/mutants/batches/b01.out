@@ -1,0 +1,15 @@
+S1 KILLED: the date shows a time (the plan's mutant) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S2 KILLED: Undo restores with version 1 (the plan's mutant) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+S3 KILLED: Undo restores with the record's version, not the delete's [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+S4 KILLED: the merchant is the title in private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S5 KILLED: the title is never the merchant [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 10 failed | 15 passed (25); 10 AssertionError; restored sha256 equal
+S6 KILLED: income drawn as an expense [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S7 KILLED: an entry already deleted reads as live [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S8 KILLED: an unconfirmed delete is not frozen [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S9 KILLED: a tray opened again keeps the action it was leaving for [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S10 KILLED: the tray's copy opens the add tray at once (R69) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S11 KILLED: the tray's edit starts at once (R69) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S12 KILLED: the tray's copy never runs [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S13 KILLED: the tray's edit never runs [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S14 KILLED: the tray's delete leaves the tray open [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+14 killed, 0 survived, 0 not as expected

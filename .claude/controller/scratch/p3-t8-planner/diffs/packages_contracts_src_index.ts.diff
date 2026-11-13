@@ -1,0 +1,18 @@
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -299,6 +299,7 @@
+   AI_DRAFT_FLAGS,
+   AI_DRAFTS_MAX,
+   AI_MODELS,
++  SLIP_KINDS,
+   BUN_FACT_KINDS,
+   parseAiPreferencesUpdate,
+   parseAiLocale,
+@@ -323,6 +324,7 @@
+   AiParseResult,
+   AiSlipRequest,
+   AiSlipResult,
++  SlipKind,
+   BunFactKind,
+   BunFact,
+   AiNoteResult,

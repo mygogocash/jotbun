@@ -1,0 +1,44 @@
+
+> gogospend-app@0.1.0 test:unit
+> node scripts/test-unit.mjs src/storage/diaryRepository.test.ts
+
+(node:71769) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:71769) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (24.404958ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (2.63375ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (3.483958ms)
+✔ a pending entry may carry a source, and an unknown one is refused (3.32325ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (23.183708ms)
+✔ a page fetched before the cursor moved is refused, never written back (2.326458ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (2.473208ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (1.720625ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (28.011ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (2.949792ms)
+✔ stores exact integer strings and no credentials (2.484375ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (2.545833ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (1.49575ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (1.568292ms)
+✔ a build that knows the import entities stores them (1.524625ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (4.323583ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (2.131ms)
+✔ logged days are the distinct dates of live records and drafts (1.892459ms)
+✔ the applied revision is read without loading the diary (1.95ms)
+✔ a pending choice is kept, replaced per record and dropped (2.952917ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (1.338125ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (4.367292ms)
+✔ choices survive a lock and reopen, and go with the erase (2.820708ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (2.848708ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (4.186459ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 275.311292

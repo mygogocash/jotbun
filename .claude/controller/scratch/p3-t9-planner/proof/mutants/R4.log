@@ -1,0 +1,37 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 1 failed) 853ms
+     × a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: -5, output: 7 } to deeply equal { input: +0, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 0,
++   "input": -5,
+    "output": 7,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
+   Start at  19:34:41
+   Duration  4.33s (transform 1.69s, setup 2.93s, import 39ms, tests 853ms, environment 0ms)
+

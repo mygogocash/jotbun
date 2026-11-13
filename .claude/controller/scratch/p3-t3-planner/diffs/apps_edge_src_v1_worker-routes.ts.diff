@@ -1,0 +1,28 @@
+--- a/apps/edge/src/v1/worker-routes.ts
++++ b/apps/edge/src/v1/worker-routes.ts
+@@ -1,7 +1,5 @@
+ import type { AiFeature } from '@gogospend/contracts'
+ 
+-import type { FeatureGates } from '@api/common/feature-gates'
+-
+ import type { UserVault } from '../vault/user-vault'
+ import { bridgeCatalogue } from './bridge'
+ import { uploadRoute } from './files/uploads'
+@@ -12,6 +10,7 @@
+ import { livePolicies } from './config'
+ import type { EdgeConfig } from './config'
+ import type { V1Env } from './env'
++import type { EdgeGates } from './gates'
+ import type { PublishedPolicies, VaultAccess, VaultCall, VaultClaims, VaultReply, VaultRouteId, WorkerRouteId } from './protocol'
+ import type { VaultRoute } from './routes'
+ 
+@@ -32,7 +31,8 @@
+   request: Request
+   claims: VaultClaims | null
+   policies: PublishedPolicies
+-  gates: FeatureGates
++  /** config:v1's gates: the API's scopes and `ai` (P3-T3). */
++  gates: EdgeGates
+   params: Record<string, string>
+   query: Record<string, unknown>
+   headers: Record<string, string | undefined>

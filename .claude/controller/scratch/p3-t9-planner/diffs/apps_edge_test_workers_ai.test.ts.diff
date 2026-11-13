@@ -1,0 +1,147 @@
+--- a/apps/edge/test/workers/ai.test.ts
++++ b/apps/edge/test/workers/ai.test.ts
+@@ -2,6 +2,8 @@
+ // are ported by name and assertion, with fakeModel as startV1's `send`; the plan
+ // adds two; the rest are the planner's (brief 1B-T7). No network: every model
+ // call is a scripted fake, and the env's own model is only ever built, never called.
++// Since P3-T9 an Ask Bun answer that is ungrounded, declined or unfinished is asked
++// again of Opus (D28), and each tool figure carries its count and scope.
+ import { env } from 'cloudflare:workers'
+ import { randomUUID } from 'node:crypto'
+ 
+@@ -213,6 +215,16 @@
+     expect((await body(await client.as(user).get('/v1/me/ai-preferences'))).remaining.parse).toBe(AI_DAILY_LIMITS.parse - 1)
+   })
+ 
++  it("a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1)", async () => {
++    // Before P3-T9 the sanitizer threw on 2026-10-32 and Tell Bun fell back to the rules.
++    const user = await consenting()
++    const { cash, food } = await withCashAndFood(user)
++    model.push(json({ drafts: [{ type: 'expense', amount_baht: '50', date: '2026-10-32', category_id: food, wallet_id: cash, merchant: 'ข้าวมันไก่', note: null, confidence: 'high', flags: [] }] }))
++    const res = await client.as(user).post('/v1/ai/parse', { text: 'ข้าวมันไก่ 50', today, locale: 'th' })
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ source: 'ai', model: 'claude-haiku-5-5', drafts: [{ amount_minor: '5000', occurred_on: today, flags: ['date_guessed'] }] })
++  })
++
+   it('never passes on an amount the person did not write', async () => {
+     const user = await consenting()
+     const { food } = await withCashAndFood(user)
+@@ -452,9 +464,10 @@
+   it('an answer with a number no tool read becomes the plain figures', async () => {
+     const user = await consenting()
+     await withCashAndFood(user)
+-    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null }), text('You spent about ฿9,999.'))
++    // D28 (P3-T9): Haiku's ungrounded answer is asked again of Opus, whose answer strays too.
++    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null }), text('You spent about ฿9,999.'), text('About ฿9,999 in all.'))
+     const answer = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' }))
+-    expect(answer).toMatchObject({ source: 'facts', answer: expect.stringContaining('From your diary') })
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, answer: expect.stringContaining('From your diary') })
+     expect(answer.answer).not.toContain('9,999')
+   })
+ 
+@@ -490,9 +503,10 @@
+       answer: grounded,
+       figures: [{ amount_minor: '40780' }],
+     })
+-    model.push(toolUse('spending_total', { from: '2016-01-01', through: '2016-02-09', type: 'expense', category_id: null }), text('About ฿407.81 in all.'))
++    // D28 (P3-T9): Opus is asked again and strays as well, so Haiku's figures answer.
++    model.push(toolUse('spending_total', { from: '2016-01-01', through: '2016-02-09', type: 'expense', category_id: null }), text('About ฿407.81 in all.'), text('About ฿407.81 in all.'))
+     const strayed = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much in early 2016?', today, locale: 'en' }))
+-    expect(strayed).toMatchObject({ source: 'facts', figures: [{ amount_minor: '40780' }] })
++    expect(strayed).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '40780' }] })
+     expect(strayed.answer).not.toContain('407.81')
+   })
+ 
+@@ -517,11 +531,12 @@
+   it('Ask Bun stops after five tool turns and answers from the figures it read', async () => {
+     const user = await consenting()
+     const turn = () => toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null })
+-    model.push(turn(), turn(), turn(), turn(), turn())
++    // D28 (P3-T9): five turns without an answer go to Opus, who declines here, so Haiku's figures answer.
++    model.push(turn(), turn(), turn(), turn(), turn(), refusal())
+     const answer = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' }))
+-    expect(answer).toMatchObject({ source: 'facts', answer: expect.stringContaining('From your diary') })
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, answer: expect.stringContaining('From your diary') })
+     expect(answer.figures).toHaveLength(5)
+-    expect(model.calls).toHaveLength(5)
++    expect(model.calls.map((call) => call.model)).toEqual([...Array(5).fill('claude-haiku-5-5'), 'claude-opus-5-5'])
+   })
+ 
+   it('two tools in one turn both run, and their results go back to Claude together', async () => {
+@@ -775,18 +790,18 @@
+     ])
+     const september = { from: '2026-09-01', through: '2026-09-30' }
+     const dates = ['2026-09-01', '2026-09-30']
+-    const spent = { result: { total_say: '฿135', count: 3 }, figures: [{ label: 'Money out, 1–30 Sep 2026', amount_minor: '13500' }], allow: { satang: ['13500'], counts: [3], dates } }
++    const spent = { result: { total_say: '฿135', count: 3 }, figures: [{ label: 'Money out, 1–30 Sep 2026', amount_minor: '13500', count: 3, scope: { ...september, type: 'expense', category_id: null } }], allow: { satang: ['13500'], counts: [3], dates } }
+     expect(await tool(user, 'spending_total', { ...september, type: 'expense', category_id: null })).toEqual(spent)
+     // Any type but income reads expenses, and a category the person does not have reads every category.
+     expect(await tool(user, 'spending_total', { ...september, type: 'transfer', category_id: randomUUID() })).toEqual(spent)
+     expect(await tool(user, 'spending_total', { ...september, type: 'expense', category_id: food })).toEqual({
+       result: { total_say: '฿105', count: 2 },
+-      figures: [{ label: 'Food, 1–30 Sep 2026', amount_minor: '10500' }],
++      figures: [{ label: 'Food, 1–30 Sep 2026', amount_minor: '10500', count: 2, scope: { ...september, type: 'expense', category_id: food } }],
+       allow: { satang: ['10500'], counts: [2], dates },
+     })
+     expect(await tool(user, 'spending_total', { ...september, type: 'income', category_id: null }, 'th')).toEqual({
+       result: { total_say: '฿500', count: 1 },
+-      figures: [{ label: 'รับเข้า 1–30 ก.ย. 2569', amount_minor: '50000' }],
++      figures: [{ label: 'รับเข้า 1–30 ก.ย. 2569', amount_minor: '50000', count: 1, scope: { ...september, type: 'income', category_id: null } }],
+       allow: { satang: ['50000'], counts: [1], dates },
+     })
+     expect(await tool(user, 'category_totals', { ...september, type: 'expense' })).toEqual({
+@@ -795,14 +810,14 @@
+         { category: 'travel', total_say: '฿30', count: 1 },
+       ],
+       figures: [
+-        { label: 'Food, 1–30 Sep 2026', amount_minor: '10500' },
+-        { label: 'Travel, 1–30 Sep 2026', amount_minor: '3000' },
++        { label: 'Food, 1–30 Sep 2026', amount_minor: '10500', count: 2, scope: { ...september, type: 'expense', category_id: food } },
++        { label: 'Travel, 1–30 Sep 2026', amount_minor: '3000', count: 1, scope: { ...september, type: 'expense', category_id: travel } },
+       ],
+       allow: { satang: ['10500', '3000'], counts: [2, 1], dates },
+     })
+     expect(await tool(user, 'category_totals', { ...september, type: 'income' })).toEqual({
+       result: [{ category: 'salary', total_say: '฿500', count: 1 }],
+-      figures: [{ label: 'Salary, 1–30 Sep 2026', amount_minor: '50000' }],
++      figures: [{ label: 'Salary, 1–30 Sep 2026', amount_minor: '50000', count: 1, scope: { ...september, type: 'income', category_id: salary } }],
+       allow: { satang: ['50000'], counts: [1], dates },
+     })
+   })
+@@ -830,9 +845,9 @@
+         { merchant: '(no description)', total_say: '฿8', count: 1 },
+       ],
+       figures: [
+-        { label: 'Café Amazon, 1–30 Sep 2026', amount_minor: '5000' },
+-        { label: 'ข้าวมันไก่, 1–30 Sep 2026', amount_minor: '1500' },
+-        { label: 'No description, 1–30 Sep 2026', amount_minor: '800' },
++        { label: 'Café Amazon, 1–30 Sep 2026', amount_minor: '5000', count: 2, scope: null },
++        { label: 'ข้าวมันไก่, 1–30 Sep 2026', amount_minor: '1500', count: 1, scope: null },
++        { label: 'No description, 1–30 Sep 2026', amount_minor: '800', count: 1, scope: null },
+       ],
+       allow: { satang: ['5000', '1500', '800'], counts: [2, 1, 1], dates: ['2026-09-01', '2026-09-30'] },
+     })
+@@ -841,10 +856,10 @@
+     expect(await tool(user, 'budget_status', { month: '2026-07' })).toEqual({
+       result: { limit_say: '฿200', spent_say: '฿70', left_say: '฿130', categories: [{ category: 'food', limit_say: '฿80', spent_say: '฿60', left_say: '฿20' }] },
+       figures: [
+-        { label: 'Budget, Jul 2026', amount_minor: '20000' },
+-        { label: 'Spent, Jul 2026', amount_minor: '7000' },
+-        { label: 'Left, Jul 2026', amount_minor: '13000' },
+-        { label: 'Food left, Jul 2026', amount_minor: '2000' },
++        { label: 'Budget, Jul 2026', amount_minor: '20000', count: null, scope: null },
++        { label: 'Spent, Jul 2026', amount_minor: '7000', count: null, scope: null },
++        { label: 'Left, Jul 2026', amount_minor: '13000', count: null, scope: null },
++        { label: 'Food left, Jul 2026', amount_minor: '2000', count: null, scope: null },
+       ],
+       allow: { satang: ['20000', '7000', '13000', '2000', '8000', '6000'], counts: [], dates: [] },
+     })
+@@ -863,7 +878,7 @@
+     expect((categories.result as { category: string }[] | undefined)?.map((row) => row.category)).toEqual(labels.slice(0, 12))
+     expect(categories.allow?.counts.length).toBe(12)
+     // A person's own category is shown by its label.
+-    expect(categories.figures?.[0]).toEqual({ label: 'c01, 1–30 Sep 2026', amount_minor: '1300' })
++    expect(categories.figures?.[0]).toEqual({ label: 'c01, 1–30 Sep 2026', amount_minor: '1300', count: 1, scope: { ...september, type: 'expense', category_id: ids[0] } })
+     const places = (await tool(user, 'top_merchants', september)) as Run
+     expect((places.result as { merchant: string }[] | undefined)?.map((row) => row.merchant)).toEqual(labels.slice(0, 8).map((label) => label.replace('c', 'm')))
+     expect(places.figures?.map((figure) => figure.amount_minor)).toEqual(['1300', '1200', '1100', '1000', '900', '800', '700', '600'])

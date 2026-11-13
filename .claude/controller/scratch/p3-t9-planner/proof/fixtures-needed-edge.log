@@ -1,0 +1,9 @@
+
+> gogospend@0.0.0 typecheck:edge
+> npm run typecheck --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 typecheck
+> tsc --noEmit
+
+test/ai-grounding.test.ts(169,25): error TS2739: Type '{ label: string; amount_minor: string; }' is missing the following properties from type 'AiFigure': count, scope

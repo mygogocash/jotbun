@@ -1,0 +1,102 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 98ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 809ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 166ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 127ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 1410ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 76ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 150ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 93ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 180ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 62ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 57ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 55ms
+ × src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 30ms
+   → th: one toastLong: expected [ { run: [Function], …(1) }, …(2) ] to have a length of 1 but got 3
+ × src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 30ms
+   → expected [ { run: [Function], …(1) }, …(1) ] to have a length of 1 but got 2
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 23ms
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 6ms
+   → not restarted: expected [ { run: [Function], …(1) }, …(1) ] to have a length of 1 but got 2
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 6ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 81ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 15ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 39ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 19ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 356ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 28ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 47ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 477ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 22 passed (25)
+   Start at  08:11:45
+   Duration  6.03s (transform 1.01s, setup 45ms, import 1.33s, tests 4.44s, environment 103ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:69460) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore
+AssertionError: th: one toastLong: expected [ { run: [Function], …(1) }, …(2) ] to have a length of 1 but got 3
+
+- Expected
++ Received
+
+- 1
++ 3
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:661:52
+    659|     await findShown(tc(NOT_CONFIRMED, locale));
+    660|     const dismissals = barTimers(timers);
+    661|     expect(dismissals, `${locale}: one toastLong`).toHaveLength(1);
+       |                                                    ^
+    662|     act(() => dismissals[0].run());
+    663|     // Its time has passed, but the undo may have landed: the bar stay…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands
+AssertionError: expected [ { run: [Function], …(1) }, …(1) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:684:22
+    682|   tap(named('button', WORDS.th.undo, bar));
+    683|   const dismissals = barTimers(timers);
+    684|   expect(dismissals).toHaveLength(1);
+       |                      ^
+    685|   act(() => dismissals[0].run());
+    686|   found('wallet-undo-bar');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it
+AssertionError: not restarted: expected [ { run: [Function], …(1) }, …(1) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:748:46
+    746|   await settle();
+    747|   const [timer] = barTimers(timers);
+    748|   expect(barTimers(timers), 'not restarted').toHaveLength(1);
+       |                                              ^
+    749|   act(() => timer.run());
+    750|   expect([first.mock.calls.length, second.mock.calls.length], 'the lat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

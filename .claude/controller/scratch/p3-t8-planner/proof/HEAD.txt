@@ -1,0 +1,6 @@
+Proof head: 437743e2ad8ccbb5d19f266f793f7d91582a21f3 (origin/claude/p1a-vault-core after #449, P5-T17).
+Planned on dffa9ee3; from dffa9ee3 to 437743e2 only #449's ten app files changed (client.ts, resources.ts,
+fakeResources.ts, ratesCache.ts, their tests, diaryRepository.test.ts and receipts/P5-T17.md), none of this
+task's 16 files, and no lockfile. Every log at this folder's top level and under mutants/ is from 437743e2:
+the base typechecks, RED, GREEN, the gate and the five mutant batches. The installs (install-*.log) ran on
+dffa9ee3's lockfiles, which 437743e2 keeps byte for byte. dev/ holds development runs on dffa9ee3 only.

@@ -1,0 +1,16 @@
+d770eeeda750ef0c692488c61fc990dda81ccf2011e01f0fdb6f41673ea9745c  packages/contracts/src/v1/ai.ts
+90077136359b300590643841f946afc03053c0ec3d167fd16fd795adb55c3c5f  packages/contracts/src/index.ts
+88bce9b44c9d2637c7d77c75c8b05c2f209112b3e9dba8705a591c3a54feeba8  apps/edge/src/server/ai/drafts.ts
+932e23ae6e0ba133191584243fb4cd0b71566d80227098ac7488a3fde8644670  apps/edge/src/v1/ai/service.ts
+20dfa8627b920016790fbabbb887afe15a2ae39506cefb47d2a12b07bbe18f61  apps/edge/src/v1/ai/slip-read.ts
+b740074af1957dddb349fd33d1bc7e88fda9dec96a44a6d0ddbf02ef41a7fffa  apps/edge/src/v1/ai/uses.ts
+020106bd5c214ecc259339037d76942429757ebb99d038f7e978d4f98c4e77a4  apps/edge/src/vault/ai.ts
+cf5d9f4f8ae9e8936d44294f7509c2260c087b9ee932e972d0579d4f3911e228  apps/edge/test/workers/ai.test.ts
+f97e03baead24974f24decf9eba9f47d7656f075c854b87fa21fac3ccba61a70  apps/edge/test/workers/ai-uses.test.ts
+4bf420890a74a0d4205200334d040a070686ecef62267c79461fae2ac25adee3  apps/edge/test/workers/slip-read.test.ts
+1a204a51f66486dc1004fe3032ddc37a6f51a77b3f730a48452e14dd08c0772e  apps/edge/test/ai-grounding.test.ts
+27a717e54c21c0ed4f593294bb3632daecff7492161cbe07dc3520ab402acad4  apps/app/src/spend/v1/ai/aiResources.ts
+70bcb7c735c7e0b7fdd77c6c10f3c02b4a0e98f600e8bfb215f972d33f7949b4  apps/app/src/spend/v1/ai/aiResources.test.ts
+ef0673c420191d4b07a476541495d983e65da58872edd164c4884e8e72a06084  apps/app/src/dev/catalogue/companion/companionSections.tsx
+89133460e9d3b322b6b98e66faef20cf4dae8e08982b6a175136096ad7216db0  apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+d9983369b3c0edc4ea8cd00a0e3d34b9fff9afcd6cf2f4589dad028835df8712  docs/implementation/receipts/P3-T8.md

@@ -1,0 +1,11 @@
+V1 killed (assertion): a total's figure has no count [escalation] -> 3 failed | 10 passed (13)
+V2 killed (assertion): a total's figure has no scope [escalation] -> 3 failed | 10 passed (13)
+V3 killed (assertion): a total's scope names a category the person does not have [escalation] -> 1 failed | 12 passed (13)
+V4 killed (assertion): a total's scope always says expense [escalation] -> 1 failed | 12 passed (13)
+V5 killed (assertion): a category's figure has no count [escalation] -> 1 failed | 12 passed (13)
+V6 killed (assertion): a category's scope names every category [escalation] -> 1 failed | 12 passed (13)
+V7 killed (assertion): a place's figure has no count [escalation] -> 1 failed | 12 passed (13)
+V8 killed (assertion): a place's figure has a scope [escalation] -> 1 failed | 12 passed (13)
+V9 killed (assertion): a budget line has a count [escalation] -> 1 failed | 12 passed (13)
+V10 killed (assertion): a total's scope swaps its days [escalation] -> 2 failed | 11 passed (13)
+10 of 10 killed; survivors []; other failures []; not restored []

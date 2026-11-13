@@ -1,0 +1,78 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back 32ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use 15ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back 17ms
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back 2518ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back 35ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use 27ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero 18ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight 16ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_refund_failed","feature":"parse","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_refund_failed","feature":"slip","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked 18ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only 20ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1) 15ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1) 23ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing 17ms
+ ✓ test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 1ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  08:10:03
+   Duration  5.37s (transform 1.06s, setup 1.91s, import 31ms, tests 2.77s, environment 0ms)
+

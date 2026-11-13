@@ -1,0 +1,28 @@
+--- a/apps/edge/test/ai-grounding.test.ts
++++ b/apps/edge/test/ai-grounding.test.ts
+@@ -111,6 +111,16 @@
+     }
+   })
+ 
++  it("a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1)", () => {
++    for (const date of ['2026-10-32', '2026-13-05', '2026-00-10', '0000-00-00', '9999-99-99']) {
++      let drafts: ReturnType<typeof sanitizeDrafts> = []
++      expect(() => {
++        drafts = sanitizeDrafts(raw({ date }), ctx(), 'ข้าวมันไก่ 50')
++      }, date).not.toThrow()
++      expect(drafts[0], date).toMatchObject({ occurred_on: '2026-10-24', flags: ['date_guessed'] })
++    }
++  })
++
+   it('cleans text, drops unknown flags and keeps at most five drafts', () => {
+     const many = { drafts: Array.from({ length: 9 }, () => raw({ merchant: 'Tea\u202E\u0000 shop', flags: ['nonsense', 'multiple_amounts'] }).drafts[0]) }
+     const out = sanitizeDrafts(many, ctx(), 'tea 50')
+@@ -166,7 +176,7 @@
+   })
+ 
+   it('figures stand in for an answer Bun could not ground', () => {
+-    expect(figuresText([{ label: 'Money out, 1–31 Oct 2026', amount_minor: '6000' }], 'en')).toBe('From your diary — Money out, 1–31 Oct 2026: ฿60')
++    expect(figuresText([{ label: 'Money out, 1–31 Oct 2026', amount_minor: '6000', count: 1, scope: { from: '2026-10-01', through: '2026-10-31', type: 'expense', category_id: null } }], 'en')).toBe('From your diary — Money out, 1–31 Oct 2026: ฿60')
+     expect(figuresText([], 'th')).toBe('บันหาข้อมูลนี้ในบันทึกของคุณไม่เจอ')
+   })
+ })

@@ -1,0 +1,93 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 5ms
+   → expected 'import { cloudflareTest, readD1Migrat…' to contain 'readD1Migrations(\'./migrations/catal…'
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected 'import { cloudflareTest, readD1Migrat…' to contain 'readD1Migrations(\'./migrations/catal…'
+
+- Expected
++ Received
+
+- readD1Migrations('./migrations/catalog')
++ import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
++ import { defineConfig, mergeConfig } from 'vitest/config'
++
++ import { apiSeams, apiSeamsConfig } from './api-seams.ts'
++
++ // Workers-runtime tests: the vault's Durable Object and its SQLite storage run
++ // in workerd through Miniflare, as they run deployed. The bindings are the one
++ // Worker's (wrangler.jsonc), with the vault's module as `main` so the tests
++ // never load TanStack Start's entry (B15). The bindings below are synthetic;
++ // no cloud resource is touched.
++ export default mergeConfig(
++   apiSeamsConfig,
++   defineConfig({
++     plugins: [
++       apiSeams(),
++       cloudflareTest(async () => {
++         // readD1Migrations is a Node helper (the same package's main export).
++         // The paths are relative to apps/edge, which is the workers test cwd.
++         const authMigrations = await readD1Migrations('./migrations/auth')
++         const erasureMigrations = await readD1Migrations('./migrations/erasure')
++         const catalogMigrations = await readD1Migrations('./migrations/erasure')
++         return {
++           main: './src/vault-worker.ts',
++           wrangler: { configPath: './wrangler.jsonc' },
++           miniflare: {
++             // AUTH_DB, ERASURE_DB and CATALOG_DB come from wrangler.jsonc; the reference database is the tests' own.
++             d1Databases: ['AUTH_DB_REFERENCE'],
++             bindings: {
++               JOTBUN_ENV: 'test',
++               COMMAND_DIGEST_KEY: 'synthetic-command-digest-key-0123456789abcdef',
++               MIN_CLIENT_VERSION_IOS: '1.0.0',
++               MIN_CLIENT_VERSION_ANDROID: '1.0.0',
++               AUTH_BASE_URL: 'http://auth.test',
++               AUTH_ISSUER: 'http://auth.test',
++               AUTH_AUDIENCE: 'jotbun-v1',
++               AUTH_TRUSTED_ORIGINS: 'gogospend://',
++               BETTER_AUTH_SECRET: 'synthetic-better-auth-secret-0123456789abcdef',
++               ERASURE_KEY: 'synthetic-erasure-key-0123456789abcdef0123',
++               TEST_AUTH_MIGRATIONS: authMigrations,
++               TEST_ERASURE_MIGRATIONS: erasureMigrations,
++               TEST_CATALOG_MIGRATIONS: catalogMigrations,
++             },
++           },
++         }
++       }),
++     ],
++     test: {
++       include: ['test/workers/**/*.test.ts'],
++       setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts', 'test/workers/support/apply-catalog-migrations.ts'],
++     },
++   }),
++ )
++
+
+ ❯ test/c1-shape.test.ts:51:46
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed (14)
+   Start at  19:52:10
+   Duration  493ms (transform 273ms, setup 0ms, import 396ms, tests 10ms, environment 0ms)
+

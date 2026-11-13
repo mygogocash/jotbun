@@ -19,7 +19,7 @@ export function fakeAiResources(overrides: Partial<AiResources> = {}, preference
       return current;
     }),
     parse: vi.fn(async () => ({ drafts: [], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
-    slip: vi.fn(async () => ({ drafts: [], bank: null, source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+    slip: vi.fn(async () => ({ drafts: [], bank: null, source: 'ai' as const, model: 'claude-opus-5-5' as const, escalated: true, kind: 'unreadable' as const, declined: false, tokens: { input: 0, output: 0 } })),
     note: vi.fn(async (date) => ({ date, facts: [{ kind: 'no_records_today' as const }], text: 'Nothing logged yet today. Add your first one?', source: 'facts' as const, model: 'rules' as const, escalated: false })),
     ask: vi.fn(async () => ({ answer: '', figures: [], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
     cashbackCatalogue: vi.fn(async () => ({ source: 'builtin' as const, updated_at: null, home_href: GOGOCASH_HOME, brands: [...BUILTIN_CASHBACK_BRANDS] })),

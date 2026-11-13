@@ -1,0 +1,60 @@
+== Step 0.4
+apps/app/src/storage/diaryRepository.test.ts: OK
+apps/edge/test/workers/transaction-source.test.ts: OK
+apps/app/src/storage/diaryRepository.ts: OK
+apps/edge/src/vault/domain/transactions.ts: OK
+apps/edge/src/vault/files/attachments.ts: OK
+apps/edge/test/workers/support/files.ts: OK
+== Step 1.1 and 1.2
+e5c8fbddad0dee05483bd3b6798ad8af9ba1590f2214524482ef36f3a60c63a7  apps/edge/test/workers/transaction-source.test.ts
+e40e241d96d673725808bce8a31be8042bbe3e19ac1c4679f3fb97dc8c1309a1  apps/app/src/storage/diaryRepository.test.ts
+== Step 1.4
+rc=0
+compared
+== Step 2
+typecheck:edge rc=0
+typecheck:app rc=0
+== Step 3
+rc=0
+compared
+== Step 4
+locked
+exit 0; unlocked
+rc=0
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+rc=0
+ℹ tests 25
+ℹ pass 25
+ℹ fail 0
+== Step 5
+rc=0
+compared
+== Step 6.1
+typecheck:edge rc=0
+typecheck:app rc=0
+== Step 6.2
+locked
+exit 0; unlocked
+rc=0
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+rc=0
+ℹ tests 25
+ℹ pass 25
+ℹ fail 0
+== Step 6.3
+test:edge rc=0
+      Tests  214 passed (214)
+== Step 6.4
+test:app rc=0
+ℹ fail 0
+test:unit rc=0
+ℹ fail 0
+== Every file of dry/ the brief touches, against real/ and the head
+same as real/: transaction-source.test.ts
+same as real/: diaryRepository.test.ts
+source after the run: 5dd5a837a43813dd41e9c862afa7c972199960e7919530d4d61d188d31a912f6  apps/app/src/storage/diaryRepository.ts
+source after the run: 8e84def1ff09a27594eb7c0cbe063390f70e614e7fd70dfe27ea616f540b7261  apps/edge/src/vault/domain/transactions.ts
+source after the run: bdf28fbc6737d4d43206b81b61119d52d59c3d0e671797ec676e349dfba683d1  apps/edge/src/vault/files/attachments.ts
+== done

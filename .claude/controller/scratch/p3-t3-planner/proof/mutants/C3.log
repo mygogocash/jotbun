@@ -1,0 +1,64 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config whose published_at is not a date is malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry 1ms
+ ✓ test/workers/config.test.ts > an absent config leaves gates open and policies unpublished 1ms
+ ✓ test/workers/config.test.ts > client minimums missing from both config and env answer 503 with a retry, never 426 0ms
+ ✓ test/workers/config.test.ts > a config whose published_at is not a date is malformed 0ms
+ ✓ test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too 0ms
+ ✓ test/workers/config.test.ts > GET /v1/policies answers the published policies from KV 10ms
+ ✓ test/workers/config.test.ts > a config that pauses ai is read, not malformed 1ms
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses ai too 0ms
+ × test/workers/config.test.ts > an unknown scope still fails the config closed 3ms
+   → expected { Object (error) } to not have property "error"
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/config.test.ts > an unknown scope still fails the config closed
+AssertionError: expected { Object (error) } to not have property "error"
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: unknown gate scope nope"
+
+ ❯ configFor test/workers/config.test.ts:17:20
+     15|     (error: unknown) => ({ error: String(error) }),
+     16|   )
+     17|   expect(read).not.toHaveProperty('error')
+       |                    ^
+     18|   return (read as { config: EdgeConfig }).config
+     19| }
+ ❯ test/workers/config.test.ts:121:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  08:24:09
+   Duration  3.70s (transform 1.60s, setup 2.97s, import 38ms, tests 17ms, environment 0ms)
+

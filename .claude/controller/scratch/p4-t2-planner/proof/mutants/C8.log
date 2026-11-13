@@ -1,0 +1,69 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 3ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 11ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 10ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 2ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 3ms
+   → expected 3600001 to be 3600000 // Object.is equality
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 1ms
+   → expected [ Array(1) ] to deeply equal [ …(2) ]
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own
+AssertionError: expected 3600001 to be 3600000 // Object.is equality
+
+- Expected
++ Received
+
+- 3600000
++ 3600001
+
+ ❯ test/workers/catalog.test.ts:217:30
+    215| describe('merchant patterns (S3, A30)', () => {
+    216|   it('merchant patterns are read once an hour per isolate, and each ca…
+    217|     expect(MERCHANTS_TTL_MS).toBe(3_600_000)
+       |                              ^
+    218|     const counted = countedCatalog()
+    219|     expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT), co…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "{\"level\":\"error\",\"event\":\"catalog_merchants_failed\",\"failure\":\"Error\"}",
+    ],
+-   [
+-     "{\"level\":\"error\",\"event\":\"catalog_merchants_failed\",\"failure\":\"Error\"}",
+-   ],
+  ]
+
+ ❯ test/workers/catalog.test.ts:250:33
+    248|       expect(await merchantPatterns({ CATALOG_DB: never }, AT)).toEqua…
+    249|       const line = JSON.stringify({ level: 'error', event: 'catalog_me…
+    250|       expect(errors.mock.calls).toEqual([[line], [line]])
+       |                                 ^
+    251|       // The failed read was not kept as a read: once the catalog answ…
+    252|       down = false
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  19:50:08
+   Duration  2.52s (transform 927ms, setup 1.90s, import 14ms, tests 34ms, environment 0ms)
+

@@ -1,0 +1,147 @@
+## step 0 RUN: mkdir -p S
+## exit 0
+## step 0 SKIP: /usr/bin/git -C WT fetch origin claude/p1a-vault-core
+## step 0 SKIP: /usr/bin/git -C WT merge --no-edit origin/claude/p1a-vault-core
+## step 0 SKIP: /usr/bin/git -C WT log --oneline -1 --grep "Merge pull request #454"
+## step 0 SKIP: /usr/bin/git -C WT rev-parse --short HEAD
+## step 0 RUN: cd PL && shasum -a 256 -c SHA256SUMS > S/kit-sums.log 2>&1; rc=$?; echo "rc=$rc"; grep -c ': OK$' S/kit-sums.log
+## exit 0
+rc=0
+75
+## step 0 RUN: cd WT && shasum -a 256 -c PL/base-check.sha256
+## exit 0
+packages/contracts/src/v1/ai.ts: OK
+packages/contracts/src/index.ts: OK
+apps/edge/src/server/ai/drafts.ts: OK
+apps/edge/src/v1/ai/service.ts: OK
+apps/edge/src/v1/ai/slip-read.ts: OK
+apps/edge/src/v1/ai/uses.ts: OK
+apps/edge/src/vault/ai.ts: OK
+apps/edge/test/workers/ai.test.ts: OK
+apps/edge/test/workers/ai-uses.test.ts: OK
+apps/edge/test/workers/slip-read.test.ts: OK
+apps/edge/test/ai-grounding.test.ts: OK
+apps/app/src/spend/v1/ai/aiResources.ts: OK
+apps/app/src/spend/v1/ai/aiResources.test.ts: OK
+apps/app/src/dev/catalogue/companion/companionSections.tsx: OK
+apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx: OK
+docs/implementation/receipts/P3-T8.md: OK
+## step 0 RUN: cd WT && for f in $(cat PL/base-absent.txt); do test -e "$f" && echo "EXISTS $f"; done; echo checked
+## exit 0
+checked
+## step 0 RUN: cd WT && { test -d node_modules || npm ci --ignore-scripts --no-audit --no-fund; }
+## exit 0
+## step 0 RUN: cd WT && { test -d apps/edge/node_modules || npm run install:edge; }
+## exit 0
+## step 0 SKIP: cd WT && npm run typecheck > S/typecheck-0-root.log 2>&1 && npm run typecheck:app > S/typecheck-0-app.log 2>&1 && npm run typecheck:edge > S/typecheck-0-edge.log 2>&1; echo "rc=$?"
+## step 1 RUN: PL/place.sh red WT
+## exit 0
+red: real/packages/contracts/src/v1/ai.ts
+red: real/packages/contracts/src/index.ts
+red: stubs/apps/edge/src/server/ai/drafts.ts
+red: stubs/apps/edge/src/v1/ai/ask.ts
+red: real/apps/edge/src/v1/ai/service.ts
+red: orig/apps/edge/src/v1/ai/slip-read.ts
+red: orig/apps/edge/src/v1/ai/uses.ts
+red: stubs/apps/edge/src/vault/ai.ts
+red: real/apps/edge/test/workers/ask-escalation.test.ts
+red: real/apps/edge/test/ask-deadline.test.ts
+red: real/apps/edge/test/workers/ai.test.ts
+red: real/apps/edge/test/workers/ai-uses.test.ts
+red: real/apps/edge/test/workers/slip-read.test.ts
+red: real/apps/edge/test/ai-grounding.test.ts
+red: orig/apps/app/src/spend/v1/ai/aiResources.ts
+red: real/apps/app/src/spend/v1/ai/aiResources.test.ts
+red: real/apps/app/src/dev/catalogue/companion/companionSections.tsx
+red: real/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+red: 18 files placed
+## step 2 RUN: cd WT && npm run typecheck > S/red-typecheck-root.log 2>&1 && npm run typecheck:app > S/red-typecheck-app.log 2>&1 && npm run typecheck:edge > S/red-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 3 RUN: cd WT/apps/app && node scripts/test-unit.mjs src/spend/v1/ai/aiResources.test.ts > S/red-node-app.log 2>&1; echo "rc=$?"; grep -E "^ℹ (tests|pass|fail) " S/red-node-app.log; grep -c "AssertionError \[ERR_ASSERTION\]" S/red-node-app.log
+## exit 0
+rc=1
+ℹ tests 4
+ℹ pass 1
+ℹ fail 3
+3
+## step 3 RUN: cd WT/apps/edge && npx vitest run --reporter=verbose test/ask-deadline.test.ts test/ai-grounding.test.ts > S/red-node-edge.log 2>&1; echo "rc=$?"; grep -E "Tests  " S/red-node-edge.log; grep -oE "^[A-Za-z]+Error: " S/red-node-edge.log | sort -u
+## exit 0
+rc=1
+      Tests  6 failed | 40 passed (46)
+AssertionError: 
+## step 3 RUN: grep -E "^ +× " S/red-node-edge.log | sed 's/ [0-9]*ms$//' | sed 's/^ *× test\///' | LC_ALL=C sort | diff - PL/proof/red-failing-node.txt && echo "the 6 failing cases match"
+## exit 0
+the 6 failing cases match
+## step 3 RUN: PL/locked.sh S/red-workers.log WT/apps/edge npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/ask-escalation.test.ts test/workers/ai-uses.test.ts test/workers/ai.test.ts test/workers/ai-routing.test.ts test/workers/slip-read.test.ts; rc=$?; echo "rc=$rc"
+## exit 0
+locked
+exit 1; unlocked
+rc=1
+## step 3 RUN: grep -E "Tests  " S/red-workers.log; grep -oE "^[A-Za-z]+Error: " S/red-workers.log | sort -u
+## exit 0
+      Tests  26 failed | 100 passed (126)
+AssertionError: 
+## step 3 RUN: grep -E "^ +× " S/red-workers.log | sed 's/ [0-9]*ms$//' | sed 's/^ *× test\/workers\///' | LC_ALL=C sort | diff - PL/proof/red-failing.txt && echo "the 26 failing cases match"
+## exit 0
+the 26 failing cases match
+## step 4 RUN: PL/place.sh green WT
+## exit 0
+green: real/packages/contracts/src/v1/ai.ts
+green: real/packages/contracts/src/index.ts
+green: real/apps/edge/src/server/ai/drafts.ts
+green: real/apps/edge/src/v1/ai/ask.ts
+green: real/apps/edge/src/v1/ai/service.ts
+green: real/apps/edge/src/v1/ai/slip-read.ts
+green: real/apps/edge/src/v1/ai/uses.ts
+green: real/apps/edge/src/vault/ai.ts
+green: real/apps/edge/test/workers/ask-escalation.test.ts
+green: real/apps/edge/test/ask-deadline.test.ts
+green: real/apps/edge/test/workers/ai.test.ts
+green: real/apps/edge/test/workers/ai-uses.test.ts
+green: real/apps/edge/test/workers/slip-read.test.ts
+green: real/apps/edge/test/ai-grounding.test.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.ts
+green: real/apps/app/src/spend/v1/ai/aiResources.test.ts
+green: real/apps/app/src/dev/catalogue/companion/companionSections.tsx
+green: real/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+green: 18 files placed
+## step 5 RUN: cd WT && npm run typecheck > S/green-typecheck-root.log 2>&1 && npm run typecheck:app > S/green-typecheck-app.log 2>&1 && npm run typecheck:edge > S/green-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 5 RUN: cd WT/apps/app && node scripts/test-unit.mjs src/spend/v1/ai/aiResources.test.ts > S/green-node-app.log 2>&1; echo "rc=$?"; grep -E "^ℹ (tests|pass|fail) " S/green-node-app.log
+## exit 0
+rc=0
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0
+## step 5 RUN: cd WT/apps/edge && npx vitest run --reporter=verbose test/ask-deadline.test.ts test/ai-grounding.test.ts > S/green-node-edge.log 2>&1; echo "rc=$?"; grep -E "Test Files|Tests  " S/green-node-edge.log
+## exit 0
+rc=0
+ Test Files  2 passed (2)
+      Tests  46 passed (46)
+## step 5 RUN: PL/locked.sh S/green-workers.log WT/apps/edge npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/ask-escalation.test.ts test/workers/ai-uses.test.ts test/workers/ai.test.ts test/workers/ai-routing.test.ts test/workers/slip-read.test.ts; rc=$?; echo "rc=$rc"; grep -E "Test Files|Tests  " S/green-workers.log
+## exit 0
+locked
+exit 0; unlocked
+rc=0
+ Test Files  5 passed (5)
+      Tests  126 passed (126)
+## step 6 RUN: cd WT/apps/app && npx vitest run --config vitest.render.config.ts src/screens/redesign/ai/TellBunSheet.render.test.tsx src/screens/redesign/ai/AskBunScreen.render.test.tsx src/screens/redesign/ai/BunNote.render.test.tsx src/screens/redesign/account/CompanionSettings.render.test.tsx src/screens/redesign/insights/CashbackCard.render.test.tsx src/analytics/AnalyticsUpkeep.render.test.tsx src/wallet/add/AmountStep.render.test.tsx src/wallet/add/AddTray.render.test.tsx src/wallet/testing/walletHarness.render.test.tsx src/wallet/recap/WalletRecap.render.test.tsx src/wallet/bunai/WalletAiSettings.render.test.tsx src/wallet/bunai/AiConsent.render.test.tsx > S/gate-render-ai.log 2>&1; echo "rc=$?"; grep -E "Test Files|Tests  " S/gate-render-ai.log
+## exit 0
+rc=0
+ Test Files  12 passed (12)
+      Tests  130 passed (130)
+## step 6 RUN: cd WT/apps/app && npx vitest run --config vitest.render.config.ts src/screens/redesign/SpendRoutes.render.test.tsx src/screens/redesign/account/AccountRoutes.render.test.tsx src/screens/redesign/insights/InsightsRoutes.render.test.tsx src/screens/redesign/planning/PlanningRoutes.render.test.tsx > S/gate-routes.log 2>&1; echo "routes rc=$?"; grep -E "Test Files|Tests  " S/gate-routes.log
+## exit 0
+routes rc=0
+ Test Files  4 passed (4)
+      Tests  17 passed (17)
+## step 8 RUN: PL/place.sh receipt WT
+## exit 0
+receipt: real/docs/implementation/receipts/P3-T8.md
+receipt: real/docs/implementation/receipts/P3-T9.md
+receipt: 2 files placed
+## step 9 RUN: cd PL && for f in $(grep -v '^#' files.txt | awk '{print $3}'); do cmp -s "real/$f" "WT/$f" || echo "DIFFERS $f"; done; echo compared
+## exit 0
+compared

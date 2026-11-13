@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 62ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 44ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 39ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 37ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 30ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 30ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 35ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 37ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 28ms
+ × test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed 51ms
+   → expected { …(10) } to match object { deleted_at: null, version: 3, …(1) }
+(8 matching properties omitted from actual)
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed 65ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed
+AssertionError: expected { …(10) } to match object { deleted_at: null, version: 3, …(1) }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "deleted_at": null,
+-   "source": "tell_bun",
+    "version": 3,
+  }
+
+ ❯ test/workers/transaction-source.test.ts:234:39
+    232|     expect(await json(await client.as(s.user).del(`/v1/transactions/${…
+    233|     expect(await json(await client.as(s.user).post(`/v1/transactions/$…
+    234|     expect(await record(s, lunch.id)).toMatchObject({ deleted_at: null…
+       |                                       ^
+    235|     expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snaps…
+    236|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  19:46:27
+   Duration  3.97s (transform 1.40s, setup 2.82s, import 51ms, tests 459ms, environment 0ms)
+

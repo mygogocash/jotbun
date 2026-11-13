@@ -1,0 +1,90 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 135ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 888ms
+ × src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 38ms
+   → th light: the bar: expected [ 'status', 'polite', …(1) ] to deeply equal [ 'status', 'polite', …(1) ]
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 168ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 1515ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 147ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 211ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 157ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 244ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 71ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 69ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 61ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 83ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 37ms
+ × src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 4ms
+   → th light: expected [ 'status', 'polite', …(1) ] to deeply equal [ 'status', 'polite', …(1) ]
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 5ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 6ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 93ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 19ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 48ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 24ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 363ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 35ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 62ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 525ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 23 passed (25)
+   Start at  08:13:01
+   Duration  8.52s (transform 2.14s, setup 142ms, import 2.80s, tests 5.01s, environment 380ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+(node:82078) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned
+AssertionError: th light: the bar: expected [ 'status', 'polite', …(1) ] to deeply equal [ 'status', 'polite', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "status",
+    "polite",
+-   "rgba(17, 16, 20, 1.00)",
++   "rgba(255, 255, 255, 1.00)",
+  ]
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:379:130
+    377|       tap(await findNamed('button', words.delete));
+    378|       const bar = await findFound('wallet-undo-bar');
+    379|       expect([bar.getAttribute('role'), bar.getAttribute('aria-live'),…
+       |                                                                                                                                  ^
+    380|       expect(shown(words.deletedBar, bar).style.color, `${locale} ${mo…
+    381|       expect(fake.callsOf('deleteTransaction'), `${locale} ${mode}: on…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs
+AssertionError: th light: expected [ 'status', 'polite', …(1) ] to deeply equal [ 'status', 'polite', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "status",
+    "polite",
+-   "rgba(17, 16, 20, 1.00)",
++   "rgba(255, 255, 255, 1.00)",
+  ]
+
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:704:121
+    702|       await settle();
+    703|       const bar = found('wallet-undo-bar');
+    704|       expect([bar.getAttribute('role'), bar.getAttribute('aria-live'),…
+       |                                                                                                                         ^
+    705|       const undo = named('button', words.undo, bar);
+    706|       expect(undo.style.minHeight, `${locale} ${mode}: 44 pt`).toBe('4…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

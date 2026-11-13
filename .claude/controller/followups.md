@@ -124,7 +124,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - Also in it, from the same review:
     - n-1: `handler.ts:129` and `:147` return `headOf(...)` inside a `try` without `await`, so a future rejection would skip the error handler;
     - n-2: the HEAD case's byte counter is shared across its four HEADs, so per-HEAD regressions after the first go unseen.
-  - **And from 1B-T9's review (reviews/1B-T9.md).** Its ready probes are in `scratch/1b-t9-review/tree/apps/edge/test/workers/zz-review-probes.test.ts`: 16 cases, all passing on a3493f4, with the reviewer's mutants in `own-mutants/`.
+  - **And from 1B-T9's review (reviews/1B-T9.md).** Its ready probes are in `scratch/1b-t9-review/tree/apps/edge/test/workers/zz-review-probes.test.ts` (lost in the controller's 13 Nov scratch cleanup, written by an Antigravity reviewer whose transcript is not kept; rebuild the cases from reviews/1B-T9.md): 16 cases, all passing on a3493f4, with the reviewer's mutants in `own-mutants/`.
     - **m-1 (security, test only):** nothing pins that the prepare step checks session and policy (`src/v1/routes.ts:135`). Without that check, a signed-out, policy-pending or deleting account reserves and copies before it is refused, and a deleting account's copy could outlive the purge. Probes AC-1 to AC-3.
     - **m-2:** the receipt HEAD test does not count bytes per HEAD (probe HD-1).
     - **m-3:** neither guard in `attachmentsDueAt` is pinned (`attachments.ts:368-369`); probes DU-1 and DU-2. Without "object gone", the alarm loops on a past due time (against R37); without the safety-net check, an unheld receipt is never scheduled.
@@ -348,7 +348,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - wallet-looks-unstored (#391, merged 76b329c on 10 Nov, no task issue; review in reviews/wallet-looks-unstored.md, a Sonnet workflow, Approved with one minor and five nits; probes in scratch/wallet-looks-unstored-review/). D8 stays unfixed by design (P6).
   - **wallet-looks-pins (a test-only follow-up; no task waits on it):**
     - m1: no committed case has two changes in flight while an earlier one is unstored. Hoisting `const earlier = unstored.current.get(accountId) ?? []` (`WalletLooksProvider.tsx:137`) out of the queued step therefore survives (mutant OM1).
-      - Add the reviewer's PE, PE2 and PF to `WalletLooks.render.test.tsx`, on that file's own helpers. They are in `scratch/wallet-looks-unstored-review/src/apps/app/src/wallet/looks/ReviewProbes.render.test.tsx`, lines 283, 298 and 314.
+      - Add the reviewer's PE, PE2 and PF to `WalletLooks.render.test.tsx`, on that file's own helpers. They are in `scratch/wallet-looks-unstored-review/src/apps/app/src/wallet/looks/ReviewProbes.render.test.tsx` (lost in the controller's 13 Nov scratch cleanup, written by an Antigravity reviewer whose transcript is not kept; rebuild the cases from reviews/wallet-looks-unstored.md), lines 283, 298 and 314.
       - PF needs `storeOver` to fail writes by attempt number.
     - Optional, n2: brief P7's "if the first read has not landed yet, they show at once" is unpinned (OM9; the difference is transient only).
   - **P2-T20 and P2-T21 (n3):** the memory holds the caller's look object and ids array by reference (`WalletLooksProvider.tsx:134`, `:147`, `:148`). A caller that mutates them after the call changes later reads (case PM). Pass a fresh object or array per call, or copy in the setter.
@@ -480,7 +480,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
 - **P2-T23** (#409, merged as `f22c5a8` on 11 Nov; promoted as #413). Both reviews approved: Opus (`reviews/P2-T23.md`) and Flash (`reviews/P2-T23-second.md`).
   - **m1, ruled R108 (the controller, 11 Nov), for P2-T24:** the front card's "today" counts today's confirmed expenses **plus today's waiting expense drafts, once**, using P2-T16's `todayOutMinor` definition ("the confirmed total plus open expense drafts dated today whose id is not confirmed").
     - Why: the approved board (rh-offline: −฿97, "วันนี้ใช้ไป 97 บาท"), P2-T12's card spec (plan line 796) and P2-T16's toast all count the draft. Plan line 1240's "confirmed only" is the outlier, and the budget card already counts the ฿50.
-    - P2-T24 edits `homeWallets.ts` anyway (the `frontFirst` swap). It changes `spentByWallet`, flips `homeWallets.test.ts:91-108`'s case, and re-aims mutant H17. The reviewer's probe is `scratch/p2-t23-review/tree/apps/app/src/wallet/home/zzprobe/rhOffline.probe.test.ts`.
+    - P2-T24 edits `homeWallets.ts` anyway (the `frontFirst` swap). It changes `spentByWallet`, flips `homeWallets.test.ts:91-108`'s case, and re-aims mutant H17. The reviewer's probe is `scratch/p2-t23-review/tree/apps/app/src/wallet/home/zzprobe/rhOffline.probe.test.ts` (lost in the controller's 13 Nov scratch cleanup, written by an Antigravity reviewer whose transcript is not kept; rebuild the cases from reviews/P2-T23.md).
   - m2 (the receipt's `TODAY_PAGES` 50, really 20) is fixed in `7c2682b5`.
   - **Nits:**
     - n1: the receipt's gate and mutant lines drift from the template;
@@ -539,7 +539,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - `limits.cpu_ms` 120000 now covers the unauthenticated `/api/auth/*`, `/ingest/*` and the pages, which needs a rate-limit or WAF decision.
   - **1C-T10a and 1C-T10b:** pin that `AUTH_ISSUER` and `AUTH_AUDIENCE` stay one setting for Better Auth and the vault.
   - **Later tasks on the deployed path:**
-    - the workers suite runs `src/vault-worker.ts`'s fetch, not TanStack Start's. Anything that must hold on the deployed path (the `/api/auth` dispatch, method handling, CORS preflight) needs a built-Worker case. The template is `scratch/1b-t13-second/tree/apps/edge/test/zz-c1-probe.db.test.ts`.
+    - the workers suite runs `src/vault-worker.ts`'s fetch, not TanStack Start's. Anything that must hold on the deployed path (the `/api/auth` dispatch, method handling, CORS preflight) needs a built-Worker case. The template is `scratch/1b-t13-second/probes/zz-c1-probe.db.test.ts`.
     - cleanup: `src/server/env.ts`'s `EdgeSettings` still lists `AUTH0_*`, `RATE_LIMIT_KEY` and `OPERATIONAL_PAUSE*`, which nothing reads now (with the receipt's P16 to P18 leftovers).
 - 1B-T12's confirming review (reviews/1B-T12-confirm.md, Approved on 317cf3a; no minor, six nits):
   - **The merge order (confirm-n6):** #398 (alarm-hardening) edits vault files the 42-step session reaches: `previews.ts`, `attachments.ts`, `jobs.ts`, `user-vault.ts`, `schema.ts` and migration 0004. #396 edits `src/v1/files` and `handler.ts`. Read the `edge` job's `test:edge:db` of whichever of #394, #396 and #398 merges last, on a head that holds all three.
@@ -585,7 +585,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **R111 (controller ruling, 12 Nov) for m1, carried by P2-T24.** The held line (`เงินที่มี … · หักบัตรเครดิตที่ใช้ไป …`) shows only when it reconciles: `BigInt(heldMinor) - BigInt(creditUsedMinor) === BigInt(totalMinor)`.
     - So a non-card wallet below zero beside a card that has spent hides the line, for P7's own reason: a line must not say more than the total without saying why.
     - Add the review's probe PC as a case. The owner can overrule at E2-B.
-  - **P2-T24 (or the next task that edits `WalletsList.render.test.tsx`): add the review's pins.** The ready-made cases are in `scratch/p2-t20-review/tree/apps/app/src/zzreview/P2T20Review.render.test.tsx`:
+  - **P2-T24 (or the next task that edits `WalletsList.render.test.tsx`): add the review's pins.** The ready-made cases are in `scratch/p2-t20-review/probes/P2T20Review.render.test.tsx`:
     - PA: no effect seeds `setOrder`, and one write per press (n4, n5). It kills X1 and X2.
     - PB: the route mounts no second looks provider. It kills X3.
     - PF: Thai names sort by `localeCompare`. It kills X7.
@@ -730,7 +730,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - A 0.3.0 build cut before P5-T18a and T18b accepts foreign-currency records but shows wrong wallet balances (`recomputeTotals` adds `amount_minor` as the wallet's money). `app.json` stays 0.3.0 through the app's currency work, so the version cannot tell those builds apart.
   - Before the phase 5 server serves phones: gate its first build on the app lane through P5-T18a, T18b, T18d and T21, or bump the app's minor version after them (P6B-T10's 0.4.0 does this only if it lands after P5-T18e) and raise the server minimum to it.
   - P6C's seed tests check only that the minimum is at or above every contract floor, which 0.3.0 passes.
-- P3-T7 (#435, merged 12 Nov as bfce84e at 088b346a; promotion #438). The reviews are `reviews/P3-T7.md` (Opus, approved: m1, m2, n1) and `reviews/P3-T7-second.md` (Sonnet, approved: m1 to m3, n1, n2). No blocker or major; a person cannot abort a model call (only the transport's own deadline and the SDK's timer can). Probes are in `scratch/p3-t7-review/` and `scratch/p3-t7-second/tree2/apps/edge/test/workers/probe-refund.test.ts` (PA to PK). Carried:
+- P3-T7 (#435, merged 12 Nov as bfce84e at 088b346a; promotion #438). The reviews are `reviews/P3-T7.md` (Opus, approved: m1, m2, n1) and `reviews/P3-T7-second.md` (Sonnet, approved: m1 to m3, n1, n2). No blocker or major; a person cannot abort a model call (only the transport's own deadline and the SDK's timer can). Probes are in `scratch/p3-t7-review/` and `scratch/p3-t7-second/probes/probe-refund.test.ts` (PA to PK). Carried:
   - **P3-T8 (must carry):**
     - Land "one request refunds once" first or with it (second review's m1: mutant M6, `giveBack` refunding twice, survives because every case runs against an empty row). Copy probe PB: seed the row with 5 uses, fail one request on each route, expect 5 and exactly one `ai.refund` call per route.
     - Call `giveBack(s, use, trace)` on `SlipNotRead` before the 503 (the receipt says so). With `HAIKU_SLIP_CAP_MS` (20 s), a Haiku slip read past its cap is a refundable timeout after a billed call; say so in that receipt's risk note.
@@ -829,3 +829,104 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - Take the home currency from the synced settings, adopt a 409's `current`, and write no local copy before the acknowledgement.
     - A `TIMEOUT` (outcome `network`) may still commit. Resend with the same command id, or read `commandStatus([id])`, before offering a retry. Read a `VERSION_CONFLICT` whose `current.home_currency` equals the ask as done.
     - After a commit `pruned_through` moves, so resync before showing any home amount (Sonnet N2).
+- P2-T17 (#451, merged 13 Nov as 9cdc1f8 at fa09a9c0; promotion #453). The reviews are `reviews/P2-T17.md` (Opus, approved: m1, m2, n1 to n5) and `reviews/P2-T17-second.md` (Sonnet, approved: m1 to m3, n1 to n5). Both found the same two minors. The probes are copied out of the review trees:
+  - `scratch/p2-t17-review/probes/SavedReview.render.test.tsx` (R1 to R6, PV1, F1; logs `probes-final.log`, `probes-fix.log`);
+  - `scratch/p2-t17-second/probes/Probe.render.test.tsx` and `probe-final.render.test.tsx`;
+  - the Sonnet prototype fix, `scratch/p2-t17-second/probes/m1-prototype-fix.diff`.
+
+  Carried:
+  - **P2-T18 (the wallet shell), must carry as its first step, before it mounts `SavedToastHost`.** The host is mounted nowhere but the catalogue until then.
+    - **m1, today's total (both reviews).**
+      - *Race A, an undercount:* the draft is sent, acknowledged and reconciled after the vault read the page but before the toast handles it. It is then in neither the page nor the outbox (Opus R1, Sonnet "undercount").
+      - *Fix A:* when the read lands, leave the total unknown if the open diary has applied past the page's revision (`now.phase === 'ready' && BigInt(now.appliedRevision) > BigInt(page.as_of_revision)`). A diary no longer `ready` at landing counts as unknown too.
+      - *Race B, an overcount:* an `acknowledged` command whose record was committed and then deleted is unlisted, so it is counted (Sonnet "overcount").
+      - *Fix B:* skip an `acknowledged` command whose `ackedRevision` is at or before the read's `as_of_revision`, passing `readRevision` as an optional input.
+      - *Pins:* R1's shape, and one mutant for each guard.
+    - **m2, private mode's iOS announcement (both reviews; R65):** the code is right but unpinned (mutant M1 / O50a survives). Add PV1: spy on `announceForAccessibility`, set iOS after the mount, and expect the hidden words with no digit or typed name in any announcement. P2-T37's sweep cannot see announcements.
+    - **Mounting:**
+      - inside `WalletRoot`'s `PrivateModeProvider`, since outside it `usePrivateMode()` answers `hidden: false`;
+      - with the host's box at the window's origin, since the chip aims with `measureInWindow`;
+      - the brief's P20 note (around `AddTrayHost`, inside `CardFramesProvider`, `noticeOf(..., tc)`).
+  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today):**
+    - the Bangkok day at the edge: a case at 00:30 Bangkok checks the read's `from` and `through` (Opus n2, Sonnet m2a; mutants M5 and O3a);
+    - the toast's `top: insets.top + 8` and `pointerEvents="box-none"`, and the chip's `pointerEvents="none"` (Sonnet m3: O1, O2, O5);
+    - where the chip starts (from the bottom centre) and its shrink and fade, with a phone-sized window in the flight's cases (Opus n1 M4, Sonnet n1 O7 to O10, O40);
+    - Sonnet n4: on iOS a total landing after 600 ms is announced as a second message, so "Saved" is heard twice;
+    - Sonnet n5: `busy` resets in `finally` before React draws the answer, so a second tap in that gap reruns the removal.
+  - **E2-B (copy and look), beside the brief's P19 list:**
+    - Opus n3: the chip draws income in ink, not violet (`WalletAmount` at 13 would do both, with the mask).
+    - Opus n4: bw-saved's chip shadow and dk-saved's `#3A3842` fill are missing.
+    - Opus n5 and Sonnet n2: Undo's refusal words speak of saving ("This entry could not be saved.").
+    - Sonnet n3: after an income or a move the toast still says today's money out.
+    - The undo bar's look: P2-T26's rh-undo pill against P2-T17's `toastLink` text link. The owner picks one.
+  - **Phase 5:** `todayOutMinor` adds a draft's `amount_minor` as baht. The page's `summary.currency` (P5-T2) and a draft's wallet currency must agree before they are added.
+- P4-T3 (#452, merged 13 Nov as a16a44d at 1eb4e5ed, after the controller's CI fix R122; promotion #455). The reviews are `reviews/P4-T3.md` (Opus, approved: m1, m2, n1 to n3) and `reviews/P4-T3-second.md` (Sonnet, approved: m1 to m5, n1 to n3). Both found R122 right and no other file pinning the vault's entity or route lists. The probes are copied out of the review trees: `scratch/p4-t3-review/probes/review-p4t3.test.ts`, and `scratch/p4-t3-second/probes/review-probes.test.ts` and `review-timing.test.ts`. Carried:
+  - **P5-T9 (`trip`) and P5-T13 (`settings`), must carry:**
+    - each registers a vault entity but its plan Files list does not name `test/workers/sync.test.ts`. Add the entity to that file's exact pin, and put `sync.test.ts` in the focused gate.
+    - The later of the two turns the `it.todo` into the full check against `Object.keys(SYNC_ENTITY_VALIDATORS)`.
+    - R122's comment and todo name only `trip`; fix the wording to name `settings` too (Opus n3, Sonnet m5).
+  - **P4-T6 (`writeSlip`) and P4-T7 (the slip commands), the next tasks to edit `slips-vault.test.ts` or `vault/slips/*`. Test-only pins; the code is right today:**
+    - **The release check (both reviews' m1/m2):** compare whole responses with a missing path's, minus `x-request-id` and `request_id`, not only `{ status, code }` (kills O8, a `retry_after` that would reveal the route).
+    - **The mapping writes one account:** add a second account and check it stays version 1 and unmapped (O5).
+    - **R41's order with two faults:** no If-Match plus an unknown field gives 422 on `if_match`; a non-UUID id plus an unknown field gives 404; stale plus `wallet_id: 'cash'` gives 422 on `wallet_id`; stale plus an archived wallet gives 409; an unknown account plus an unknown wallet gives 404 (O2 to O4). The probes hold each as a ready case.
+    - **`open_drafts`:** count a draft whose two sides are one account once (O1).
+    - **The salt:** pin that it is never logged or sent to analytics (Sonnet m2).
+    - **Nits:**
+      - Opus n1: the inbox head is read for any entity (O7), so edit a wallet twice first.
+      - Opus n2: try `TRUE` and ` true` for the release var (O9).
+      - Sonnet n1: `accounts.ts`'s `IF_MATCH` copies `apps/api`'s regex, so share one.
+      - Sonnet n2: `route-coverage`'s `wranglerVars()` duplicates `c1-shape`'s.
+  - **P4-T6:**
+    - `ensureSlipAccount`'s `ThaiBankKey` is a compile-time type only, and the bank `GLOB` checks only the first letter, so write only `sanitizeSlipImportRead`'s output (P4-T4).
+    - Two unlisted banks (`other`) with the same last four digits would share one slip account; that needs a planner ruling.
+  - **P4-T20 (sl-wallet-map):** mapping is a plain write without `Idempotency-Key`. Treat a 409 whose `current.wallet_id` is the wallet sent as done.
+  - **P4-T5:** add `GET /v1/slips/salt`, `GET /v1/slip-accounts`, `PUT /v1/slip-accounts/:id` and `SLIP_IMPORT_ENABLED` to `apps/edge/README.md` (ruling P15).
+  - **The first task that adds another `transactions` column:** loosen `slips-vault.test.ts`'s upgrade case, which pins the columns exactly, as P3-T2's was loosened (ruling P4).
+  - **Later, if slip accounts grow:** `listSlipAccounts` scans `slip_drafts` once per account (Sonnet n3).
+- P3-T8 (#454, merged 13 Nov as 02da8f6 at 53d24947; promotion #458). The reviews are `reviews/P3-T8.md` (Opus, approved: m1 to m3, n1 to n3) and `reviews/P3-T8-second.md` (Sonnet, approved: m1, m2, n1 to n3). The probes are copied out of the review trees: `scratch/p3-t8-review/probes/review-probes.test.ts`, and `scratch/p3-t8-second/probes/probe-t8-second.test.ts` and `probe-fuzz.test.ts`, with the fuzz result in `scratch/p3-t8-second/fuzz-result.json`. Carried:
+  - **P3-T9 (planning now on P3-T8's `real/`), must carry:**
+    - **Sonnet m1, a real defect, older than this task:** a model date that is not a calendar date throws.
+      - Which dates: `2026-10-32`, `2026-13-05`, `2026-00-10`, `0000-00-00` and `9999-99-99`. `isRealDate` (`server/ai/drafts.ts:30`) calls `toISOString()` and throws `RangeError`.
+      - What happens: `readOnce` (`slip-read.ts:158`) calls `sanitizeDrafts` outside any try, so the read answers 503 `AI_PAUSED` with the use spent, and D25's "implausible date" never reaches Opus.
+      - The fix: wrap `sanitizeDrafts` in `readOnce` so a throw is `{ kind: 'unusable' }` and Opus re-reads, and give `isRealDate` a `Number.isNaN(date.getTime())` guard. `parse` shares it, and would then keep the model's draft with `date_guessed`.
+      - The cases: a Haiku date of `2026-10-32` and one of `0000-00-00` are re-read by Opus.
+    - **Opus m1 / Sonnet MO2, money path:** an unusable or draftless Haiku answer followed by an Opus outage gives the use back, and today only the decline row is pinned. Add rows for a non-JSON answer, a draftless answer and an `unreadable` answer, each with `apiFailure(529)`: 503, two calls, `remaining.slip` 10.
+    - **R116's slip row (Sonnet note 1, probe PC2):** Haiku declines and Opus is never started, so `shouldRefund` is true today. Add it to R116's pin (PR4), and revisit the receipt's "unchanged on purpose" (`receipts/P3-T8.md:36`).
+    - **`choices` lives twice** (`service.ts:318-323`, `slip-read.ts:164-169`). P3-T9 edits `service.ts`, so move it to one module with one pin, holding the archived filters (Opus m3, Sonnet MB1 and MB2; probe PD).
+  - **P3-T9, or P4-T4 if P3-T9 does not touch `slip-read.ts` (test pins; the code is right today):**
+    - Opus m2 / Sonnet MC: an Opus answer with no draft does not replace Haiku's draft or its bank (probe PA / PM).
+    - Sonnet MJ: a whole answer of `null`, `[]` or `"hello"` goes to Opus (probe PL).
+    - Opus n1 / Sonnet MO3: the image's media type reaches both calls; a JPEG is a phone's camera photo (probe PC / PQ).
+    - Opus n2 / Sonnet MA: `tokens` count this read's calls only (`first`; probe PE / PB).
+    - Sonnet n1: `tokens` trusts the API's usage, and a usage without `input_tokens` gives NaN (probe PJ).
+  - **Housekeeping (next receipt or `service.ts` touch):**
+    - Sonnet n2: `service.ts:46-51`'s "every call is Haiku 5.5's" should name parse, the note and Ask Bun.
+    - Opus n3 / Sonnet n3: the receipt's risk note names one of two refund-after-billing paths. The second is an unusable Haiku answer followed by an Opus call that times out after it was sent.
+  - **P4-T4 (import mode) and P3-T22:**
+    - `date_guessed` also fires for a real date older than `sanitizeDrafts`' 90-day window, so an old genuine slip is read twice for nothing (probe PK). P4-T4's backfill needs a wider window or no date trigger for old dates.
+    - P3-T22 counts the escalations whose result still carries `date_guessed`, Haiku's latency against the 20 s cap, the escalation rate, and that a photo that is not a slip costs two calls.
+    - P4's per-slip deadline must leave Opus at least 2 s after Haiku's 20 s cap.
+  - **P3-T10 (logs):** a model failure inside a read that is then shown leaves no `ai_fallback` line now (an Opus failure or refusal, or a Haiku refusal that Opus then reads). Only the trace keeps it, so `$ai_generation` is where an Opus 429 or a refusal rate shows. A floor-skipped Opus call is recorded `sent: false, escalated: true, latencyMs: 0`; do not emit it as a model call. `RecordedCall.model` is the response's model.
+  - **P3-T17:** decide what the tray shows from `kind` and `drafts`, not `declined`: `declined: true` can come with Opus's drafts. `kind` is the model's word about the image, so do not read it as a check on what the image is.
+  - **P6C and P3-T22:** watch the `rejected` rate on `/v1/ai/slip` after an escalation. A systematic 400 on Opus (the fallback beta) would spend a use on every escalated read.
+- P3-T3 (#457, merged 13 Nov as ab350e4 at 2c642055; promotion #459). The reviews are `reviews/P3-T3.md` (Opus, approved: n1) and `reviews/P3-T3-second.md` (Sonnet, approved: n1 to n5), with no blocker, major or minor. Both found that the 503 before the token reveals only the service's state. The probes are `scratch/p3-t3-review/probes/zz-review-probe.test.ts` and `scratch/p3-t3-second/probes/zz-second-probe.test.ts`. Carried:
+  - **P4-T6 (the slips route):**
+    - add `'slips.read'` to `MODEL_ROUTE_WORKERS` and to the coverage case's first list;
+    - carry `gates: ['ai', 'imports']`, with `ai` first so `AI_PAUSED` answers when both are paused, and pin whichever code P4's plan wants;
+    - keep the release check (404) before the gates.
+    - `MODEL_ROUTE_WORKERS` is kept by hand: a model route in neither list passes the coverage case (Sonnet n2).
+  - **The next task that edits `ai-gate.test.ts` (test-only pins):**
+    - a model route under a fail-closed config answers `AI_PAUSED` with 30 (Opus n1, probe B's second case);
+    - a person can switch Bun off by name while `ai` is paused or the config is unreadable (Sonnet n1).
+  - **P3-T24 (the notice bump):** `ai-gate.test.ts:40` and `:77` hard-code `notice_version: 1`, as do `ai.test.ts`, `ai-uses.test.ts` and `ai-routing.test.ts`.
+  - **App tasks that build Tell Bun, the slip read, the attach step and Ask Bun in the wallet look (P3-T14's followers, P3-T17, T20, T21, P6B-T15):**
+    - treat `companion && !available` as "Bun is resting", not as missing consent, as `WalletAiSettingsScreen` does; today the old sheets open the consent sheet for someone who already agreed.
+    - During a pause `BunNote` calls the note route for everyone and drops the failure, so the Home note is absent for all.
+  - **P6C and the runbook:**
+    - deploy this reader before any `config:v1` names `ai`, rolled out everywhere: with gradual deployments, wait for 100% (Sonnet n3, Opus note 2);
+    - put the deploy order beside `apps/edge/README.md:98`;
+    - a scope name outside `EDGE_GATE_SCOPES` (`"AI"`, `"ai "`) fails the whole config closed, so validate scope names in `kv-seed` (P6C-T6);
+    - a KV change can take 60 s or more to reach other locations.
+  - **Owner, Q5:** today the preferences PUT saves while `writes` is paused and while the config fails closed. If the owner gates the preferences, say whether `writes` covers the PUT.
+  - **A transport follow-up (`followups.md` line 303, not P3-T3's):** `transportFromEnv`'s `ANTHROPIC_BASE_URL` mapping has no pin (mutant O12 survives). Without it, model calls would skip AI Gateway (§6.7).
+  - **If a pause is ever used to shed load** (Sonnet n4): the body is read before the gate answers.

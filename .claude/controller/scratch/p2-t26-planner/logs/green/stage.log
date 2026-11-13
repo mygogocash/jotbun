@@ -1,0 +1,12 @@
+OK  real    apps/app/src/wallet/records/WalletRecordScreen.tsx 806a0647abe9
+OK  real    apps/app/src/wallet/records/RecordActionsTray.tsx 6a3105bcf323
+OK  real    apps/app/src/wallet/records/WalletUndoBar.tsx ec194ddced0c
+OK  real    apps/app/src/wallet/records/WalletRecord.render.test.tsx 75df33d229d2
+OK  real    apps/app/src/dev/catalogue/wallet/recordScreens.tsx 75d383e29023
+OK  real    apps/app/src/wallet/records/copy.ts 11e95b7a851b
+OK  real    apps/app/src/dev/catalogue/wallet/recordSections.tsx 0c7681c8aac0
+OK  real    apps/app/app/spend/record/[id].tsx 7a0b9cbba03a
+OK  real    apps/app/src/screens/redesign/SpendRoutes.render.test.tsx dd2aa2817ea3
+OK  real    apps/app/src/ui/dateStep.ts 8eb13abccdec
+OK  real    apps/app/src/ui/dateStep.test.ts 96e8c9cae5ea
+green: 11 files, 0 not as expected

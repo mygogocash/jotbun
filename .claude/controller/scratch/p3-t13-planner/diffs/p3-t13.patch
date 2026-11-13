@@ -1,0 +1,925 @@
+diff --git a/apps/app/src/screens/redesign/entry/entrySave.render.test.tsx b/apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+index 27cf331ef86fe25c0e6f5a9b3cda0eaf8fa46a02..c437efd42370ed0ead9e770bdfeee7c2573a43df 100644
+--- a/apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
++++ b/apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+@@ -1,5 +1,7 @@
+ // useEntrySave, probed without the Quick add screen: a fixed expense draft,
+-// the diary or the online command, and what the caller is told afterwards.
++// the diary or the online command, what the caller is told afterwards, and how
++// the entry was made (P3-T13): the source the create carries and record_saved's
++// photo flag.
+ // Then Quick add itself, for what the move must keep: a sum worked out the
+ // moment Save is pressed, and Tell Bun's often-logged chips.
+ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+@@ -16,7 +18,7 @@ vi.mock('expo-router', () => ({ useRouter: () => ({ push: () => undefined, repla
+ vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+ vi.mock('react-native-safe-area-context', () => import('../../../dev/catalogue/safeAreaTestStub'));
+ 
+-import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
++import type { TransactionDto, TransactionSource, WalletSnapshot } from '@gogospend/contracts';
+ import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import { haptics } from '@mobile/lib/haptics';
+ import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
+@@ -81,6 +83,7 @@ function Probe({
+   wallets,
+   keypad,
+   track,
++  source,
+   onSaved,
+   savedHaptic,
+   onAttempt,
+@@ -89,6 +92,7 @@ function Probe({
+   wallets: readonly WalletSnapshot[];
+   keypad: KeypadState;
+   track?: EntryTrack;
++  source?: TransactionSource;
+   onSaved?: (saved: SavedEntry) => void;
+   savedHaptic?: 'quickAdd' | 'success';
+   onAttempt?: (attempt: SaveAttempt) => void;
+@@ -102,7 +106,7 @@ function Probe({
+       <Pressable
+         accessibilityRole="button"
+         accessibilityLabel="Save entry"
+-        onPress={() => { void entrySave.save({ draft, keypad, wallets, track }).then(onAttempt); }}
++        onPress={() => { void entrySave.save({ draft, keypad, wallets, track, source }).then(onAttempt); }}
+       >
+         <Text>Save entry</Text>
+       </Pressable>
+@@ -212,6 +216,36 @@ test('the track a caller passes reaches onSaved, and a resend keeps the first at
+   expect(onSaved.mock.calls[0][0].via).toBe('online');
+ });
+ 
++test('the create carries its source, and record_saved its source and photo flag', async () => {
++  const recorded = await recordAnalytics();
++  restoreAnalytics = recorded.restore;
++  const saved = () => recorded.sent.filter((event) => event.name === 'record_saved').map((event) => event.properties);
++  // Kept on the phone: the outbox entry says how it was made, and record_saved says so, with the photo it carries.
++  const diary = createFakeDiary({ phase: 'ready', wallets: [...WALLETS], categories: [FOOD] });
++  const photo: EntryTrack = { source: 'photo', categoryKey: 'food', openedAt: Date.now(), hasPhoto: true };
++  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={photo} source="photo" />, resources(), diary.diary);
++  fireEvent.click(saveButton());
++  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
++  expect(diary.saves).toEqual([expect.objectContaining({ id: RECORD_ID, amount_minor: '6500', source: 'photo' })]);
++  expect(saved()).toEqual([expect.objectContaining({ kind: 'expense', source: 'photo', category_key: 'food', has_photo: true })]);
++  cleanup();
++  // Sent online: the create carries it too, and a track that names no photo sends has_photo false.
++  const fake = createFakeResources({ wallets: [...WALLETS], categories: [FOOD] });
++  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={{ source: 'tell_bun', categoryKey: 'food', openedAt: Date.now() }} source="tell_bun" />, fake.resources, null);
++  fireEvent.click(saveButton());
++  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
++  expect(fake.callsOf('createTransaction').map((call) => (call.args[0] as Record<string, unknown>).source)).toEqual(['tell_bun']);
++  expect(saved()).toEqual([expect.anything(), expect.objectContaining({ source: 'tell_bun', has_photo: false })]);
++  cleanup();
++  // No source named (Quick add's way, H9): the outbox entry has no source key, though the track says typed.
++  const plain = createFakeDiary({ phase: 'ready', wallets: [...WALLETS], categories: [FOOD] });
++  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={{ source: 'typed', categoryKey: 'food', openedAt: Date.now() }} />, resources(), plain.diary);
++  fireEvent.click(saveButton());
++  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
++  expect(plain.saves.map((entry) => 'source' in entry)).toEqual([false]);
++  expect(saved().map((properties) => [properties.source, properties.has_photo])).toEqual([['photo', true], ['tell_bun', false], ['typed', false]]);
++});
++
+ test('savedHaptic success plays success for a phone-kept save; Quick add\'s default stays light', async () => {
+   const success = vi.spyOn(haptics, 'success');
+   const light = vi.spyOn(haptics, 'light');
+diff --git a/apps/app/src/screens/redesign/entry/entrySave.ts b/apps/app/src/screens/redesign/entry/entrySave.ts
+index 33b01f2f9600b0dff1c632818602dd419c6b43f9..e5083b8524489e0cd49020c3712522eaca884000 100644
+--- a/apps/app/src/screens/redesign/entry/entrySave.ts
++++ b/apps/app/src/screens/redesign/entry/entrySave.ts
+@@ -3,11 +3,16 @@
+ // resend keeps the first attempt's track. `finish` is the rule that saves, so
+ // it sends the one record_saved for a save that carries a track (1D-T7, R61):
+ // after the device commit or the server's acknowledgement, never for a
+-// conflict, and never the amount, the note or a name.
++// conflict, and never the amount, the note or a name. The track's source and
++// photo flag are record_saved's (P3-T13). A caller may also name how the entry
++// was made (`source`, H9), which the create and the device entry carry; a
++// resend sends the first attempt's create, source and all. Quick add names
++// none.
+ import { useEffect, useRef, useState } from 'react';
+ 
+-import type { WalletSnapshot } from '@gogospend/contracts';
++import type { TransactionSource, WalletSnapshot } from '@gogospend/contracts';
+ import { trackRecordSaved } from '@mobile/analytics/events';
++import type { RecordSource } from '@mobile/analytics/events';
+ import { V1Error } from '@mobile/api/client';
+ import { useCopy } from '@mobile/i18n/useCopy';
+ import { playHaptic } from '@mobile/lib/hapticMoment';
+@@ -24,7 +29,8 @@ import { readCheerDay, writeCheerDay } from '../quickAddCheer';
+ import { earliestFor, localSaveProblem } from './entryHelpers';
+ import type { CreateInput } from './entryHelpers';
+ 
+-export type EntryTrack = { source: 'typed' | 'tell_bun'; categoryKey: string | null; openedAt: number };
++/** record_saved's track: how the entry was made, its category's key, when it opened, and whether it carries a photo (absent is none). */
++export type EntryTrack = { source: RecordSource; categoryKey: string | null; openedAt: number; hasPhoto?: boolean };
+ export type EntrySaveStatus = 'editing' | 'saving' | 'unconfirmed' | 'blocked' | 'saved' | 'conflict';
+ export type SavedEntry = { draft: QuickAddDraft; via: 'device' | 'online'; cheer: boolean; track: EntryTrack | null };
+ export type SaveAttempt = { settledKeypad: KeypadState | null; openDetails: boolean };
+@@ -36,7 +42,7 @@ export type EntrySave = {
+   resendBlocked: boolean;
+   saved: SavedEntry | null;
+   locked: boolean;
+-  save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack }): Promise<SaveAttempt>;
++  save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack; source?: TransactionSource }): Promise<SaveAttempt>;
+   another(): void;
+ };
+ 
+@@ -105,7 +111,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     if (track) {
+       // Offline: kept on this phone while the diary's last sync did not end synced.
+       const offline = via === 'device' && diaryView.outcome?.status !== 'synced';
+-      trackRecordSaved({ kind: fields.type, source: track.source, categoryKey: track.categoryKey, offline, secondsToSave: (Date.now() - track.openedAt) / 1000 });
++      trackRecordSaved({ kind: fields.type, source: track.source, categoryKey: track.categoryKey, offline, secondsToSave: (Date.now() - track.openedAt) / 1000, hasPhoto: track.hasPhoto });
+     }
+   }
+ 
+@@ -156,7 +162,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     }
+   }
+ 
+-  async function save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack }): Promise<SaveAttempt> {
++  async function save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack; source?: TransactionSource }): Promise<SaveAttempt> {
+     const track = input.track ?? null;
+     if (status === 'saving' || status === 'saved' || status === 'blocked' || status === 'conflict' || resendBlocked) return NOTHING;
+     // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
+@@ -169,7 +175,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     const settled = settleForSave(input.keypad);
+     const settledKeypad = keypadShownOnSave(input.keypad);
+     const fields: QuickAddDraft = { ...input.draft, amountMinor: settled.outcome.ok ? settled.outcome.minor : '' };
+-    const built = buildQuickAdd(fields, { today, tc });
++    const built = buildQuickAdd(fields, { today, tc, source: input.source });
+     const next: Errors = built.ok ? {} : { ...built.errors };
+     // The keypad itself says what is wrong with the amount.
+     if (!settled.outcome.ok) delete next.amount_minor;
+diff --git a/apps/app/src/spend/v1/ai/draftReview.test.ts b/apps/app/src/spend/v1/ai/draftReview.test.ts
+index 61639b2322ac0bb85ab7541ac9081afca87f3e54..e41d4182d5b4add880d8d1577d1c9435230d9f56 100644
+--- a/apps/app/src/spend/v1/ai/draftReview.test.ts
++++ b/apps/app/src/spend/v1/ai/draftReview.test.ts
+@@ -75,6 +75,20 @@ test('a tally that fails never fails the review, and leaves nothing unhandled',
+   }
+ });
+ 
++test('a tally that throws at once never fails the review', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    // P3-T5's review (m1): a count that throws before it hands back a promise is dropped as one that rejects is,
++    // and the review it follows is sent all the same.
++    assert.doesNotThrow(() => reviewDraft({ outcome: 'kept', fieldsEdited: 0, model: 'claude-haiku-5-5', escalated: false }, () => {
++      throw new Error('the tally is not there');
++    }));
++    assert.deepEqual(recorded.sent.map((event) => [event.name, event.properties.outcome]), [['ai_draft_reviewed', 'kept']]);
++  } finally {
++    recorded.restore();
++  }
++});
++
+ test('useDraftReview.ts imports with __DEV__ undefined, and its review is sent with no tally', async () => {
+   assert.equal(typeof (globalThis as { __DEV__?: unknown }).__DEV__, 'undefined');
+   const loading = import('./useDraftReview.ts');
+diff --git a/apps/app/src/spend/v1/ai/draftReview.ts b/apps/app/src/spend/v1/ai/draftReview.ts
+index 5708f9caa4e062f2eba12dc712300bde77703900..96868e7d199e2d7a8f18fd33c8d63fcc8d0d3819 100644
+--- a/apps/app/src/spend/v1/ai/draftReview.ts
++++ b/apps/app/src/spend/v1/ai/draftReview.ts
+@@ -6,7 +6,9 @@
+ //   outcome, the model and escalated are all the event carries (§7).
+ // - '' and null are the same: an empty field is empty however the form holds it.
+ // - The tally (a development build's count, src/dev/draftTally.ts) comes after
+-//   the event, and a tally that fails is dropped: a count never fails a review.
++//   the event, and a tally that fails is dropped, whether it rejects or throws
++//   at once (P3-T5's review, m1): a count never fails a review. The review
++//   stays synchronous.
+ import { trackAiDraftReviewed } from '../../../analytics/events.ts';
+ import type { AiModelName, DraftOutcome } from '../../../analytics/events.ts';
+ 
+@@ -33,5 +35,9 @@ export function reviewDraft(
+ ): void {
+   trackAiDraftReviewed(p);
+   if (tally === undefined) return;
+-  void Promise.resolve(tally(p.outcome, p.model)).catch(() => undefined);
++  try {
++    void Promise.resolve(tally(p.outcome, p.model)).catch(() => undefined);
++  } catch {
++    // A tally that throws before it hands back a promise is dropped the same way.
++  }
+ }
+diff --git a/apps/app/src/spend/v1/redesign/quickAddModel.test.ts b/apps/app/src/spend/v1/redesign/quickAddModel.test.ts
+index 18f7aebcda6390bae6ef03fc4cb7b391f49d4b4e..61273cb9f9ec8d8ae64055511f316067f1a5b686 100644
+--- a/apps/app/src/spend/v1/redesign/quickAddModel.test.ts
++++ b/apps/app/src/spend/v1/redesign/quickAddModel.test.ts
+@@ -213,3 +213,21 @@ test('the date chip steps by days, never into the future or before 1970', () =>
+   assert.equal(stepDay('2026-10-16', 1, TODAY), '2026-10-17');
+   assert.equal(stepDay('1970-01-01', -1, TODAY), '1970-01-01');
+ });
++
++test('buildQuickAdd puts the source on the create and the device entry only when given', () => {
++  const draft = { ...newQuickAddDraft({ ids: { recordId: uuid(), commandId: uuid() }, today: TODAY, wallets: WALLETS, categories: [FOOD] }), amountMinor: '6500' };
++  const plain = buildQuickAdd(draft, { today: TODAY, tc });
++  const photo = buildQuickAdd(draft, { today: TODAY, tc, source: 'photo' });
++  assert.ok(plain.ok && photo.ok);
++  // None given (Quick add's way, H9): no key at all, so the create is the JSON it always was.
++  assert.deepEqual(['source' in plain.input, 'source' in plain.entry], [false, false]);
++  // Given: the create and the device entry both carry it, and nothing else changes.
++  assert.deepEqual(photo.input, { ...plain.input, source: 'photo' });
++  assert.deepEqual(photo.entry, { ...plain.entry, source: 'photo' });
++  // A move carries it the same way.
++  const move = buildQuickAdd({ ...draft, type: 'transfer' }, { today: TODAY, tc, source: 'tell_bun' });
++  assert.ok(move.ok);
++  assert.deepEqual([move.input.source, move.entry.source, move.entry.type], ['tell_bun', 'tell_bun', 'transfer']);
++  // A draft the check refuses builds nothing to carry it.
++  assert.deepEqual(buildQuickAdd({ ...draft, amountMinor: '' }, { today: TODAY, tc, source: 'photo' }), { ok: false, errors: { amount_minor: 'Enter an amount' } });
++});
+diff --git a/apps/app/src/spend/v1/redesign/quickAddModel.ts b/apps/app/src/spend/v1/redesign/quickAddModel.ts
+index b5983cebdb2dffe6c994dc53848829a8a419dd13..46f148079dacf242022d2fe3dbdf24cbe3bc2194 100644
+--- a/apps/app/src/spend/v1/redesign/quickAddModel.ts
++++ b/apps/app/src/spend/v1/redesign/quickAddModel.ts
+@@ -18,8 +18,12 @@
+ // - "Saved, add another?" starts a new draft with new ids (`anotherDraft`).
+ //   A copy of a record is a new draft with new ids too (`duplicateDraft` in
+ //   recordModel.ts). Nothing ever reuses a saved draft's ids.
++// - How the record was made (`source`, P3-T13; H9: set once, at create) is
++//   named only when the caller gives it, after the fields the current form
++//   sends, so a create without one is the same JSON it always was. The add
++//   tray names one; Quick add names none.
+ import { ContractValidationError, MINOR_AMOUNT_MAX, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+-import type { CategoryDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
++import type { CategoryDto, TransactionSource, TransactionType, WalletSnapshot } from '@gogospend/contracts';
+ 
+ import type { PendingEntry } from '../../../storage/types.ts';
+ import type { CreateEntryInput, CreateTransferInput } from '../resources.ts';
+@@ -184,15 +188,16 @@ export type QuickAddResult =
+  * The create input for `resources.createTransaction` / `createTransfer`, and
+  * the same entry as a device draft for `diary.saveDraft(entry, commandId)`.
+  * The input's keys are in the current form's order, so `keys.keyFor` sees the
+- * same JSON for the same draft.
++ * same JSON for the same draft; a `source` the caller gives comes last.
+  */
+-export function buildQuickAdd(draft: QuickAddDraft, context: { today: string; tc: Translate }): QuickAddResult {
++export function buildQuickAdd(draft: QuickAddDraft, context: { today: string; tc: Translate; source?: TransactionSource }): QuickAddResult {
+   const { errors, clean } = checkEntryFields(draft, context);
+   if (!clean) return { ok: false, errors };
+   const common = { id: draft.recordId, amount_minor: clean.amount_minor, occurred_on: clean.occurred_on, note: clean.note, merchant: clean.merchant };
++  const made = context.source === undefined ? {} : { source: context.source };
+   const input: CreateEntryInput | CreateTransferInput = clean.type === 'transfer'
+-    ? { ...common, source_wallet_id: clean.source_wallet_id, destination_wallet_id: clean.destination_wallet_id }
+-    : { ...common, type: clean.type, wallet_id: clean.wallet_id, category_id: clean.category_id };
++    ? { ...common, source_wallet_id: clean.source_wallet_id, destination_wallet_id: clean.destination_wallet_id, ...made }
++    : { ...common, type: clean.type, wallet_id: clean.wallet_id, category_id: clean.category_id, ...made };
+   return { ok: true, input, entry: toPendingEntry(input) };
+ }
+ 
+diff --git a/apps/app/src/wallet/add/AddTray.render.test.tsx b/apps/app/src/wallet/add/AddTray.render.test.tsx
+index abc01348eac2295c2e847b11aa57a6bd30f2acf0..0aa35351e29ba1843700b7734181ba2c2d06f0b6 100644
+--- a/apps/app/src/wallet/add/AddTray.render.test.tsx
++++ b/apps/app/src/wallet/add/AddTray.render.test.tsx
+@@ -28,6 +28,13 @@
+ // the second review's six survivors (M3 to M6, M8 and M10, its probes P1, P2,
+ // P8, P11, P12 and P13). For the bound the Modal holds its dismissals back when
+ // a case asks (`dismissals.hold`), as UIKit may.
++//
++// P3-T13 adds how each record was made: the source a save carries (typed, the
++// sheet's tell_bun, or an AI draft's own) and the review each AI draft gets
++// once (kept, edited with its count, or dropped). A case hands the host an AI
++// draft through the probe's useAddTray().applyAiDraft, as P3-T17's slip read
++// and P3-T18's tell step will. The suite defines __DEV__, so each review also
++// counts in the draft tally (P3-T5), which no case reads.
+ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+ import { readFileSync } from 'node:fs';
+ import { dirname, join } from 'node:path';
+@@ -95,7 +102,7 @@ import { PRIVATE_MODE_NAME } from '../privacy/PrivateModeProvider';
+ import { AX5, mountWallet } from '../testing/walletHarness';
+ import type { MountWalletOptions } from '../testing/walletHarness';
+ import { AddTrayHost, useAddTray } from './AddTrayHost';
+-import type { AddRequest, AddTray, SavedContext } from './AddTrayHost';
++import type { AddRequest, AddTray, AiDraftMeta, SavedContext } from './AddTrayHost';
+ 
+ const os = Platform.OS;
+ afterEach(() => {
+@@ -263,6 +270,23 @@ function useBun(draft: AiDraft) {
+   startAnimations();
+ }
+ 
++/** An AI draft handed to the host as P3-T17's slip read and P3-T18's tell step will (applyAiDraft); then its content shows. */
++function aiDraft(draft: AiDraft, meta: AiDraftMeta) {
++  act(() => { tray().applyAiDraft(draft, meta); });
++  startAnimations();
++}
++/** A photo Bun read with Haiku, and a sentence Opus read after Haiku: each draft's word on itself. */
++const HAIKU_PHOTO: AiDraftMeta = { source: 'photo', model: 'claude-haiku-5-5', escalated: false };
++const OPUS_TELL: AiDraftMeta = { source: 'tell_bun', model: 'claude-opus-5-5', escalated: true };
++/** An event's own properties, without the ones every event carries. */
++const own = (properties: Recorded['properties']) => Object.fromEntries(Object.entries(properties).filter(([key]) => key !== 'origin' && !(key in COMMON_RULES)));
++/** Each ai_draft_reviewed sent (P3-T5's review), by its own properties. */
++const reviews = (sent: readonly Recorded[]) => sent.filter((event) => event.name === 'ai_draft_reviewed').map(({ properties }) => own(properties));
++/** Each record_saved's source and photo flag. */
++const savedAs = (sent: readonly Recorded[]) => sent.filter((event) => event.name === 'record_saved').map(({ properties }) => [properties.source, properties.has_photo]);
++/** The review of each AI draft below: kept, edited with a count, or dropped, with its model and whether Opus answered. */
++const reviewOf = (outcome: string, fieldsEdited: number, meta: AiDraftMeta) => ({ outcome, fields_edited: fieldsEdited, model: meta.model, escalated: meta.escalated });
++
+ /** Every element gets a box, so Gesture Handler's web build reads the pointer (see the note at the top). */
+ function boxes() {
+   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+@@ -666,6 +690,243 @@ test("in private mode confirm draws none of Bun's words: a title it would quote
+   expect([text('confirm-title'), rowLabels()[3]]).toEqual(['ค่าจ้าง', 'โน้ต ซ่อนอยู่ บันเดา']);
+ });
+ 
++test('a typed save sends source typed', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    // Kept on the phone: the outbox entry says typed.
++    const diary = readyDiary();
++    await mount(<Host />, { diary: diary.diary });
++    await openTray();
++    press('5', '0');
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(diary.saves).toEqual([expect.objectContaining({ amount_minor: '5000', source: 'typed' })]);
++    cleanup();
++    // Sent online, from a quick chip (the person's own entry, logged before): the create says typed too.
++    const fake = resources({ records: OFTEN });
++    await mount(<Host />, { resources: fake.resources, diary: null });
++    await openTray();
++    tap(named('button', 'วิน 20 บาท'));
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(fake.callsOf('createTransaction').map((call) => (call.args[0] as Record<string, unknown>).source)).toEqual(['typed']);
++    // record_saved says typed, with no photo (until P3-T15), and nothing is reviewed.
++    expect([savedAs(recorded.sent), reviews(recorded.sent)]).toEqual([[['typed', false], ['typed', false]], []]);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('a Tell Bun sheet draft saves as tell_bun without a review', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const diary = readyDiary();
++    await mount(<Host />, { ai: bunOn(), diary: diary.diary });
++    await openTray();
++    tap(named('button', 'บอกบัน'));
++    useBun(BUN_DRAFT);
++    tap(named('button', 'ถัดไป'));
++    // The person changes every row Bun filled, so no guess of Bun's stands: the record still says tell_bun, since
++    // the entry's origin decides it, not a guess still standing (P2's rule; followups, P2-T16's reviews).
++    tap(found('confirm-row-category'));
++    tap(radio('อาหาร'));
++    tap(found('confirm-row-wallet'));
++    tap(walletRadio(MAIN.name));
++    tap(found('confirm-row-date'));
++    tap(named('button', translateCopy('Previous day', 'th')));
++    tap(found('pick-date-done'));
++    expect(rowLabels().filter((row) => row?.includes('บันเดา'))).toEqual([]);
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(diary.saves).toEqual([expect.objectContaining({ category_id: FOOD.id, wallet_id: MAIN.id, occurred_on: addDays(TODAY, -1), source: 'tell_bun' })]);
++    // The sheet does not say which model read the sentence, so nothing is reviewed.
++    expect([savedAs(recorded.sent), reviews(recorded.sent)]).toEqual([[['tell_bun', false]], []]);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('an AI draft saved as filled is reviewed kept, and one changed is edited with its count', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    // A photo Bun read with Haiku: the draft fills the entry as the sheet's does, each row it filled Bun's guess.
++    const diary = readyDiary();
++    await mount(<Host />, { diary: diary.diary });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    expect(text('add-amount')).toBe('฿65');
++    tap(named('button', 'ถัดไป'));
++    expect([text('confirm-title'), rowLabels()]).toEqual(['วิน', ['หมวด การเดินทาง บันเดา', 'กระเป๋า เงินสด บันเดา', 'วันที่ วันนี้ บันเดา', 'โน้ต เพิ่มโน้ต']]);
++    tap(named('button', 'บันทึก'));
++    await settle();
++    // Saved as filled: the record says photo, and the draft is reviewed kept, once.
++    expect(diary.saves).toEqual([expect.objectContaining({ amount_minor: '6500', category_id: TRAVEL.id, wallet_id: CASH.id, merchant: 'วิน', source: 'photo' })]);
++    expect([savedAs(recorded.sent), reviews(recorded.sent)]).toEqual([[['photo', false]], [reviewOf('kept', 0, HAIKU_PHOTO)]]);
++    cleanup();
++    // The same draft with its category changed: edited, one field.
++    const changed = readyDiary();
++    await mount(<Host />, { diary: changed.diary });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    tap(named('button', 'ถัดไป'));
++    tap(found('confirm-row-category'));
++    tap(radio('อาหาร'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(changed.saves).toEqual([expect.objectContaining({ amount_minor: '6500', category_id: FOOD.id, source: 'photo' })]);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('kept', 0, HAIKU_PHOTO), reviewOf('edited', 1, HAIKU_PHOTO)]);
++    cleanup();
++    // A sentence Opus read after Haiku, saved online with its amount and note changed: edited, two fields, and the
++    // create says tell_bun.
++    const fake = resources();
++    await mount(<Host />, { resources: fake.resources, diary: null });
++    await openTray();
++    aiDraft(BUN_DRAFT, OPUS_TELL);
++    press('7', '0');
++    expect(text('add-amount')).toBe('฿70');
++    tap(named('button', 'ถัดไป'));
++    tap(found('confirm-row-note'));
++    fireEvent.change(named('textbox', 'โน้ต'), { target: { value: 'ข้าวกลางวัน' } });
++    tap(found('pick-note-done'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(fake.callsOf('createTransaction').map((call) => call.args[0])).toEqual([expect.objectContaining({ amount_minor: '7000', note: 'ข้าวกลางวัน', source: 'tell_bun' })]);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('kept', 0, HAIKU_PHOTO), reviewOf('edited', 1, HAIKU_PHOTO), reviewOf('edited', 2, OPUS_TELL)]);
++    cleanup();
++    // Bun read no amount: the amount the person had typed stays, and saved as the draft left it, the draft is kept.
++    const typed = readyDiary();
++    await mount(<Host />, { diary: typed.diary });
++    await openTray();
++    press('4', '5');
++    aiDraft({ ...BUN_DRAFT, amount_minor: null, flags: ['amount_unclear'] }, HAIKU_PHOTO);
++    expect(text('add-amount')).toBe('฿45');
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(typed.saves).toEqual([expect.objectContaining({ amount_minor: '4500', category_id: TRAVEL.id, source: 'photo' })]);
++    expect(reviews(recorded.sent)[3]).toEqual(reviewOf('kept', 0, HAIKU_PHOTO));
++    expect(savedAs(recorded.sent)).toEqual([['photo', false], ['photo', false], ['tell_bun', false], ['photo', false]]);
++    // No amount, place, note or wallet reaches analytics (1D-T7's allow-list is the boundary), and the host reviews
++    // only through useDraftReview, the one way to the development tally (P3-T5's review, m2).
++    const json = JSON.stringify(recorded.sent);
++    for (const secret of ['6500', '7000', '4500', 'วิน', 'ข้าวกลางวัน', CASH.name]) expect(json).not.toContain(secret);
++    expect(source('AddTrayHost.tsx')).not.toMatch(/draftTally|trackAiDraftReviewed/);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('closing the tray with an unsaved AI draft reviews it dropped, once', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const diary = readyDiary();
++    const view = await mount(<Host />, { diary: diary.diary });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    tap(named('button', 'ถัดไป'));
++    // Closed unsaved: dropped at once, with its model. Drawn again while the tray leaves, and once it has gone,
++    // nothing more is sent.
++    fireEvent.click(named('button', 'ปิด'));
++    expect(reviews(recorded.sent)).toEqual([reviewOf('dropped', 0, HAIKU_PHOTO)]);
++    view.rerender(<Host />);
++    await wait(250);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('dropped', 0, HAIKU_PHOTO)]);
++    // A typed entry closed unsaved has nothing to review.
++    await openTray();
++    press('5');
++    fireEvent.click(named('button', 'ปิด'));
++    await wait(250);
++    expect(reviews(recorded.sent)).toHaveLength(1);
++    // Escape closes it the same way: the next AI draft is dropped too, once, and nothing was kept.
++    await openTray();
++    aiDraft(BUN_DRAFT, OPUS_TELL);
++    escape();
++    await wait(250);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('dropped', 0, HAIKU_PHOTO), reviewOf('dropped', 0, OPUS_TELL)]);
++    expect([diary.saves, savedAs(recorded.sent)]).toEqual([[], []]);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('a second AI draft over an unsaved one reviews the first dropped', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const diary = readyDiary();
++    await mount(<Host />, { ai: bunOn(), diary: diary.diary });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    // The second fills the entry, and the first, never saved, is dropped at once.
++    aiDraft({ ...BUN_DRAFT, amount_minor: '12000', category_id: FOOD.id, merchant: 'ข้าวมันไก่' }, OPUS_TELL);
++    expect([text('add-amount'), reviews(recorded.sent)]).toEqual(['฿120', [reviewOf('dropped', 0, HAIKU_PHOTO)]]);
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    // Saved as the second filled it: its source, and reviewed kept with its own model.
++    expect(diary.saves).toEqual([expect.objectContaining({ amount_minor: '12000', category_id: FOOD.id, merchant: 'ข้าวมันไก่', source: 'tell_bun' })]);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('dropped', 0, HAIKU_PHOTO), reviewOf('kept', 0, OPUS_TELL)]);
++    cleanup();
++    // P2's sheet over an unsaved AI draft: the AI draft is dropped, and the sheet's is saved as tell_bun, unreviewed.
++    const sheetDiary = readyDiary();
++    await mount(<Host />, { ai: bunOn(), diary: sheetDiary.diary });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    tap(named('button', 'บอกบัน'));
++    useBun({ ...BUN_DRAFT, amount_minor: '8000' });
++    expect(reviews(recorded.sent)).toEqual([reviewOf('dropped', 0, HAIKU_PHOTO), reviewOf('kept', 0, OPUS_TELL), reviewOf('dropped', 0, HAIKU_PHOTO)]);
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    expect(sheetDiary.saves).toEqual([expect.objectContaining({ amount_minor: '8000', source: 'tell_bun' })]);
++    expect([reviews(recorded.sent).length, savedAs(recorded.sent)]).toEqual([3, [['tell_bun', false], ['tell_bun', false]]]);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('an AI draft handed over while a save is on its way, or while its answer is unknown, changes nothing', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    // A save on its way online: a second draft is not taken, and the first is reviewed once it lands.
++    const fake = resources();
++    const release = fake.hold('createTransaction');
++    await mount(<Host />, { resources: fake.resources, diary: null });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    aiDraft({ ...BUN_DRAFT, amount_minor: '9900', category_id: FOOD.id }, OPUS_TELL);
++    expect([text('confirm-amount'), reviews(recorded.sent)]).toEqual(['฿65', []]);
++    await act(async () => {
++      release();
++      await new Promise((resolve) => setTimeout(resolve, 0));
++    });
++    expect(fake.callsOf('createTransaction').map((call) => call.args[0])).toEqual([expect.objectContaining({ amount_minor: '6500', category_id: TRAVEL.id, source: 'photo' })]);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('kept', 0, HAIKU_PHOTO)]);
++    cleanup();
++    // An answer lost: the same; Try again resends the first draft, which is then reviewed.
++    const lost = resources();
++    lost.fail('createTransaction', 'network');
++    await mount(<Host />, { resources: lost.resources, diary: null });
++    await openTray();
++    aiDraft(BUN_DRAFT, HAIKU_PHOTO);
++    tap(named('button', 'ถัดไป'));
++    tap(named('button', 'บันทึก'));
++    await settle();
++    aiDraft({ ...BUN_DRAFT, amount_minor: '9900' }, OPUS_TELL);
++    expect([text('confirm-amount'), reviews(recorded.sent)]).toEqual(['฿65', [reviewOf('kept', 0, HAIKU_PHOTO)]]);
++    tap(named('button', 'ลองอีกครั้ง'));
++    await settle();
++    expect(lost.callsOf('createTransaction').map((call) => (call.args[0] as Record<string, unknown>).amount_minor)).toEqual(['6500', '6500']);
++    expect(reviews(recorded.sent)).toEqual([reviewOf('kept', 0, HAIKU_PHOTO), reviewOf('kept', 0, HAIKU_PHOTO)]);
++  } finally {
++    recorded.restore();
++  }
++});
++
+ test("Tell Bun's sheet opens inside the tray", async () => {
+   await mount(<Host />, { ai: bunOn() });
+   await openTray();
+diff --git a/apps/app/src/wallet/add/AddTrayHost.tsx b/apps/app/src/wallet/add/AddTrayHost.tsx
+index ea65b9e63aa4d19839199687cdc104a3efb1a8fa..2618e5399b463b431d3768d2f51cbcb2ce2a278d 100644
+--- a/apps/app/src/wallet/add/AddTrayHost.tsx
++++ b/apps/app/src/wallet/add/AddTrayHost.tsx
+@@ -30,9 +30,19 @@
+ //   a note it guessed reads as hidden; what the person typed shows (R106). The
+ //   amount step's quick chips are the type's often-logged entries, named by
+ //   their place only (R106), so the sheet offers none of its own.
+-// - Saving is useEntrySave's save with the track (W27): Tell Bun's source while
+-//   any of its guesses stand, the category's analytics key and when the tray
+-//   opened. This file sends no record_saved (R61: 1D-T7's call in finish reads
++// - applyAiDraft (P3-T13; P3-T17's slip read and P3-T18's tell step call it):
++//   an AI draft fills the entry as the sheet's does, its rows Bun's guesses,
++//   and the record says the meta's source. Its review (P3-T5) is sent once:
++//   kept, or edited with the fields changed, when the entry is saved; dropped
++//   when the tray closes unsaved or a new draft takes its place (the sheet's
++//   too). While a save is on its way or its outcome is unknown the entry takes
++//   no draft, so a review is always of the draft that was saved. The sheet's
++//   draft says tell_bun, with no review: the sheet does not say which model
++//   read the sentence.
++// - Saving is useEntrySave's save with the entry's origin (P3-T13, H9), the
++//   record's source, and the track (W27): that source, the category's
++//   analytics key, when the tray opened, and no photo until P3-T15 attaches
++//   one. This file sends no record_saved (R61: 1D-T7's call in finish reads
+ //   the track). While a save is in flight nothing closes the tray (Review
+ //   Focus 1); when it lands the host is told, with the lookups and whether it
+ //   stayed on the phone unsynced, and the tray closes. An unconfirmed online
+@@ -56,6 +66,7 @@ import type { ReactNode } from 'react';
+ import { ActivityIndicator, View } from 'react-native';
+ 
+ import { trackRecordStarted } from '@mobile/analytics/events';
++import type { AiModelName } from '@mobile/analytics/events';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+ import { TellBunSheet } from '@mobile/screens/redesign/ai/TellBunSheet';
+ import { earliestFor, firstDraft, KEYPAD_PROBLEM_TEXT, rank, withDefaults } from '@mobile/screens/redesign/entry/entryHelpers';
+@@ -64,8 +75,10 @@ import { useEntryReferences } from '@mobile/screens/redesign/entry/entryReferenc
+ import type { EntryReferences } from '@mobile/screens/redesign/entry/entryReferences';
+ import { useEntrySave } from '@mobile/screens/redesign/entry/entrySave';
+ import type { SavedEntry } from '@mobile/screens/redesign/entry/entrySave';
++import { savedOutcome } from '@mobile/spend/v1/ai/draftReview';
+ import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
+ import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
++import { useDraftReview } from '@mobile/spend/v1/ai/useDraftReview';
+ import { analyticsCategoryKey } from '@mobile/spend/v1/redesign/planning/thaiPack';
+ import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
+ import type { Lookups } from '@mobile/spend/v1/redesign/shared';
+@@ -73,7 +86,7 @@ import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
+ import { todayInBangkok } from '@mobile/spend/v1/viewModels';
+ import { useWalletColors } from '@mobile/theme/ThemeProvider';
+ import { useAnnouncement } from '@mobile/ui/a11y';
+-import { EMPTY_KEYPAD } from '@mobile/ui/keypadExpression';
++import { EMPTY_KEYPAD, settleForSave } from '@mobile/ui/keypadExpression';
+ import type { KeypadState } from '@mobile/ui/keypadExpression';
+ import { COMMON_COPY } from '../common/copy';
+ import { useDraftCopy } from '../copy/useDraftCopy';
+@@ -88,6 +101,8 @@ import type { AddStep, AddType, StepProps } from './addFlow';
+ import { AmountFooter, AmountStep, useCanTellBun } from './AmountStep';
+ import { ConfirmStep, confirmTitle } from './ConfirmStep';
+ import { COPY } from './copy';
++import { draftFieldsOf, TYPED_ORIGIN } from './draftOrigin';
++import type { DraftOrigin } from './draftOrigin';
+ import { CategoryPick, DatePick, isPickStep, NotePick, WalletPick } from './PickSteps';
+ import type { QuickChip } from './QuickChips';
+ import { TransferFooter, TransferStep } from './TransferStep';
+@@ -95,19 +110,31 @@ import { TypeSwitchHeader, useSwitchInHeader } from './TypeSwitchHeader';
+ 
+ export type AddRequest = { type?: AddType; walletId?: string; copyOf?: string };
+ export type SavedContext = { lookups: Lookups; offline: boolean };
+-export type AddTray = { open(request?: AddRequest): void; close(): void; isOpen: boolean; blocked: boolean; whenClosed(run: () => void): void };
++/** An AI draft's own word on itself (P3-T13): the source its record gets, the model whose draft it is, and whether Opus answered. */
++export type AiDraftMeta = { source: 'tell_bun' | 'photo'; model: AiModelName; escalated: boolean };
++export type AddTray = {
++  open(request?: AddRequest): void;
++  close(): void;
++  isOpen: boolean;
++  blocked: boolean;
++  whenClosed(run: () => void): void;
++  applyAiDraft(draft: AiDraft, meta: AiDraftMeta): void;
++};
+ 
+ const LINES = { ...COMMON_COPY, ...COPY } as const;
+ 
+ /** One opening of the tray: its request and when it opened (the track's openedAt). */
+ type Entry = { key: number; request: AddRequest; openedAt: number };
+ type Ready = Extract<EntryReferences, { state: 'ready' }>;
++type ApplyAi = (draft: AiDraft, meta: AiDraftMeta) => void;
+ 
+ const AddTrayContext = createContext<AddTray | null>(null);
+ 
+ const NONE: ReadonlySet<string> = new Set();
+ const NO_WALLETS: readonly WalletSnapshot[] = [];
+ const NO_CATEGORIES: readonly CategoryDto[] = [];
++/** A draft from P2's Tell Bun sheet: tell_bun, and nothing to review. */
++const SHEET_ORIGIN: DraftOrigin = { source: 'tell_bun', review: null };
+ 
+ /**
+  * How long a hidden tray waits for its Modal to say it has gone before its
+@@ -130,6 +157,7 @@ export function useAddTray(): AddTray {
+     isOpen: false,
+     blocked: false,
+     whenClosed: (run) => run(),
++    applyAiDraft: () => undefined,
+   }), [router]);
+   return host ?? outside;
+ }
+@@ -154,6 +182,11 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+   }, [blocked]);
+   const queue = useRef<(() => void)[]>([]);
+   const keys = useRef(0);
++  // The open entry's applyAiDraft, as it last drew; null while no entry is mounted.
++  const applier = useRef<ApplyAi | null>(null);
++  const register = useCallback((apply: ApplyAi | null) => {
++    applier.current = apply;
++  }, []);
+   const show = useCallback((next: Entry | null, shown: boolean) => {
+     now.current.entry = next;
+     now.current.visible = shown;
+@@ -181,7 +214,8 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+       if (now.current.saving) return;
+       show(now.current.entry, false);
+     };
+-    return { open, close, whenClosed, isOpen: visible, blocked };
++    const applyAiDraft = (draft: AiDraft, meta: AiDraftMeta) => applier.current?.(draft, meta);
++    return { open, close, whenClosed, applyAiDraft, isOpen: visible, blocked };
+   }, [visible, blocked]);
+   const saving = useCallback((inFlight: boolean) => {
+     now.current.saving = inFlight;
+@@ -203,6 +237,7 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
+           onClose={value.close}
+           onClosed={closed}
+           onSaving={saving}
++          onApplier={register}
+           onSaved={(saved, context) => {
+             onSaved?.(saved, context);
+             show(now.current.entry, false);
+@@ -244,12 +279,19 @@ function guessedBy(draft: AiDraft): string[] {
+   return Object.entries(filled).filter(([, value]) => Boolean(value)).map(([key]) => key);
+ }
+ 
+-function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
++/** The amount a keypad holds as Save would settle it, or null while it holds none. */
++function settledMinor(keypad: KeypadState): string | null {
++  const settled = settleForSave(keypad);
++  return settled.outcome.ok ? settled.outcome.minor : null;
++}
++
++function AddEntry({ entry, visible, onClose, onClosed, onSaving, onApplier, onSaved }: {
+   entry: Entry;
+   visible: boolean;
+   onClose(): void;
+   onClosed(gone: Entry): void;
+   onSaving(inFlight: boolean): void;
++  onApplier(apply: ApplyAi | null): void;
+   onSaved(saved: SavedEntry, context: SavedContext): void;
+ }) {
+   const tc = useCopy();
+@@ -283,6 +325,9 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const [telling, setTelling] = useState(false);
+   // The place Bun last filled (R117): while the entry's merchant is still it, private mode does not draw it on confirm.
+   const [bunMerchant, setBunMerchant] = useState<string | null>(null);
++  // How the entry was made (P3-T13): its record's source, and an AI draft's review until the entry is saved or goes unsaved.
++  const origin = useRef<DraftOrigin>(TYPED_ORIGIN);
++  const review = useDraftReview();
+   // The entry starts once its lists are ready (a copy once it has loaded).
+   if (ready !== null && live !== null && draft === null) {
+     setDraft(startDraft(ready, entry.request, live));
+@@ -293,7 +338,15 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+   const entrySave = useEntrySave({
+     today,
+     savedHaptic: 'success',
+-    onSaved: (saved) => onSaved(saved, { lookups, offline: saved.via === 'device' && diaryView.outcome?.status !== 'synced' }),
++    onSaved: (saved) => {
++      // A saved AI draft is reviewed once, against the entry as the draft filled it: kept, or edited with its count.
++      const pending = origin.current.review;
++      if (pending !== null) {
++        origin.current = { ...origin.current, review: null };
++        review({ ...savedOutcome(pending.original, draftFieldsOf(saved.draft, saved.draft.amountMinor)), model: pending.model, escalated: pending.escalated });
++      }
++      onSaved(saved, { lookups, offline: saved.via === 'device' && diaryView.outcome?.status !== 'synced' });
++    },
+   });
+   const { status, resendBlocked, locked } = entrySave;
+   const inFlight = status === 'saving';
+@@ -307,6 +360,18 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     const timer = setTimeout(leave, CLOSED_BOUND_MS);
+     return () => clearTimeout(timer);
+   }, [visible, leave]);
++  /** An AI draft the entry lets go of unsaved (the tray closed, or a new draft took its place) is reviewed dropped, once. */
++  const dropUnsaved = useCallback(() => {
++    const pending = origin.current.review;
++    if (pending === null) return;
++    origin.current = { ...origin.current, review: null };
++    review({ outcome: 'dropped', fieldsEdited: 0, model: pending.model, escalated: pending.escalated });
++  }, [review]);
++  // The tray closes (close, the backdrop, escape, a swipe or a conflict's Done): an AI draft still unsaved was dropped.
++  // A landed save has reviewed its draft already, before the host hides the tray.
++  useEffect(() => {
++    if (!visible) dropUnsaved();
++  }, [visible, dropUnsaved]);
+   // The save's problem in today's words: its message, else the first field the check refused. A conflict's words
+   // quote the amount Jotbun holds, so in private mode they mask it, and say it is hidden (R117).
+   const conflictMasked = hidden && status === 'conflict';
+@@ -328,17 +393,36 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     setGuessed((now) => stillGuessed(now, current, next));
+     setDraft(next);
+   };
+-  /** A draft laid over the entry (applyDraft): a quick chip's, or Bun's, whose rows become its guesses. The amount is a fill (R106). */
+-  const fill = (filled: AiDraft, bun: boolean) => {
+-    if (current === null) return;
++  /**
++   * A draft laid over the entry (applyDraft): a quick chip's, or Bun's, whose rows become its guesses. The amount is a
++   * fill (R106). What the entry then shows comes back: its draft, and the amount Save would settle on.
++   */
++  const fill = (filled: AiDraft, bun: boolean): { draft: QuickAddDraft; amountMinor: string | null } | null => {
++    if (current === null) return null;
+     const applied = applyDraft(current, filled);
+-    edit({ ...current, ...applied.fields });
++    const next = { ...current, ...applied.fields };
++    edit(next);
+     if (bun) {
+       setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
+       // A draft that names no place keeps the one Bun named before, as applyDraft does.
+       setBunMerchant((was) => filled.merchant ?? was);
+     }
+     if (applied.amountMinor !== null) setKeypad(filledKeypad(applied.amountMinor));
++    return { draft: next, amountMinor: applied.amountMinor ?? settledMinor(keypad) };
++  };
++  /** P2's Tell Bun sheet: its draft fills the entry, and the record says tell_bun, with no review. */
++  const fromSheet = (filled: AiDraft) => {
++    dropUnsaved();
++    fill(filled, true);
++    origin.current = SHEET_ORIGIN;
++  };
++  /** applyAiDraft: an AI draft fills the entry and gives its origin; none while a save is on its way or its outcome unknown. */
++  const applyAi: ApplyAi = (filled, meta) => {
++    if (locked) return;
++    dropUnsaved();
++    const shown = fill(filled, true);
++    if (shown === null) return;
++    origin.current = { source: meta.source, review: { original: draftFieldsOf(shown.draft, shown.amountMinor), model: meta.model, escalated: meta.escalated } };
+   };
+   const goTo = (next: AddStep) => {
+     if (locked) return;
+@@ -357,13 +441,20 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+     if (current === null) return;
+     const categoryId = current.type === 'transfer' ? null : current.categoryByType[current.type];
+     const category = categories.find((each) => each.id === categoryId) ?? null;
++    const { source } = origin.current;
+     void entrySave.save({
+       draft: current,
+       keypad,
+       wallets,
+-      track: { source: guessed.size > 0 ? 'tell_bun' : 'typed', categoryKey: analyticsCategoryKey(category), openedAt: entry.openedAt },
++      source,
++      track: { source, categoryKey: analyticsCategoryKey(category), openedAt: entry.openedAt, hasPhoto: false },
+     });
+   };
++  // The host's applyAiDraft reaches this entry's rule as it last drew; an entry that has gone takes none.
++  useEffect(() => {
++    onApplier(applyAi);
++    return () => onApplier(null);
++  });
+ 
+   if (current === null || ready === null || live === null) {
+     return (
+@@ -403,7 +494,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+       onClose={() => setTelling(false)}
+       context={{ today, wallets, categories }}
+       locale={locale}
+-      onUse={(bunDraft) => fill(bunDraft, true)}
++      onUse={fromSheet}
+     />
+   ) : null;
+ 
+diff --git a/apps/app/src/wallet/add/draftOrigin.test.ts b/apps/app/src/wallet/add/draftOrigin.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..b16cc51c34057d2d7e362398d245c31afe2ecc1b
+--- /dev/null
++++ b/apps/app/src/wallet/add/draftOrigin.test.ts
+@@ -0,0 +1,38 @@
++// The add tray's draft origin (P3-T13): the fields a draft review compares,
++// read from the tray's draft and the amount its keypad settles on.
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import type { QuickAddDraft } from '../../spend/v1/redesign/quickAddModel.ts';
++import { draftFieldsOf } from './draftOrigin.ts';
++
++const CASH = '0000000a-0000-4000-8000-000000000002';
++const MAIN = '0000000a-0000-4000-8000-000000000001';
++const FOOD = '0000000c-0000-4000-8000-000000000001';
++const SALARY = '0000000c-0000-4000-8000-000000000004';
++
++/** ฿65 at the motorbike taxi from cash, with a note; the keypad holds the amount, so the draft's own is stale. */
++const DRAFT: QuickAddDraft = {
++  mode: 'create', recordId: '0000000b-0000-4000-8000-0000000000a1', commandId: '0000000b-0000-4000-8000-0000000000a2', type: 'expense',
++  amountMinor: '999', occurredOn: '2026-11-12', walletId: CASH, categoryByType: { expense: FOOD, income: SALARY },
++  fromWalletId: MAIN, toWalletId: CASH, note: 'ค่าข้าวกับพี่', merchant: 'วิน',
++};
++
++test("draftFieldsOf reads the draft's fields and the settled amount", () => {
++  // Spending: the amount passed (never the draft's own), its category, the wallet it is paid from, the place and the note.
++  assert.deepEqual(draftFieldsOf(DRAFT, '6500'), {
++    type: 'expense', amountMinor: '6500', occurredOn: '2026-11-12', categoryId: FOOD, walletId: CASH, merchant: 'วิน', note: 'ค่าข้าวกับพี่',
++  });
++  // Income: income's own category.
++  assert.deepEqual(draftFieldsOf({ ...DRAFT, type: 'income' }, '3000000'), {
++    type: 'income', amountMinor: '3000000', occurredOn: '2026-11-12', categoryId: SALARY, walletId: CASH, merchant: 'วิน', note: 'ค่าข้าวกับพี่',
++  });
++  // A move: no category, and the wallet it leaves.
++  assert.deepEqual(draftFieldsOf({ ...DRAFT, type: 'transfer' }, '50000'), {
++    type: 'transfer', amountMinor: '50000', occurredOn: '2026-11-12', categoryId: null, walletId: MAIN, merchant: 'วิน', note: 'ค่าข้าวกับพี่',
++  });
++  // A keypad that settles on no amount is none; empty words stay as the draft holds them (the review counts '' as none).
++  assert.deepEqual(draftFieldsOf({ ...DRAFT, note: '', merchant: '', categoryByType: { expense: null, income: null }, walletId: null }, null), {
++    type: 'expense', amountMinor: null, occurredOn: '2026-11-12', categoryId: null, walletId: null, merchant: '', note: '',
++  });
++});
+diff --git a/apps/app/src/wallet/add/draftOrigin.ts b/apps/app/src/wallet/add/draftOrigin.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..22ae6503e7b4a661b2a2e02c6e703de88439a9ba
+--- /dev/null
++++ b/apps/app/src/wallet/add/draftOrigin.ts
+@@ -0,0 +1,37 @@
++// How the add tray's entry was made (P3-T13; H9): the source its save gives
++// the record, and, for a draft an AI model made, what the draft review
++// (P3-T5) compares the saved record with. Pure: a Node test reads it, so it
++// imports by relative path and loads no React or React Native.
++//
++// - A typed entry is `typed`, with nothing to review. P2's Tell Bun sheet
++//   gives `tell_bun`, also with nothing to review: the sheet does not say
++//   which model read the sentence. A draft handed to applyAiDraft gives its
++//   own source (`tell_bun` or `photo`), and its review keeps the model, whether
++//   Opus answered, and the entry as the tray showed it once the draft filled
++//   it (`original`).
++// - draftFieldsOf turns a tray's draft into the review's fields: the type, the
++//   amount it settles on (the tray keeps the amount on its keypad, so the
++//   caller passes it), the date, the type's category (none for a move), the
++//   wallet (for a move, the one it leaves), the merchant and the note.
++import type { TransactionSource } from '@gogospend/contracts';
++
++import type { AiModelName } from '../../analytics/events.ts';
++import type { DraftFields } from '../../spend/v1/ai/draftReview.ts';
++import type { QuickAddDraft } from '../../spend/v1/redesign/quickAddModel.ts';
++
++export type DraftOrigin = { source: TransactionSource; review: { original: DraftFields; model: AiModelName; escalated: boolean } | null };
++
++export const TYPED_ORIGIN: DraftOrigin = { source: 'typed', review: null };
++
++export function draftFieldsOf(draft: QuickAddDraft, amountMinor: string | null): DraftFields {
++  const move = draft.type === 'transfer';
++  return {
++    type: draft.type,
++    amountMinor,
++    occurredOn: draft.occurredOn,
++    categoryId: draft.type === 'transfer' ? null : draft.categoryByType[draft.type],
++    walletId: move ? draft.fromWalletId : draft.walletId,
++    merchant: draft.merchant,
++    note: draft.note,
++  };
++}

@@ -1,0 +1,13 @@
+85e66f7cf4017c30cc400f05097d6fdadcd7019d43ca151e0a3ffbe14fce07b3  packages/contracts/src/v1/ai.ts
+3b5df75a46392ba6ad87d8ad66edd81e837585af5600e68e45aacc661acc4951  packages/contracts/src/index.ts
+476c2cd1b262e2732fbf7e1d5eceb5b9c79ddce75500e58934642207bddf2c9f  apps/edge/src/server/ai/prompts.ts
+98730028a73d1276867d1ddb9d9c7a0a072061c5d46d5099f365e0b94cfda637  apps/edge/src/v1/ai/service.ts
+bbb23d3846c22bddde098c852db67d40034baa42bc0b9780da3b6baa7b596136  apps/edge/test/workers/ai.test.ts
+7886a2f05b7c9b12a5cf787147b2f7ec03098e816d7707f904af093936743019  apps/edge/test/workers/ai-routing.test.ts
+dd1eef0044bcae2e050633afdd4c08472da62fced5aafd60587bee5c33489973  apps/edge/test/workers/ai-uses.test.ts
+78bdae1500e71047116ed152712b24afe015a1086bdae469d41959e50c57e15a  apps/app/src/spend/v1/ai/aiResources.ts
+3696ca8d4b8255449125a28a6573416962aabf48b542371ec0da816808c5acb3  apps/app/src/spend/v1/ai/aiResources.test.ts
+8cd88f75ffdf4fe7b0795609e89f86e9394f351f10bd5442fc1791cdb39bcd10  apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+dfa81fe1f723a616c74f33f979e3e8cae6179015fcee6973d4e1f9e50c5fe015  apps/app/src/dev/catalogue/companion/companionSections.tsx
+ad01dabd44494c8497eff822abcc4d0c5e0b101e83fa6546cc17bd9f6fa21890  apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx
+c7cb69136a8b9507bc4e20848aaad01ebbbbc8d4ddfd23e7891acf6fd369cd63  docs/implementation/receipts/P3-T6.md

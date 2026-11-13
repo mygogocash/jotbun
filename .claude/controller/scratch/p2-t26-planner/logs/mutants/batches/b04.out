@@ -1,0 +1,15 @@
+S43 KILLED: the amount does not say its kind [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S44 KILLED: the note is drawn in private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S45 KILLED: a note row with no note [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S46 KILLED: no category row [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S47 KILLED: a category row for a move [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S48 KILLED: a move's two wallets are not said [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S49 KILLED: a move draws a swatch [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S50 KILLED: the swatch ignores the wallet's kept look [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S51 KILLED: a fact is not read as one [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S52 KILLED: a saved entry says no status [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S53 KILLED: a draft says it is saved [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S54 KILLED: no saved check [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S55 KILLED: a draft has the saved check [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S56 KILLED: the tile is never the category's [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+14 killed, 0 survived, 0 not as expected

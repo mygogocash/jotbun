@@ -1,0 +1,33 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+ ❯ test/ai-grounding.test.ts (34 tests | 1 failed) 10ms
+     × a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-grounding.test.ts > sanitizeDrafts > a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1)
+AssertionError: 2026-10-32: expected [Function] to not throw an error but 'RangeError: Invalid time value' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: Invalid time value"
+
+ ❯ test/ai-grounding.test.ts:119:20
+    117|       expect(() => {
+    118|         drafts = sanitizeDrafts(raw({ date }), ctx(), 'ข้าวมันไก่ 50')
+    119|       }, date).not.toThrow()
+       |                    ^
+    120|       expect(drafts[0], date).toMatchObject({ occurred_on: '2026-10-24…
+    121|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 33 passed (34)
+   Start at  19:29:41
+   Duration  194ms (transform 59ms, setup 0ms, import 77ms, tests 10ms, environment 0ms)
+

@@ -1,0 +1,9 @@
+# The round's file lists (sourced by the kit's bash tools; paths relative to the repository root).
+# ORIG: the five files 52110318 has, which the round changes. NEW: the two files the round adds.
+# CODE, TESTS, RECEIPTS: the seven, by kind. RELIED: unchanged files the round's code and cases rely on.
+ORIG="apps/app/src/wallet/records/WalletRecordScreen.tsx apps/app/src/wallet/records/WalletUndoBar.tsx apps/app/src/dev/catalogue/wallet/recordScreens.tsx apps/app/src/wallet/records/WalletRecord.render.test.tsx docs/implementation/receipts/P2-T26.md"
+NEW="apps/app/src/wallet/records/WalletRecordReceipt.render.test.tsx docs/implementation/receipts/P2-T26-fix.md"
+CODE="apps/app/src/wallet/records/WalletRecordScreen.tsx apps/app/src/wallet/records/WalletUndoBar.tsx apps/app/src/dev/catalogue/wallet/recordScreens.tsx"
+TESTS="apps/app/src/wallet/records/WalletRecord.render.test.tsx apps/app/src/wallet/records/WalletRecordReceipt.render.test.tsx"
+RECEIPTS="docs/implementation/receipts/P2-T26.md docs/implementation/receipts/P2-T26-fix.md"
+RELIED="apps/app/src/config/featureFlags.ts apps/app/src/dev/catalogue/wallet/recordSections.tsx apps/app/src/screens/redesign/HistoryParts.tsx apps/app/src/screens/redesign/import/ReceiptParts.tsx apps/app/src/screens/redesign/import/RecordReceipt.tsx apps/app/src/screens/redesign/record/recordActions.ts apps/app/src/spend/v1/testing/fakeAttachments.ts apps/app/src/spend/v1/testing/fakeDiary.ts apps/app/src/spend/v1/testing/fakeResources.ts apps/app/src/ui/a11y.ts apps/app/src/wallet/common/copy.ts apps/app/src/wallet/money/walletMoney.ts apps/app/src/wallet/privacy/PrivateModeProvider.tsx apps/app/src/wallet/records/RecordActionsTray.tsx apps/app/src/wallet/records/copy.ts apps/app/src/wallet/testing/walletHarness.tsx apps/app/src/wallet/tray/Tray.tsx"

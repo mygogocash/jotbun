@@ -1,0 +1,6 @@
+Proof head: b1ca3bfb (origin/claude/p1a-vault-core after #457, P3-T3, merged as ab350e48; P3-T8 merged before it as 02da8f66).
+Planned on 2062b89a with P3-T8's real/ laid over it, then re-proved on 1ae7b383 and 4f1f7445 as the head moved; every log
+in this folder, under mutants/ and under mutants-s4-repeat/ is from b1ca3bfb: the base typechecks, RED, GREEN, the gate,
+the six mutant batches, two repeats of the timing-based S4, the fixture proof (fixtures-needed-*.log) and applycheck.out.
+From 4f1f7445 to b1ca3bfb only P3-T3's eleven edge files changed (the ai gate), none of this task's twenty, and no lockfile.
+The installs (install-*.log) ran on 2062b89a's lockfiles, which b1ca3bfb keeps byte for byte.

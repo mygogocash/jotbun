@@ -1,0 +1,1181 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ModelUnavailable"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > parse, note, slip and ask call Haiku 5.5 with no betas, fallbacks, thinking, sampling or prefill 72ms
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation 66ms
+   → expected { …(5) } to deeply equal { …(5) }
+   → expected 2 to be +0 // Object.is equality
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku 56ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse 30ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back 51ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use 26ms
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 33ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 28ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 37ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"RangeError"}
+
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus 37ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { …(4) }
+(4 matching properties omitted from actual)
+   → expected 2 to be +0 // Object.is equality
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus 41ms
+   → expected { …(5) } to match object { …(5) }
+   → expected 2 to be +0 // Object.is equality
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer 35ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(2 matching properties omitted from actual)
+   → expected 2 to be +0 // Object.is equality
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back 29ms
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year) 31ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver 27ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined 29ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands 29ms
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 31ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 34ms
+ × test/workers/ai.test.ts > Tell Bun > a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1) 33ms
+   → expected { drafts: [ { …(9) } ], …(3) } to match object { source: 'ai', …(2) }
+(7 matching properties omitted from actual)
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model 65ms
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ModelUnavailable"}
+
+ ✓ test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus 38ms
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 37ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a question neither model grounds, with no figures, answers that Bun could not find it 19ms
+   → expected { …(5) } to deeply equal { …(5) }
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once 19ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { source: 'ai', …(2) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus 27ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus 26ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus 24ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus 35ms
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 31ms
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 22ms
+ ✓ test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 27ms
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 529 is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 500 is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 2026-10-32, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"RangeError"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"warn","event":"ai_refund_failed","feature":"ask","failure":"Error"}
+
+ × test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > the prompts carry no account, session or device identifier (both conversations) 45ms
+   → expected [ 'claude-haiku-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5', …(3) ]
+   → expected 2 to be +0 // Object.is equality
+ ✓ test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 529 is 503 AI_PAUSED and gives the use back 27ms
+ ✓ test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 500 is 503 AI_PAUSED and gives the use back 25ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 0000-00-00, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"RangeError"}
+
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus 36ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus 28ms
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 2026-10-32, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1) 39ms
+   → expected 503 to be 200 // Object.is equality
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 27ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 41ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 45ms
+ ✓ test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only 33ms
+ × test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope 37ms
+   → expected [ { …(4) } ] to deeply equal [ { label: Any<String>, …(3) } ]
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 0000-00-00, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1) 30ms
+   → expected 503 to be 200 // Object.is equality
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a guessed category or wallet never escalates 24ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read 33ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an income slip without a receiver is not re-read 30ms
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 39ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 22ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 43ms
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 38ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 42ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 37ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable 40ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent 43ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent 29ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that is not JSON, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 43ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 70ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3) 56ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Haiku's draft and bank stand when Opus answers with no draft (the P3-T8 reviews' m2 and MC) 33ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3) 30ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that is not JSON, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2) 24ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that has no draft, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that says unreadable, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 36ms
+ × test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 29ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 21ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 19ms
+ × test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 27ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that has no draft, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2) 24ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku answer that says unreadable, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2) 24ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back 27ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14) 24ms
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 28ms
+ × test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 25ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 30ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an escalated read spends one use 35ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept 35ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls) 25ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > both calls carry the image's media type, a phone's JPEG included (the P3-T8 reviews' n1 and MO3) 22ms
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2) 33ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included 26ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3) 1ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a cap under 2 s makes no call and records a timeout that was never sent (the P3-T4 review's R9) 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16) 1ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > null as the whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > an array as the whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a string as the whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a draft the sanitizer cannot read leaves the answer unusable, so Opus reads it again and nothing crashes (the P3-T8 second review's m1) 2ms
+   → promise rejected "RangeError: Invalid time value" instead of resolving
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > tokens count this read's calls only, when its trace already holds another (the P3-T8 reviews' n2 and MA) 0ms
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without input tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1) 1ms
+   → expected { input: NaN, output: 7 } to deeply equal { input: +0, output: 7 }
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without output tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1) 0ms
+   → expected { input: 70, output: NaN } to deeply equal { input: 70, output: +0 }
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1) 0ms
+   → expected { input: -5, output: 7 } to deeply equal { input: +0, output: 7 }
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 35ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key 33ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 44ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 23ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 48ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 24ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 33ms
+ × test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 22ms
+   → expected { result: { …(2) }, …(2) } to deeply equal { result: { …(2) }, …(2) }
+ × test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 22ms
+   → expected { result: [ { …(3) }, …(2) ], …(2) } to deeply equal { result: [ { …(3) }, …(2) ], …(2) }
+ × test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 23ms
+   → expected { label: 'c01, 1–30 Sep 2026', …(3) } to deeply equal { label: 'c01, 1–30 Sep 2026', …(3) }
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 28ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 26ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step 25ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call 18ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent 26ms
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back 2527ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back 42ms
+ × test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use 41ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero 59ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight 29ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_refund_failed","feature":"parse","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_refund_failed","feature":"slip","failure":"ProblemException"}
+
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked 55ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only 52ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1) 36ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1) 58ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing 33ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ × test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4) 2258ms
+   → expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+stderr | test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ × test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2) 2249ms
+   → expected 10 to be 9 // Object.is equality
+ × test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 2ms
+   → a call that answered, then a turn the deadline never let start: expected true to be false // Object.is equality
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs 10043ms
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > no prompt carries the account, the session or a balance 43ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most 1ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one 0ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "escalated": true,
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
+      },
+    ],
+
+ ❯ test/workers/ai-uses.test.ts:126:20
+    124|     model.push(toolUse('spending_total', { from: monthStart, through: …
+    125|     const answer = await body(await ask(user))
+    126|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    127|     expect(answer.answer).not.toContain('9,999')
+    128|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/40]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/ai-uses.test.ts:39:24
+     37| afterEach(() => {
+     38|   // Every scripted reply was asked for.
+     39|   expect(model.left()).toBe(0)
+       |                        ^
+     40| })
+     41|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/40]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "escalated": true,
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
+      },
+    ],
+
+ ❯ test/workers/ai-uses.test.ts:296:29
+    294|     expect(res.status).toBe(200)
+    295|     // Haiku's second turn could not start, so the question went to Op…
+    296|     expect(await body(res)).toMatchObject({ source: 'facts', model: 'r…
+       |                             ^
+    297|     expect(sent).toBe(1)
+    298|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/40]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)
+AssertionError: expected 10 to be 9 // Object.is equality
+
+- Expected
++ Received
+
+- 9
++ 10
+
+ ❯ test/workers/ai-uses.test.ts:317:42
+    315|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    316|     expect(sent).toBe(1)
+    317|     expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
+       |                                          ^
+    318|   })
+    319| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/40]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+AssertionError: a call that answered, then a turn the deadline never let start: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/ai-uses.test.ts:358:116
+    356|       ['a failed call, then a turn the deadline never let start', [cal…
+    357|     ]
+    358|     for (const [what, calls, answeredByModel, refunds] of rows) expect…
+       |                                                                                                                    ^
+    359|   })
+    360| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/40]⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1)
+AssertionError: expected { drafts: [ { …(9) } ], …(3) } to match object { source: 'ai', …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "drafts": [
+      {
+        "amount_minor": "5000",
+-       "flags": [
+-         "date_guessed",
+-       ],
++       "flags": [],
+        "occurred_on": "2026-11-13",
+      },
+    ],
+-   "model": "claude-haiku-5-5",
+-   "source": "ai",
++   "model": "rules",
++   "source": "rules",
+  }
+
+ ❯ test/workers/ai.test.ts:225:29
+    223|     const res = await client.as(user).post('/v1/ai/parse', { text: 'ข้…
+    224|     expect(res.status).toBe(200)
+    225|     expect(await body(res)).toMatchObject({ source: 'ai', model: 'clau…
+       |                             ^
+    226|   })
+    227|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/40]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "answer": "From your diary — Money out, 1–13 Nov 2026: ฿0",
+-   "escalated": true,
++   "escalated": false,
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ai.test.ts:470:20
+    468|     model.push(toolUse('spending_total', { from: monthStart, through: …
+    469|     const answer = await body(await client.as(user).post('/v1/ai/ask',…
+    470|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    471|     expect(answer.answer).not.toContain('9,999')
+    472|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/40]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures
+ FAIL  test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check
+ FAIL  test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/ai.test.ts:41:24
+     39| afterEach(() => {
+     40|   // Every scripted reply was asked for.
+     41|   expect(model.left()).toBe(0)
+       |                        ^
+     42| })
+     43|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/40]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "escalated": true,
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "40780",
+      },
+    ],
+
+ ❯ test/workers/ai.test.ts:509:21
+    507|     model.push(toolUse('spending_total', { from: '2016-01-01', through…
+    508|     const strayed = await body(await client.as(user).post('/v1/ai/ask'…
+    509|     expect(strayed).toMatchObject({ source: 'facts', model: 'rules', e…
+       |                     ^
+    510|     expect(strayed.answer).not.toContain('407.81')
+    511|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/40]⎯
+
+ FAIL  test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "answer": "From your diary — Money out, 1–13 Nov 2026: ฿0; Money out, 1–13 Nov 2026: ฿0; Money out, 1–13 Nov 2026: ฿0; Money out, 1–13 Nov 2026: ฿0",
+-   "escalated": true,
++   "escalated": false,
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ai.test.ts:537:20
+    535|     model.push(turn(), turn(), turn(), turn(), turn(), refusal())
+    536|     const answer = await body(await client.as(user).post('/v1/ai/ask',…
+    537|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    538|     expect(answer.figures).toHaveLength(5)
+    539|     expect(model.calls.map((call) => call.model)).toEqual([...Array(5)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/40]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return
+AssertionError: expected { result: { …(2) }, …(2) } to deeply equal { result: { …(2) }, …(2) }
+
+- Expected
++ Received
+
+@@ -12,18 +12,13 @@
+      ],
+    },
+    "figures": [
+      {
+        "amount_minor": "13500",
+-       "count": 3,
++       "count": null,
+        "label": "Money out, 1–30 Sep 2026",
+-       "scope": {
+-         "category_id": null,
+-         "from": "2026-09-01",
+-         "through": "2026-09-30",
+-         "type": "expense",
+-       },
++       "scope": null,
+      },
+    ],
+    "result": {
+      "count": 3,
+      "total_say": "฿135",
+
+ ❯ test/workers/ai.test.ts:794:102
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/40]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return
+AssertionError: expected { result: [ { …(3) }, …(2) ], …(2) } to deeply equal { result: [ { …(3) }, …(2) ], …(2) }
+
+- Expected
++ Received
+
+@@ -16,23 +16,23 @@
+      ],
+    },
+    "figures": [
+      {
+        "amount_minor": "5000",
+-       "count": 2,
++       "count": null,
+        "label": "Café Amazon, 1–30 Sep 2026",
+        "scope": null,
+      },
+      {
+        "amount_minor": "1500",
+-       "count": 1,
++       "count": null,
+        "label": "ข้าวมันไก่, 1–30 Sep 2026",
+        "scope": null,
+      },
+      {
+        "amount_minor": "800",
+-       "count": 1,
++       "count": null,
+        "label": "No description, 1–30 Sep 2026",
+        "scope": null,
+      },
+    ],
+    "result": [
+
+ ❯ test/workers/ai.test.ts:841:94
+    839|       { type: 'expense', amount_minor: '1000', occurred_on: '2026-07-1…
+    840|     ])
+    841|     expect(await tool(user, 'top_merchants', { from: '2026-09-01', thr…
+       |                                                                                              ^
+    842|       result: [
+    843|         { merchant: 'Café Amazon', total_say: '฿50', count: 2 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/40]⎯
+
+ FAIL  test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first
+AssertionError: expected { label: 'c01, 1–30 Sep 2026', …(3) } to deeply equal { label: 'c01, 1–30 Sep 2026', …(3) }
+
+- Expected
++ Received
+
+  {
+    "amount_minor": "1300",
+-   "count": 1,
++   "count": null,
+    "label": "c01, 1–30 Sep 2026",
+-   "scope": {
+-     "category_id": "728ce0d3-d7c2-4dfa-bc7e-7f1b31ca8b18",
+-     "from": "2026-09-01",
+-     "through": "2026-09-30",
+-     "type": "expense",
+-   },
++   "scope": null,
+  }
+
+ ❯ test/workers/ai.test.ts:881:37
+    879|     expect(categories.allow?.counts.length).toBe(12)
+    880|     // A person's own category is shown by its label.
+    881|     expect(categories.figures?.[0]).toEqual({ label: 'c01, 1–30 Sep 20…
+       |                                     ^
+    882|     const places = (await tool(user, 'top_merchants', september)) as R…
+    883|     expect((places.result as { merchant: string }[] | undefined)?.map(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+  {
+-   "answer": "This month you spent ฿60 on food.",
+-   "escalated": true,
++   "answer": "From your diary — Food, 1–13 Nov 2026: ฿60",
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
+-       "count": 1,
++       "count": null,
+        "label": "Food, 1–13 Nov 2026",
+-       "scope": {
+-         "category_id": "3a02d134-3253-84ad-b8e6-486f9ac1cac9",
+-         "from": "2026-11-01",
+-         "through": "2026-11-13",
+-         "type": "expense",
+-       },
++       "scope": null,
+      },
+    ],
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "model": "rules",
++   "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:84:29
+     82|     const res = await ask(who.user)
+     83|     expect(res.status).toBe(200)
+     84|     expect(await body(res)).toEqual({
+       |                             ^
+     85|       answer: 'This month you spent ฿60 on food.',
+     86|       figures: [{ label: expect.any(String), amount_minor: '6000', cou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > the prompts carry no account, session or device identifier (both conversations)
+AssertionError: expected 2 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ test/workers/ask-escalation.test.ts:36:24
+     34| afterEach(() => {
+     35|   // Every scripted reply was asked for.
+     36|   expect(model.left()).toBe(0)
+       |                        ^
+     37| })
+     38|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { …(4) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "answer": "This month you spent ฿60 on food.",
+-   "escalated": true,
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "80defb0f-2ee2-4800-ba94-bd40c0b43165",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:109:45
+    107|     const who = await person()
+    108|     model.push(refusal(), total(who.food), text('This month you spent …
+    109|     expect(await body(await ask(who.user))).toMatchObject({ answer: 'T…
+       |                                             ^
+    110|     expect(modelsAsked()).toEqual([HAIKU, OPUS, OPUS])
+    111|     expect(model.calls[1].messages).toEqual([model.calls[0].messages[0…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+AssertionError: expected { …(5) } to match object { …(5) }
+
+- Expected
++ Received
+
+  {
+-   "answer": "This month you spent ฿60 on food.",
+-   "escalated": true,
++   "answer": "From your diary — Food, 1–13 Nov 2026: ฿60; Food, 1–13 Nov 2026: ฿60; Food, 1–13 Nov 2026: ฿60; Food, 1–13 Nov 2026: ฿60",
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
++       "count": null,
++       "label": "Food, 1–13 Nov 2026",
++       "scope": null,
+      },
++     {
++       "amount_minor": "6000",
++       "count": null,
++       "label": "Food, 1–13 Nov 2026",
++       "scope": null,
++     },
++     {
++       "amount_minor": "6000",
++       "count": null,
++       "label": "Food, 1–13 Nov 2026",
++       "scope": null,
++     },
++     {
++       "amount_minor": "6000",
++       "count": null,
++       "label": "Food, 1–13 Nov 2026",
++       "scope": null,
++     },
++     {
++       "amount_minor": "6000",
++       "count": null,
++       "label": "Food, 1–13 Nov 2026",
++       "scope": null,
++     },
+    ],
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "model": "rules",
++   "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:119:20
+    117|     const answer = await body(await ask(who.user))
+    118|     // Opus's answer, with the one figure its own tool read.
+    119|     expect(answer).toMatchObject({ answer: 'This month you spent ฿60 o…
+       |                    ^
+    120|     expect(answer.figures).toHaveLength(1)
+    121|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
++   "escalated": false,
+    "figures": [
+      {
+-       "amount_minor": "10000",
+-       "count": 2,
+-       "scope": {
+-         "category_id": null,
+-       },
++       "amount_minor": "6000",
++       "count": null,
++       "scope": null,
+      },
+    ],
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:130:20
+    128|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    129|     const answer = await body(await ask(who.user))
+    130|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    131|     // Opus's figures, not Haiku's.
+    132|     expect(answer.figures).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "escalated": true,
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
+      },
+    ],
+
+ ❯ test/workers/ask-escalation.test.ts:162:45
+    160|     const who = await person()
+    161|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+       |                                             ^
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a question neither model grounds, with no figures, answers that Bun could not find it
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/ask-escalation.test.ts:36:24
+     34| afterEach(() => {
+     35|   // Every scripted reply was asked for.
+     36|   expect(model.left()).toBe(0)
+       |                        ^
+     37| })
+     38|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a question neither model grounds, with no figures, answers that Bun could not find it
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+  {
+    "answer": "บันหาข้อมูลนี้ในบันทึกของคุณไม่เจอ",
+-   "escalated": true,
++   "escalated": false,
+    "figures": [],
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:172:29
+    170|     const res = await ask(user, 'th')
+    171|     expect(res.status).toBe(200)
+    172|     expect(await body(res)).toEqual({ answer: 'บันหาข้อมูลนี้ในบันทึกข…
+       |                             ^
+    173|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+    174|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { source: 'ai', …(2) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "69f16540-867f-4fcd-b771-d94ad574e140",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:179:41
+    177|     const user = await consenting()
+    178|     model.push(refusal(), text('Bun can answer that from your diary.'))
+    179|     expect(await body(await ask(user))).toMatchObject({ source: 'ai', …
+       |                                         ^
+    180|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+    181|     expect(await vaultRows(user, 'SELECT day, feature, uses FROM ai_us…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > the prompts carry no account, session or device identifier (both conversations)
+AssertionError: expected [ 'claude-haiku-5-5', …(1) ] to deeply equal [ 'claude-haiku-5-5', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:188:27
+    186|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    187|     expect((await ask(who.user)).status).toBe(200)
+    188|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
+       |                           ^
+    189|     // Only the question, the day and the names to choose from, then t…
+    190|     const wire = JSON.stringify(model.calls)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/40]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+AssertionError: expected [ { …(4) } ] to deeply equal [ { label: Any<String>, …(3) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "amount_minor": "41000",
+-     "count": 41,
++     "count": null,
+      "label": "Food, 1–24 Oct 2026",
+-     "scope": {
+-       "category_id": "b15b592b-8b36-8bfd-a118-1c855e324782",
+-       "from": "2026-10-01",
+-       "through": "2026-10-24",
+-       "type": "expense",
+-     },
++     "scope": null,
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:267:119
+    265|     const october = { from: '2026-10-01', through: '2026-10-24' }
+    266|     // A total over food: its 41 records, and a scope naming the days,…
+    267|     expect(figuresOf(await tool(who.user, 'spending_total', { ...octob…
+       |                                                                                                                       ^
+    268|       { label: expect.any(String), amount_minor: '41000', count: 41, s…
+    269|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 2026-10-32, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 0000-00-00, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ test/workers/slip-read.test.ts:201:24
+    199|     model.push(slipReply('slip', [drafted(who, { date })]), slipReply(…
+    200|     const res = await readSlip(who.user)
+    201|     expect(res.status).toBe(200)
+       |                        ^
+    202|     expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', …
+    203|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 2026-10-32, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku date of 0000-00-00, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/slip-read.test.ts:68:26
+     66|   afterEach(() => {
+     67|     // Every scripted reply was asked for.
+     68|     expect(model.left()).toBe(0)
+       |                          ^
+     69|   })
+     70|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a draft the sanitizer cannot read leaves the answer unusable, so Opus reads it again and nothing crashes (the P3-T8 second review's m1)
+AssertionError: promise rejected "RangeError: Invalid time value" instead of resolving
+ ❯ test/workers/slip-read.test.ts:556:6
+    554|     await expect(
+    555|       readSlipImage({ image, context: { ...context, today: 'not-a-date…
+    556|     ).resolves.toMatchObject({ kind: 'unreadable', drafts: [], bank: n…
+       |      ^
+    557|     expect(replies.calls).toHaveLength(2)
+    558|   })
+
+Caused by: RangeError: Invalid time value
+ ❯ addDays src/server/ai/drafts.ts:27:15
+ ❯ sanitizeDrafts src/server/ai/drafts.ts:90:18
+ ❯ readOnce src/v1/ai/slip-read.ts:158:53
+ ❯ readSlipImage src/v1/ai/slip-read.ts:88:17
+ ❯ test/workers/slip-read.test.ts:554:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without input tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: NaN, output: 7 } to deeply equal { input: +0, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 0,
++   "input": NaN,
+    "output": 7,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage without output tokens counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: 70, output: NaN } to deeply equal { input: 70, output: +0 }
+
+- Expected
++ Received
+
+  {
+    "input": 70,
+-   "output": 0,
++   "output": NaN,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/40]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a usage with a count below zero counts what it has, so the phone takes the read (the P3-T8 second review's n1)
+AssertionError: expected { input: -5, output: 7 } to deeply equal { input: +0, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 0,
++   "input": -5,
+    "output": 7,
+  }
+
+ ❯ test/workers/slip-read.test.ts:575:25
+    573|     const reply = { ...slipReply('slip', [written()]), usage } as unkn…
+    574|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    575|     expect(read.tokens).toEqual(tokens)
+       |                         ^
+    576|   })
+    577| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/40]⎯
+
+
+ Test Files  4 failed | 1 passed (5)
+      Tests  26 failed | 100 passed (126)
+   Start at  19:27:20
+   Duration  14.32s (transform 7.77s, setup 15.31s, import 327ms, tests 20.70s, environment 3ms)
+

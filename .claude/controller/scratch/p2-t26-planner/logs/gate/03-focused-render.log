@@ -1,0 +1,121 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the receipt shows the amount, type, category, wallet, date and note, with Edit, Copy and Delete 67ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a move reads From → To, and a merchant gets its own row 34ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Copy opens quick add with copyOf; Back returns to the list 23ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > edits with the version you saw and its own command key, then shows the server record after the acknowledgement 104ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Edit on the receipt opens the edit mode; Cancel leaves it without sending 69ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the keypad sends an exact amount_minor: 0.1 + 0.2 is 30 satang, 100 ÷ 3 is ฿33.33 142ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > only the fields you changed are sent: note, merchant and date 60ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unchanged edit sends nothing; an amount the keypad cannot save says why 102ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a conflict shows yours and the server side by side, and Apply my change resends on the server version with a new key 79ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Reload after a conflict shows the other device’s version and drops the edit 91ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a conflict without a usable current record reloads instead of looping 67ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an entry deleted on another device says so, drops the edit and can be restored within 30 days 74ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed edit is frozen and retried as the same command 76ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a failed reload after an acknowledged edit is a load problem, not an unconfirmed save 87ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Delete shows the undo bar; Undo restores with the new version and its own key 47ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed undo keeps the bar and resends the same restore 53ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an undo Jotbun definitely refuses reloads the entry, which then reads as deleted 46ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a second Save while the first is still on its way sends nothing 79ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed delete is frozen and resent with the same key 35ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a draft on this device opens from the diary with its state, and can be copied or removed 15ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a draft that needs a look can be discarded; one being checked can only wait 26ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 26ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > in Vietnamese the receipt date uses the same words as the day headers, never Intl English 15ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'en', 'light': paper slip, translated rows, the long date and Thai leading 12ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'en', 'dark': paper slip, translated rows, the long date and Thai leading 16ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'th', 'light': paper slip, translated rows, the long date and Thai leading 15ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'th', 'dark': paper slip, translated rows, the long date and Thai leading 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'vi', 'light': paper slip, translated rows, the long date and Thai leading 16ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > reads in 'vi', 'dark': paper slip, translated rows, the long date and Thai leading 16ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > while editing, the message and Save changes with Cancel are pinned under the scrolling form 74ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the receipt view has no pinned footer 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > the amount being edited shows exactly, as Quick add does, with what was typed above it 44ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a refused edit is kept as a choice and both versions are shown, yours chosen 83ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > decide later keeps the choice, and reopening the record shows it again 112ms
+(node:3058) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours sends the same changes on the server's version once, then drops the choice 98ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours meeting yet another change keeps the choice with the newer record and shows it again 118ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the record shows its amount exactly, its facts and no time (฿50.00, เสาร์ 24 ต.ค. 2569) 155ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > once use yours is acknowledged the choice is gone, even when the next read fails 102ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an unconfirmed "use yours" is frozen with Try again, resent with the same key, and the choice stays until it is confirmed 98ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's version sends nothing and drops the choice 133ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours refused without a usable record reads the record again, and choosing the server's then clears the notice 114ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > offline, the choice compares with the kept record and cannot send yours 18ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the server already holds clears itself 18ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a deleted record offers Restore and Discard my change 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a phone that cannot keep the choice asks for it now 150ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > conflict_shown is sent once, from the edit rule, with the class name and the route pattern only 97ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > with the conflict area off, today's comparison stays and nothing is kept 79ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's version never shows today's comparison while the diary drops the choice 97ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ทำซ้ำวันนี้ opens the add tray copying this record; from the tray, once the tray has gone (R69) 888ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" never shows today's comparison while the diary drops the choice 96ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the diary finds after the record has loaded is offered, against the fresh record 38ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice the diary finds while an edit is open never replaces the edit in progress 51ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > with the conflict area off, a diary that opens with a kept choice changes nothing 16ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > choosing the server's when the diary cannot drop the choice shows the record, and the next open offers the choice again 92ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > ลบ deletes, and Undo restores with the version the delete returned 160ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a reopened choice this phone cannot keep again still leaves the diary when the server's is chosen 27ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > use yours meeting a record deleted elsewhere offers Restore and Discard my change, and keeps the choice until one is used 75ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a choice for a record that is no longer there offers Discard my change 12ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows 131ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > conflict_shown is sent again when "use yours" meets yet another change 81ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a server that is unavailable counts as offline: the choice compares with the kept record and cannot send yours 14ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > History's Edit on a record with a choice opens the choice first, and choosing the server's lands on the record 35ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an edit refused for a record deleted elsewhere keeps no choice (R94) 57ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged edit records record_edited, and an unconfirmed one nothing until it is 71ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > a delete records record_deleted and its undo records undo_used, each once Jotbun has it 46ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Restore records record_restored, never undo_used 21ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" records one record_edited; the refused edit before it records none 76ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > an acknowledged "use yours" reports the category of the server's copy when another phone moved the entry 75ms
+ ✓ src/screens/redesign/RecordScreen.render.test.tsx > Restore of an income records record_restored with kind income 21ms
+(node:4046) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > Recently deleted says how many days are left and restores one entry (restoreTransaction once with its version and key) 174ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > from the tray, แก้ไข starts the edit once the tray has gone, ลบ deletes at once, and closing it does nothing 1483ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > the last day says so 87ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > private mode hides every amount and masks the restore label 61ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a draft never sent can be removed and one that needs a look discarded; neither can be edited 131ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > private mode: a restore names its entry without the amount, on screen and in every live region (R109) 141ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > private mode hides the record's amount and the ghost, and draws none of the person's words 201ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > every restore button is 44 pt and names its entry 51ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > at the largest text size the title wraps and each restore pill grows with its words (m1) 26ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > a deleted income draws as income: violet, with its plus (m2) 68ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > each row says its wallet and its day as dateStep says it: yesterday, a weekday, and another year's with its year (m4) 39ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > the page starts 8 pt below the status bar, from the safe-area inset (m5) 13ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > an unconfirmed restore is frozen: only Try again, which resends the same command 36ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > every action and row is at least 44 pt 141ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > a refused restore says why in plain words and reads the list again 75ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > Back, named as rh-deleted names it, returns to History, or opens it when there is nothing to go back to (n1) 20ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > with nothing deleted it says so and shows the empty state 14ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > each line takes WalletText's leading for its language (n4) 27ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > income is violet with its plus, a move names both wallets and no category, and the tile is the category's, the move's or the initial 240ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the wallet's swatch is its kept look, else the one derived from its id 80ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an unconfirmed delete is frozen: only Try again, which resends the same delete 67ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar goes after its time, and the page then says the entry was deleted 58ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo whose answer never came keeps the bar past its time, and Undo resends the same restore 96ms
+ ✓ src/wallet/records/WalletDeleted.render.test.tsx > the catalogue section bw-deleted draws the real screen on its own fakes (B1) 362ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > an undo on its way when the time runs out keeps the bar until it lands 40ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but never while a screen reader runs 22ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar's time follows the phone: no answer counts as no screen reader, a change stops or starts it, and drawing it again never restarts it 5ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the undo bar says its words once on iOS 6ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a record deleted elsewhere says so, counts its days and restores with its own version 111ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > today's receipt section, unchanged (W15): it gets the record's id, version and receipt, and a change reads the record again 26ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > load problems: a failed load can be tried again; a missing entry says so 72ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > while a delete is on its way, แก้ไข, ลบ and more wait; ทำซ้ำวันนี้ does not 42ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > a tray opened again before it has gone forgets the action it was leaving for 372ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the screen sends no event of its own: a delete and its undo send one record_deleted and one undo_used, with no amount or words 40ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > at the largest text size the three buttons stack and nothing is clamped 88ms
+ ✓ src/wallet/records/WalletRecord.render.test.tsx > the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes 726ms
+
+ Test Files  3 passed (3)
+      Tests  105 passed (105)
+   Start at  08:15:00
+   Duration  8.90s (transform 3.26s, setup 238ms, import 4.63s, tests 10.46s, environment 486ms)
+

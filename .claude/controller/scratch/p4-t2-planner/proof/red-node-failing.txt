@@ -1,0 +1,2 @@
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2)

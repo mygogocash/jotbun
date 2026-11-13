@@ -1,0 +1,47 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error","message":"429 {\"error\":{\"message\":\"API error 429\"}}"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 284ms
+     × a Haiku outage never reaches Opus 29ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+AssertionError: expected [ { level: 'warn', …(4) } ] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+@@ -2,7 +2,8 @@
+    {
+      "event": "ai_fallback",
+      "failure": "Error",
+      "feature": "ask",
+      "level": "warn",
++     "message": "429 {\"error\":{\"message\":\"API error 429\"}}",
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:150:54
+    148|       // The outage is logged by its class name only (Global Constrain…
+    149|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    150|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    151|     } finally {
+    152|       warnings.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:30:01
+   Duration  2.39s (transform 804ms, setup 1.60s, import 24ms, tests 284ms, environment 0ms)
+

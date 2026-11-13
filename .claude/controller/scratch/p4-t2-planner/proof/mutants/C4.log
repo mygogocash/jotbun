@@ -1,0 +1,72 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 4ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 20ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 12ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 7ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 4ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 2ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 4ms
+   → expected [] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call
+AssertionError: expected [] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "category_key": "food",
+-     "pattern": "7-eleven",
+-   },
+-   {
+-     "category_key": "shopping",
+-     "pattern": "big c",
+-   },
+-   {
+-     "category_key": "travel",
+-     "pattern": "bts",
+-   },
+-   {
+-     "category_key": "shopping",
+-     "pattern": "lotus's",
+-   },
+-   {
+-     "category_key": "shopping",
+-     "pattern": "makro",
+-   },
+-   {
+-     "category_key": "travel",
+-     "pattern": "mrt",
+-   },
+-   {
+-     "category_key": "food",
+-     "pattern": "เซเว่น",
+-   },
+- ]
++ []
+
+ ❯ test/workers/catalog.test.ts:246:77
+    244|       expect(await merchantPatterns({ CATALOG_DB: flaky }, AT)).toEqua…
+    245|       down = true
+    246|       expect(await merchantPatterns({ CATALOG_DB: flaky }, AT + 3_600_…
+       |                                                                             ^
+    247|       // A binding never read has no list to keep.
+    248|       expect(await merchantPatterns({ CATALOG_DB: never }, AT)).toEqua…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  19:49:55
+   Duration  2.61s (transform 996ms, setup 2.01s, import 18ms, tests 59ms, environment 0ms)
+

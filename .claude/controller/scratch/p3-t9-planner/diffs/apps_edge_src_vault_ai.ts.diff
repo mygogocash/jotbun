@@ -1,0 +1,71 @@
+--- a/apps/edge/src/vault/ai.ts
++++ b/apps/edge/src/vault/ai.ts
+@@ -6,7 +6,7 @@
+ // Nothing a person writes to Bun, and no slip image, reaches the vault: the
+ // only row an AI call writes is its use. Sums leave SQLite as CAST(... AS TEXT).
+ import { AI_DAILY_LIMITS, AI_FEATURES, AI_NOTICE_VERSION, bangkokDate } from '@gogospend/contracts'
+-import type { AiFeature, AiFigure, AiLocale, AiPreferences, AiPreferencesDto, AiPreferencesUpdate, BunFact, CategoryDto, WalletDto } from '@gogospend/contracts'
++import type { AiFeature, AiFigure, AiFigureScope, AiLocale, AiPreferences, AiPreferencesDto, AiPreferencesUpdate, BunFact, CategoryDto, WalletDto } from '@gogospend/contracts'
+ 
+ import { ProblemException } from '@api/common/api-problem.filter'
+ 
+@@ -228,9 +228,10 @@
+ }
+ 
+ function runVaultTool(c: VaultContext, name: string, input: Record<string, unknown>, names: CategoryNames, allowed: AllowanceRecorder, locale: AiLocale): { result: unknown; figures: AiFigure[] } {
+-  const money = (label: string, minor: string): AiFigure => {
++  /** A figure the phone shows (P3-T9, H14): its label and amount, how many records it adds up, and what it counts over. */
++  const money = (label: string, minor: string, count: number | null, scope: AiFigureScope | null): AiFigure => {
+     allowed.addSatang(minor)
+-    return { label, amount_minor: minor }
++    return { label, amount_minor: minor, count, scope }
+   }
+   switch (name) {
+     case 'spending_total': {
+@@ -252,7 +253,7 @@
+       allowed.addCount(row.n).addDate(from).addDate(through)
+       const what = category ? categoryShown(names, category, locale) : figureWord(type === 'income' ? 'in' : 'out', locale)
+       const label = figureLabel(what, periodText(from, through, locale), locale)
+-      return { result: { total_say: formatBaht(row.total), count: row.n }, figures: [money(label, row.total)] }
++      return { result: { total_say: formatBaht(row.total), count: row.n }, figures: [money(label, row.total, row.n, { from, through, type, category_id: category })] }
+     }
+     case 'category_totals': {
+       const { from, through } = dates(input)
+@@ -269,7 +270,7 @@
+         .toArray()
+       allowed.addDate(from).addDate(through)
+       const when = periodText(from, through, locale)
+-      const figures = rows.map((r) => money(figureLabel(categoryShown(names, r.category_id, locale), when, locale), r.total))
++      const figures = rows.map((r) => money(figureLabel(categoryShown(names, r.category_id, locale), when, locale), r.total, r.n, { from, through, type, category_id: r.category_id }))
+       for (const r of rows) allowed.addCount(r.n)
+       return { result: rows.map((r) => ({ category: categoryName(names, r.category_id), total_say: formatBaht(r.total), count: r.n })), figures }
+     }
+@@ -287,7 +288,8 @@
+       allowed.addDate(from).addDate(through)
+       for (const r of rows) allowed.addCount(r.n)
+       const when = periodText(from, through, locale)
+-      const figures = rows.map((r) => money(figureLabel(r.merchant ?? figureWord('noDescription', locale), when, locale), r.total))
++      // A place's total names no category or type to see all of.
++      const figures = rows.map((r) => money(figureLabel(r.merchant ?? figureWord('noDescription', locale), when, locale), r.total, r.n, null))
+       return { result: rows.map((r) => ({ merchant: r.merchant ?? '(no description)', total_say: formatBaht(r.total), count: r.n })), figures }
+     }
+     case 'budget_status': {
+@@ -300,13 +302,14 @@
+       if (!totals.budget) return { result: null, figures: [] }
+       const b = totals.budget
+       const when = monthText(month, locale)
++      // A budget's lines are limits and what is left of them: no records to count.
+       const figures = [
+-        money(figureLabel(figureWord('budget', locale), when, locale), b.overall_limit_minor),
+-        money(figureLabel(figureWord('spent', locale), when, locale), b.spent_minor),
+-        money(figureLabel(figureWord('left', locale), when, locale), b.remaining_minor),
++        money(figureLabel(figureWord('budget', locale), when, locale), b.overall_limit_minor, null, null),
++        money(figureLabel(figureWord('spent', locale), when, locale), b.spent_minor, null, null),
++        money(figureLabel(figureWord('left', locale), when, locale), b.remaining_minor, null, null),
+       ]
+       const categories = b.categories.map((limit) => {
+-        figures.push(money(figureLabel(leftOf(categoryShown(names, limit.category_id, locale), locale), when, locale), limit.remaining_minor))
++        figures.push(money(figureLabel(leftOf(categoryShown(names, limit.category_id, locale), locale), when, locale), limit.remaining_minor, null, null))
+         allowed.addSatang(limit.limit_minor).addSatang(limit.spent_minor)
+         return { category: categoryName(names, limit.category_id), limit_say: formatBaht(limit.limit_minor), spent_say: formatBaht(limit.spent_minor), left_say: formatBaht(limit.remaining_minor) }
+       })

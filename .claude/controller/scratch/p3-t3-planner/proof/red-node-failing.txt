@@ -1,0 +1,5 @@
+ × test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry
+ × test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed
+ × test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes
+ × test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does

@@ -1,0 +1,57 @@
+diff --git a/docs/implementation/receipts/P2-T26-fix.md b/docs/implementation/receipts/P2-T26-fix.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..0a7d00e6c028f89e2fa61d756904d0f35ef84aa3
+--- /dev/null
++++ b/docs/implementation/receipts/P2-T26-fix.md
+@@ -0,0 +1,51 @@
++# P2-T26-fix: the receipt photo in private mode, the undo bar's spoken words, and the reviews' pins
++
++- **Status:** built and verified locally on `p2/t26-record-detail` (`.claude/worktrees/p2-t26`), one commit on PR #456's reviewed head `52110318`. Not pushed. This is the fix round on PR #456 after two reviews, both Needs fixes for one major, which is the controller's R123:
++  - the first (`.claude/controller/reviews/P2-T26.md`, Opus): M1, m1 to m3, n1 to n3;
++  - the second (`P2-T26-second.md`, Sonnet, money and privacy): M1, m1, m2, n1 to n5.
++
++  The controller ruled R123 and R124 (13 November), and the planner's brief is `.claude/controller/briefs/P2-T26-fix.md`. Under R87 this receipt is its own file; `P2-T26.md` is corrected and points here.
++- **Base:** `52110318`, with no merge: the controller merges the integration branch up. #451 (P2-T17), #452 (P4-T3) and #454 (P3-T8) merged after the build; none changes a file of this task.
++- **Files:** modified `apps/app/src/wallet/records/WalletRecordScreen.tsx` (488 lines before, 528 after), `apps/app/src/wallet/records/WalletUndoBar.tsx` (103, 117), `apps/app/src/dev/catalogue/wallet/recordScreens.tsx` (148, 152), `apps/app/src/wallet/records/WalletRecord.render.test.tsx` (942, 1157; 25 cases before, 35 after) and `docs/implementation/receipts/P2-T26.md` (a line pointing here, and the lines the round makes untrue); created `apps/app/src/wallet/records/WalletRecordReceipt.render.test.tsx` (171 lines, 4 cases) and this receipt. `RecordReceipt.tsx` and today's `RecordScreen.tsx` are unchanged. No copy key is added (`records.noteHidden` is reused), and no catalog, route, package or lockfile changes.
++- **R123, private mode and the receipt photo (both reviews' M1):**
++  - While `usePrivateMode().hidden`, the wallet page does not mount today's `RecordReceipt`, so nothing is granted, downloaded, drawn or opened, and Attach, Replace and Remove wait. Private mode reads as hidden until its setting is read, so the panel never mounts before the setting is known.
++  - A record that holds a receipt (`attachment_id` set), with the import area on, shows the section's frame in the wallet look instead: a card of one fact, รูปใบเสร็จ (`tc('Receipt photo')`) and ซ่อนอยู่ (`records.noteHidden`), read as one, as the note's row is in private mode. No new key: the words are the note's private line.
++  - A record with no receipt, or the import area off, shows nothing while hidden: there is nothing to hide, and a photo attached now would be drawn at once.
++  - With private mode off, today's panel, unchanged. The fix lives in the wallet page only; today's `RecordScreen` (its line 214) goes to P2-T37.
++  - The cases run the real panel, in their own file (`WalletRecordReceipt.render.test.tsx`), since the main file stands the panel in module-wide: a record with a receipt in private mode (Thai and English, light and dark: the frame, its words and how it is read, the facts' card colour; no part of the panel, no `<img>`, no photo's bytes in the page, no grant and no download); one with no receipt (nothing); private mode off (the thumbnail, one grant, no frame; Attach with no receipt); the import area off (neither, private mode on or off). The main file's private-mode case also checks that the stand-in is not drawn.
++- **R124, the undo bar's spoken words (the first review's m1):**
++  - `deletedBarText` returns the drawn words and the spoken ones: ลบ ข้าวมันไก่ ฿50 แล้ว is read, and said on iOS, as ลบ ข้าวมันไก่ 50 บาท แล้ว (the spoken amount through `spokenMoney`). In private mode both are `records.deletedBarHidden`, which holds no amount.
++  - `WalletUndoBar` takes an optional `spoken`, one prop beyond the plan's three: it labels the bar's words and is what iOS is told (`spoken ?? message`). A bar given no `spoken` reads and says its words, as before.
++  - The catalogue's undo section passes both. Its draft table now carries `COMMON_COPY`, so `common.baht` resolves there.
++  - The cases: a delete's words, read (Thai and English, light and dark); the private-mode case, read as drawn, and no label in the page holding an amount, drawn or in words; on iOS the page says its bar once, ลบ ข้าวมันไก่ 50 บาท แล้ว (Deleted ข้าวมันไก่ 50 baht), and in private mode ลบ อาหาร แล้ว (Deleted Food); and the catalogue's section, read in both modes.
++- **The guard on the phone's first answer (the first review's n3, the second's n5; the controller left it to the planner):** once the phone has told the bar of a screen-reader change, its first answer to `isScreenReaderEnabled()`, a value or a failure, is dropped, so a late "no" can no longer start the time under a screen reader (WCAG 2.2.1). The case answers late, after a change, both ways. The other half of today's `UndoBar` guard, an answer after the bar has gone, is not carried: React 19 drops a state update on an unmounted component with no warning, so it changes nothing a person or a case can see.
++- **The reviews' pins (the code was right; each now has a case and a mutant):** a new delete after an undo whose bar ran out is a new bar (Opus m2: M1, M2); the tray's Close closes it (m3: M49); Back goes back, or to History when there is nowhere to go back to (n1: M28, M28b); the Undo pill's fill and the mark's circle (n2: M24, M24b); a refused delete (`conflict`, `deleted`, `not_found`, `invalid`) says why from the page and from the tray, with one `deleteTransaction`, two reads and the page still live (Sonnet m1: OM7); a draft whose Remove or Discard fails says so and stays (OM8); a draft at the largest text size stacks (OM1, OM2); the tile and the swatch are never read (n2: OM19, OM20).
++- **RED to GREEN:**
++  - RED (the round's two render files over `52110318`'s code, with no stub): `npm run typecheck:app` exit 0. Exit 1, `Test Files 2 failed (2)`, `Tests 7 failed | 32 passed (39)`. `first_errors.py`: 7 failing cases, each an `AssertionError`, and no line for a module, syntax, reference or type error. The 7: the delete case, the private-mode case, the answer guard, the iOS page case and the catalogue case (main file), and the two private-mode cases of the receipt file.
++  - GREEN: `typecheck:app` exit 0; the two files 39 of 39 (35 and 4), with no `stderr |` line.
++- **Mutation check:** 139 mutants, 139 killed, 0 survived. Each file was restored with its SHA-256 checked, and every failing case of every kill is an `AssertionError`, except C1, killed as it expects by its suite failing to load.
++  - The first round's 106. S38, S64, U3, U4, U12 and U15 are re-pointed at the lines this round moves.
++  - This round's F1 to F10 (R123's frame, in the receipt file), W1 to W7 (R124's spoken words) and G1 to G3 (the answer guard).
++  - The reviews' pins under the reviewers' names: M1, M2, M24, M28 and M49 (Opus), OM1, OM2, OM7, OM8, OM19 and OM20 (Sonnet), and two kin, M24b and M28b.
++- **Gate (R100, each file named):**
++  - `npm run typecheck:app`: exit 0.
++  - The focused render files and today's three neighbours (`WalletRecord`, `WalletRecordReceipt`, `WalletDeleted`, `RecordScreen` and `RecordReceipt` `.render.test.tsx`): `Test Files 5 passed (5)`, `Tests 167 passed (167)` (35, 4, 15, 65 and 48; the last three unchanged), no `stderr |` line.
++  - The four routes tests (SpendRoutes, AccountRoutes, InsightsRoutes, PlanningRoutes): 18 of 18.
++  - The eight kit render files that import the wallet catalogue index (CardStack, WalletLooks, PrivateMode, walletHarness, Tray, Lock, AmountStep, WalletsList): 142 of 142.
++  - The record's and bw-deleted's sections in both catalogue suites (`-t "section bw-record|section bw-deleted"`): `Tests 12 passed | 672 skipped (684)`.
++  - `npm run test:app`: exit 0, `ℹ fail 0`.
++  - `npm run test:unit`: exit 0, `ℹ fail 0`.
++  - `git diff --check`: clean before the commit, and against `origin/claude/p1a-vault-core...HEAD` after it.
++- **Deviations:** none from the brief's rulings.
++- **SKIPPED and CI:**
++  - In CI on the PR (R100): the full render suite (its per-section jobs open the record's five sections), `export:web` and the iOS export, the database, edge and image jobs, and `test:ops`.
++  - Not needed: `typecheck:routes` and `export:web` locally (no route, config or entry changes), and the API and edge suites (nothing outside `apps/app` and the receipts changes).
++  - SKIPPED until a device: VoiceOver and TalkBack reading the bar's words with the amount in words (TalkBack hears the bar as a live region); the frame read as one in private mode; and the first round's list.
++- **Risks:**
++  - Turning private mode on while today's panel is attaching or preparing a photo unmounts the panel mid-way. With private mode off again, the panel mounts afresh and reads the record; no case covers a switch in the middle of an attach. Attaching waits until private mode is off.
++  - Outside the wallet's private-mode provider the page reads as shown and mounts today's panel, as today's record does.
++- **Notes for later tasks:**
++  - **P2-T24 (Home, the first routed eye):** R123 is in, so private mode can be reached with the record's photo hidden.
++  - **P2-T37 (the sweep):** today's `RecordScreen` still draws the slip in private mode (R123, the first review's point 4); the undo bar's literals (the second review's n4: the 12% fill and the shadow, white in both modes).
++  - **The controller's followups, not in this round:** the iOS dismissal bound for the tray's hand-off (the second review's m2, the device item before P2-T18); the static import cycle between `recordScreens` and `recordSections` (n3). The second review's n1 is `after.current` not cleared once `actionsClosed` has used it (unreachable today); the controller's list names it "the If-Match regex copy", which neither review raises.
++  - **E2-B (the owner):** the frame's words, รูปใบเสร็จ ซ่อนอยู่ (Receipt photo Hidden), and the bar's spoken words.

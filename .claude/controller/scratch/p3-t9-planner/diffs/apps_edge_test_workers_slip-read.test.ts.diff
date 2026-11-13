@@ -1,0 +1,158 @@
+--- a/apps/edge/test/workers/slip-read.test.ts
++++ b/apps/edge/test/workers/slip-read.test.ts
+@@ -5,6 +5,9 @@
+ // when no model read the slip and the last call failed with an outage (H5), and
+ // writes nothing else (B9). The front-door cases script the models' replies (no
+ // network); the last cases run slipNeedsOpus, readSlipImage and the cap alone.
++// P3-T9 carries the P3-T8 reviews' pins: a model date that is no calendar date,
++// an Opus outage after any unusable Haiku answer, an Opus answer with no draft,
++// the media type, the archived choices, a bare answer, and the read's tokens.
+ import { randomUUID } from 'node:crypto'
+ 
+ import Anthropic from '@anthropic-ai/sdk'
+@@ -39,6 +42,12 @@
+   return content.find((block) => block.type === 'image')?.source?.data
+ }
+ 
++/** The media type of the image a request sent. */
++function mediaOf(call: MessageParams): string | undefined {
++  const content = call.messages[0].content as { type: string; source?: { media_type?: string } }[]
++  return content.find((block) => block.type === 'image')?.source?.media_type
++}
++
+ /** The text a request sent beside the image. */
+ function textOf(call: MessageParams): string | undefined {
+   const content = call.messages[0].content as { type: string; text?: string }[]
+@@ -185,6 +194,15 @@
+     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
+   })
+ 
++  it.each(['2026-10-32', '0000-00-00'])("a Haiku date of %s, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)", async (date) => {
++    const who = await person()
++    model.push(slipReply('slip', [drafted(who, { date })]), slipReply('slip', [drafted(who)], 'SCB EASY'))
++    const res = await readSlip(who.user)
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', escalated: true, kind: 'slip', bank: 'SCB EASY', drafts: [{ amount_minor: '125000', occurred_on: today }] })
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++  })
++
+   it('a guessed category or wallet never escalates', async () => {
+     // No wallet and no category to choose from, so both are guessed.
+     const user = await consenting()
+@@ -250,6 +268,15 @@
+       drafts: [{ amount_minor: null, merchant: 'ร้านป้าแดง', flags: ['amount_unclear'] }],
+     })
+     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++    expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
++  })
++
++  it("Haiku's draft and bank stand when Opus answers with no draft (the P3-T8 reviews' m2 and MC)", async () => {
++    const who = await person()
++    model.push(slipReply('slip', [drafted(who, { amount_baht: null })]), slipReply('unreadable', [], 'SCB EASY'))
++    const res = await readSlip(who.user)
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ model: 'claude-haiku-5-5', escalated: true, declined: false, kind: 'slip', bank: 'K PLUS', drafts: [{ amount_minor: null, merchant: 'ร้านป้าแดง' }] })
+     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
+   })
+ 
+@@ -273,6 +300,20 @@
+     expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: 'warn', event: 'ai_fallback', feature: 'slip', failure: 'SlipNotRead' }])
+   })
+ 
++  it.each([
++    ['is not JSON', () => text('I read ฿1,250.')],
++    ['has no draft', () => slipReply('slip', [])],
++    ['says unreadable', () => slipReply('unreadable', [], null)],
++  ])("a Haiku answer that %s, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2)", async (_what, haikuReply) => {
++    const user = await consenting()
++    model.push(haikuReply(), apiFailure(529))
++    const res = await readSlip(user)
++    expect(res.status).toBe(503)
++    expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_after_seconds: 300 })
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++    expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip)
++  })
++
+   it('an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back', async () => {
+     const who = await person()
+     model.push(apiFailure(529))
+@@ -352,6 +393,33 @@
+     for (const secret of [who.user.sub, who.user.sid, vaultIdOf(who.user), 'ios/1.0.0', '100000', '฿1,000']) expect(wire, secret).not.toContain(secret)
+   })
+ 
++  it("both calls carry the image's media type, a phone's JPEG included (the P3-T8 reviews' n1 and MO3)", async () => {
++    const who = await person()
++    model.push(refusal(), slipReply('slip', [drafted(who)]))
++    expect((await client.as(who.user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/jpeg', today, locale: 'th' })).status).toBe(200)
++    expect(model.calls.map(mediaOf)).toEqual(['image/jpeg', 'image/jpeg'])
++  })
++
++  it("an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2)", async () => {
++    const who = await person()
++    const spare = randomUUID()
++    expect((await client.as(who.user).post('/v1/wallets', { id: spare, name: 'Spare', opening_minor: '0', tracking_start: '2026-01-01' })).status).toBe(201)
++    expect((await client.as(who.user).post(`/v1/wallets/${spare}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
++    const listed = (await body(await client.as(who.user).get('/v1/categories'))) as { id: string; builtin_key: string | null }[]
++    const fun = listed.find((category) => category.builtin_key === 'fun')?.id
++    if (!fun) throw new Error('the built-in categories have no fun')
++    expect((await client.as(who.user).post(`/v1/categories/${fun}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
++    model.push(refusal(), slipReply('slip', [drafted(who)]))
++    expect((await readSlip(who.user)).status).toBe(200)
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++    for (const call of model.calls) {
++      const sent = JSON.parse(textOf(call) ?? 'null') as { wallets: { id: string }[]; categories: { id: string }[] }
++      expect(sent.wallets.map((wallet) => wallet.id)).toEqual([who.cash])
++      expect(sent.categories.map((category) => category.id)).toContain(who.food)
++      expect(sent.categories.map((category) => category.id)).not.toContain(fun)
++    }
++  })
++
+   it('tokens add up both calls, cache reads and writes included', async () => {
+     const who = await person()
+     const used = (message: ModelMessage, usage: Record<string, number>) => ({ ...message, usage }) as unknown as ModelMessage
+@@ -465,4 +533,45 @@
+     await expect(read(refusal(), apiFailure(429))).rejects.toMatchObject({ name: 'SlipNotRead', failure: 'rate_limited' })
+     await expect(read(apiFailure(529))).rejects.toBeInstanceOf(SlipNotRead)
+   })
++
++  it.each([
++    ['null', 'null'],
++    ['an array', '[]'],
++    ['a string', '"hello"'],
++  ])("%s as the whole answer is re-read by Opus (the P3-T8 second review's MJ)", async (_what, whole) => {
++    const replies = fakeModel([text(whole), slipReply('slip', [written()])])
++    await expect(readSlipImage({ image, context, locale: 'th' }, { transport: replies.transport, trace: newTrace(), deadline: new AiDeadline(45_000) })).resolves.toMatchObject({
++      model: 'claude-opus-5-5',
++      escalated: true,
++      kind: 'slip',
++    })
++    expect(replies.calls).toHaveLength(2)
++  })
++
++  it("a draft the sanitizer cannot read leaves the answer unusable, so Opus reads it again and nothing crashes (the P3-T8 second review's m1)", async () => {
++    // A day that is no date makes sanitizeDrafts throw for any draft (the service always sends a real one), so neither read can be used.
++    const replies = fakeModel([slipReply('slip', [written()]), slipReply('slip', [written()])])
++    await expect(
++      readSlipImage({ image, context: { ...context, today: 'not-a-date' }, locale: 'th' }, { transport: replies.transport, trace: newTrace(), deadline: new AiDeadline(45_000) }),
++    ).resolves.toMatchObject({ kind: 'unreadable', drafts: [], bank: null, model: 'claude-opus-5-5', escalated: true })
++    expect(replies.calls).toHaveLength(2)
++  })
++
++  it("tokens count this read's calls only, when its trace already holds another (the P3-T8 reviews' n2 and MA)", async () => {
++    const trace = newTrace()
++    const used = (usage: Record<string, number>) => ({ ...slipReply('slip', [written()]), usage }) as unknown as ModelMessage
++    const read = (usage: Record<string, number>) => readSlipImage({ image, context, locale: 'th' }, { transport: fakeModel([used(usage)]).transport, trace, deadline: new AiDeadline(45_000) })
++    expect((await read({ input_tokens: 1_000, output_tokens: 100 })).tokens).toEqual({ input: 1_000, output: 100 })
++    expect((await read({ input_tokens: 70, output_tokens: 7 })).tokens).toEqual({ input: 70, output: 7 })
++  })
++
++  it.each([
++    ['without input tokens', { output_tokens: 7 }, { input: 0, output: 7 }],
++    ['without output tokens', { input_tokens: 70 }, { input: 70, output: 0 }],
++    ['with a count below zero', { input_tokens: -5, output_tokens: 7 }, { input: 0, output: 7 }],
++  ])("a usage %s counts what it has, so the phone takes the read (the P3-T8 second review's n1)", async (_what, usage, tokens) => {
++    const reply = { ...slipReply('slip', [written()]), usage } as unknown as ModelMessage
++    const read = await readSlipImage({ image, context, locale: 'th' }, { transport: fakeModel([reply]).transport, trace: newTrace(), deadline: new AiDeadline(45_000) })
++    expect(read.tokens).toEqual(tokens)
++  })
+ })

@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 1 failed) 798ms
+     × tokens count this read's calls only, when its trace already holds another (the P3-T8 reviews' n2 and MA) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > tokens count this read's calls only, when its trace already holds another (the P3-T8 reviews' n2 and MA)
+AssertionError: expected { input: 1070, output: 107 } to deeply equal { input: 70, output: 7 }
+
+- Expected
++ Received
+
+  {
+-   "input": 70,
+-   "output": 7,
++   "input": 1070,
++   "output": 107,
+  }
+
+ ❯ test/workers/slip-read.test.ts:565:73
+    563|     const read = (usage: Record<string, number>) => readSlipImage({ im…
+    564|     expect((await read({ input_tokens: 1_000, output_tokens: 100 })).t…
+    565|     expect((await read({ input_tokens: 70, output_tokens: 7 })).tokens…
+       |                                                                         ^
+    566|   })
+    567|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
+   Start at  19:35:07
+   Duration  3.06s (transform 860ms, setup 1.72s, import 32ms, tests 798ms, environment 0ms)
+

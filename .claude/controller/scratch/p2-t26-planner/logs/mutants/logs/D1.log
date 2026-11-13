@@ -1,0 +1,57 @@
+(node:96060) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app/src/ui/dateStep.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:96060) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/packages/contracts/package.json.
+✔ steps one day across month and year ends (0.703083ms)
+✔ leap days follow the Gregorian rules (0.080917ms)
+✔ only real YYYY-MM-DD dates are accepted (0.172625ms)
+✔ never steps into the future (0.081833ms)
+✔ never steps before the earliest date (the wallet tracking start, or 1970) (0.043958ms)
+✔ Today and Yesterday in English, Thai and Vietnamese (0.251542ms)
+✔ other days are written out, with the year only when it is not this year (0.093791ms)
+✔ Thai dates show Buddhist-era years (0.096833ms)
+✔ full dates and month names in English and Vietnamese keep the Gregorian year (0.062792ms)
+✔ weekday initials run Sunday first in each language (0.080166ms)
+✔ a month's short name has no year, in each language (0.081833ms)
+✔ a short date is written out for today and yesterday too, with the year only when it is not this year (0.056208ms)
+✔ monthName gives short and long names in Thai and English (0.109542ms)
+✔ shortDayName gives ส. 24 and Sat 24 (0.07225ms)
+✖ a record's day always carries its year, as bw-record writes it (P2-T26) (0.40825ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139.9165
+
+✖ failing tests:
+
+test at src/ui/dateStep.test.ts:152:1
+✖ a record's day always carries its year, as bw-record writes it (P2-T26) (0.40825ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'เสาร์ 24 ต.ค.'
+  - 'เสาร์ 24 ต.ค. 2569'
+                  ^
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app/src/ui/dateStep.test.ts:154:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'เสาร์ 24 ต.ค.',
+    expected: 'เสาร์ 24 ต.ค. 2569',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

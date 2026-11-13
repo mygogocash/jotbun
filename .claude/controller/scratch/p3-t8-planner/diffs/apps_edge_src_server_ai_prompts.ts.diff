@@ -1,0 +1,33 @@
+--- a/apps/edge/src/server/ai/prompts.ts
++++ b/apps/edge/src/server/ai/prompts.ts
+@@ -2,6 +2,7 @@
+  * Bun's instructions and output schemas. The system prompts never change per
+  * request (stable prefix); everything about the user arrives in the user turn.
+  */
++import { SLIP_KINDS } from '@gogospend/contracts'
+ 
+ const VOICE = `You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.`
+ 
+@@ -25,6 +26,7 @@
+ 
+ Rules:
+ - If the image is not a slip or receipt, return 0 drafts.
++- kind: "slip" for a bank or e-wallet transfer slip, "receipt" for a shop receipt or bill, "unreadable" when no amount can be read; with "unreadable" return 0 drafts.
+ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and "amount_unclear".
+ - type: "expense" for money the person sent or paid; "income" for money they received.
+ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
+@@ -78,11 +80,12 @@
+   properties: { drafts: { type: 'array', items: DRAFT_ITEM } },
+ }
+ 
++/** A slip read: what the image is (P3-T8, D25), its drafts and the bank that issued it. */
+ export const SLIP_SCHEMA = {
+   type: 'object',
+   additionalProperties: false,
+-  required: ['drafts', 'bank'],
+-  properties: { drafts: { type: 'array', items: DRAFT_ITEM }, bank: nullable({ type: 'string' }) },
++  required: ['kind', 'drafts', 'bank'],
++  properties: { kind: { type: 'string', enum: [...SLIP_KINDS] }, drafts: { type: 'array', items: DRAFT_ITEM }, bank: nullable({ type: 'string' }) },
+ }
+ 
+ export const NOTE_SCHEMA = {

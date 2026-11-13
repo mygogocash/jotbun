@@ -1,0 +1,15 @@
+S15 KILLED: the tray's delete deletes nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+S16 KILLED: any draft can be removed [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S17 KILLED: any draft can be discarded [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S18 KILLED: Remove discards [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S19 KILLED: Discard removes [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S20 KILLED: a draft's ทำซ้ำวันนี้ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S21 KILLED: the page's ทำซ้ำวันนี้ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S22 KILLED: the page's แก้ไข does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S23 KILLED: the page's ลบ does nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 7 failed | 18 passed (25); 7 AssertionError; restored sha256 equal
+S24 KILLED: แก้ไข works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S25 KILLED: ลบ works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S26 KILLED: more works while a delete is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S27 KILLED: ทำซ้ำวันนี้ waits for a delete on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S28 KILLED: the buttons never stack [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+14 killed, 0 survived, 0 not as expected

@@ -1,0 +1,14 @@
+--- a/docs/implementation/receipts/P3-T8.md
++++ b/docs/implementation/receipts/P3-T8.md
+@@ -31,9 +31,10 @@
+ - **Not locked yet:** `SLIP_SYSTEM` and `SLIP_SCHEMA` are locked only after P3-T22's run of about 100 real slips (D25).
+ - **Risks:**
+   - With `HAIKU_SLIP_CAP_MS` (20 s), a Haiku slip read that runs past its cap is a timeout after a call Anthropic may still bill: the use comes back (H5), and Opus is not asked (H7), so the route answers 503 while about 25 s of its deadline remain. B27 (no global limiter in v1) and P6C's spend alerts are the guards.
++  - A second path gives the use back after calls Anthropic may bill (added at P3-T9, from both reviews' n3): a Haiku answer with nothing usable (a decline, an unusable answer or no draft) followed by an Opus call that times out after it was sent. Review Focus 3 asks for that refund. The owner's refund-caps item (followups, "Owner (B27, P4, P6C)") is the guard for both paths.
+   - An escalated read makes two billed calls for one use (D25), and a Haiku draft kept after an Opus outage spends the use (A14).
+ - **Notes for later tasks:**
+-  - **P3-T9** (shares `service.ts`, contracts `ai.ts` and `aiResources.ts`): R116 is Ask Bun's; the slip's `shouldRefund` is unchanged (its Opus call always has the deadline Haiku's cap leaves, less the vault steps).
++  - **P3-T9** (shares `service.ts`, contracts `ai.ts` and `aiResources.ts`): R116 is Ask Bun's; the slip's `shouldRefund` is unchanged (its Opus call always has the deadline Haiku's cap leaves, less the vault steps). P3-T9 revisited this (R116; the second review's PC2): `shouldRefund` now spends a use whose last call never started once an earlier call answered, on every route, so a slip whose Opus re-read the deadline never let start after a Haiku answer spends its use (`receipts/P3-T9.md`).
+   - **P3-T10:** the Opus call is recorded with `escalated: true` and `requested: 'claude-opus-5-5'`; a result's `model` is the read that is shown.
+   - **P3-T17:** `kind` decides B3: keep a photo only after a `receipt` read; `unreadable` always comes with no draft and `escalated: true`.
+   - **P4 (A16, A26):** `/v1/slips` calls `readSlipImage` with its own trace and deadline per slip; `declined` and `tokens` cover only that read's calls (the trace from its first call), and `SlipNotRead.failure` tells an outage from a rejected request. P4-T4 adds the import mode and `SlipNotRead.retryAfterSeconds` additively.

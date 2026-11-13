@@ -1,0 +1,254 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > reads Thai digits, separators and satang as hundredths 1ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > a list with a non-thousands comma reads each number 0ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > money is grounded only when it is an allowed amount 0ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > an overspend is allowed as its absolute amount 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 0 → ฿0 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 6000 → ฿60 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 125050 → ฿1,250.50 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 99999999999 → ฿999,999,999.99 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > -12005 → -฿120.05 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > keeps a grounded draft as it is 2ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > drops an amount the person never wrote 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > accepts an amount written in Thai words through the rules 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > drops ids that are not the account’s own, archived or of the other type 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > uses the only active wallet when the model names an unknown one, and flags a real choice 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > a future, ancient or impossible date becomes today, flagged 0ms
+ × test/ai-grounding.test.ts > sanitizeDrafts > a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1) 3ms
+   → 2026-10-32: expected [Function] to not throw an error but 'RangeError: Invalid time value' was thrown
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > cleans text, drops unknown flags and keeps at most five drafts 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > ignores drafts of other types and non-objects 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > slip drafts (no sentence) keep the printed amount 0ms
+ ✓ test/ai-grounding.test.ts > draftFromRules > maps the rule guess onto the account’s own built-in category and sole wallet 0ms
+ ✓ test/ai-grounding.test.ts > draftFromRules > flags what it could not tell 1ms
+ ✓ test/ai-grounding.test.ts > plain facts > reads in Thai and English, and Vietnamese falls back to English 0ms
+ ✓ test/ai-grounding.test.ts > plain facts > names built-in categories as the app does and joins at most two facts 0ms
+ ✓ test/ai-grounding.test.ts > plain facts > figures stand in for an answer Bun could not ground 0ms
+ ✓ test/ai-grounding.test.ts > figure labels > say a period with its year, Buddhist era in Thai 0ms
+ ✓ test/ai-grounding.test.ts > figure labels > use the words of the screens beside them 0ms
+stderr | test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a refusal
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ModelUnavailable"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > an answer cut short
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ModelUnavailable"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > an outage
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a request the API rejected
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ × test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers 4ms
+   → expected { …(5) } to deeply equal { …(5) }
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a grounded answer 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an answer with a number no tool read 0ms
+ × test/ask-deadline.test.ts > how one conversation ends (D28) > a refusal 1ms
+   → expected { kind: 'failed', …(2) } to deeply equal { kind: 'declined', …(1) }
+ × test/ask-deadline.test.ts > how one conversation ends (D28) > an answer cut short 0ms
+   → expected { kind: 'failed', …(2) } to deeply equal { kind: 'no_answer', figures: [] }
+ × test/ask-deadline.test.ts > how one conversation ends (D28) > an empty answer 0ms
+   → expected { kind: 'ungrounded', figures: [] } to deeply equal { kind: 'no_answer', figures: [] }
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > five tool turns 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an outage 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a request the API rejected 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > takes five turns at most 0ms
+ × test/ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent 0ms
+   → expected { kind: 'failed', …(2) } to deeply equal { kind: 'no_answer', figures: [] }
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ai-grounding.test.ts > sanitizeDrafts > a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1)
+AssertionError: 2026-10-32: expected [Function] to not throw an error but 'RangeError: Invalid time value' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"RangeError: Invalid time value"
+
+ ❯ test/ai-grounding.test.ts:119:20
+    117|       expect(() => {
+    118|         drafts = sanitizeDrafts(raw({ date }), ctx(), 'ข้าวมันไก่ 50')
+    119|       }, date).not.toThrow()
+       |                    ^
+    120|       expect(drafts[0], date).toMatchObject({ occurred_on: '2026-10-24…
+    121|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+-   "answer": "เดือนนี้ใช้กับอาหารไป ฿60",
+-   "escalated": true,
++   "answer": "จากบันทึกของคุณ — อาหาร: ฿60; อาหาร: ฿60",
++   "escalated": false,
+    "figures": [
+      {
+        "amount_minor": "6000",
+        "count": 1,
+        "label": "อาหาร",
+@@ -11,9 +11,20 @@
+          "from": "2026-11-01",
+          "through": "2026-11-12",
+          "type": "expense",
+        },
+      },
++     {
++       "amount_minor": "6000",
++       "count": 1,
++       "label": "อาหาร",
++       "scope": {
++         "category_id": "2c000000-0000-4000-8000-000000000001",
++         "from": "2026-11-01",
++         "through": "2026-11-12",
++         "type": "expense",
++       },
++     },
+    ],
+-   "model": "claude-opus-5-5",
+-   "source": "ai",
++   "model": "rules",
++   "source": "facts",
+  }
+
+ ❯ test/ask-deadline.test.ts:47:20
+     45|     const trace = newTrace()
+     46|     const answer = await askWithEscalation(input, { transport, trace, …
+     47|     expect(answer).toEqual({ answer: GROUNDED, figures: [FIGURE], sour…
+       |                    ^
+     48|     // Two 12 s turns use 24 of Haiku's 25 s, so its third cannot star…
+     49|     expect(given).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/ask-deadline.test.ts > how one conversation ends (D28) > a refusal
+AssertionError: expected { kind: 'failed', …(2) } to deeply equal { kind: 'declined', …(1) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "failure": "other",
+    "figures": [
+      {
+        "amount_minor": "6000",
+        "count": 1,
+        "label": "อาหาร",
+@@ -10,7 +11,7 @@
+          "through": "2026-11-12",
+          "type": "expense",
+        },
+      },
+    ],
+-   "kind": "declined",
++   "kind": "failed",
+  }
+
+ ❯ test/ask-deadline.test.ts:86:21
+     84|   it.each(rows)('%s', async (_what, replies, expected) => {
+     85|     const { outcome, model } = await conversation(replies)
+     86|     expect(outcome).toEqual(expected)
+       |                     ^
+     87|     expect(model.left()).toBe(0)
+     88|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/ask-deadline.test.ts > how one conversation ends (D28) > an answer cut short
+AssertionError: expected { kind: 'failed', …(2) } to deeply equal { kind: 'no_answer', figures: [] }
+
+- Expected
++ Received
+
+  {
++   "failure": "other",
+    "figures": [],
+-   "kind": "no_answer",
++   "kind": "failed",
+  }
+
+ ❯ test/ask-deadline.test.ts:86:21
+     84|   it.each(rows)('%s', async (_what, replies, expected) => {
+     85|     const { outcome, model } = await conversation(replies)
+     86|     expect(outcome).toEqual(expected)
+       |                     ^
+     87|     expect(model.left()).toBe(0)
+     88|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/ask-deadline.test.ts > how one conversation ends (D28) > an empty answer
+AssertionError: expected { kind: 'ungrounded', figures: [] } to deeply equal { kind: 'no_answer', figures: [] }
+
+- Expected
++ Received
+
+  {
+    "figures": [],
+-   "kind": "no_answer",
++   "kind": "ungrounded",
+  }
+
+ ❯ test/ask-deadline.test.ts:86:21
+     84|   it.each(rows)('%s', async (_what, replies, expected) => {
+     85|     const { outcome, model } = await conversation(replies)
+     86|     expect(outcome).toEqual(expected)
+       |                     ^
+     87|     expect(model.left()).toBe(0)
+     88|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent
+AssertionError: expected { kind: 'failed', …(2) } to deeply equal { kind: 'no_answer', figures: [] }
+
+- Expected
++ Received
+
+  {
++   "failure": "timeout",
+    "figures": [],
+-   "kind": "no_answer",
++   "kind": "failed",
+  }
+
+ ❯ test/ask-deadline.test.ts:97:21
+     95|     const trace = newTrace()
+     96|     const { outcome, model } = await conversation([], { trace, deadlin…
+     97|     expect(outcome).toEqual({ kind: 'no_answer', figures: [] })
+       |                     ^
+     98|     expect(model.calls).toHaveLength(0)
+     99|     expect(trace.calls).toMatchObject([{ requested: HAIKU, sent: false…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  6 failed | 40 passed (46)
+   Start at  19:27:14
+   Duration  355ms (transform 187ms, setup 0ms, import 331ms, tests 20ms, environment 0ms)
+

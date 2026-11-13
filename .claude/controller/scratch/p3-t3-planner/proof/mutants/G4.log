@@ -1,0 +1,112 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+ × test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry 4ms
+   → expected false to be true // Object.is equality
+ ✓ test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates 0ms
+ × test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes 1ms
+   → expected [ 'writes', 'jobs' ] to deeply equal [ 'writes', 'jobs', 'ai' ]
+ × test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed 1ms
+   → expected null to deeply equal { Object (status, code, ...) }
+ × test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes 1ms
+   → expected { status: 503, …(3) } to deeply equal { Object (status, code, ...) }
+ ✓ test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/edge-gates.test.ts:37:34
+     35|   it('ai is paused on its own and answers AI_PAUSED with its retry', (…
+     36|     const gates = gatesOf({ paused: ['ai'], retryAfterSeconds: 120 })
+     37|     expect(gates.isPaused('ai')).toBe(true)
+       |                                  ^
+     38|     expect(refusalOf(() => gates.assertOpen('ai'))).toEqual({ status: …
+     39|     for (const scope of GATE_SCOPES) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes
+AssertionError: expected [ 'writes', 'jobs' ] to deeply equal [ 'writes', 'jobs', 'ai' ]
+
+- Expected
++ Received
+
+  [
+    "writes",
+    "jobs",
+-   "ai",
+  ]
+
+ ❯ test/edge-gates.test.ts:65:38
+     63|   it("pausedEdgeScopes lists ai after the API's scopes", () => {
+     64|     const gates = gatesOf({ paused: ['ai', 'jobs', 'writes'] })
+     65|     expect(gates.pausedEdgeScopes()).toEqual(['writes', 'jobs', 'ai'])
+       |                                      ^
+     66|     // pausedScopes() is still the API's list, in the API's order.
+     67|     expect(gates.pausedScopes()).toEqual(['writes', 'jobs'])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed
+AssertionError: expected null to deeply equal { Object (status, code, ...) }
+
+- Expected:
+{
+  "code": "AI_PAUSED",
+  "messageKey": "errors.ai_paused",
+  "retryAfterSeconds": 300,
+  "status": 503,
+}
+
++ Received:
+null
+
+ ❯ test/edge-gates.test.ts:78:53
+     76|     expect(gates.isExposed('uploads')).toBe(false)
+     77|     expect(refusalOf(() => gates.assertOpen('ai', 'uploads'))).toEqual…
+     78|     expect(refusalOf(() => gates.assertOpen('ai'))).toEqual({ status: …
+       |                                                     ^
+     79|   })
+     80|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes
+AssertionError: expected { status: 503, …(3) } to deeply equal { Object (status, code, ...) }
+
+- Expected
++ Received
+
+  {
+-   "code": "AI_PAUSED",
+-   "messageKey": "errors.ai_paused",
++   "code": "WRITES_PAUSED",
++   "messageKey": "errors.writes_paused",
+    "retryAfterSeconds": 60,
+    "status": 503,
+  }
+
+ ❯ test/edge-gates.test.ts:83:63
+     81|   it("the first paused scope in the order given answers, and the API's…
+     82|     const gates = gatesOf({ paused: ['writes', 'ai'], retryAfterSecond…
+     83|     expect(refusalOf(() => gates.assertOpen('ai', 'writes'))).toEqual(…
+       |                                                               ^
+     84|     expect(refusalOf(() => gates.assertOpen('writes', 'ai'))).toEqual(…
+     85|     expect(refusalOf(() => gates.assertOpen('imports', 'ai'))).toEqual…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 2 passed (6)
+   Start at  08:23:34
+   Duration  349ms (transform 125ms, setup 0ms, import 173ms, tests 9ms, environment 0ms)
+

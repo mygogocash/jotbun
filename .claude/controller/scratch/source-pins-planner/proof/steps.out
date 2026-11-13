@@ -1,0 +1,4 @@
+S1 killed (assertion; 1 failed | 10 passed (11); failed: a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed): retain alone clears the source [attachments.ts] restored=True
+S2 killed (assertion; 1 failed | 10 passed (11); failed: a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed): replace alone clears the source [attachments.ts] restored=True
+S3 killed (assertion; 1 failed | 10 passed (11); failed: a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed): remove alone clears the source [attachments.ts] restored=True
+3 of 3 killed; survivors []; not clean []; not restored []

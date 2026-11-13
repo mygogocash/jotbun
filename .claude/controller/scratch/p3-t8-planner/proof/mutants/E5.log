@@ -1,0 +1,64 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 2 failed) 672ms
+     × a receipt without a receiver is not re-read 25ms
+     × slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    "drafts": [
+      {
+        "merchant": null,
+      },
+    ],
+-   "escalated": false,
++   "escalated": true,
+    "kind": "receipt",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:207:50
+    205|     const who = await person()
+    206|     model.push(slipReply(kind, [drafted(who, { ...changes, category_id…
+    207|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    208|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+    209|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing
+AssertionError: a receipt with no receiver: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/slip-read.test.ts:409:84
+    407|       ['a second draft with no amount', answer('receipt', [draft(), dr…
+    408|     ]
+    409|     for (const [what, outcome, opus] of rows) expect(slipNeedsOpus(out…
+       |                                                                                    ^
+    410|   })
+    411|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  08:02:40
+   Duration  3.61s (transform 1.22s, setup 2.25s, import 34ms, tests 672ms, environment 0ms)
+

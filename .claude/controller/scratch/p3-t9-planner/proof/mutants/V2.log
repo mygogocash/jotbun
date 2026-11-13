@@ -1,0 +1,119 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 3 failed) 340ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 42ms
+     × when Opus is not grounded either, the plain figures answer 36ms
+     × figures carry their record count and scope 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+@@ -4,16 +4,11 @@
+    "figures": [
+      {
+        "amount_minor": "6000",
+        "count": 1,
+        "label": "Food, 1–13 Nov 2026",
+-       "scope": {
+-         "category_id": "eec1c790-69f1-8e1b-a314-a30373b98c25",
+-         "from": "2026-11-01",
+-         "through": "2026-11-13",
+-         "type": "expense",
+-       },
++       "scope": null,
+      },
+    ],
+    "model": "claude-opus-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:84:29
+     82|     const res = await ask(who.user)
+     83|     expect(res.status).toBe(200)
+     84|     expect(await body(res)).toEqual({
+       |                             ^
+     85|       answer: 'This month you spent ฿60 on food.',
+     86|       figures: [{ label: expect.any(String), amount_minor: '6000', cou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,13 +2,11 @@
+    "escalated": true,
+    "figures": [
+      {
+        "amount_minor": "10000",
+        "count": 2,
+-       "scope": {
+-         "category_id": null,
+-       },
++       "scope": null,
+      },
+    ],
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:130:20
+    128|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    129|     const answer = await body(await ask(who.user))
+    130|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    131|     // Opus's figures, not Haiku's.
+    132|     expect(answer.figures).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+AssertionError: expected [ { …(4) } ] to deeply equal [ { label: Any<String>, …(3) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "amount_minor": "41000",
+      "count": 41,
+      "label": "Food, 1–24 Oct 2026",
+-     "scope": {
+-       "category_id": "26690225-77ee-8a78-9c34-7317ae001e54",
+-       "from": "2026-10-01",
+-       "through": "2026-10-24",
+-       "type": "expense",
+-     },
++     "scope": null,
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:267:119
+    265|     const october = { from: '2026-10-01', through: '2026-10-24' }
+    266|     // A total over food: its 41 records, and a scope naming the days,…
+    267|     expect(figuresOf(await tool(who.user, 'spending_total', { ...octob…
+       |                                                                                                                       ^
+    268|       { label: expect.any(String), amount_minor: '41000', count: 41, s…
+    269|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 10 passed (13)
+   Start at  19:33:42
+   Duration  3.04s (transform 1.05s, setup 2.06s, import 30ms, tests 340ms, environment 0ms)
+

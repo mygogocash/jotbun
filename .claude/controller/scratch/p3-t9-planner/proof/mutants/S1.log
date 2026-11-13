@@ -1,0 +1,118 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 529 is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 500 is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 5 failed) 363ms
+     × a Haiku outage never reaches Opus 30ms
+     × an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 32ms
+     × a question whose first Haiku call fails with 529 is 503 AI_PAUSED and gives the use back 21ms
+     × a question whose first Haiku call fails with 500 is 503 AI_PAUSED and gives the use back 20ms
+     × a refund whose vault call itself fails never changes the 503, and is logged by name only 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ask-escalation.test.ts:155:45
+    153|     }
+    154|     // The use is given back.
+    155|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                             ^
+    156|   })
+    157|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ask-escalation.test.ts:164:45
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                             ^
+    165|   })
+    166|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 529 is 503 AI_PAUSED and gives the use back
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a question whose first Haiku call fails with 500 is 503 AI_PAUSED and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ask-escalation.test.ts:203:41
+    201|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+    202|     expect(modelsAsked()).toEqual([HAIKU])
+    203|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                         ^
+    204|   })
+    205|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "Error",
+-     "feature": "ask",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ask-escalation.test.ts:222:54
+    220|       expect(res.status).toBe(503)
+    221|       expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    222|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    223|     } finally {
+    224|       UserVault.prototype.call = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 8 passed (13)
+   Start at  19:32:09
+   Duration  2.61s (transform 866ms, setup 1.73s, import 26ms, tests 363ms, environment 0ms)
+

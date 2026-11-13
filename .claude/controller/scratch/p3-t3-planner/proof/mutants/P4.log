@@ -1,0 +1,42 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication
+ × test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused 68ms
+   → expected { companion: true, …(5) } to match object { companion: true, …(2) }
+(7 matching properties omitted from actual)
+ ↓ test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused
+AssertionError: expected { companion: true, …(5) } to match object { companion: true, …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "available": false,
++   "available": true,
+    "cashback_tips": true,
+    "companion": true,
+  }
+
+ ❯ test/workers/ai-gate.test.ts:81:32
+     79|     const saved = await paused.as(user).put('/v1/me/ai-preferences', {…
+     80|     expect(saved.status).toBe(200)
+     81|     expect(await saved.json()).toMatchObject({ companion: true, cashba…
+       |                                ^
+     82|     // Open again, AI is available, and the change was kept.
+     83|     const open = await startV1(OPEN, { transport: model.transport })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  08:24:25
+   Duration  5.03s (transform 2.30s, setup 4.09s, import 32ms, tests 70ms, environment 0ms)
+

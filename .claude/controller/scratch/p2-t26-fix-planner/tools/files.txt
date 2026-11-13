@@ -1,0 +1,7 @@
+shared apps/app/src/wallet/records/WalletRecordScreen.tsx
+shared apps/app/src/wallet/records/WalletUndoBar.tsx
+shared apps/app/src/dev/catalogue/wallet/recordScreens.tsx
+shared apps/app/src/wallet/records/WalletRecord.render.test.tsx
+new apps/app/src/wallet/records/WalletRecordReceipt.render.test.tsx
+shared docs/implementation/receipts/P2-T26.md
+new docs/implementation/receipts/P2-T26-fix.md

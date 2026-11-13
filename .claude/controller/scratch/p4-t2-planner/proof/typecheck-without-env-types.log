@@ -1,0 +1,19 @@
+
+> gogospend@0.0.0 typecheck:edge
+> npm run typecheck --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 typecheck
+> tsc --noEmit
+
+test/workers/catalog.test.ts(49,19): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(59,11): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(91,14): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(93,28): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(94,22): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(236,16): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(238,30): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(239,24): error TS18046: 'env.CATALOG_DB' is of type 'unknown'.
+test/workers/catalog.test.ts(260,41): error TS2559: Type 'Env' has no properties in common with type '{ CATALOG_DB?: D1Database | undefined; }'.
+test/workers/support/apply-catalog-migrations.ts(15,25): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'D1Database'.
+test/workers/support/apply-catalog-migrations.ts(15,52): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ name: string; queries: string[]; }[]'.

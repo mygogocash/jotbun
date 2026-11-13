@@ -1,4 +1,4 @@
-import { isBudgetSnapshot, isCategorySnapshot, isExportRequestSnapshot, isImportReviewSnapshot, isImportSelectionSnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
+import { isBudgetSnapshot, isCategorySnapshot, isExportRequestSnapshot, isImportReviewSnapshot, isImportSelectionSnapshot, isSlipInboxSnapshot, isTransactionSnapshot, isWalletSnapshot } from '@gogospend/contracts'
 import type { CommandOutcome } from '@gogospend/contracts'
 
 import { ATTACHMENT_REMOVE_KIND, ATTACHMENT_REPLACE_KIND, ATTACHMENT_RETAIN_KIND } from '@api/attachments/attachments.service'
@@ -6,6 +6,7 @@ import { CommandRegistry } from '@api/commands/command-registry'
 import { CONFIRM_KIND, FREEZE_KIND, PATCH_KIND, REVIEW_ENTITY, SELECTION_ENTITY } from '@api/imports/confirmation.service'
 
 import { EXPORT_ENTITY, EXPORT_REQUEST_KIND } from '../files/exports'
+import { SLIP_INBOX_ENTITY } from '../slips/inbox'
 
 const WALLET_COMMANDS: [string, CommandOutcome][] = [
   ['wallet.create', 'created'],
@@ -61,5 +62,7 @@ export function buildVaultRegistry(): CommandRegistry {
   registry.defineCommand({ kind: PATCH_KIND, entity: REVIEW_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
   registry.defineCommand({ kind: FREEZE_KIND, entity: SELECTION_ENTITY, outcome: 'created', schemaVersions: [1], policy: 'current' })
   registry.defineCommand({ kind: CONFIRM_KIND, entity: SELECTION_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
+  // P4-T3: the slip inbox's open count (S1), the one slip entity that syncs, after the import entities. P4-T7 adds its two commands after it.
+  registry.defineEntity({ entity: SLIP_INBOX_ENTITY, validate: isSlipInboxSnapshot })
   return registry
 }

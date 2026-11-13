@@ -1,0 +1,53 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+stderr | test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ❯ test/ask-deadline.test.ts (12 tests | 1 failed) 7ms
+     × a slow Haiku conversation is cut at 25 s and Opus still answers 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+AssertionError: expected [ [ 'claude-haiku-5-5', …(3) ], …(4) ] to deeply equal [ [ 'claude-haiku-5-5', …(3) ], …(4) ]
+
+- Expected
++ Received
+
+@@ -17,16 +17,16 @@
+      false,
+      "timeout",
+    ],
+    [
+      "claude-opus-5-5",
+-     true,
++     false,
+      true,
+      null,
+    ],
+    [
+      "claude-opus-5-5",
+-     true,
++     false,
+      true,
+      null,
+    ],
+  ]
+
+ ❯ test/ask-deadline.test.ts:56:113
+     54|     ])
+     55|     // The trace keeps every call, the turn that never started include…
+     56|     expect(trace.calls.map(({ requested, escalated, sent, failure }) =…
+       |                                                                                                                 ^
+     57|       [HAIKU, false, true, null],
+     58|       [HAIKU, false, true, null],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  19:29:37
+   Duration  240ms (transform 72ms, setup 0ms, import 130ms, tests 7ms, environment 0ms)
+

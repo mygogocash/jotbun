@@ -1,0 +1,52 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 45ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 29ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 28ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 27ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 22ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 22ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 27ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 32ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 24ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed 26ms
+ × test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed 60ms
+   → expected [ [ 'retain', 200, 2, …(2) ], …(2) ] to deeply equal [ [ 'retain', 200, 2, …(2) ], …(2) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed
+AssertionError: expected [ [ 'retain', 200, 2, …(2) ], …(2) ] to deeply equal [ [ 'retain', 200, 2, …(2) ], …(2) ]
+
+- Expected
++ Received
+
+@@ -16,8 +16,8 @@
+    [
+      "remove",
+      200,
+      4,
+      null,
+-     "typed",
++     undefined,
+    ],
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:257:18
+    255|       seen.push([step, status, got.version, got.attachment_id ?? null,…
+    256|     }
+    257|     expect(seen).toEqual([
+       |                  ^
+    258|       ['retain', 200, 2, first.attachmentId, 'typed'],
+    259|       ['replace', 200, 3, second.attachmentId, 'typed'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  19:31:49
+   Duration  2.48s (transform 809ms, setup 1.59s, import 34ms, tests 343ms, environment 0ms)
+

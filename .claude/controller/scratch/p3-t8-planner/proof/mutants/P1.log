@@ -1,0 +1,124 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 4 failed) 576ms
+     × a guessed category or wallet never escalates 20ms
+     × a receipt without a receiver is not re-read 30ms
+     × an income slip without a receiver is not re-read 24ms
+     × slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a guessed category or wallet never escalates
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -7,9 +7,9 @@
+          "wallet_guessed",
+        ],
+        "wallet_id": null,
+      },
+    ],
+-   "escalated": false,
++   "escalated": true,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:192:46
+    190|     const user = await consenting()
+    191|     model.push(slipReply('slip', [drafted(null, { category_id: randomU…
+    192|     expect(await body(await readSlip(user))).toMatchObject({
+       |                                              ^
+    193|       model: 'claude-haiku-5-5',
+    194|       escalated: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    "drafts": [
+      {
+        "merchant": null,
+      },
+    ],
+-   "escalated": false,
++   "escalated": true,
+    "kind": "receipt",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:207:50
+    205|     const who = await person()
+    206|     model.push(slipReply(kind, [drafted(who, { ...changes, category_id…
+    207|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    208|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+    209|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an income slip without a receiver is not re-read
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    "drafts": [
+      {
+        "merchant": null,
+      },
+    ],
+-   "escalated": false,
++   "escalated": true,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:207:50
+    205|     const who = await person()
+    206|     model.push(slipReply(kind, [drafted(who, { ...changes, category_id…
+    207|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    208|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+    209|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing
+AssertionError: a complete slip: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/slip-read.test.ts:409:84
+    407|       ['a second draft with no amount', answer('receipt', [draft(), dr…
+    408|     ]
+    409|     for (const [what, outcome, opus] of rows) expect(slipNeedsOpus(out…
+       |                                                                                    ^
+    410|   })
+    411|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 26 passed (30)
+   Start at  08:02:08
+   Duration  3.26s (transform 1.17s, setup 2.10s, import 32ms, tests 576ms, environment 0ms)
+

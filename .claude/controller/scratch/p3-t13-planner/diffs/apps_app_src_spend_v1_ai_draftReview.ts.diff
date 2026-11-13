@@ -1,0 +1,26 @@
+diff --git a/apps/app/src/spend/v1/ai/draftReview.ts b/apps/app/src/spend/v1/ai/draftReview.ts
+index 5708f9caa4e062f2eba12dc712300bde77703900..96868e7d199e2d7a8f18fd33c8d63fcc8d0d3819 100644
+--- a/apps/app/src/spend/v1/ai/draftReview.ts
++++ b/apps/app/src/spend/v1/ai/draftReview.ts
+@@ -6,7 +6,9 @@
+ //   outcome, the model and escalated are all the event carries (§7).
+ // - '' and null are the same: an empty field is empty however the form holds it.
+ // - The tally (a development build's count, src/dev/draftTally.ts) comes after
+-//   the event, and a tally that fails is dropped: a count never fails a review.
++//   the event, and a tally that fails is dropped, whether it rejects or throws
++//   at once (P3-T5's review, m1): a count never fails a review. The review
++//   stays synchronous.
+ import { trackAiDraftReviewed } from '../../../analytics/events.ts';
+ import type { AiModelName, DraftOutcome } from '../../../analytics/events.ts';
+ 
+@@ -33,5 +35,9 @@ export function reviewDraft(
+ ): void {
+   trackAiDraftReviewed(p);
+   if (tally === undefined) return;
+-  void Promise.resolve(tally(p.outcome, p.model)).catch(() => undefined);
++  try {
++    void Promise.resolve(tally(p.outcome, p.model)).catch(() => undefined);
++  } catch {
++    // A tally that throws before it hands back a promise is dropped the same way.
++  }
+ }

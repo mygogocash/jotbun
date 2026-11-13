@@ -1,0 +1,12 @@
+OK  stubs   apps/app/src/wallet/records/WalletRecordScreen.tsx 48e045e039d9
+OK  stubs   apps/app/src/wallet/records/RecordActionsTray.tsx d385f2078449
+OK  stubs   apps/app/src/wallet/records/WalletUndoBar.tsx d3e03cfb561d
+OK  real    apps/app/src/wallet/records/WalletRecord.render.test.tsx 75df33d229d2
+OK  absent  apps/app/src/dev/catalogue/wallet/recordScreens.tsx
+OK  real    apps/app/src/wallet/records/copy.ts 11e95b7a851b
+OK  orig    apps/app/src/dev/catalogue/wallet/recordSections.tsx afd86fc48596
+OK  orig    apps/app/app/spend/record/[id].tsx 086365f9967a
+OK  real    apps/app/src/screens/redesign/SpendRoutes.render.test.tsx dd2aa2817ea3
+OK  stubs   apps/app/src/ui/dateStep.ts 7e07450738cf
+OK  real    apps/app/src/ui/dateStep.test.ts 96e8c9cae5ea
+red: 11 files, 0 not as expected

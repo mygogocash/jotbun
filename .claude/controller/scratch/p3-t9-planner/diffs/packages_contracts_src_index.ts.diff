@@ -1,0 +1,10 @@
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -329,6 +329,7 @@
+   BunFact,
+   AiNoteResult,
+   AiAskRequest,
++  AiFigureScope,
+   AiFigure,
+   AiAskResult,
+ } from "./v1/ai.ts";
