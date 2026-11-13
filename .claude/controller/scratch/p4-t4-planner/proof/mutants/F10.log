@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 29ms
+     × Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 30,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:211:31
+    209|   it("Opus failing after Haiku read no bank slip throws SlipNotRead wi…
+    210|     const limited = importRead([json(answer({ kind: 'unreadable' })), …
+    211|     await expect(limited.read).rejects.toMatchObject({ name: 'SlipNotR…
+       |                               ^
+    212|     expect(asked(limited.model)).toEqual([HAIKU, OPUS])
+    213|     const down = importRead([refusal(), apiFailure(529)])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:06
+   Duration  258ms (transform 75ms, setup 0ms, import 125ms, tests 29ms, environment 0ms)
+

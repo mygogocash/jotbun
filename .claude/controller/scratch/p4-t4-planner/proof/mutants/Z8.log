@@ -1,0 +1,73 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 27ms
+     × a bank outside the list becomes null, and an impossible time null 3ms
+     × a bank is a key from the list, else null; 'other' is a key 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -13,11 +13,11 @@
+      },
+      "occurred_on": "2026-10-24",
+      "occurred_time": null,
+      "to": {
+        "account_last4": "9876",
+-       "bank": null,
++       "bank": "promptpay",
+        "name": "ร้านป้าแดง ข้าวแกง",
+      },
+    },
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+
+ ❯ test/slip-read-import.test.ts:160:23
+    158|   it('a bank outside the list becomes null, and an impossible time nul…
+    159|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    160|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    161|     expect(asked(model)).toEqual([HAIKU])
+    162|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a bank is a key from the list, else null; 'other' is a key
+AssertionError: KBANK: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -8,9 +8,9 @@
+    },
+    "occurred_on": "2026-10-24",
+    "occurred_time": "18:40",
+    "to": {
+      "account_last4": "9876",
+-     "bank": null,
++     "bank": "KBANK",
+      "name": "ร้านป้าแดง ข้าวแกง",
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:435:78
+    433|     for (const bank of THAI_BANK_KEYS) expect(sanitized(answer({ to: {…
+    434|     for (const bank of ['KBANK', 'K PLUS', 'promptpay', ' kbank', 7, n…
+    435|       expect(sanitized(answer({ to: { ...PA_DAENG, bank } })), String(…
+       |                                                                              ^
+    436|     }
+    437|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:23
+   Duration  248ms (transform 70ms, setup 0ms, import 118ms, tests 27ms, environment 0ms)
+

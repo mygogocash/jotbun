@@ -1,0 +1,722 @@
+diff --git a/apps/edge/migrations/catalog/0001_catalog.sql b/apps/edge/migrations/catalog/0001_catalog.sql
+new file mode 100644
+index 00000000..e03191fb
+--- /dev/null
++++ b/apps/edge/migrations/catalog/0001_catalog.sql
+@@ -0,0 +1,7 @@
++-- The shared catalog (P4-T2, spec section 6.3): the bank apps' photo albums and the
++-- merchant patterns behind slip category guesses (S3). Read-mostly, the same for
++-- everyone; it holds no person's data. P5-T6 adds fx_rates after these.
++CREATE TABLE bank_albums (bank TEXT NOT NULL CHECK (bank GLOB '[a-z]*' AND length(bank) BETWEEN 2 AND 16), platform TEXT NOT NULL CHECK (platform IN ('ios', 'android')),
++  album_name TEXT NOT NULL CHECK (length(album_name) BETWEEN 1 AND 60), PRIMARY KEY (bank, platform, album_name)) STRICT;
++CREATE TABLE merchants (pattern TEXT PRIMARY KEY CHECK (length(pattern) BETWEEN 2 AND 60 AND pattern = lower(trim(pattern))),
++  category_key TEXT NOT NULL CHECK (length(category_key) BETWEEN 2 AND 32), gogocash_eligible INTEGER NOT NULL DEFAULT 0 CHECK (gogocash_eligible IN (0, 1))) STRICT;
+diff --git a/apps/edge/migrations/catalog/0002_catalog_seed.sql b/apps/edge/migrations/catalog/0002_catalog_seed.sql
+new file mode 100644
+index 00000000..b003047d
+--- /dev/null
++++ b/apps/edge/migrations/catalog/0002_catalog_seed.sql
+@@ -0,0 +1,12 @@
++-- The catalog's draft seed (P4-T2), default pending owner Q8, for the owner's review:
++-- the three bank apps the boards show, on both platforms, and the merchants
++-- sl-review guesses. Each pattern is stored as its own merchantKey
++-- (src/catalog/catalog.ts); the category keys are built-in keys.
++INSERT INTO bank_albums (bank, platform, album_name) VALUES
++  ('kbank', 'ios', 'K PLUS'), ('kbank', 'android', 'K PLUS'),
++  ('scb', 'ios', 'SCB EASY'), ('scb', 'android', 'SCB EASY'),
++  ('ktb', 'ios', 'Krungthai NEXT'), ('ktb', 'android', 'Krungthai NEXT');
++INSERT INTO merchants (pattern, category_key) VALUES
++  ('7-eleven', 'food'), ('เซเว่น', 'food'),
++  ('bts', 'travel'), ('mrt', 'travel'),
++  ('lotus''s', 'shopping'), ('big c', 'shopping'), ('makro', 'shopping');
+diff --git a/apps/edge/src/catalog/catalog.ts b/apps/edge/src/catalog/catalog.ts
+new file mode 100644
+index 00000000..82549c7c
+--- /dev/null
++++ b/apps/edge/src/catalog/catalog.ts
+@@ -0,0 +1,102 @@
++// The shared catalog (P4-T2, spec section 6.3) in CATALOG_DB: the bank apps' photo
++// albums, which GET /v1/catalog/bank-albums lists for the phone's album picker, and
++// the merchant patterns behind a slip's category guess (S3). It holds no person's
++// data. A29: no category_packs table (P2's code pack holds the packs). A30: merchants
++// are read from D1 with a one-hour cache per isolate, in place of a KV snapshot.
++import { createHash } from 'node:crypto'
++
++import { isThaiBankKey } from '@gogospend/contracts'
++import type { BankAlbumDto } from '@gogospend/contracts'
++
++import { logFailure } from '../v1/log'
++import type { WorkerHandler } from '../v1/worker-routes'
++
++export type MerchantPattern = { pattern: string; category_key: string }
++
++/** How long an isolate keeps the merchant patterns it read (A30). */
++export const MERCHANTS_TTL_MS = 3_600_000
++
++/**
++ * The patterns this isolate read, per catalog binding, and when. Only a read
++ * that succeeded is kept, so a failed read is tried again on the next call.
++ */
++const merchantReads = new WeakMap<D1Database, { readAt: number; patterns: MerchantPattern[] }>()
++
++/**
++ * The merchant patterns, read from D1 at most once an hour per isolate; `[]`
++ * without the binding. A failed read logs `catalog_merchants_failed` (its class
++ * name only) and answers the last list read, or `[]` when there is none.
++ */
++export async function merchantPatterns(env: { CATALOG_DB?: D1Database }, nowMs: number = Date.now()): Promise<MerchantPattern[]> {
++  const db = env.CATALOG_DB
++  if (!db) return []
++  const last = merchantReads.get(db)
++  if (last && nowMs - last.readAt < MERCHANTS_TTL_MS) return last.patterns
++  try {
++    const { results } = await db.prepare('SELECT pattern, category_key FROM merchants ORDER BY pattern').all<MerchantPattern>()
++    merchantReads.set(db, { readAt: nowMs, patterns: results })
++    return results
++  } catch (error) {
++    logFailure('catalog_merchants_failed', error)
++    return last?.patterns ?? []
++  }
++}
++
++/** Every run of characters that are not letters, marks (Thai vowels and tone marks), digits, `-`, `.` or `'`. */
++const SEPARATORS = /[^\p{L}\p{M}\p{Nd}.'-]+/gu
++
++/** A name as merchants are compared: NFC, ASCII letters in lower case, each run of separators one space, trimmed. */
++export function merchantKey(text: string): string {
++  return text
++    .normalize('NFC')
++    .replace(/[A-Z]+/g, (upper) => upper.toLowerCase())
++    .replace(SEPARATORS, ' ')
++    .trim()
++}
++
++const THAI = /\p{Script=Thai}/u
++
++/**
++ * The category key of the longest pattern found in the name, compared as
++ * merchant keys; the first listed wins a tie. Thai is written without spaces
++ * between words, so a pattern with a Thai character is found anywhere in the
++ * name; any other pattern only as whole words. A pattern with no letter, digit
++ * or mark left matches nothing.
++ */
++export function matchMerchant(name: string | null, patterns: readonly MerchantPattern[]): string | null {
++  if (name === null) return null
++  const key = merchantKey(name)
++  const words = ` ${key} `
++  let best: { length: number; category: string } | null = null
++  for (const { pattern, category_key } of patterns) {
++    const wanted = merchantKey(pattern)
++    if (wanted === '') continue
++    const found = THAI.test(wanted) ? key.includes(wanted) : words.includes(` ${wanted} `)
++    if (found && (best === null || wanted.length > best.length)) best = { length: wanted.length, category: category_key }
++  }
++  return best?.category ?? null
++}
++
++/**
++ * Whether `If-None-Match` names this tag. Entity tags compare weakly there
++ * (RFC 9110, 13.1.2), so a `W/` that a proxy adds when it compresses the body
++ * still matches. `*` is not read: the list answers 200.
++ */
++function namesTag(header: string | undefined, etag: string): boolean {
++  return header !== undefined && header.split(',').some((tag) => tag.trim().replace(/^W\//, '') === etag)
++}
++
++/**
++ * GET /v1/catalog/bank-albums (public): `{ albums }` of known banks, by bank,
++ * platform and name, with the hex SHA-256 of that body as its ETag; the same tag
++ * in `If-None-Match` is 304 with no body. Without CATALOG_DB, 503 with a retry.
++ */
++export const handleBankAlbums: WorkerHandler = async (w) => {
++  const db = w.env.CATALOG_DB
++  if (!db) return { ok: false, status: 503, code: 'SERVICE_UNAVAILABLE', problem: { retryAfterSeconds: 30 } }
++  const { results } = await db.prepare('SELECT bank, platform, album_name FROM bank_albums ORDER BY bank, platform, album_name').all<BankAlbumDto>()
++  const body = { albums: results.filter((album) => isThaiBankKey(album.bank)) }
++  const etag = `"${createHash('sha256').update(JSON.stringify(body)).digest('hex')}"`
++  if (namesTag(w.headers['if-none-match'], etag)) return { ok: true, status: 304, headers: { etag } }
++  return { ok: true, status: 200, body, headers: { etag } }
++}
+diff --git a/apps/edge/src/cloudflare-workers.d.ts b/apps/edge/src/cloudflare-workers.d.ts
+index c635fcc9..893384e1 100644
+--- a/apps/edge/src/cloudflare-workers.d.ts
++++ b/apps/edge/src/cloudflare-workers.d.ts
+@@ -188,8 +188,10 @@ declare namespace Cloudflare {
+     AUTH_DB: D1Database
+     AUTH_DB_REFERENCE: D1Database
+     ERASURE_DB: D1Database
++    CATALOG_DB: D1Database
+     TEST_AUTH_MIGRATIONS: { name: string; queries: string[] }[]
+     TEST_ERASURE_MIGRATIONS: { name: string; queries: string[] }[]
++    TEST_CATALOG_MIGRATIONS: { name: string; queries: string[] }[]
+     AUTH_BASE_URL?: string
+     AUTH_ISSUER?: string
+     AUTH_AUDIENCE?: string
+diff --git a/apps/edge/src/v1/env.ts b/apps/edge/src/v1/env.ts
+index d80a2d04..33376d92 100644
+--- a/apps/edge/src/v1/env.ts
++++ b/apps/edge/src/v1/env.ts
+@@ -11,6 +11,8 @@ export type V1Env = {
+   CONFIG: KVNamespace
+   /** The one private bucket. The vault reads it; Worker routes reach it through the same binding. */
+   OBJECTS?: VaultBucket
++  /** The shared catalog (P4-T2): bank albums and merchant patterns. Without it the bank-album list is 503 and there are no merchant patterns. */
++  CATALOG_DB?: D1Database
+   JOTBUN_ENV?: string
+   /** The token issuer and audience, and the JWKS they are verified against (P3). */
+   AUTH_ISSUER?: string
+diff --git a/apps/edge/src/v1/protocol.ts b/apps/edge/src/v1/protocol.ts
+index 84f41524..84731ceb 100644
+--- a/apps/edge/src/v1/protocol.ts
++++ b/apps/edge/src/v1/protocol.ts
+@@ -39,6 +39,8 @@ export type WorkerRouteId =
+   | 'snapshot.chunk.download'
+   // 1B-T7
+   | 'ai.preferences.get' | 'ai.preferences.put' | 'ai.parse' | 'ai.slip' | 'ai.note' | 'ai.ask'
++  // P4-T2: the bank-album list, from the catalog database.
++  | 'catalog.bankAlbums'
+ 
+ /** The published policy versions from config:v1, or null when none are published. */
+ export type PublishedPolicies = PolicyVersionDto[] | null
+diff --git a/apps/edge/src/v1/routes.ts b/apps/edge/src/v1/routes.ts
+index 2c8a633f..3a065cda 100644
+--- a/apps/edge/src/v1/routes.ts
++++ b/apps/edge/src/v1/routes.ts
+@@ -135,6 +135,8 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
+   { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
+   { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
+   { method: 'PUT', path: '/v1/slip-accounts/:id', access: 'current_policy', vault: 'slipAccounts.update', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
++  // The catalog (P4-T2): the bank apps' album names, the same for everyone, answered by the Worker from CATALOG_DB with an ETag.
++  { method: 'GET', path: '/v1/catalog/bank-albums', access: 'public', worker: 'catalog.bankAlbums' },
+ ]
+ 
+ const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
+@@ -228,9 +230,9 @@ export const VAULT_RETIRED_ROUTES: readonly string[] = [
+  * Routes the PostgreSQL edge never had (plans 1D and P4): served here, absent from the
+  * NestJS controllers and never shadowed by one of their routes
+  * (route-coverage.test.ts): the live socket (1D-T10), the analytics answer (1D-T11),
+- * and the slip salt and slip accounts (P4-T3).
++ * the slip salt and slip accounts (P4-T3), and the bank-album list (P4-T2).
+  */
+-export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id']
++export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id', 'GET /v1/catalog/bank-albums']
+ 
+ /**
+  * The PostgreSQL edge's own routes, which NestJS never had: the AI companion
+diff --git a/apps/edge/src/v1/worker-routes.ts b/apps/edge/src/v1/worker-routes.ts
+index e92b56e8..94fab7d5 100644
+--- a/apps/edge/src/v1/worker-routes.ts
++++ b/apps/edge/src/v1/worker-routes.ts
+@@ -1,5 +1,6 @@
+ import type { AiFeature } from '@gogospend/contracts'
+ 
++import { handleBankAlbums } from '../catalog/catalog'
+ import type { UserVault } from '../vault/user-vault'
+ import { bridgeCatalogue } from './bridge'
+ import { uploadRoute } from './files/uploads'
+@@ -63,6 +64,7 @@ export const WORKER_HANDLERS: Partial<Record<WorkerRouteId, WorkerHandler>> = {
+   'ai.slip': aiSlipRoute,
+   'ai.note': aiNoteRoute,
+   'ai.ask': aiAskRoute,
++  'catalog.bankAlbums': handleBankAlbums,
+ }
+ 
+ export function vaultSession(env: V1Env, claims: VaultClaims, policies: PublishedPolicies, access: VaultAccess, charge: 'read' | 'write'): VaultSession {
+diff --git a/apps/edge/test/c1-shape.test.ts b/apps/edge/test/c1-shape.test.ts
+index 06271854..44ca093e 100644
+--- a/apps/edge/test/c1-shape.test.ts
++++ b/apps/edge/test/c1-shape.test.ts
+@@ -43,8 +43,12 @@ describe('C1: the vault moves into the HTTP Worker', () => {
+     // consumers and containers only. A Cron Trigger added here would need leaving out there too.
+     expect(config.triggers).toBeUndefined()
+     expect([config.r2_buckets[0].binding, config.kv_namespaces[0].binding]).toEqual(['OBJECTS', 'CONFIG'])
+-    // Better Auth's databases and the email binding (1C-T1) stay with the merge.
+-    expect([config.d1_databases.map((d: { binding: string }) => d.binding), config.send_email.map((e: { name: string }) => e.name)]).toEqual([['AUTH_DB', 'ERASURE_DB'], ['EMAIL']])
++    // Better Auth's databases and the email binding (1C-T1) stay with the merge; the catalog (P4-T2) joins them.
++    expect([config.d1_databases.map((d: { binding: string }) => d.binding), config.send_email.map((e: { name: string }) => e.name)]).toEqual([['AUTH_DB', 'ERASURE_DB', 'CATALOG_DB'], ['EMAIL']])
++    // The catalog's migrations are the folder the Workers-runtime tests apply, so the tests run the tables wrangler deploys.
++    const catalog = config.d1_databases.find((d: { binding: string }) => d.binding === 'CATALOG_DB')
++    expect([catalog.database_name, catalog.migrations_dir]).toEqual(['jotbun-catalog', 'migrations/catalog'])
++    expect(read('vitest.workers.config.ts')).toContain(`readD1Migrations('./${catalog.migrations_dir}')`)
+     for (const gone of ['wrangler.vault.jsonc', 'wrangler.jobs.jsonc', 'wrangler.security.jsonc', 'wrangler.deletion.jsonc', 'src/roles', 'src/server/app', 'src/server/db', 'src/server/jobs', 'src/server/worker.ts']) {
+       expect(existsSync(join(EDGE, gone)), gone).toBe(false)
+     }
+diff --git a/apps/edge/test/route-coverage.test.ts b/apps/edge/test/route-coverage.test.ts
+index 9f79a635..a659e76a 100644
+--- a/apps/edge/test/route-coverage.test.ts
++++ b/apps/edge/test/route-coverage.test.ts
+@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
+ 
+ import { describe, expect, it } from 'vitest'
+ 
++import { handleBankAlbums } from '../src/catalog/catalog'
+ import { MODEL_ROUTE_WORKERS } from '../src/v1/gates'
+ import { matchRoute } from '../src/v1/match'
+ import type { VaultRouteId } from '../src/v1/protocol'
+@@ -171,7 +172,7 @@ describe('the one Worker covers every NestJS v1 route', () => {
+   })
+ 
+   it('the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13)', () => {
+-    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analytics', 'GET /v1/slip-accounts', 'GET /v1/slips/salt', 'GET /v1/sync/live', 'PUT /v1/slip-accounts/:id'])
++    for (const key of ['GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id']) expect(VAULT_ADDED_ROUTES).toContain(key)
+     expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v1/slip'))).toEqual([
+       { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
+       { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
+@@ -203,4 +204,10 @@ describe('the one Worker covers every NestJS v1 route', () => {
+       expect(route?.gates, key).toBeUndefined()
+     }
+   })
++
++  it('the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2)', () => {
++    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/catalog/bank-albums', 'GET /v1/me/analytics', 'GET /v1/slip-accounts', 'GET /v1/slips/salt', 'GET /v1/sync/live', 'PUT /v1/slip-accounts/:id'])
++    expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v1/catalog'))).toEqual([{ method: 'GET', path: '/v1/catalog/bank-albums', access: 'public', worker: 'catalog.bankAlbums' }])
++    expect(WORKER_HANDLERS['catalog.bankAlbums']).toBe(handleBankAlbums)
++  })
+ })
+diff --git a/apps/edge/test/workers/catalog.test.ts b/apps/edge/test/workers/catalog.test.ts
+new file mode 100644
+index 00000000..289de7d0
+--- /dev/null
++++ b/apps/edge/test/workers/catalog.test.ts
+@@ -0,0 +1,305 @@
++// P4-T2: the catalog database (CATALOG_DB). Its tables, its draft seed (default pending
++// owner Q8), the public bank-album list GET /v1/catalog/bank-albums with its ETag, and the
++// merchant patterns behind a slip's category guess (S3, A30). apply-catalog-migrations.ts
++// migrates this file's CATALOG_DB before its first case. Storage is not undone between the
++// cases of a file, so a case that writes rows deletes them again (`withRowsUndone`).
++// Every catalog read and write goes through `select` or `put`, which answer a value (rows,
++// or the error's class name; 'ok' or 'refused'), so a missing table fails an assertion.
++import { env } from 'cloudflare:workers'
++import { createHash } from 'node:crypto'
++import { describe, expect, it, vi } from 'vitest'
++
++import { isBankAlbumsDto } from '@gogospend/contracts'
++
++import { MERCHANTS_TTL_MS, matchMerchant, merchantKey, merchantPatterns } from '../../src/catalog/catalog'
++import type { MerchantPattern } from '../../src/catalog/catalog'
++import { BASE, startV1 } from './support/v1-client'
++
++/** Any fixed time: merchantPatterns takes the time it is called at. */
++const AT = Date.UTC(2026, 9, 25, 3, 0, 0)
++
++/** The seed's albums, in the order the list answers them: bank, then platform, then name. */
++const SEED_ALBUMS = [
++  { bank: 'kbank', platform: 'android', album_name: 'K PLUS' },
++  { bank: 'kbank', platform: 'ios', album_name: 'K PLUS' },
++  { bank: 'ktb', platform: 'android', album_name: 'Krungthai NEXT' },
++  { bank: 'ktb', platform: 'ios', album_name: 'Krungthai NEXT' },
++  { bank: 'scb', platform: 'android', album_name: 'SCB EASY' },
++  { bank: 'scb', platform: 'ios', album_name: 'SCB EASY' },
++]
++
++/** The seed's merchants, in the order merchantPatterns reads them (by pattern). */
++const SEED_MERCHANTS: MerchantPattern[] = [
++  { pattern: '7-eleven', category_key: 'food' },
++  { pattern: 'big c', category_key: 'shopping' },
++  { pattern: 'bts', category_key: 'travel' },
++  { pattern: "lotus's", category_key: 'shopping' },
++  { pattern: 'makro', category_key: 'shopping' },
++  { pattern: 'mrt', category_key: 'travel' },
++  { pattern: 'เซเว่น', category_key: 'food' },
++]
++
++const TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '\\_cf\\_%' ESCAPE '\\' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' AND name <> 'd1_migrations' ORDER BY name"
++
++type Row = Record<string, unknown>
++
++/** A catalog query's rows, or the class name of its error. */
++async function select(query: string, ...bindings: unknown[]): Promise<Row[] | { failed: string }> {
++  try {
++    return (await env.CATALOG_DB.prepare(query).bind(...bindings).all<Row>()).results
++  } catch (error) {
++    return { failed: error instanceof Error ? error.name : typeof error }
++  }
++}
++
++/** One row written to a catalog table: 'refused' when D1 refuses it (a rule, a key, a type, or a table that is not there). */
++async function put(table: 'bank_albums' | 'merchants', row: Row): Promise<'ok' | 'refused'> {
++  const names = Object.keys(row)
++  try {
++    await env.CATALOG_DB.prepare(`INSERT INTO ${table} (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`).bind(...Object.values(row)).run()
++    return 'ok'
++  } catch {
++    return 'refused'
++  }
++}
++
++/**
++ * Runs a case that writes catalog rows, then deletes every row it added (each has a rowid
++ * above the largest one before it ran), so the next case reads the seed again.
++ */
++async function withRowsUndone(run: () => Promise<void>): Promise<void> {
++  const before = await select('SELECT (SELECT coalesce(max(rowid), 0) FROM bank_albums) AS albums, (SELECT coalesce(max(rowid), 0) FROM merchants) AS merchants')
++  try {
++    await run()
++  } finally {
++    if (Array.isArray(before)) {
++      await select('DELETE FROM bank_albums WHERE rowid > ?', before[0].albums)
++      await select('DELETE FROM merchants WHERE rowid > ?', before[0].merchants)
++    }
++  }
++}
++
++const albumsRequest = (headers: Record<string, string> = {}) => new Request(`${BASE}/v1/catalog/bank-albums`, { headers })
++const sha256 = (text: string) => createHash('sha256').update(text).digest('hex')
++
++/** CATALOG_DB with its queries counted, as a binding of its own. */
++function countedCatalog(): { db: D1Database; queries: () => number } {
++  let queries = 0
++  const db: D1Database = {
++    prepare: (query) => {
++      queries += 1
++      return env.CATALOG_DB.prepare(query)
++    },
++    batch: (statements) => env.CATALOG_DB.batch(statements),
++    exec: (query) => env.CATALOG_DB.exec(query),
++  }
++  return { db, queries: () => queries }
++}
++
++describe('the catalog tables and their seed (P4-T2)', () => {
++  it("the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms", async () => {
++    // The table list is not pinned: P5-T6 adds fx_rates.
++    expect(await select(TABLES)).toEqual(expect.arrayContaining([{ name: 'bank_albums' }, { name: 'merchants' }]))
++    expect(await select('SELECT bank, platform, album_name FROM bank_albums ORDER BY bank, platform, album_name')).toEqual(SEED_ALBUMS)
++    const merchants = await select('SELECT pattern, category_key, gogocash_eligible FROM merchants ORDER BY pattern')
++    expect(merchants).toEqual(SEED_MERCHANTS.map((merchant) => ({ ...merchant, gogocash_eligible: 0 })))
++    // Each pattern is stored as its own merchant key.
++    for (const { pattern } of SEED_MERCHANTS) expect(merchantKey(pattern), pattern).toBe(pattern)
++  })
++
++  it('each catalog table takes a well-formed row and refuses one that breaks a rule', async () => {
++    const album = (o: Row = {}): Row => ({ bank: 'kbank', platform: 'ios', album_name: 'Slips', ...o })
++    const merchant = (o: Row = {}): Row => ({ pattern: 'central', category_key: 'shopping', ...o })
++    const bytes = (text: string) => new TextEncoder().encode(text).buffer
++    const cases: [string, 'bank_albums' | 'merchants', Row, 'ok' | 'refused'][] = [
++      ['album: well formed', 'bank_albums', album(), 'ok'],
++      ['album: a bank of two letters', 'bank_albums', album({ bank: 'ab' }), 'ok'],
++      ['album: a bank of 16 letters', 'bank_albums', album({ bank: 'a'.repeat(16) }), 'ok'],
++      ['album: a name of one letter', 'bank_albums', album({ album_name: 'S' }), 'ok'],
++      ['album: a name of 60 Thai letters', 'bank_albums', album({ album_name: 'ก'.repeat(60) }), 'ok'],
++      ['album: no bank', 'bank_albums', album({ bank: null }), 'refused'],
++      ['album: a bank in capitals', 'bank_albums', album({ bank: 'Kbank' }), 'refused'],
++      ['album: a bank of one letter', 'bank_albums', album({ bank: 'k' }), 'refused'],
++      ['album: a bank of 17 letters', 'bank_albums', album({ bank: 'b'.repeat(17) }), 'refused'],
++      ['album: another platform', 'bank_albums', album({ platform: 'web' }), 'refused'],
++      ['album: no platform', 'bank_albums', album({ platform: null }), 'refused'],
++      ['album: an empty name', 'bank_albums', album({ album_name: '' }), 'refused'],
++      ['album: a name of 61 letters', 'bank_albums', album({ album_name: 'x'.repeat(61) }), 'refused'],
++      ['album: no name', 'bank_albums', album({ album_name: null }), 'refused'],
++      ['album: K PLUS on ios again', 'bank_albums', album({ album_name: 'K PLUS' }), 'refused'],
++      ['album: a name as bytes (STRICT)', 'bank_albums', album({ album_name: bytes('Slips 2') }), 'refused'],
++      ['merchant: well formed', 'merchants', merchant(), 'ok'],
++      ['merchant: GoGoCash eligible', 'merchants', merchant({ pattern: 'central world', gogocash_eligible: 1 }), 'ok'],
++      ['merchant: a pattern of two letters', 'merchants', merchant({ pattern: 'cp' }), 'ok'],
++      ['merchant: a pattern of 60 letters', 'merchants', merchant({ pattern: 'x'.repeat(60) }), 'ok'],
++      ['merchant: a category of 32 letters', 'merchants', merchant({ pattern: 'tops', category_key: 'c'.repeat(32) }), 'ok'],
++      ['merchant: no pattern', 'merchants', merchant({ pattern: null }), 'refused'],
++      ['merchant: a pattern of one letter', 'merchants', merchant({ pattern: 'y' }), 'refused'],
++      ['merchant: a pattern of 61 letters', 'merchants', merchant({ pattern: 'y'.repeat(61) }), 'refused'],
++      ['merchant: a pattern in capitals', 'merchants', merchant({ pattern: 'Big C Extra' }), 'refused'],
++      ['merchant: a pattern with a space before it', 'merchants', merchant({ pattern: ' big c extra' }), 'refused'],
++      ['merchant: bts again', 'merchants', merchant({ pattern: 'bts' }), 'refused'],
++      ['merchant: no category', 'merchants', merchant({ pattern: 'tops a', category_key: null }), 'refused'],
++      ['merchant: a category of one letter', 'merchants', merchant({ pattern: 'tops b', category_key: 'f' }), 'refused'],
++      ['merchant: a category of 33 letters', 'merchants', merchant({ pattern: 'tops c', category_key: 'c'.repeat(33) }), 'refused'],
++      ['merchant: GoGoCash 2', 'merchants', merchant({ pattern: 'tops d', gogocash_eligible: 2 }), 'refused'],
++      ['merchant: GoGoCash unknown', 'merchants', merchant({ pattern: 'tops e', gogocash_eligible: null }), 'refused'],
++      ['merchant: a category as bytes (STRICT)', 'merchants', merchant({ pattern: 'tops f', category_key: bytes('food') }), 'refused'],
++    ]
++    await withRowsUndone(async () => {
++      const outcomes: [string, 'ok' | 'refused'][] = []
++      for (const [what, table, row] of cases) outcomes.push([what, await put(table, row)])
++      expect(outcomes).toEqual(cases.map(([what, , , expected]) => [what, expected]))
++      // A merchant written without its flag is not GoGoCash-eligible.
++      expect(await select("SELECT gogocash_eligible FROM merchants WHERE pattern = 'central'")).toEqual([{ gogocash_eligible: 0 }])
++    })
++  })
++})
++
++describe('GET /v1/catalog/bank-albums (P4-T2)', () => {
++  it('the bank-album list is public, carries an ETag, and answers 304 to the same tag', async () => {
++    const client = await startV1()
++    // No token and no client header: the list is public.
++    const res = await client.raw(albumsRequest())
++    expect(res.status).toBe(200)
++    const text = await res.text()
++    const body = JSON.parse(text)
++    expect(body).toEqual({ albums: SEED_ALBUMS })
++    expect(isBankAlbumsDto(body)).toBe(true)
++    const etag = res.headers.get('etag')
++    expect(etag ?? '').toMatch(/^"[0-9a-f]{64}"$/)
++    expect(etag).toBe(`"${sha256(text)}"`)
++    // The same tag, as sent, weakened by a proxy (W/), or among others, is 304 with no body and the same tag.
++    for (const tag of [String(etag), `W/${etag}`, `"${'0'.repeat(64)}", ${etag}`]) {
++      const again = await client.raw(albumsRequest({ 'if-none-match': tag }))
++      expect([again.status, await again.text(), again.headers.get('etag')], tag).toEqual([304, '', etag])
++    }
++    // Another tag gets the whole list.
++    const other = await client.raw(albumsRequest({ 'if-none-match': `"${'0'.repeat(64)}"` }))
++    expect([other.status, await other.text(), other.headers.get('etag')]).toEqual([200, text, etag])
++  })
++
++  it('an album row of an unknown bank is left out, and the list stays in order of bank, platform and name', async () => {
++    await withRowsUndone(async () => {
++      expect([
++        await put('bank_albums', { bank: 'zzbank', platform: 'ios', album_name: 'Z Bank' }),
++        await put('bank_albums', { bank: 'bbl', platform: 'ios', album_name: 'Bualuang mBanking' }),
++        await put('bank_albums', { bank: 'kbank', platform: 'android', album_name: 'กสิกรไทย' }),
++      ]).toEqual(['ok', 'ok', 'ok'])
++      const res = await (await startV1()).raw(albumsRequest())
++      expect(res.status).toBe(200)
++      const text = await res.text()
++      expect(JSON.parse(text)).toEqual({
++        albums: [{ bank: 'bbl', platform: 'ios', album_name: 'Bualuang mBanking' }, SEED_ALBUMS[0], { bank: 'kbank', platform: 'android', album_name: 'กสิกรไทย' }, ...SEED_ALBUMS.slice(1)],
++      })
++      expect(res.headers.get('etag')).toBe(`"${sha256(text)}"`)
++    })
++  })
++
++  it('without CATALOG_DB the route is 503 and merchant patterns are empty', async () => {
++    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
++    try {
++      const res = await (await startV1(undefined, { env: { CATALOG_DB: undefined } })).raw(albumsRequest())
++      expect([res.status, res.headers.get('retry-after')]).toEqual([503, '30'])
++      expect(await res.json()).toMatchObject({ code: 'SERVICE_UNAVAILABLE', retry_after_seconds: 30 })
++      expect(await merchantPatterns({}, AT)).toEqual([])
++      expect(await merchantPatterns({ CATALOG_DB: undefined }, AT)).toEqual([])
++      // A missing binding is not a failure: nothing is logged.
++      expect(errors).not.toHaveBeenCalled()
++    } finally {
++      errors.mockRestore()
++    }
++  })
++})
++
++describe('merchant patterns (S3, A30)', () => {
++  it('merchant patterns are read once an hour per isolate, and each catalog binding keeps its own', async () => {
++    expect(MERCHANTS_TTL_MS).toBe(3_600_000)
++    const counted = countedCatalog()
++    expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT), counted.queries()]).toEqual([SEED_MERCHANTS, 1])
++    expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT + 3_599_999), counted.queries()]).toEqual([SEED_MERCHANTS, 1])
++    expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT + 3_600_000), counted.queries()]).toEqual([SEED_MERCHANTS, 2])
++    // Another binding reads its own list.
++    const other = countedCatalog()
++    expect([await merchantPatterns({ CATALOG_DB: other.db }, AT), other.queries()]).toEqual([SEED_MERCHANTS, 1])
++  })
++
++  it('a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call', async () => {
++    let down = false
++    let reads = 0
++    const outage = () => Promise.reject(new Error('D1_ERROR: synthetic outage'))
++    const failing = { all: outage, first: outage, run: outage } as unknown as D1PreparedStatement
++    const flaky: D1Database = {
++      prepare: (query) => {
++        if (down) return failing
++        reads += 1
++        return env.CATALOG_DB.prepare(query)
++      },
++      batch: (statements) => env.CATALOG_DB.batch(statements),
++      exec: (query) => env.CATALOG_DB.exec(query),
++    }
++    const never: D1Database = { prepare: () => failing, batch: () => outage(), exec: () => outage() }
++    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
++    try {
++      expect(await merchantPatterns({ CATALOG_DB: flaky }, AT)).toEqual(SEED_MERCHANTS)
++      down = true
++      expect(await merchantPatterns({ CATALOG_DB: flaky }, AT + 3_600_000)).toEqual(SEED_MERCHANTS)
++      // A binding never read has no list to keep.
++      expect(await merchantPatterns({ CATALOG_DB: never }, AT)).toEqual([])
++      const line = JSON.stringify({ level: 'error', event: 'catalog_merchants_failed', failure: 'Error' })
++      expect(errors.mock.calls).toEqual([[line], [line]])
++      // The failed read was not kept as a read: once the catalog answers, the next call reads it.
++      down = false
++      expect([await merchantPatterns({ CATALOG_DB: flaky }, AT + 3_600_001), reads]).toEqual([SEED_MERCHANTS, 2])
++    } finally {
++      errors.mockRestore()
++    }
++  })
++
++  it('matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing', async () => {
++    const seed = await merchantPatterns(env, AT)
++    expect(seed).toEqual(SEED_MERCHANTS)
++    const cases: [string | null, string | null][] = [
++      ['7-ELEVEN สาขา 01234', 'food'],
++      ['ร้านเซเว่นอีเลฟเว่น', 'food'],
++      ['BTS SKYTRAIN', 'travel'],
++      ['Big  C Extra', 'shopping'],
++      ["LOTUS'S GO FRESH", 'shopping'],
++      ['Makrobiotic', null],
++      // The review's m1: a Latin pattern matches whole words at both ends, also in a name with Thai in it.
++      ['SUPERMAKRO', null],
++      ['ร้าน Makrobiotic', null],
++      ['ร้าน MAKRO บางนา', 'shopping'],
++      [null, null],
++    ]
++    expect(() => cases.map(([name]) => matchMerchant(name, seed))).not.toThrow()
++    expect(cases.map(([name]) => [name, matchMerchant(name, seed)])).toEqual(cases)
++    // Thai vowels and tone marks are marks, so they stay.
++    expect(merchantKey('ร้านเซเว่น')).toBe('ร้านเซเว่น')
++  })
++
++  it('the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing', () => {
++    const list = (...entries: [string, string][]): MerchantPattern[] => entries.map(([pattern, category_key]) => ({ pattern, category_key }))
++    expect(matchMerchant('BTS Skytrain Shop', list(['bts', 'travel'], ['bts skytrain shop', 'shopping']))).toBe('shopping')
++    expect(matchMerchant('Big C Extra', list(['big c', 'shopping'], ['extra', 'food']))).toBe('shopping')
++    expect(matchMerchant('Big C Extra', list(['extra', 'food'], ['big c', 'shopping']))).toBe('food')
++    expect(matchMerchant('big c extra', list(['  BIG   C ', 'shopping']))).toBe('shopping')
++    expect(matchMerchant('!!', list(['!!', 'food']))).toBeNull()
++  })
++
++  it("merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space", () => {
++    const combiningAcute = String.fromCharCode(0x0301)
++    const cases: [string, string][] = [
++      ["  LOTUS'S  Go-Fresh, No.5 ", "lotus's go-fresh no.5"],
++      ['ร้านเซเว่น', 'ร้านเซเว่น'],
++      // NFC first: an e followed by a combining accent becomes one letter.
++      [`Cafe${combiningAcute}`, 'café'],
++      // Only ASCII letters are lowered, as SQLite's lower() lowers the stored patterns.
++      ['ÉCOLE', 'École'],
++      // Thai digits are digits.
++      ['สาขา ๑๒/3', 'สาขา ๑๒ 3'],
++      ['7-ELEVEN!!!(สาขา)', '7-eleven สาขา'],
++    ]
++    expect(cases.map(([text]) => [text, merchantKey(text)])).toEqual(cases)
++  })
++})
+diff --git a/apps/edge/test/workers/support/apply-catalog-migrations.ts b/apps/edge/test/workers/support/apply-catalog-migrations.ts
+new file mode 100644
+index 00000000..c7dc4d0f
+--- /dev/null
++++ b/apps/edge/test/workers/support/apply-catalog-migrations.ts
+@@ -0,0 +1,15 @@
++import { applyD1Migrations } from 'cloudflare:test'
++import { env } from 'cloudflare:workers'
++
++// The catalog database (P4-T2), migrated before every workers test file as
++// apply-auth-migrations.ts migrates AUTH_DB: every file in migrations/catalog, the
++// draft seed included (vitest.workers.config.ts reads them in Node). D1 rejects a
++// query with no statement, so a query of comments alone is dropped.
++function statements(migrations: { name: string; queries: string[] }[]) {
++  return migrations.map((migration) => ({
++    name: migration.name,
++    queries: migration.queries.filter((query) => query.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim().length > 0),
++  }))
++}
++
++await applyD1Migrations(env.CATALOG_DB, statements(env.TEST_CATALOG_MIGRATIONS))
+diff --git a/apps/edge/vitest.workers.config.ts b/apps/edge/vitest.workers.config.ts
+index ce14fb12..e210b8a3 100644
+--- a/apps/edge/vitest.workers.config.ts
++++ b/apps/edge/vitest.workers.config.ts
+@@ -18,11 +18,12 @@ export default mergeConfig(
+         // The paths are relative to apps/edge, which is the workers test cwd.
+         const authMigrations = await readD1Migrations('./migrations/auth')
+         const erasureMigrations = await readD1Migrations('./migrations/erasure')
++        const catalogMigrations = await readD1Migrations('./migrations/catalog')
+         return {
+           main: './src/vault-worker.ts',
+           wrangler: { configPath: './wrangler.jsonc' },
+           miniflare: {
+-            // AUTH_DB and ERASURE_DB come from wrangler.jsonc; the reference database is the tests' own.
++            // AUTH_DB, ERASURE_DB and CATALOG_DB come from wrangler.jsonc; the reference database is the tests' own.
+             d1Databases: ['AUTH_DB_REFERENCE'],
+             bindings: {
+               JOTBUN_ENV: 'test',
+@@ -37,6 +38,7 @@ export default mergeConfig(
+               ERASURE_KEY: 'synthetic-erasure-key-0123456789abcdef0123',
+               TEST_AUTH_MIGRATIONS: authMigrations,
+               TEST_ERASURE_MIGRATIONS: erasureMigrations,
++              TEST_CATALOG_MIGRATIONS: catalogMigrations,
+             },
+           },
+         }
+@@ -44,7 +46,7 @@ export default mergeConfig(
+     ],
+     test: {
+       include: ['test/workers/**/*.test.ts'],
+-      setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts'],
++      setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts', 'test/workers/support/apply-catalog-migrations.ts'],
+     },
+   }),
+ )
+diff --git a/apps/edge/wrangler.jsonc b/apps/edge/wrangler.jsonc
+index b177d21d..f9c89a29 100644
+--- a/apps/edge/wrangler.jsonc
++++ b/apps/edge/wrangler.jsonc
+@@ -35,7 +35,7 @@
+   // Published policies, gates and client minimums (config:v1). The ids here are
+   // local placeholders until the owner creates the resources.
+   "kv_namespaces": [{ "binding": "CONFIG", "id": "00000000000000000000000000000000" }],
+-  // The owner creates both databases with the `apac` location hint
++  // The owner creates the three databases with the `apac` location hint
+   // (default pending owner Q6).
+   "d1_databases": [
+     {
+@@ -49,6 +49,14 @@
+       "database_name": "jotbun-erasure",
+       "database_id": "00000000-0000-0000-0000-000000000001",
+       "migrations_dir": "migrations/erasure"
++    },
++    // The shared catalog (P4-T2): bank albums and merchant patterns. The id is a
++    // local placeholder until the owner creates jotbun-catalog (D33).
++    {
++      "binding": "CATALOG_DB",
++      "database_name": "jotbun-catalog",
++      "database_id": "00000000-0000-0000-0000-000000000002",
++      "migrations_dir": "migrations/catalog"
+     }
+   ],
+   // `remote` stays unset: setting it would reach the real Email Service from `wrangler dev`.
+diff --git a/docs/implementation/receipts/P4-T2.md b/docs/implementation/receipts/P4-T2.md
+new file mode 100644
+index 00000000..b83d803e
+--- /dev/null
++++ b/docs/implementation/receipts/P4-T2.md
+@@ -0,0 +1,46 @@
++# P4-T2: The catalog database: bank albums, merchant patterns and the bank-album route
++
++- **Status:** built and verified locally on `p4/t2-catalog-db`, from `origin/claude/p1a-vault-core` (#457's merge `ab350e48` or later). Not pushed. Under R87 this receipt is its own file; `premium-progress.md` is not edited. Under R100 whole suites are CI's (the full workers suite, the full render suite and its sections, the exports, the database suites and `test:ops`). No app file, Expo route or app entry changed, so `typecheck:routes`, `export:web` and the app's suites are not in the local gate.
++- **Delivers:** `P4:catalog-db`: the `CATALOG_DB` D1 binding, its migrations in `apps/edge/migrations/catalog`, its test setup (as 1C's `AUTH_DB`), the tables `bank_albums` and `merchants` with a draft seed, the merchant reader and matcher for P4-T6, and `GET /v1/catalog/bank-albums`.
++  - `migrations/catalog/0001_catalog.sql`: the plan's two STRICT tables, verbatim. `0002_catalog_seed.sql`: the draft seed (default pending owner Q8, for the owner's review): `K PLUS` (`kbank`), `SCB EASY` (`scb`) and `Krungthai NEXT` (`ktb`), each on `ios` and `android`; merchants `7-eleven` and `เซเว่น` (`food`), `bts` and `mrt` (`travel`), `lotus's`, `big c` and `makro` (`shopping`), each stored as its own `merchantKey`, none GoGoCash-eligible.
++  - `GET /v1/catalog/bank-albums` (`public`, Worker route `catalog.bankAlbums`, an added route, no gate, no release): `{ albums }` of known banks (`isThaiBankKey`), by bank, platform and name, with `etag: "<hex SHA-256 of the body>"`. An `If-None-Match` that names the tag (also weakened, `W/"..."`, or in a list) is 304 with no body and the same tag. Without `CATALOG_DB`: 503 `SERVICE_UNAVAILABLE`, retry 30. No token or client header is needed.
++  - `src/catalog/catalog.ts`: `merchantPatterns(env, nowMs?)` reads `merchants` once an hour per isolate and per binding (A30), `[]` without the binding; a failed read logs `catalog_merchants_failed` (the class name only), answers the last list (or `[]`) and is tried again on the next call. `merchantKey` is NFC, ASCII letters lowered, each run of characters other than letters, marks (`\p{L}\p{M}`: Thai vowels and tone marks stay), digits (`\p{Nd}`, Thai digits included), `-`, `.` and `'` made one space, trimmed. `matchMerchant` compares merchant keys and answers the category key of the longest matching pattern (the first listed wins a tie): a pattern with a Thai character matches anywhere, any other only as whole words; a pattern with nothing left matches nothing; a null name is null.
++  - A29: no `category_packs` table. A30: no KV merchant snapshot. A20 does not apply: P6C-T1 has not landed (`wrangler.jsonc` has no `env.staging` or `env.production` block).
++- **Files:**
++  - New:
++    - `apps/edge/migrations/catalog/0001_catalog.sql`, `apps/edge/migrations/catalog/0002_catalog_seed.sql`.
++    - `apps/edge/src/catalog/catalog.ts`: `MerchantPattern`, `MERCHANTS_TTL_MS`, `merchantPatterns`, `merchantKey`, `matchMerchant`, `handleBankAlbums`.
++    - `apps/edge/test/workers/support/apply-catalog-migrations.ts`: migrates `CATALOG_DB` before every workers test file.
++    - `apps/edge/test/workers/catalog.test.ts` (10 cases: the plan's six and the planner's four).
++    - `docs/implementation/receipts/P4-T2.md` (this receipt).
++  - Modified (shared):
++    - `apps/edge/wrangler.jsonc`: `d1_databases` gains `CATALOG_DB` (`jotbun-catalog`, the local placeholder id `00000000-0000-0000-0000-000000000002`, `migrations/catalog`), with a comment; the owner creates the three databases with the `apac` location hint.
++    - `apps/edge/vitest.workers.config.ts`: `readD1Migrations('./migrations/catalog')` into `TEST_CATALOG_MIGRATIONS`, and the setup file. `CATALOG_DB` itself comes from `wrangler.jsonc`, as `AUTH_DB` and `ERASURE_DB` do.
++    - `apps/edge/src/cloudflare-workers.d.ts`: `Cloudflare.Env` gains `CATALOG_DB` and `TEST_CATALOG_MIGRATIONS`.
++    - `apps/edge/src/v1/env.ts`: `CATALOG_DB?: D1Database`.
++    - `apps/edge/src/v1/protocol.ts`: `WorkerRouteId` gains `'catalog.bankAlbums'`.
++    - `apps/edge/src/v1/routes.ts`: the route, and `VAULT_ADDED_ROUTES` gains it.
++    - `apps/edge/src/v1/worker-routes.ts`: `'catalog.bankAlbums': handleBankAlbums`.
++    - `apps/edge/test/route-coverage.test.ts`: one case; P4-T3's case keeps its route checks, and the exact list of added routes moves to the new case.
++    - `apps/edge/test/c1-shape.test.ts`: `CATALOG_DB` among the D1 bindings; its migrations folder is the one the workers tests read.
++- **RED to GREEN** (typed stubs: `catalog.ts` answering `[]`, `''`, null and 501, and two comment-only migrations; the types (`protocol.ts`, `env.ts`, `cloudflare-workers.d.ts`) and the tests final; `routes.ts`, `worker-routes.ts`, `wrangler.jsonc` and `vitest.workers.config.ts` at base and the setup file absent, so RED has neither the route nor the binding; `typecheck:edge` passes at RED):
++  - `apps/edge` `test/route-coverage.test.ts` and `test/c1-shape.test.ts` (Node): RED `Tests  2 failed | 12 passed (14)`, GREEN `Tests  14 passed (14)`.
++  - Workers, under the heavy lock, `test/workers/catalog.test.ts`: RED `Tests  10 failed (10)`, GREEN `Tests  10 passed (10)`, nothing logged.
++  - Every RED failure is an `AssertionError` (12 of 12 across both runs): every catalog read and write in the tests goes through a helper that answers a value, so a missing binding or table fails an assertion.
++- **Mutation check:** `mutants.py`, 70 of 70 killed, each with every failing case an `AssertionError`; each file restored byte for byte. The tables' rules S1 to S17 (each CHECK, key, NOT NULL, DEFAULT and STRICT that is not implied by another) and the seed S18 to S20; `merchantPatterns` C1 to C8; `merchantKey` K1 to K11; `matchMerchant` M1 to M8; the route H1 to H15; the route table, the binding and the test config R1 to R8. The plan's five: "drop the 304" is H1, "query on every read" is C2, "match Latin patterns as substrings" is M1, "keep unknown banks" is H6, and "treat marks as separators" is K3.
++- **Fast local gate (R100):**
++  - Install: `node_modules` was already ready (the root, and `apps/edge` by `npm ls --depth=0`), so `npm ci` and `npm run install:edge` were skipped (brief Step 0.7, as amended by the controller).
++  - `npm run typecheck:edge`: passed (at RED and at GREEN).
++  - The focused files above: RED to GREEN as listed. Their neighbours, under the heavy lock: `test/workers/ai.test.ts`, `attachments.test.ts` and `download-aborts.test.ts` (their `Proxy` doubles over `env.VAULT`), `files-front-door.test.ts` (the other public Worker route), `front-door.test.ts`, `server-events.test.ts` (it spies on `WORKER_HANDLERS`) and `auth/schema.test.ts` (the other D1 setup file): passed.
++  - `npm run test:edge`: passed. `npm run build:edge`: passed; the bundle holds the album query, and the built `dist/server/wrangler.json` binds `CATALOG_DB` with its migrations folder. `git diff --check`: clean.
++- **CI (R100):** the full `test:edge:workers` (every workers file now also migrates `CATALOG_DB` first), `test:edge:db` (Docker is stopped locally), the full render suite and sections 1 to 3, `export:web` and the iOS export, `test:db`, `test:ops`.
++- **SKIPPED:** the hosted database. `jotbun-catalog` is a new Cloudflare resource: the owner creates it with the `apac` location hint (D33, as `AUTH_DB` and `ERASURE_DB`), puts its id in `wrangler.jsonc` and applies `migrations/catalog` remotely before a deploy. Until then the binding is local only (Miniflare and `wrangler dev`). Nothing is deployed.
++- **Deviations:** the brief's planner rulings P1 to P15 (`.claude/controller/briefs/P4-T2.md`), as accepted by the controller. In short: `miniflare.d1Databases` is unchanged, because `CATALOG_DB` comes from `wrangler.jsonc`; `cloudflare-workers.d.ts` changes, though the plan does not list it; RED leaves the route and the binding out; `If-None-Match` compares weakly and reads lists; Thai digits are digits; ties go to the first listed pattern; a failed merchant read is not kept as a read; four cases join the plan's six, and the two that write rows delete them again, since storage is not undone between the cases of a file.
++- **The review's m1, added by the controller after the approving review:** three rows in the matcher case's table (`SUPERMAKRO` is no match, `ร้าน Makrobiotic` is no match, `ร้าน MAKRO บางนา` is `shopping`), so a Latin pattern matches whole words at both ends, also in a name with Thai in it (the plan's line 205). `catalog.test.ts` passes 10 of 10 under the heavy lock. The reviewer's MY1 (the leading word boundary dropped) and MY2 (Thai or Latin chosen by the name's script) are each killed by that case on an `AssertionError`, and the source is restored byte for byte. `typecheck:edge` passes, and `git diff --check` is clean. Proof: `.claude/controller/scratch/p4-t2-m1/`.
++- **Notes for later tasks and the integrator:**
++  - P4-T6: `const patterns = await merchantPatterns(env)` once per request, then `matchMerchant(side.name, patterns)` for each side's `catalog_keys`. A catalog key is a built-in category key (`food`, `travel`, `shopping` in the seed).
++  - P5-T6: `NNNN_fx_rates.sql` is `0003` in `migrations/catalog`; the setup file applies every file in the folder, and drops a query of comments alone (a RED stub). The table-list case does not pin the list.
++  - 1C's dev script (Task 12) applies the D1 migrations locally: it should also run `wrangler d1 migrations apply jotbun-catalog --local`; until then a local `wrangler dev` answers the album list 500 (no such table) and has no merchant patterns.
++  - P4-T5 edits `apps/edge/README.md`: its "Added" list should then name `GET /v1/catalog/bank-albums`, and the owner's first step should create three D1 databases (`jotbun-catalog` too).
++  - Owner Q8: the seed is a draft. Slips often print a shop's operator rather than its brand, so the review may add operators' names; a curly apostrophe (’) is a separator under the plan's rule, so `LOTUS’S` does not match `lotus's`.
++  - The route reads six rows from D1 on every request (the ETag saves the body, not the read); it has no cache and no rate limit of its own. `If-None-Match: *` is not read (the list answers 200).

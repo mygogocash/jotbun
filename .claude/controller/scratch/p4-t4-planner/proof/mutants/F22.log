@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 29ms
+     × an import read writes no log line, so no image, name or number reaches one 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an import read writes no log line, so no image, name or number reaches one
+AssertionError: expected "info" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st info call:
+
+    Array [
+      "{"event":"slip_import_read","read":{"amount_minor":"125050","occurred_on":"2026-10-24","occurred_time":"18:40","from":{"bank":"kbank","account_last4":"1234","name":"นาย กานต์ ใจดี"},"to":{"bank":"scb","account_last4":"9876","name":"ร้านป้าแดง ข้าวแกง"},"flags":[]}}",
+    ]
+
+
+Number of calls: 1
+
+ ❯ test/slip-read-import.test.ts:342:48
+    340|       await expect(importRead([json(answer({ to: { ...PA_DAENG, name: …
+    341|       await expect(importRead([apiFailure(429, { 'retry-after': '40' }…
+    342|       for (const spy of spies) expect(spy).not.toHaveBeenCalled()
+       |                                                ^
+    343|     } finally {
+    344|       for (const spy of spies) spy.mockRestore()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:14
+   Duration  269ms (transform 75ms, setup 0ms, import 128ms, tests 29ms, environment 0ms)
+

@@ -1,0 +1,8 @@
+Proof head: 30b65ec9 (origin/claude/p1a-vault-core, the controller's state commit after fda09f7b), with #461's 20 files
+(P3-T9, approved and waiting on CI) copied over it from scratch/p3-t9-planner/real/, as the head will hold them once #461
+merges. From P3-T9's base b1ca3bfb to 30b65ec9 only controller state changed (no code), and P3-T9's 16 base-check files
+answer OK at 30b65ec9. Every log in this folder is from that tree (tree/): the base and stage typechecks, RED, GREEN,
+P3's AI workers files, the gate (test:edge, build:edge), the three mutant batches and applycheck.out. The installs
+(install-*.log) are fresh npm ci runs of 30b65ec9's lockfiles. dryrun.log is this brief's own commands of Steps 0 to 9
+(git commands skipped: the copy has no repository), run by dryrun.py on sim/wt, a fresh archive of 30b65ec9 with #461's
+files over it and the tree's installs linked; its S was sim/dryrun-s (deleted afterwards, with the installs).

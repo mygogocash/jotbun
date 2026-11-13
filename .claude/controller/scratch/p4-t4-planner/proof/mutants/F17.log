@@ -1,0 +1,1039 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 3 failed) 34ms
+     × the import mode asks for the time and both sides, and sends only today and the locale 9ms
+     × Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 2ms
+     × the image's media type reaches both calls (the P3-T8 reviews' MO3) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale
+AssertionError: expected { model: 'claude-haiku-5-5', …(4) } to deeply equal { model: 'claude-haiku-5-5', …(4) }
+
+- Expected
++ Received
+
+@@ -24,167 +24,104 @@
+      "effort": "medium",
+      "format": {
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+-           "amount_baht": {
++           "bank": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+-           "date": {
++           "drafts": {
++             "items": {
++               "additionalProperties": false,
++               "properties": {
++                 "amount_baht": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-           "flags": {
+-             "items": {
+-               "enum": [
+-                 "amount_unclear",
+-                 "multiple_amounts",
+-                 "date_guessed",
+-                 "category_guessed",
+-                 "wallet_guessed",
+-                 "not_money",
+-               ],
+-               "type": "string",
+-             },
+-             "type": "array",
+-           },
+-           "from": {
+-             "additionalProperties": false,
+-             "properties": {
+-               "account_last4": {
++                 "category_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-               "bank": {
+-                 "anyOf": [
+-                   {
++                 "confidence": {
+                    "enum": [
+-                       "bbl",
+-                       "kbank",
+-                       "ktb",
+-                       "ttb",
+-                       "scb",
+-                       "bay",
+-                       "gsb",
+-                       "ghb",
+-                       "baac",
+-                       "kkp",
+-                       "cimb",
+-                       "uob",
+-                       "lhb",
+-                       "tisco",
+-                       "icbc",
+-                       "tcrb",
+-                       "ibank",
+-                       "other",
++                     "high",
++                     "medium",
++                     "low",
+                    ],
+                    "type": "string",
+-                   },
+-                   {
+-                     "type": "null",
+                  },
+-                 ],
+-               },
+-               "name": {
++                 "date": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+-               },
+                  },
+-             "required": [
+-               "bank",
+-               "account_last4",
+-               "name",
+-             ],
+-             "type": "object",
+-           },
+-           "kind": {
++                 "flags": {
++                   "items": {
+                      "enum": [
+-               "slip",
+-               "receipt",
+-               "unreadable",
++                       "amount_unclear",
++                       "multiple_amounts",
++                       "date_guessed",
++                       "category_guessed",
++                       "wallet_guessed",
++                       "not_money",
+                      ],
+                      "type": "string",
+                    },
+-           "time": {
++                   "type": "array",
++                 },
++                 "merchant": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-           "to": {
+-             "additionalProperties": false,
+-             "properties": {
+-               "account_last4": {
++                 "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-               "bank": {
+-                 "anyOf": [
+-                   {
++                 "type": {
+                    "enum": [
+-                       "bbl",
+-                       "kbank",
+-                       "ktb",
+-                       "ttb",
+-                       "scb",
+-                       "bay",
+-                       "gsb",
+-                       "ghb",
+-                       "baac",
+-                       "kkp",
+-                       "cimb",
+-                       "uob",
+-                       "lhb",
+-                       "tisco",
+-                       "icbc",
+-                       "tcrb",
+-                       "ibank",
+-                       "other",
++                     "expense",
++                     "income",
+                    ],
+                    "type": "string",
+-                   },
+-                   {
+-                     "type": "null",
+-                   },
+-                 ],
+                  },
+-               "name": {
++                 "wallet_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+@@ -192,25 +129,37 @@
+                      },
+                    ],
+                  },
+                },
+                "required": [
+-               "bank",
+-               "account_last4",
+-               "name",
++                 "type",
++                 "amount_baht",
++                 "date",
++                 "category_id",
++                 "wallet_id",
++                 "merchant",
++                 "note",
++                 "confidence",
++                 "flags",
+                ],
+                "type": "object",
++             },
++             "type": "array",
+            },
++           "kind": {
++             "enum": [
++               "slip",
++               "receipt",
++               "unreadable",
++             ],
++             "type": "string",
+            },
++         },
+          "required": [
+            "kind",
+-           "amount_baht",
+-           "date",
+-           "time",
+-           "from",
+-           "to",
+-           "flags",
++           "drafts",
++           "bank",
+          ],
+          "type": "object",
+        },
+        "type": "json_schema",
+      },
+
+ ❯ test/slip-read-import.test.ts:106:19
+    104|     const [haiku] = model.calls
+    105|     // The whole request: Haiku's base and effort, the import schema a…
+    106|     expect(haiku).toEqual(importRequest(HAIKU_BASE))
+       |                   ^
+    107|     expect(JSON.parse(textOf(haiku))).toEqual({ today: '2026-10-25', l…
+    108|     // None of the caller's context, by name or id, and no id of the r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace
+AssertionError: expected { model: 'claude-opus-5-5', …(6) } to deeply equal { model: 'claude-opus-5-5', …(6) }
+
+- Expected
++ Received
+
+@@ -28,167 +28,104 @@
+      "effort": "medium",
+      "format": {
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+-           "amount_baht": {
++           "bank": {
+              "anyOf": [
+                {
+                  "type": "string",
+                },
+                {
+                  "type": "null",
+                },
+              ],
+            },
+-           "date": {
++           "drafts": {
++             "items": {
++               "additionalProperties": false,
++               "properties": {
++                 "amount_baht": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-           "flags": {
+-             "items": {
+-               "enum": [
+-                 "amount_unclear",
+-                 "multiple_amounts",
+-                 "date_guessed",
+-                 "category_guessed",
+-                 "wallet_guessed",
+-                 "not_money",
+-               ],
+-               "type": "string",
+-             },
+-             "type": "array",
+-           },
+-           "from": {
+-             "additionalProperties": false,
+-             "properties": {
+-               "account_last4": {
++                 "category_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-               "bank": {
+-                 "anyOf": [
+-                   {
++                 "confidence": {
+                    "enum": [
+-                       "bbl",
+-                       "kbank",
+-                       "ktb",
+-                       "ttb",
+-                       "scb",
+-                       "bay",
+-                       "gsb",
+-                       "ghb",
+-                       "baac",
+-                       "kkp",
+-                       "cimb",
+-                       "uob",
+-                       "lhb",
+-                       "tisco",
+-                       "icbc",
+-                       "tcrb",
+-                       "ibank",
+-                       "other",
++                     "high",
++                     "medium",
++                     "low",
+                    ],
+                    "type": "string",
+-                   },
+-                   {
+-                     "type": "null",
+                  },
+-                 ],
+-               },
+-               "name": {
++                 "date": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+-               },
+                  },
+-             "required": [
+-               "bank",
+-               "account_last4",
+-               "name",
+-             ],
+-             "type": "object",
+-           },
+-           "kind": {
++                 "flags": {
++                   "items": {
+                      "enum": [
+-               "slip",
+-               "receipt",
+-               "unreadable",
++                       "amount_unclear",
++                       "multiple_amounts",
++                       "date_guessed",
++                       "category_guessed",
++                       "wallet_guessed",
++                       "not_money",
+                      ],
+                      "type": "string",
+                    },
+-           "time": {
++                   "type": "array",
++                 },
++                 "merchant": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-           "to": {
+-             "additionalProperties": false,
+-             "properties": {
+-               "account_last4": {
++                 "note": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+                        "type": "null",
+                      },
+                    ],
+                  },
+-               "bank": {
+-                 "anyOf": [
+-                   {
++                 "type": {
+                    "enum": [
+-                       "bbl",
+-                       "kbank",
+-                       "ktb",
+-                       "ttb",
+-                       "scb",
+-                       "bay",
+-                       "gsb",
+-                       "ghb",
+-                       "baac",
+-                       "kkp",
+-                       "cimb",
+-                       "uob",
+-                       "lhb",
+-                       "tisco",
+-                       "icbc",
+-                       "tcrb",
+-                       "ibank",
+-                       "other",
++                     "expense",
++                     "income",
+                    ],
+                    "type": "string",
+-                   },
+-                   {
+-                     "type": "null",
+-                   },
+-                 ],
+                  },
+-               "name": {
++                 "wallet_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                      },
+                      {
+@@ -196,25 +133,37 @@
+                      },
+                    ],
+                  },
+                },
+                "required": [
+-               "bank",
+-               "account_last4",
+-               "name",
++                 "type",
++                 "amount_baht",
++                 "date",
++                 "category_id",
++                 "wallet_id",
++                 "merchant",
++                 "note",
++                 "confidence",
++                 "flags",
+                ],
+                "type": "object",
++             },
++             "type": "array",
+            },
++           "kind": {
++             "enum": [
++               "slip",
++               "receipt",
++               "unreadable",
++             ],
++             "type": "string",
+            },
++         },
+          "required": [
+            "kind",
+-           "amount_baht",
+-           "date",
+-           "time",
+-           "from",
+-           "to",
+-           "flags",
++           "drafts",
++           "bank",
+          ],
+          "type": "object",
+        },
+        "type": "json_schema",
+      },
+
+ ❯ test/slip-read-import.test.ts:275:28
+    273|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    274|     expect(model.calls).toHaveLength(2)
+    275|     expect(model.calls[1]).toEqual(importRequest(OPUS_BASE))
+       |                            ^
+    276|     expect(trace.calls.map((call) => [call.requested, call.feature, ca…
+    277|       [HAIKU, 'slip', false, true],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected [ { …(5) }, …(1) ] to deeply equal [ { …(5) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -25,167 +25,104 @@
+        "effort": "medium",
+        "format": {
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+-             "amount_baht": {
++             "bank": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+-             "date": {
++             "drafts": {
++               "items": {
++                 "additionalProperties": false,
++                 "properties": {
++                   "amount_baht": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-             "flags": {
+-               "items": {
+-                 "enum": [
+-                   "amount_unclear",
+-                   "multiple_amounts",
+-                   "date_guessed",
+-                   "category_guessed",
+-                   "wallet_guessed",
+-                   "not_money",
+-                 ],
+-                 "type": "string",
+-               },
+-               "type": "array",
+-             },
+-             "from": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "account_last4": {
++                   "category_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-                 "bank": {
+-                   "anyOf": [
+-                     {
++                   "confidence": {
+                      "enum": [
+-                         "bbl",
+-                         "kbank",
+-                         "ktb",
+-                         "ttb",
+-                         "scb",
+-                         "bay",
+-                         "gsb",
+-                         "ghb",
+-                         "baac",
+-                         "kkp",
+-                         "cimb",
+-                         "uob",
+-                         "lhb",
+-                         "tisco",
+-                         "icbc",
+-                         "tcrb",
+-                         "ibank",
+-                         "other",
++                       "high",
++                       "medium",
++                       "low",
+                      ],
+                      "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+                    },
+-                   ],
+-                 },
+-                 "name": {
++                   "date": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+-                 },
+                    },
+-               "required": [
+-                 "bank",
+-                 "account_last4",
+-                 "name",
+-               ],
+-               "type": "object",
+-             },
+-             "kind": {
++                   "flags": {
++                     "items": {
+                        "enum": [
+-                 "slip",
+-                 "receipt",
+-                 "unreadable",
++                         "amount_unclear",
++                         "multiple_amounts",
++                         "date_guessed",
++                         "category_guessed",
++                         "wallet_guessed",
++                         "not_money",
+                        ],
+                        "type": "string",
+                      },
+-             "time": {
++                     "type": "array",
++                   },
++                   "merchant": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-             "to": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "account_last4": {
++                   "note": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-                 "bank": {
+-                   "anyOf": [
+-                     {
++                   "type": {
+                      "enum": [
+-                         "bbl",
+-                         "kbank",
+-                         "ktb",
+-                         "ttb",
+-                         "scb",
+-                         "bay",
+-                         "gsb",
+-                         "ghb",
+-                         "baac",
+-                         "kkp",
+-                         "cimb",
+-                         "uob",
+-                         "lhb",
+-                         "tisco",
+-                         "icbc",
+-                         "tcrb",
+-                         "ibank",
+-                         "other",
++                       "expense",
++                       "income",
+                      ],
+                      "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+                    },
+-                 "name": {
++                   "wallet_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+@@ -193,25 +130,37 @@
+                        },
+                      ],
+                    },
+                  },
+                  "required": [
+-                 "bank",
+-                 "account_last4",
+-                 "name",
++                   "type",
++                   "amount_baht",
++                   "date",
++                   "category_id",
++                   "wallet_id",
++                   "merchant",
++                   "note",
++                   "confidence",
++                   "flags",
+                  ],
+                  "type": "object",
++               },
++               "type": "array",
+              },
++             "kind": {
++               "enum": [
++                 "slip",
++                 "receipt",
++                 "unreadable",
++               ],
++               "type": "string",
+              },
++           },
+            "required": [
+              "kind",
+-             "amount_baht",
+-             "date",
+-             "time",
+-             "from",
+-             "to",
+-             "flags",
++             "drafts",
++             "bank",
+            ],
+            "type": "object",
+          },
+          "type": "json_schema",
+        },
+@@ -250,167 +199,104 @@
+        "effort": "medium",
+        "format": {
+          "schema": {
+            "additionalProperties": false,
+            "properties": {
+-             "amount_baht": {
++             "bank": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                  },
+                  {
+                    "type": "null",
+                  },
+                ],
+              },
+-             "date": {
++             "drafts": {
++               "items": {
++                 "additionalProperties": false,
++                 "properties": {
++                   "amount_baht": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-             "flags": {
+-               "items": {
+-                 "enum": [
+-                   "amount_unclear",
+-                   "multiple_amounts",
+-                   "date_guessed",
+-                   "category_guessed",
+-                   "wallet_guessed",
+-                   "not_money",
+-                 ],
+-                 "type": "string",
+-               },
+-               "type": "array",
+-             },
+-             "from": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "account_last4": {
++                   "category_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-                 "bank": {
+-                   "anyOf": [
+-                     {
++                   "confidence": {
+                      "enum": [
+-                         "bbl",
+-                         "kbank",
+-                         "ktb",
+-                         "ttb",
+-                         "scb",
+-                         "bay",
+-                         "gsb",
+-                         "ghb",
+-                         "baac",
+-                         "kkp",
+-                         "cimb",
+-                         "uob",
+-                         "lhb",
+-                         "tisco",
+-                         "icbc",
+-                         "tcrb",
+-                         "ibank",
+-                         "other",
++                       "high",
++                       "medium",
++                       "low",
+                      ],
+                      "type": "string",
+                    },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "name": {
++                   "date": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+-                 },
+                    },
+-               "required": [
+-                 "bank",
+-                 "account_last4",
+-                 "name",
+-               ],
+-               "type": "object",
+-             },
+-             "kind": {
++                   "flags": {
++                     "items": {
+                        "enum": [
+-                 "slip",
+-                 "receipt",
+-                 "unreadable",
++                         "amount_unclear",
++                         "multiple_amounts",
++                         "date_guessed",
++                         "category_guessed",
++                         "wallet_guessed",
++                         "not_money",
+                        ],
+                        "type": "string",
+                      },
+-             "time": {
++                     "type": "array",
++                   },
++                   "merchant": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-             "to": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "account_last4": {
++                   "note": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+                          "type": "null",
+                        },
+                      ],
+                    },
+-                 "bank": {
+-                   "anyOf": [
+-                     {
++                   "type": {
+                      "enum": [
+-                         "bbl",
+-                         "kbank",
+-                         "ktb",
+-                         "ttb",
+-                         "scb",
+-                         "bay",
+-                         "gsb",
+-                         "ghb",
+-                         "baac",
+-                         "kkp",
+-                         "cimb",
+-                         "uob",
+-                         "lhb",
+-                         "tisco",
+-                         "icbc",
+-                         "tcrb",
+-                         "ibank",
+-                         "other",
++                       "expense",
++                       "income",
+                      ],
+                      "type": "string",
+                    },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "name": {
++                   "wallet_id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                        },
+                        {
+@@ -418,25 +304,37 @@
+                        },
+                      ],
+                    },
+                  },
+                  "required": [
+-                 "bank",
+-                 "account_last4",
+-                 "name",
++                   "type",
++                   "amount_baht",
++                   "date",
++                   "category_id",
++                   "wallet_id",
++                   "merchant",
++                   "note",
++                   "confidence",
++                   "flags",
+                  ],
+                  "type": "object",
++               },
++               "type": "array",
+              },
++             "kind": {
++               "enum": [
++                 "slip",
++                 "receipt",
++                 "unreadable",
++               ],
++               "type": "string",
+              },
++           },
+            "required": [
+              "kind",
+-             "amount_baht",
+-             "date",
+-             "time",
+-             "from",
+-             "to",
+-             "flags",
++             "drafts",
++             "bank",
+            ],
+            "type": "object",
+          },
+          "type": "json_schema",
+        },
+
+ ❯ test/slip-read-import.test.ts:327:25
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+       |                         ^
+    328|   })
+    329|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+   Start at  01:28:11
+   Duration  277ms (transform 87ms, setup 0ms, import 139ms, tests 34ms, environment 0ms)
+

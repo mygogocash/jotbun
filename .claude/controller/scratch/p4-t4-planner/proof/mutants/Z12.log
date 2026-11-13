@@ -1,0 +1,41 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 30ms
+     × a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number
+AssertionError: "ร้าน 7-11 สาขา 123456": expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -9,8 +9,8 @@
+    "occurred_on": "2026-10-24",
+    "occurred_time": "18:40",
+    "to": {
+      "account_last4": "9876",
+      "bank": "scb",
+-     "name": "ร้าน 7-11 สาขา 123456",
++     "name": null,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:475:86
+    473|     ]
+    474|     for (const [name, kept] of rows) {
+    475|       expect(sanitized(answer({ to: { ...PA_DAENG, name } })), JSON.st…
+       |                                                                                      ^
+    476|     }
+    477|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:26
+   Duration  291ms (transform 88ms, setup 0ms, import 154ms, tests 30ms, environment 0ms)
+

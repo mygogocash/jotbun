@@ -1,0 +1,119 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 3 failed) 30ms
+     × the import mode asks for the time and both sides, and sends only today and the locale 7ms
+     × Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 1ms
+     × the image's media type reaches both calls (the P3-T8 reviews' MO3) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale
+AssertionError: expected { model: 'claude-haiku-5-5', …(4) } to deeply equal { model: 'claude-haiku-5-5', …(4) }
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+    "messages": [
+      {
+        "content": [
+          {
+            "source": {
+-             "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
++             "data": "",
+              "media_type": "image/png",
+              "type": "base64",
+            },
+            "type": "image",
+          },
+
+ ❯ test/slip-read-import.test.ts:106:19
+    104|     const [haiku] = model.calls
+    105|     // The whole request: Haiku's base and effort, the import schema a…
+    106|     expect(haiku).toEqual(importRequest(HAIKU_BASE))
+       |                   ^
+    107|     expect(JSON.parse(textOf(haiku))).toEqual({ today: '2026-10-25', l…
+    108|     // None of the caller's context, by name or id, and no id of the r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace
+AssertionError: expected { model: 'claude-opus-5-5', …(6) } to deeply equal { model: 'claude-opus-5-5', …(6) }
+
+- Expected
++ Received
+
+@@ -7,11 +7,11 @@
+    "messages": [
+      {
+        "content": [
+          {
+            "source": {
+-             "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
++             "data": "",
+              "media_type": "image/png",
+              "type": "base64",
+            },
+            "type": "image",
+          },
+
+ ❯ test/slip-read-import.test.ts:275:28
+    273|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    274|     expect(model.calls).toHaveLength(2)
+    275|     expect(model.calls[1]).toEqual(importRequest(OPUS_BASE))
+       |                            ^
+    276|     expect(trace.calls.map((call) => [call.requested, call.feature, ca…
+    277|       [HAIKU, 'slip', false, true],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected [ { …(5) }, …(1) ] to deeply equal [ { …(5) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -4,11 +4,11 @@
+      "messages": [
+        {
+          "content": [
+            {
+              "source": {
+-               "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
++               "data": "",
+                "media_type": "image/jpeg",
+                "type": "base64",
+              },
+              "type": "image",
+            },
+@@ -229,11 +229,11 @@
+      "messages": [
+        {
+          "content": [
+            {
+              "source": {
+-               "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
++               "data": "",
+                "media_type": "image/jpeg",
+                "type": "base64",
+              },
+              "type": "image",
+            },
+
+ ❯ test/slip-read-import.test.ts:327:25
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+       |                         ^
+    328|   })
+    329|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+   Start at  01:28:16
+   Duration  249ms (transform 70ms, setup 0ms, import 117ms, tests 30ms, environment 0ms)
+

@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/sim/wt/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record
+{"level":"error","event":"vault_call_failed","failure":"TypeError"}
+
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > drafts come newest first, 50 a page and at most 200, with the total and a cursor
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > the list names a live record with the same amount and date as a possible duplicate
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a shared slip's draft confirms as share_extension
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > more than 50 drafts, a repeated draft or a repeated record id is 422, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a resent confirm replays its acknowledgement and writes nothing more
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a draft confirmed on another phone makes the batch 409, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > each record is checked as transactions.create checks it, and a refused record is named by its draft index
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a transaction carrying source or slip_ref_id is 422 UNKNOWN_FIELD: the vault sets both
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > slip confirmations send no record_saved (S18)
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > dismissing keeps the slip known, and a dismissed draft cannot be confirmed
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > confirm and dismiss poke the other phones with the new inbox count
+ × test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record 34ms
+   → expected [ 1, 500, …(1) ] to deeply equal [ 1, 204, '' ]
+ ↓ test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a slip ref leaves the record as it was: its version, its source or none, its change log and a slip ref it has
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > an open draft leaves the inbox 30 days after it was read, and its slip stays known (C11)
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > after pruneSlips at slipsDueAt, the next slipsDueAt is later or null (R37), and backfill uses go once more than 31 Bangkok days old
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > the prune takes more drafts than SQLite has parameters
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > the drafts routes are 404 until SLIP_IMPORT_ENABLED is on, as a missing path answers, and the slip ref answers before it
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > confirm, dismiss and the slip ref are writes under the current policy and the imports gate, confirm also under writes; the list needs only the session
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record
+AssertionError: expected [ 1, 500, …(1) ] to deeply equal [ 1, 204, '' ]
+
+- Expected
++ Received
+
+  [
+    1,
+-   204,
+-   "",
++   500,
++   "{\"code\":\"INTERNAL_ERROR\",\"request_id\":\"fbc2fd0b-022d-44a0-a375-97ddef3e5e66\",\"message_key\":\"errors.internal_error\"}",
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:385:49
+    383|     for (let i = 0; i < 2; i += 1) {
+    384|       const res = await recordRef(s, { ref_hash: hash, transaction_id:…
+    385|       expect([i, res.status, await res.text()]).toEqual([i, 204, ''])
+       |                                                 ^
+    386|     }
+    387|     const refs = await sqlRows<{ id: string; state: string; transactio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  01:58:34
+   Duration  2.27s (transform 810ms, setup 1.73s, import 39ms, tests 35ms, environment 0ms)
+

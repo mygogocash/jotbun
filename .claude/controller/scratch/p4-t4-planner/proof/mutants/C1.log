@@ -1,0 +1,97 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 3 failed) 28ms
+     × a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead 3ms
+     × an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC) 1ms
+     × Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { Object (kind, drafts, ...) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+    "bank": null,
+-   "declined": true,
++   "declined": false,
+    "drafts": [],
+    "escalated": true,
+    "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+
+ ❯ test/slip-read-import.test.ts:247:23
+    245|   it('a decline from both models is unreadable and declined: a decline…
+    246|     const { read, model } = importRead([refusal(), refusal()])
+    247|     await expect(read).resolves.toStrictEqual(unreadable(2, true))
+       |                       ^
+    248|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+    249|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+    "bank": "kbank",
+-   "declined": true,
++   "declined": false,
+    "drafts": [],
+    "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+
+ ❯ test/slip-read-import.test.ts:268:23
+    266|   ])("an Opus that %s leaves Haiku's read and its bank (the P3-T8 revi…
+    267|     const { read } = importRead([json(answer({ to: { ...PA_DAENG, name…
+    268|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    269|   })
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,8 +1,8 @@
+  {
+    "bank": "kbank",
+-   "declined": true,
++   "declined": false,
+    "drafts": [],
+    "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+
+ ❯ test/slip-read-import.test.ts:273:23
+    271|   it("Opus is asked the same way, on Opus's base, and its call is mark…
+    272|     const { read, model, trace } = importRead([refusal(), json(answer(…
+    273|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    274|     expect(model.calls).toHaveLength(2)
+    275|     expect(model.calls[1]).toEqual(importRequest(OPUS_BASE))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+   Start at  01:28:14
+   Duration  265ms (transform 73ms, setup 0ms, import 122ms, tests 28ms, environment 0ms)
+

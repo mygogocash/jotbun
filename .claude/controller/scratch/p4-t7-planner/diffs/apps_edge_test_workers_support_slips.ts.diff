@@ -1,0 +1,16 @@
+--- a/apps/edge/test/workers/support/slips.ts
++++ b/apps/edge/test/workers/support/slips.ts
+@@ -12,9 +12,10 @@
+ import type { TestUser } from './v1-client'
+ 
+ export type SlipDraftFields = {
+-  amount_minor: string
+-  occurred_on: string
+-  occurred_time: string
++  // Null as a read that could not tell them (P4-T7's list orders a slip with no date or time last).
++  amount_minor: string | null
++  occurred_on: string | null
++  occurred_time: string | null
+   direction: 'out' | 'in'
+   from: SlipParty
+   to: SlipParty

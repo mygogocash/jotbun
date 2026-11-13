@@ -1,0 +1,45 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 32ms
+     × known flags are kept once each, in their order, and unknown ones dropped 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > known flags are kept once each, in their order, and unknown ones dropped
+AssertionError: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,12 @@
+  {
+    "amount_minor": "125050",
+    "flags": [
+-     "multiple_amounts",
+      "date_guessed",
++     "bogus",
++     "multiple_amounts",
++     7,
+    ],
+    "from": {
+      "account_last4": "1234",
+      "bank": "kbank",
+      "name": "นาย กานต์ ใจดี",
+
+ ❯ test/slip-read-import.test.ts:485:108
+    483|
+    484|   it('known flags are kept once each, in their order, and unknown ones…
+    485|     expect(sanitized(answer({ flags: ['date_guessed', 'bogus', 'multip…
+       |                                                                                                            ^
+    486|     expect(sanitized(answer({ amount_baht: null, flags: ['not_money'] …
+    487|     expect(sanitized(answer({ flags: 'date_guessed' }))).toEqual(READ)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:27
+   Duration  251ms (transform 68ms, setup 0ms, import 116ms, tests 32ms, environment 0ms)
+

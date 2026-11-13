@@ -49,7 +49,28 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
-- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb`.**
+- **14 Nov 02:25: #464's pins pushed as `7e2ae0dc` (the Opus reviewer confirms); P4-T7's brief READY (waits on #463).**
+  - **#464 (P2-T18a):** the controller's commit `7e2ae0dc` holds both reviews' pins and the comment, test-only plus the comment. Proof `scratch/p2-t18a-pins/`, all under the heavy lock:
+    - the three render files 56 of 56, and `typecheck:app`;
+    - the reviews' mutants O1, O2, O6, O9, OF1, R1 and R3 each killed on an assertion, by the case meant for it;
+    - the planner's H1 to H7 and W1 to W5 still killed.
+
+    The PR body is updated. **The Opus reviewer (`mcp:launch:94c5884601504349cb697d18f6b873d2e2bd3acbb7212a5253684ae148b304a4`, run 2) confirms `7e2ae0dc`** in a new section of `reviews/P2-T18a.md`, ending with a new VERDICT line. The Sonnet thread is archived. Followups are written (P2-T22 for n3; `saved-pins`, a new pins-only task to plan once #464 merges, owns the P2-T17 carry).
+  - **P4-T7 planner done** (thread archived). Brief `briefs/P4-T7.md`, kit `scratch/p4-t7-planner/` (78 of 78 sums).
+    - `check_kit` reports `routes.ts`, `route-coverage.test.ts` and `protocol.ts` as DIFFERS. That is expected: their `orig/` equals #463's head `19ef67fb` for all three, and the other 8 `orig/` files equal the head.
+    - Its base is the head plus #461, #462 and #463 in merge order. **P1 to P17 accepted.** Confirm follows B10 as A1 amends it; that default stands while owner Q4 is open.
+    - Dispatch the Haiku implementer (`--lock`, worktree `p4-t7` on `p4/t7-slip-drafts`, `install-edge`) only after #463 merges.
+  - **Live now:** the #465 reviews (Opus and Sonnet) and the #464 confirmation (Opus). No planner or builder is running.
+- **14 Nov 02:05: #464 approved twice; P4-T4's brief READY (waits on #461); #465's head is `a47a2876`.**
+  - **#464 (P2-T18a):** Opus (`reviews/P2-T18a.md`) and Sonnet (`reviews/P2-T18a-second.md`) both approve. Their findings overlap and are all test pins plus one comment:
+    - Opus m1 = Sonnet m1a (R3/O6, the revision handed to `todayOutMinor`): race B's case with the diary at `'8'` (probe B1);
+    - Opus m2 = Sonnet m1c (R1/O2): the closed-diary case over `locked`, `opening` and `unavailable`;
+    - Sonnet m1b (O1, PS1: a diary opening mid-read), m1d (O9, PS6: the online save), n1 (OF1, PF2: `canGoBack` false);
+    - Opus n1 = Sonnet n2: the comment at `NewWalletFlow.tsx:388-390`.
+    - **The controller adds them itself** (test-only plus the comment, while CI is blocked), proves them under the lock (proof `scratch/p2-t18a-pins/`), and asks the Opus reviewer to confirm. Sonnet's n3 (the editor's loading-state back, PE1) goes to P2-T22 in followups.
+  - **P4-T4 planner done** (thread archived). Brief `briefs/P4-T4.md`, kit `scratch/p4-t4-planner/` (28 of 28 sums). `check_kit` says `slip-read.ts` DIFFERS at the head: expected, because its `orig/` is #461's text (`orig/` sha256 equals `5cb1055e`'s file for both base files). **P1 to P15 accepted.** Dispatch the Haiku implementer (`--lock`, worktree `p4-t4` on `p4/t4-slip-import`, `install-edge`) only after #461 merges; its Step 0 checks the merge.
+  - **#465's head is `a47a2876`, not `179d03cb`:** the implementer amended its commit before pushing (one wording line in `receipts/P2-T18.md`). Both #465 reviewers were told to review `a47a2876`.
+- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb` (pushed as `a47a2876`, see 02:05).**
   - All 12 `real/` files are byte-identical. RED was Node 8 of 8 and render 15 of 39; GREEN passes. 87 mutants: 86 killed and 1 equivalent, identical to the planner's.
   - Gate: `typecheck:app` and `:routes`, `test:unit` 1117, kit eight 142, routes 17, neighbours 131, `export:web`.
   - Reviews: Opus `mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, Sonnet `mcp:launch:b699098f4b6f9f2e876f0fc036e922a2f25326b7da301688d934e8cf8f9d84cb`. The implementer thread is archived.

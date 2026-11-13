@@ -1,0 +1,24 @@
+--- a/apps/edge/src/vault/routes.ts
++++ b/apps/edge/src/vault/routes.ts
+@@ -29,6 +29,8 @@
+ import { aiContext, aiDayFacts, aiPreferences, aiTool, consumeAi, refundAi, setAiPreferences } from './ai'
+ import { analyticsConsent, weeksSinceSignup } from './analytics'
+ import { listSlipAccounts, updateSlipAccount } from './slips/accounts'
++import { confirmSlipDrafts, dismissSlipDraft, listSlipDrafts } from './slips/drafts'
++import { recordSlipRef } from './slips/refs'
+ import { slipSalt } from './slips/salt'
+ 
+ export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
+@@ -230,4 +232,12 @@
+   'slips.salt': (c, call) => okReply(call.route, slipSalt(c)),
+   'slipAccounts.list': (c, call) => okReply(call.route, listSlipAccounts(c)),
+   'slipAccounts.update': (c, call) => okReply(call.route, updateSlipAccount(c, call)),
++  // P4-T7: the slip drafts (confirm and dismiss are slip_inbox commands) and a single read's slip ref (a plain write).
++  'drafts.list': (c, call) => okReply(call.route, listSlipDrafts(c, call.query)),
++  'drafts.confirm': (c, call) => okReply(call.route, confirmSlipDrafts(c, call)),
++  'drafts.dismiss': (c, call) => okReply(call.route, dismissSlipDraft(c, call)),
++  'slips.refs': (c, call) => {
++    recordSlipRef(c, call)
++    return okReply(call.route)
++  },
+ }

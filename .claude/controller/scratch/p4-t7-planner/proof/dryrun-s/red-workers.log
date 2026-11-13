@@ -1,0 +1,571 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/sim/wt/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 61ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 29ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 51ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 24ms
+ × test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > drafts come newest first, 50 a page and at most 200, with the total and a cursor 131ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > the list names a live record with the same amount and date as a possible duplicate 27ms
+   → expected 404 to be 200 // Object.is equality
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 28ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 29ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 20ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 22ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 24ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is never logged or sent to analytics: its first read, later reads, a read after an erase 54ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 13ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 19ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 33ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping one account changes only that account 19ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 26ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 24ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed 36ms
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref 49ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a shared slip's draft confirms as share_extension 18ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > more than 50 drafts, a repeated draft or a repeated record id is 422, and nothing is written 21ms
+   → expected [ '51 drafts', 404, undefined ] to deeply equal [ '51 drafts', 422, …(1) ]
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a resent confirm replays its acknowledgement and writes nothing more 20ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a draft confirmed on another phone makes the batch 409, and nothing is written 18ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > each record is checked as transactions.create checks it, and a refused record is named by its draft index 18ms
+   → expected [ 404, 'NOT_FOUND', undefined ] to deeply equal [ 422, 'VALIDATION_FAILED', { …(1) } ]
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > two faults at once answer the first check in R41 order: If-Match, the id, the body, the version, then the wallet 29ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a draft whose two sides are the same account counts once for it 17ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 16ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 20ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed 49ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a record made without a source stays without one through an edit, a delete and restore, and a receipt kept, replaced and removed 48ms
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a transaction carrying source or slip_ref_id is 422 UNKNOWN_FIELD: the vault sets both 19ms
+   → expected [ 404, { code: 'NOT_FOUND', …(2) } ] to deeply equal [ 422, ObjectContaining{…} ]
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > slip confirmations send no record_saved (S18) 20ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > dismissing keeps the slip known, and a dismissed draft cannot be confirmed 19ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > confirm and dismiss poke the other phones with the new inbox count 21ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record 22ms
+   → expected [ +0, 404, …(1) ] to deeply equal [ +0, 204, '' ]
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox version follows its own head, not another entity's 34ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 19ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 21ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 65ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 22ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 15ms
+ × test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a slip ref leaves the record as it was: its version, its source or none, its change log and a slip ref it has 24ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > an open draft leaves the inbox 30 days after it was read, and its slip stays known (C11) 17ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > after pruneSlips at slipsDueAt, the next slipsDueAt is later or null (R37), and backfill uses go once more than 31 Bangkok days old 17ms
+   → expected null to be 1801796400000 // Object.is equality
+ × test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > the prune takes more drafts than SQLite has parameters 66ms
+   → expected [ …(102) ] to deeply equal [ Array(1) ]
+ × test/workers/slip-drafts.test.ts > the routes (S13, C12) > the drafts routes are 404 until SLIP_IMPORT_ENABLED is on, as a missing path answers, and the slip ref answers before it 18ms
+   → expected 404 to be 204 // Object.is equality
+ × test/workers/slip-drafts.test.ts > the routes (S13, C12) > confirm, dismiss and the slip ref are writes under the current policy and the imports gate, confirm also under writes; the list needs only the session 10ms
+   → expected 404 to be 200 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > drafts come newest first, 50 a page and at most 200, with the total and a cursor
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ read test/workers/slip-drafts.test.ts:118:33
+    116|     const read = async (query: string) => {
+    117|       const res = await s.client.as(s.user).get(`/v1/drafts${query}`)
+    118|       expect(res.status, query).toBe(200)
+       |                                 ^
+    119|       const page = await json(res)
+    120|       expect(isSlipDraftsPage(page), query).toBe(true)
+ ❯ test/workers/slip-drafts.test.ts:123:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > the list names a live record with the same amount and date as a possible duplicate
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:172:24
+    170|     const otherDay = await seedSlipDraft(s.user, { amount_minor: '6500…
+    171|     const res = await s.client.as(s.user).get('/v1/drafts')
+    172|     expect(res.status).toBe(200)
+       |                        ^
+    173|     const byId = new Map(((await json(res)).drafts as Json[]).map((dra…
+    174|     expect([byId.get(same.draftId), byId.get(deleted.draftId), byId.ge…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:187:24
+    185|     const key = randomUUID()
+    186|     const res = await confirm(s, drafts, key)
+    187|     expect(res.status).toBe(200)
+       |                        ^
+    188|     expect(await json(res)).toEqual({ command_id: key, entity_id: SLIP…
+    189|     expect(await revisionOf(s.user)).toBe(String(BigInt(before) + 1n))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a shared slip's draft confirms as share_extension
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:210:148
+    208|     const album = await seedSlipDraft(s.user, { origin: 'album' })
+    209|     const [fromShare, fromAlbum] = [expense(s), expense(s, { amount_mi…
+    210|     expect((await confirm(s, [{ draft_id: shared.draftId, transaction:…
+       |                                                                                                                                                    ^
+    211|     const sourceOf = async (id: string) => (await json(await s.client.…
+    212|     expect([await sourceOf(fromShare.id), await sourceOf(fromAlbum.id)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > more than 50 drafts, a repeated draft or a repeated record id is 422, and nothing is written
+AssertionError: expected [ '51 drafts', 404, undefined ] to deeply equal [ '51 drafts', 422, …(1) ]
+
+- Expected
++ Received
+
+  [
+    "51 drafts",
+-   422,
+-   {
+-     "drafts": "VALIDATION_FAILED",
+-   },
++   404,
++   undefined,
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:227:61
+    225|     for (const [label, drafts, fields] of cases) {
+    226|       const res = await confirm(s, drafts)
+    227|       expect([label, res.status, (await json(res)).fields]).toEqual([l…
+       |                                                             ^
+    228|     }
+    229|     expect([await revisionOf(s.user), await openIds(s.user), await cou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a resent confirm replays its acknowledgement and writes nothing more
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:238:26
+    236|     const key = randomUUID()
+    237|     const first = await confirm(s, drafts, key)
+    238|     expect(first.status).toBe(200)
+       |                          ^
+    239|     const ack = await json(first)
+    240|     const after = { revision: await revisionOf(s.user), records: await…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a draft confirmed on another phone makes the batch 409, and nothing is written
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:253:91
+    251|     const s = await setup()
+    252|     const [a, b] = [await seedSlipDraft(s.user), await seedSlipDraft(s…
+    253|     expect((await confirm(s, [{ draft_id: a.draftId, transaction: expe…
+       |                                                                                           ^
+    254|     const before = await revisionOf(s.user)
+    255|     const late = expense(s, { amount_minor: '4500' })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > each record is checked as transactions.create checks it, and a refused record is named by its draft index
+AssertionError: expected [ 404, 'NOT_FOUND', undefined ] to deeply equal [ 422, 'VALIDATION_FAILED', { …(1) } ]
+
+- Expected
++ Received
+
+  [
+-   422,
+-   "VALIDATION_FAILED",
+-   {
+-     "drafts[0].transaction.category_id": "errors.category_type_mismatch",
+-   },
++   404,
++   "NOT_FOUND",
++   undefined,
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:273:125
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a transaction carrying source or slip_ref_id is 422 UNKNOWN_FIELD: the vault sets both
+AssertionError: expected [ 404, { code: 'NOT_FOUND', …(2) } ] to deeply equal [ 422, ObjectContaining{…} ]
+
+- Expected
++ Received
+
+  [
+-   422,
++   404,
+    {
+-     "code": "UNKNOWN_FIELD",
+-     "fields": {
+-       "drafts[0].transaction.source": "UNKNOWN_FIELD",
+-     },
++     "code": "NOT_FOUND",
++     "message_key": "errors.not_found",
++     "request_id": "84a34acc-1b8b-4aea-93f7-2f07060cca17",
+    },
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:291:45
+    289|       const res = await confirm(s, [{ draft_id: a.draftId, transaction…
+    290|       const field = `drafts[0].transaction.${Object.keys(extra)[0]}`
+    291|       expect([res.status, await json(res)]).toEqual([422, expect.objec…
+       |                                             ^
+    292|     }
+    293|     expect([await openIds(s.user), await countRows(s.user, 'transactio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > slip confirmations send no record_saved (S18)
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:314:167
+    312|     await settle()
+    313|     sent.length = 0
+    314|     expect((await confirm(s, [{ draft_id: a.draftId, transaction: expe…
+       |                                                                                                                                                                       ^
+    315|     await settle()
+    316|     expect(sent).toEqual([])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > dismissing keeps the slip known, and a dismissed draft cannot be confirmed
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:330:24
+    328|     const key = randomUUID()
+    329|     const res = await dismiss(s, a.draftId, key)
+    330|     expect(res.status).toBe(200)
+       |                        ^
+    331|     const ack = await json(res)
+    332|     expect(ack).toMatchObject({ command_id: key, entity_id: SLIP_INBOX…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > confirm and dismiss poke the other phones with the new inbox count
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:361:32
+    359|       const [a, b, c] = [await seedSlipDraft(s.user), await seedSlipDr…
+    360|       const confirmed = await confirm(s, [{ draft_id: a.draftId, trans…
+    361|       expect(confirmed.status).toBe(200)
+       |                                ^
+    362|       expect(await socket.next()).toBe(`{"revision":"${(await json(con…
+    363|       const dismissed = await dismiss(s, b.draftId)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record
+AssertionError: expected [ +0, 404, …(1) ] to deeply equal [ +0, 204, '' ]
+
+- Expected
++ Received
+
+  [
+    0,
+-   204,
+-   "",
++   404,
++   "{\"code\":\"NOT_FOUND\",\"request_id\":\"7b59afec-a2cf-45be-9c95-c1a9a2efdba9\",\"message_key\":\"errors.not_found\"}",
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:385:49
+    383|     for (let i = 0; i < 2; i += 1) {
+    384|       const res = await recordRef(s, { ref_hash: hash, transaction_id:…
+    385|       expect([i, res.status, await res.text()]).toEqual([i, 204, ''])
+       |                                                 ^
+    386|     }
+    387|     const refs = await sqlRows<{ id: string; state: string; transactio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a slip ref leaves the record as it was: its version, its source or none, its change log and a slip ref it has
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:410:94
+    408|     const draft = await seedSlipDraft(s.user, { amount_minor: '3000' })
+    409|     const confirmed = expense(s, { amount_minor: '3000' })
+    410|     expect((await confirm(s, [{ draft_id: draft.draftId, transaction: …
+       |                                                                                              ^
+    411|     const [{ slip_ref_id: draftRef }] = await sqlRows<{ slip_ref_id: s…
+    412|     // A slip still open as a draft is known too.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > an open draft leaves the inbox 30 days after it was read, and its slip stays known (C11)
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:439:54
+    437|     const expiresAt = readAt + SLIP_LIMITS.draftDays * DAY
+    438|     // A dismiss commits a command, so its call sets the alarm: at the…
+    439|     expect((await dismiss(s, other.draftId)).status).toBe(200)
+       |                                                      ^
+    440|     expect(await alarmOf(s.user)).toBe(expiresAt)
+    441|     // A moment before, the alarm's prune leaves it, and the alarm com…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > after pruneSlips at slipsDueAt, the next slipsDueAt is later or null (R37), and backfill uses go once more than 31 Bangkok days old
+AssertionError: expected null to be 1801796400000 // Object.is equality
+
+- Expected:
+1801796400000
+
++ Received:
+null
+
+ ❯ test/workers/slip-drafts.test.ts:473:46
+    471|       return { open: await openIds(s.user), days: await days(), revisi…
+    472|     }
+    473|     expect(await dueAt(s.user, first - DAY)).toBe(first)
+       |                                              ^
+    474|     const start = await revisionOf(s.user)
+    475|     const one = await step(first)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > the prune takes more drafts than SQLite has parameters
+AssertionError: expected [ …(102) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "003b2a09-68d7-41bd-9727-1b431eef8026",
++   "01231cff-6142-47b5-8c3d-1fb58ce568cf",
++   "02addf9b-b5d1-44e1-9561-39402d751b6a",
++   "03942428-da52-4aa5-a450-f9f60d877d74",
++   "042c3287-77e2-4e0a-bb2a-3fc37c9497b8",
++   "055604e4-41eb-40d4-bd59-fb4775424b31",
++   "070d6704-2a96-4eb4-a730-e8a64f8f9564",
++   "082dd103-3351-44a9-a7a6-366cfcbd17c7",
++   "083bba93-94b4-40a8-9cdc-aa2278ed11a9",
++   "0cc5b608-135e-49a6-9675-a65a0df79625",
++   "0cd25121-3006-4630-a99f-01a7ef3bc845",
++   "0ec64084-ce2b-4f37-8456-09d0113ab841",
++   "12f77fe2-00c9-4a35-8a71-7507dce70a75",
++   "13a1c886-c894-4d3f-99a4-76fc8a2e7278",
++   "14650b17-2f65-4f76-bf02-a0d29f1e2a28",
++   "14f3c64e-4c7d-47cb-b6b5-ba1c3a645f64",
++   "177d987e-8293-4ceb-8f2c-9ffae294aad4",
++   "19dc7cec-c014-4a51-90f5-5a2e88b419df",
++   "1cda46b0-21aa-4730-a7d4-831ef87762ee",
++   "1cead376-6d5a-428f-9a10-4752c5bbcd66",
++   "22f83d4f-e480-4ed1-81db-83bf71fd4f4e",
++   "257a3f47-cbec-4fc6-9e6a-1fe9e0a5bc9c",
++   "25fc3d93-addd-4d33-9810-4f9df9c2c8f1",
++   "29a23934-e0f3-4ffe-ab6b-7986da9647cf",
++   "2a2b94b3-1a15-4124-8694-ec2732f7f36b",
++   "2a9841d8-eaf5-4431-b558-5c75b0b2018a",
++   "2c6bf08f-6b3d-4fad-acaa-9afc918f75b3",
++   "2e3a706b-7265-4b94-a52f-db24323df44c",
++   "33f9669c-bf61-485a-8f82-f037b72c04cf",
++   "34b8535b-733e-4368-a538-6c0e83b5aa4c",
++   "3b933b58-1d4f-4dfa-a1fb-f98dd2f1f9b8",
++   "3c4fe530-72ad-402d-a5cb-603e623bd60a",
++   "3e5a044c-e278-4652-9994-7cefa373fe07",
++   "4ff83be7-5ef7-47a7-97b7-2294888fab85",
++   "50d378e8-1b5e-4e9e-bf99-ea73f50aa5bd",
++   "5883aaaa-33fb-44cc-aa83-50ac3e8a68f6",
++   "593cacb3-6525-4685-b6a9-7b8ee452cfd4",
++   "5983b41c-9b22-448d-9c6b-0f018fc37e46",
++   "5b273f63-ce34-4955-8b79-24c24a6b9bf6",
++   "5cce1050-dcb8-4c99-8b85-26aa84ed7624",
++   "6522c5ab-90d4-406b-82f2-3d7cc005e3d6",
++   "6d0dd6ae-5f00-4de1-9f5a-2c46f41275ad",
++   "6e6f3c93-f32c-433b-815f-5b1b042da9f8",
++   "76d68757-2d13-4542-be31-1ca4ef619566",
++   "76dd07d7-8cf8-4934-85c5-9ffc66fd4689",
++   "7869cfad-4c02-4ed3-96fd-7260d0ce9010",
++   "7ad0bf1a-8113-4cd8-9d39-757f9e4b8ad9",
++   "7c54328c-70de-4e95-86a7-10391682fed0",
++   "7e94c0d8-a167-461d-8fe3-b8b916b914e5",
++   "7f18215c-68f3-4f05-bd35-2bc397132b0e",
++   "80d39b85-79bc-4839-bad4-3aca4c845e68",
++   "8285f3c3-d631-48ad-bfa9-ad3dfd76fa38",
++   "833bfc36-4107-4c54-ad06-58f3828b502e",
++   "83415795-6d96-4ac2-a526-29898906551f",
++   "84315e38-6bb3-4aff-8641-62aa95c1e67c",
++   "85d95861-c552-4ab0-87fa-c0fec229f7b7",
++   "879a4ffa-162e-4dcb-86dc-fee5967963a5",
++   "87d08a07-6808-40a6-8be1-cc26a215b448",
++   "8909b380-c449-4725-836b-69172d89a376",
++   "8b8a9f63-bc98-4f68-8246-df0023e82e32",
++   "8f809b34-fa8c-470f-b1ab-a161d76a3748",
++   "8fdf5f4d-3482-4cde-9c06-2ad46017b634",
++   "90fc3a7b-66e1-4482-8f31-16e59dfcf79f",
++   "95546f8d-2d5a-4ff6-97b4-d508b06db98f",
++   "9556b308-3e3c-442f-bc2a-e9892c08890c",
++   "978e3005-efaa-48a3-a066-a3c72b1f65b2",
++   "9c2ea7e7-e000-436b-8a7e-2201610c8f36",
++   "9fa82f3c-b965-46ae-a4dc-3a670ca5bda9",
++   "a3235001-4c83-4437-9a0c-ca977e2abb81",
++   "a3ffb151-2286-454f-8b74-721eaa6f3803",
++   "a41a25d6-6b11-472a-940a-8b1d4929677e",
++   "a54c120e-fcf1-41f9-b6f1-2cb5877b1254",
++   "a8889c1a-2149-446d-bfef-a76b3e67b211",
++   "aafcbf3c-437e-4455-abfa-7ec5556ecbc3",
++   "b0f5bc1e-c192-40fc-9461-c080e65e97b3",
++   "b159b70a-c71e-4979-bdcf-9c6c0a83326d",
++   "b444c951-1764-49de-ad6c-064f220bea87",
++   "b489b9d8-4cba-4829-8ca0-b82c7c70f867",
++   "b96ada24-2199-4a74-bead-5fa89916f946",
++   "ba43ab13-1d32-4463-9fc2-72296f3478e8",
++   "bcd58753-043c-497b-a80a-0a57919e0754",
++   "bdd15adf-4679-4a40-b402-c03f603c85f9",
++   "bf99cb65-0e18-42a3-834e-a75488642c0d",
++   "c2b13374-6d1a-4c27-9736-9137efbae43e",
++   "c4710bba-a337-4447-95bc-b9862f1f24ec",
++   "c9b937b1-d1c6-41ea-9f90-136e6b40e41b",
++   "cd8be78d-70ec-47af-914b-4a950ad160cc",
++   "cf0b2963-db32-4bc9-92d9-7cf2f35d2f3e",
++   "d299fdab-52b8-4767-9bd4-965065a84888",
++   "d3c17fe5-1d24-43bd-a7cb-32029911359d",
++   "d4150233-16fd-43d4-989b-8dfcb70b5471",
++   "d42a44ff-c43e-45c2-97ce-544714056922",
++   "d4de4bf3-6ac9-4994-bf80-b3c0345fe7c2",
++   "d6533666-d9a1-4f27-ae26-9bfeb9ae28d3",
++   "d8bf212b-ceec-411f-b997-a8c08a0c34f4",
++   "da00c323-d57c-4566-806f-c5cffb3b3894",
++   "db0e950a-a5c0-4418-9869-fd61ea8cf90f",
+    "dd4e47d1-3094-4e3d-bae1-d3110478ea96",
++   "e686621a-b325-42cc-98bf-2c8a8964bac1",
++   "ea37c58e-c1e2-4c6d-8433-4e3577674c6f",
++   "f8cfb32d-805c-43f4-aa30-e680bab5e242",
++   "fdf25a2a-3de0-46f0-b1df-bd25990307f8",
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:494:35
+    492|     const before = await revisionOf(s.user)
+    493|     await expect(pruneAt(s.user, expiresAt)).resolves.toBeUndefined()
+    494|     expect(await openIds(s.user)).toEqual([stays.draftId])
+       |                                   ^
+    495|     expect(await sqlRows(s.user, 'SELECT state, count(*) AS n FROM sli…
+    496|     const snapshots = await sqlRows<{ snapshot: string }>(s.user, "SEL…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the routes (S13, C12) > the drafts routes are 404 until SLIP_IMPORT_ENABLED is on, as a missing path answers, and the slip ref answers before it
+AssertionError: expected 404 to be 204 // Object.is equality
+
+- Expected
++ Received
+
+- 204
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:524:123
+    522|     // The slip ref is not behind the release.
+    523|     const lunch = await moneyFixtures(hidden).record(s.user, expense(s…
+    524|     expect((await hidden.as(s.user).post('/v1/slips/refs', { ref_hash:…
+       |                                                                                                                           ^
+    525|     // Released, the list answers.
+    526|     expect((await (await startV1(CONFIG, RELEASED)).as(s.user).get('/v…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/19]⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > the routes (S13, C12) > confirm, dismiss and the slip ref are writes under the current policy and the imports gate, confirm also under writes; the list needs only the session
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slip-drafts.test.ts:534:62
+    532|     const draft = await seedSlipDraft(user)
+    533|     const shape = async (res: Response) => [res.status, (await json(re…
+    534|     expect((await client.as(user).get('/v1/drafts')).status).toBe(200)
+       |                                                              ^
+    535|     const policy = [403, 'POLICY_ACCEPTANCE_REQUIRED']
+    536|     expect(await shape(await client.as(user).post('/v1/drafts/confirm'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/19]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  19 failed | 30 passed (49)
+   Start at  01:55:54
+   Duration  3.65s (transform 3.45s, setup 7.10s, import 148ms, tests 1.43s, environment 0ms)
+

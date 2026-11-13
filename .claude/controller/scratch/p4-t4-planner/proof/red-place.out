@@ -1,0 +1,5 @@
+red: real/apps/edge/src/server/ai/prompts.ts
+red: stubs/apps/edge/src/v1/ai/slip-read.ts
+red: stubs/apps/edge/src/v1/ai/slip-import.ts
+red: real/apps/edge/test/slip-read-import.test.ts
+red: 4 files placed

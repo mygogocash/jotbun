@@ -1,0 +1,303 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 6 failed) 31ms
+     × the import mode asks for the time and both sides, and sends only today and the locale 8ms
+     × a slip both models call unreadable has no import read 1ms
+     × a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead 0ms
+     × Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 2ms
+     × the image's media type reaches both calls (the P3-T8 reviews' MO3) 1ms
+     × a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale
+AssertionError: expected { model: 'claude-haiku-5-5', …(4) } to deeply equal { model: 'claude-haiku-5-5', …(4) }
+
+- Expected
++ Received
+
+@@ -215,7 +215,18 @@
+        "type": "json_schema",
+      },
+    },
+    "system": "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  }
+
+ ❯ test/slip-read-import.test.ts:106:19
+    104|     const [haiku] = model.calls
+    105|     // The whole request: Haiku's base and effort, the import schema a…
+    106|     expect(haiku).toEqual(importRequest(HAIKU_BASE))
+       |                   ^
+    107|     expect(JSON.parse(textOf(haiku))).toEqual({ today: '2026-10-25', l…
+    108|     // None of the caller's context, by name or id, and no id of the r…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip both models call unreadable has no import read
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:242:52
+    240|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    241|     // Both were asked for an import read.
+    242|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    243|   })
+    244|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:248:52
+    246|     const { read, model } = importRead([refusal(), refusal()])
+    247|     await expect(read).resolves.toStrictEqual(unreadable(2, true))
+    248|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    249|   })
+    250|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace
+AssertionError: expected { model: 'claude-opus-5-5', …(6) } to deeply equal { model: 'claude-opus-5-5', …(6) }
+
+- Expected
++ Received
+
+@@ -219,7 +219,18 @@
+        "type": "json_schema",
+      },
+    },
+    "system": "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  }
+
+ ❯ test/slip-read-import.test.ts:275:28
+    273|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    274|     expect(model.calls).toHaveLength(2)
+    275|     expect(model.calls[1]).toEqual(importRequest(OPUS_BASE))
+       |                            ^
+    276|     expect(trace.calls.map((call) => [call.requested, call.feature, ca…
+    277|       [HAIKU, 'slip', false, true],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected [ { …(5) }, …(1) ] to deeply equal [ { …(5) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -216,11 +216,22 @@
+          "type": "json_schema",
+        },
+      },
+      "system": "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+    },
+    {
+      "betas": [
+        "server-side-fallback-2026-07-01",
+      ],
+@@ -440,9 +451,20 @@
+          },
+          "type": "json_schema",
+        },
+      },
+      "system": "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+    },
+  ]
+
+ ❯ test/slip-read-import.test.ts:327:25
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+       |                         ^
+    328|   })
+    329|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+    "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
+
+- Task: read one image the person chose, usually a Thai bank transfer or payment slip. kind is 'slip' for a bank transfer or payment slip, 'receipt' for a shop receipt and 'unreadable' otherwise. amount_baht: the amount transferred exactly as printed, digits with at most 2 decimals; never guess a blurred amount: use null and amount_unclear. date: YYYY-MM-DD; Thai slips print Buddhist-era years (2569 is 2026) and Thai month abbreviations. time: HH:MM in 24 hours as printed, or null. from is the sender and to is the receiver. bank: the key from the list for the bank whose name, logo text or app is printed (K PLUS is kbank, SCB EASY is scb, Krungthai NEXT is ktb); other for a bank not in the list; null when none is shown. account_last4: only the last four digits of the account or phone number as printed. name: the display name as printed. Never copy reference numbers, QR contents, or more than four digits of any account or phone number.",
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:358:52
+    356|     await expect(read).resolves.toStrictEqual(unreadable(2))
+    357|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    358|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    359|   })
+    360| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 42 passed (48)
+   Start at  01:28:10
+   Duration  250ms (transform 68ms, setup 0ms, import 117ms, tests 31ms, environment 0ms)
+

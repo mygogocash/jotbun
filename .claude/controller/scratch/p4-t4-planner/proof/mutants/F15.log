@@ -1,0 +1,33 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 28ms
+     × a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes
+AssertionError: promise rejected "TypeError: addDays needs a Gregorian YYYY…" instead of resolving
+ ❯ test/slip-read-import.test.ts:356:23
+    354|       { fields: 'import' },
+    355|     )
+    356|     await expect(read).resolves.toStrictEqual(unreadable(2))
+       |                       ^
+    357|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    358|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+
+Caused by: TypeError: addDays needs a Gregorian YYYY-MM-DD date.
+ ❯ addDays ../../packages/contracts/src/v1/validation.ts:207:37
+ ❯ sanitizeSlipImportRead src/v1/ai/slip-import.ts:131:18
+ ❯ importOnce src/v1/ai/slip-read.ts:257:16
+ ❯ readSlipImport src/v1/ai/slip-read.ts:140:17
+ ❯ test/slip-read-import.test.ts:356:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:09
+   Duration  253ms (transform 74ms, setup 0ms, import 122ms, tests 28ms, environment 0ms)
+

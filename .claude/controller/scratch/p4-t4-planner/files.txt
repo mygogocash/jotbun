@@ -1,0 +1,8 @@
+# P4-T4's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, later = the receipt, copied at the end).
+# GREEN holds real/ for every line but `later`. Shared files are marked in the brief's Scope table.
+M real apps/edge/src/server/ai/prompts.ts
+M stub apps/edge/src/v1/ai/slip-read.ts
+A stub apps/edge/src/v1/ai/slip-import.ts
+A real apps/edge/test/slip-read-import.test.ts
+A later docs/implementation/receipts/P4-T4.md

@@ -847,7 +847,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
       - inside `WalletRoot`'s `PrivateModeProvider`, since outside it `usePrivateMode()` answers `hidden: false`;
       - with the host's box at the window's origin, since the chip aims with `measureInWindow`;
       - the brief's P20 note (around `AddTrayHost`, inside `CardFramesProvider`, `noticeOf(..., tc)`).
-  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today):**
+  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today). Owner since 14 Nov: `saved-pins`, a pins-only follow-up task (see P2-T18a's entry at the end):**
     - the Bangkok day at the edge: a case at 00:30 Bangkok checks the read's `from` and `through` (Opus n2, Sonnet m2a; mutants M5 and O3a);
     - the toast's `top: insets.top + 8` and `pointerEvents="box-none"`, and the chip's `pointerEvents="none"` (Sonnet m3: O1, O2, O5);
     - where the chip starts (from the bottom centre) and its shrink and fade, with a phone-sized window in the flight's cases (Opus n1 M4, Sonnet n1 O7 to O10, O40);
@@ -930,3 +930,24 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **Owner, Q5:** today the preferences PUT saves while `writes` is paused and while the config fails closed. If the owner gates the preferences, say whether `writes` covers the PUT.
   - **A transport follow-up (`followups.md` line 303, not P3-T3's):** `transportFromEnv`'s `ANTHROPIC_BASE_URL` mapping has no pin (mutant O12 survives). Without it, model calls would skip AI Gateway (§6.7).
   - **If a pause is ever used to shed load** (Sonnet n4): the body is read before the gate answers.
+- P2-T18a (#464, approved twice; not merged yet, since CI is queued org-wide). The reviews are `reviews/P2-T18a.md` (Opus, approved: m1, m2, n1) and `reviews/P2-T18a-second.md` (Sonnet, approved: m1a to m1d, n1 to n3). Their findings were test gaps on the task's own guards and one comment. The controller added them all itself as `7e2ae0dc` (test-only plus the comment; proof `scratch/p2-t18a-pins/`), and the Opus reviewer confirms it. The probes are in `scratch/p2-t18a-review/probes/ReviewProbe.render.test.tsx` and `scratch/p2-t18a-second/probes/` (`SecondSaved`, `SecondFlow` and `SecondEdit` `.append.tsx`). Carried:
+  - **P2-T22 (the editor gains a kind), a guard and its pin (Sonnet n3):** `WalletEditScreen`'s own `goBack` (`:88-91`) drives the header in the loading, error and gone states (`:111`) without `leave()`, so two quick presses on กลับ pop two screens. Probe PE1: `expected [ 2, [] ] to deeply equal [ 1, [] ]`. Wrap it in the once-only guard and pin it.
+  - **`saved-pins`, a pins-only follow-up task like source-pins, to plan once #464 merges (Opus's note):** the P2-T17 carry above ("The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx`") has no other owner. P2-T18a edited the host but its brief deferred the carry (P16), P2-T18 edits no host file, and no later plan task edits either file. It owns:
+    - the 00:30 Bangkok day;
+    - the toast's box and touches;
+    - where the chip starts;
+    - Sonnet n4 (on iOS "Saved" is heard twice);
+    - Sonnet n5 (a second Undo tap in the `finally` gap reruns the removal).
+  - **A later pass over `spendDiary.ts` (both reviews):**
+    - `switchTo` emits `phase: 'ready'` with the placeholder `outbox: []` and `appliedRevision: '0'` until its first `refresh` (`spendDiary.ts:214-215`).
+    - A toast read landing in that window counts no drafts. Any later screen that takes `ready` to mean "loaded" should know.
+    - Emitting `opening` until the first refresh would close it.
+  - **For the owner, only if "unknown" is ever wanted (Sonnet):**
+    - A diary `locked` or `opening` for the whole toast reads like no diary, so the figure is the read alone and leaves that diary's drafts out. P2-T17 pinned this deliberately (`SavedMoment.render.test.tsx:441-445`).
+    - A command `sending` or `uncertain` that the read does not list, and that was deleted elsewhere, still counts: it has no revision.
+  - **P2-T18 (the shell, #465):** keep `spendLayoutOrder.test.ts`'s order, with the saved moment's host under `DeviceDiaryProvider`. Outside a diary provider the view reads `unavailable` from the start, and neither guard could fire (Sonnet).
+  - **Device checks, SKIPPED, on a phone:**
+    - the 200 pt drop with the `nativeID`;
+    - VoiceOver hearing the masked toast in private mode;
+    - two quick presses on back;
+    - two on เสร็จ (`POP_TO` makes them idempotent; a glance is enough).

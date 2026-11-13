@@ -1,0 +1,93 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 30ms
+     × an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK) 4ms
+     × a day is real and from 1970-01-01 to the day after today, else null with date_guessed 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK)
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,19 +1,21 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+-     "flags": [],
++     "flags": [
++       "date_guessed",
++     ],
+      "from": {
+        "account_last4": "1234",
+        "bank": "kbank",
+        "name": "นาย กานต์ ใจดี",
+      },
+-     "occurred_on": "2024-03-15",
++     "occurred_on": null,
+      "occurred_time": "18:40",
+      "to": {
+        "account_last4": "9876",
+        "bank": "scb",
+        "name": "ร้านป้าแดง ข้าวแกง",
+
+ ❯ test/slip-read-import.test.ts:319:23
+    317|   it("an old genuine slip keeps its day and is read once: no 90-day wi…
+    318|     const { read, model } = importRead([json(answer({ date: '2024-03-1…
+    319|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    320|     expect(asked(model)).toEqual([HAIKU])
+    321|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a day is real and from 1970-01-01 to the day after today, else null with date_guessed
+AssertionError: 1970-01-01: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -1,14 +1,16 @@
+  {
+    "amount_minor": "125050",
+-   "flags": [],
++   "flags": [
++     "date_guessed",
++   ],
+    "from": {
+      "account_last4": "1234",
+      "bank": "kbank",
+      "name": "นาย กานต์ ใจดี",
+    },
+-   "occurred_on": "1970-01-01",
++   "occurred_on": null,
+    "occurred_time": "18:40",
+    "to": {
+      "account_last4": "9876",
+      "bank": "scb",
+      "name": "ร้านป้าแดง ข้าวแกง",
+
+ ❯ test/slip-read-import.test.ts:414:57
+    412|     ]
+    413|     for (const [date, day] of rows) {
+    414|       expect(sanitized(answer({ date })), String(date)).toEqual({ ...R…
+       |                                                         ^
+    415|     }
+    416|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:20
+   Duration  265ms (transform 76ms, setup 0ms, import 128ms, tests 30ms, environment 0ms)
+

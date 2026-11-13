@@ -1,0 +1,56 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 45ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 30ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pagination_never_splits_a_command_group 44ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > pages whole groups in revision order within the 2 MiB budget, with no gaps 52ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 39ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 21ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 15ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 23ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 46ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 18ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 22ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 18ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 33ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 33ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 24ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 27ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > defaults to 200 groups a page and refuses more than 1,000 178ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 19ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 22ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 27ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 30ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed 28ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 85ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 22ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 17ms
+stderr | test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > rejects malformed, foreign and future cursors, and needs a resync below retention 57ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > 30-day retention drops superseded changes, keeps every head, and expires older cursors 24ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > refuses to serve a stored change that no longer matches its entity DTO 17ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor is bound to its account and names a revision, nothing else 1ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed 42ms
+ ✓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a record made without a source stays without one through an edit, a delete and restore, and a receipt kept, replaced and removed 47ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a cursor from an earlier lifecycle generation needs a resync 16ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > a page reads about its byte budget, not every group the limit allows 112ms
+ ✓ test/workers/sync.test.ts > ordered deltas, ported from sync-query.integration.spec.ts > the retention line can never pass the account revision 13ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers 1ms
+ □ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > snapshots validate exactly the entities the API registers: every key of SYNC_ENTITY_VALIDATORS, once phase 5 registers trip (P5-T9)
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > requests, builds, and downloads a snapshot through short-lived grants, then continues with deltas 49ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > asking again while a snapshot is ready answers 200 with it 28ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves whole, valid change groups and refuses bad parameters 22ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > orders keys as jsonb does: shorter first, equal lengths bytewise, nested objects too, arrays kept in order 1ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > serves each snapshot with its keys in the API's order: PostgreSQL jsonb, shortest key first, then bytewise 20ms
+ ✓ test/workers/sync.test.ts > GET /v1/sync/changes, ported from sync-api.integration.spec.ts > a client behind retention recovers: 410, then a snapshot, then deltas from its cursor 27ms
+
+ Test Files  3 passed (3)
+      Tests  42 passed | 1 todo (43)
+   Start at  01:12:41
+   Duration  4.00s (transform 2.87s, setup 5.39s, import 114ms, tests 1.40s, environment 0ms)
+

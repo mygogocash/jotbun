@@ -1,0 +1,75 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 28ms
+     × a bank outside the list becomes null, and an impossible time null 4ms
+     × a time is HH:MM in 24 hours, else null 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -10,11 +10,11 @@
+        "account_last4": "1234",
+        "bank": "kbank",
+        "name": "นาย กานต์ ใจดี",
+      },
+      "occurred_on": "2026-10-24",
+-     "occurred_time": null,
++     "occurred_time": "24:00",
+      "to": {
+        "account_last4": "9876",
+        "bank": null,
+        "name": "ร้านป้าแดง ข้าวแกง",
+      },
+
+ ❯ test/slip-read-import.test.ts:160:23
+    158|   it('a bank outside the list becomes null, and an impossible time nul…
+    159|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    160|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    161|     expect(asked(model)).toEqual([HAIKU])
+    162|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a time is HH:MM in 24 hours, else null
+AssertionError: 24:00: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -5,11 +5,11 @@
+      "account_last4": "1234",
+      "bank": "kbank",
+      "name": "นาย กานต์ ใจดี",
+    },
+    "occurred_on": "2026-10-24",
+-   "occurred_time": null,
++   "occurred_time": "24:00",
+    "to": {
+      "account_last4": "9876",
+      "bank": "scb",
+      "name": "ร้านป้าแดง ข้าวแกง",
+    },
+
+ ❯ test/slip-read-import.test.ts:429:88
+    427|       [null, null],
+    428|     ]
+    429|     for (const [time, kept] of rows) expect(sanitized(answer({ time })…
+       |                                                                                        ^
+    430|   })
+    431|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:22
+   Duration  247ms (transform 70ms, setup 0ms, import 117ms, tests 28ms, environment 0ms)
+

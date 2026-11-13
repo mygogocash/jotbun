@@ -1,0 +1,78 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 28ms
+     × a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 3ms
+     × a day that is no day for today throws: the caller's bug, which the reader counts as unusable 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { Object (kind, drafts, ...) }
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
++   "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
+-   "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "import": {
++     "amount_minor": "125050",
++     "flags": [],
++     "from": {
++       "account_last4": "1234",
++       "bank": "kbank",
++       "name": "นาย กานต์ ใจดี",
++     },
++     "occurred_on": "2026-10-24",
++     "occurred_time": "18:40",
++     "to": {
++       "account_last4": "9876",
++       "bank": "scb",
++       "name": "ร้านป้าแดง ข้าวแกง",
++     },
++   },
++   "kind": "slip",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:356:23
+    354|       { fields: 'import' },
+    355|     )
+    356|     await expect(read).resolves.toStrictEqual(unreadable(2))
+       |                       ^
+    357|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    358|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a day that is no day for today throws: the caller's bug, which the reader counts as unusable
+AssertionError: expected function to throw an error, but it didn't
+ ❯ test/slip-read-import.test.ts:491:66
+    489|
+    490|   it("a day that is no day for today throws: the caller's bug, which t…
+    491|     expect(() => sanitizeSlipImportRead(answer(), 'not-a-date')).toThr…
+       |                                                                  ^
+    492|   })
+    493|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:31
+   Duration  247ms (transform 69ms, setup 0ms, import 117ms, tests 28ms, environment 0ms)
+

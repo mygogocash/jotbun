@@ -1,0 +1,74 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 27ms
+     × an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped 3ms
+     × an account keeps only its last four digits, Thai digits read as ASCII 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -5,11 +5,11 @@
+    "escalated": false,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+-       "account_last4": "6789",
++       "account_last4": "56789",
+        "bank": "kbank",
+        "name": null,
+      },
+      "occurred_on": "2026-10-24",
+      "occurred_time": "18:40",
+
+ ❯ test/slip-read-import.test.ts:154:23
+    152|   it('an account number longer than four digits keeps only its last fo…
+    153|     const { read, model } = importRead([json(answer({ from: { bank: 'k…
+    154|     await expect(read).resolves.toStrictEqual(shown({ ...READ, from: {…
+       |                       ^
+    155|     expect(asked(model)).toEqual([HAIKU])
+    156|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > an account keeps only its last four digits, Thai digits read as ASCII
+AssertionError: 012-3-45678-9: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -7,10 +7,10 @@
+      "name": "นาย กานต์ ใจดี",
+    },
+    "occurred_on": "2026-10-24",
+    "occurred_time": "18:40",
+    "to": {
+-     "account_last4": "6789",
++     "account_last4": "56789",
+      "bank": "scb",
+      "name": "ร้านป้าแดง ข้าวแกง",
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:450:99
+    448|     ]
+    449|     for (const [account, last4] of rows) {
+    450|       expect(sanitized(answer({ to: { ...PA_DAENG, account_last4: acco…
+       |                                                                                                   ^
+    451|     }
+    452|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:27:58
+   Duration  253ms (transform 74ms, setup 0ms, import 124ms, tests 27ms, environment 0ms)
+

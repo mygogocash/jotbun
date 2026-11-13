@@ -1,0 +1,4 @@
+CW1 killed (assertion): a refusal reads as an unusable answer (single read) [workers] -> 4 failed | 42 passed (46)
+CW2 killed (assertion): every image is sent as a PNG (single read) [workers] -> 1 failed | 45 passed (46)
+CW3 killed (assertion): the single read asks with the import schema [workers] -> 4 failed | 42 passed (46)
+3 of 3 killed; survivors []; other failures []; not restored []

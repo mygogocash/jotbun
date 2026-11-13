@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 29ms
+     × the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the single read keeps P3-T8's shape > the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from
+AssertionError: expected { kind: 'slip', …(7) } to strictly equal { kind: 'slip', …(6) }
+
+- Expected
++ Received
+
+@@ -13,10 +13,11 @@
+        "type": "expense",
+        "wallet_id": "0c000000-0000-4000-8000-000000000001",
+      },
+    ],
+    "escalated": false,
++   "import": null,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+    "tokens": {
+      "input": 10,
+      "output": 10,
+
+ ❯ test/slip-read-import.test.ts:511:25
+    509|       const model = fakeModel([json({ kind: 'slip', bank: 'K PLUS', dr…
+    510|       const read = readSlipImage({ image: png, context, locale: 'th' }…
+    511|       await expect(read).resolves.toStrictEqual(expected)
+       |                         ^
+    512|       expect(model.calls).toHaveLength(1)
+    513|       expect(model.calls[0]).toMatchObject({ system: SLIP_SYSTEM, outp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:00
+   Duration  260ms (transform 75ms, setup 0ms, import 127ms, tests 29ms, environment 0ms)
+

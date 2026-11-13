@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it
+ ↓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key
+ ↓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written
+ ↓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH
+ × test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 29ms
+   → expected [ Array(1) ] to deeply equal [ Array(1) ]
+ ↓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source
+ ↓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link
+ ↓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else
+ ↓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row
+ ↓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed
+ ↓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed
+ ↓ test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a record made without a source stays without one through an edit, a delete and restore, and a receipt kept, replaced and removed
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "digest": "BD71AD389EE61DB4F3CF3122A8F0EDD62C9E739B278A9529EC373CB69C641348",
++     "digest": "CEF91A5873CD65FE7B286C3C1F9B69017C6516D44A6CC828970603F3761BD60F",
+    },
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:135:22
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 skipped (12)
+   Start at  01:47:50
+   Duration  1.91s (transform 696ms, setup 1.39s, import 29ms, tests 30ms, environment 0ms)
+

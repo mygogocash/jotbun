@@ -1,0 +1,17 @@
+base: removed apps/edge/src/vault/slips/drafts.ts
+base: removed apps/edge/src/vault/slips/refs.ts
+base: removed apps/edge/src/vault/slips/prune.ts
+base: orig/apps/edge/src/vault/domain/transactions.ts
+base: orig/apps/edge/src/vault/commands/registry.ts
+base: orig/apps/edge/src/vault/commands/change-log.ts
+base: orig/apps/edge/src/vault/files/jobs.ts
+base: orig/apps/edge/src/vault/user-vault.ts
+base: orig/apps/edge/src/v1/protocol.ts
+base: orig/apps/edge/src/v1/routes.ts
+base: orig/apps/edge/src/vault/routes.ts
+base: orig/apps/edge/test/workers/support/slips.ts
+base: removed apps/edge/test/workers/slip-drafts.test.ts
+base: orig/apps/edge/test/workers/slips-vault.test.ts
+base: orig/apps/edge/test/route-coverage.test.ts
+base: removed docs/implementation/receipts/P4-T7.md
+base: 16 files placed

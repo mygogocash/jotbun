@@ -1,0 +1,72 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 28ms
+     × an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped 3ms
+     × a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -7,11 +7,11 @@
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": "6789",
+        "bank": "kbank",
+-       "name": null,
++       "name": "โอนเข้า 0812345678",
+      },
+      "occurred_on": "2026-10-24",
+      "occurred_time": "18:40",
+      "to": {
+        "account_last4": "9876",
+
+ ❯ test/slip-read-import.test.ts:154:23
+    152|   it('an account number longer than four digits keeps only its last fo…
+    153|     const { read, model } = importRead([json(answer({ from: { bank: 'k…
+    154|     await expect(read).resolves.toStrictEqual(shown({ ...READ, from: {…
+       |                       ^
+    155|     expect(asked(model)).toEqual([HAIKU])
+    156|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number
+AssertionError: "โอนเข้า 0812345678": expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -9,8 +9,8 @@
+    "occurred_on": "2026-10-24",
+    "occurred_time": "18:40",
+    "to": {
+      "account_last4": "9876",
+      "bank": "scb",
+-     "name": null,
++     "name": "โอนเข้า 0812345678",
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:475:86
+    473|     ]
+    474|     for (const [name, kept] of rows) {
+    475|       expect(sanitized(answer({ to: { ...PA_DAENG, name } })), JSON.st…
+       |                                                                                      ^
+    476|     }
+    477|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:24
+   Duration  250ms (transform 74ms, setup 0ms, import 123ms, tests 28ms, environment 0ms)
+

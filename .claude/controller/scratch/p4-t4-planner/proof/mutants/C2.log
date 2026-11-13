@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 31ms
+     × the image's media type reaches both calls (the P3-T8 reviews' MO3) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected [ { …(5) }, …(1) ] to deeply equal [ { …(5) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -5,11 +5,11 @@
+        {
+          "content": [
+            {
+              "source": {
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+-               "media_type": "image/jpeg",
++               "media_type": "image/png",
+                "type": "base64",
+              },
+              "type": "image",
+            },
+            {
+@@ -230,11 +230,11 @@
+        {
+          "content": [
+            {
+              "source": {
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+-               "media_type": "image/jpeg",
++               "media_type": "image/png",
+                "type": "base64",
+              },
+              "type": "image",
+            },
+            {
+
+ ❯ test/slip-read-import.test.ts:327:25
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+       |                         ^
+    328|   })
+    329|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:15
+   Duration  249ms (transform 69ms, setup 0ms, import 115ms, tests 31ms, environment 0ms)
+

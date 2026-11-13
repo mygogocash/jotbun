@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 27ms
+     × tokens count this read's calls only, when its trace already holds another (A16, the P3-T8 reviews' MA) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > tokens count this read's calls only, when its trace already holds another (A16, the P3-T8 reviews' MA)
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to match object { tokens: { input: 70, output: 7 } }
+(13 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "tokens": {
+-     "input": 70,
+-     "output": 7,
++     "input": 1070,
++     "output": 107,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:334:89
+    332|     const used = (usage: Record<string, number>) => ({ ...json(answer(…
+    333|     await expect(importRead([used({ input_tokens: 1_000, output_tokens…
+    334|     await expect(importRead([used({ input_tokens: 70, output_tokens: 7…
+       |                                                                                         ^
+    335|   })
+    336|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:09
+   Duration  254ms (transform 74ms, setup 0ms, import 122ms, tests 27ms, environment 0ms)
+

@@ -1,0 +1,95 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 4 failed) 778ms
+     × a Haiku refusal is re-read by Opus and marked declined 25ms
+     × an Opus refusal marks the read declined too, and Haiku's draft stands 22ms
+     × when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent 23ms
+     × when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(4) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "declined": true,
++   "declined": false,
+    "drafts": [
+      {
+        "amount_minor": "125000",
+      },
+    ],
+
+ ❯ test/workers/slip-read.test.ts:169:50
+    167|     const who = await person()
+    168|     model.push(refusal(), slipReply('slip', [drafted(who)]))
+    169|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    170|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    171|     // A decline spends the use (A14).
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(4) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  {
+-   "declined": true,
++   "declined": false,
+    "drafts": [
+      {
+        "amount_minor": null,
+        "flags": [
+          "amount_unclear",
+
+ ❯ test/workers/slip-read.test.ts:178:50
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent
+AssertionError: expected { drafts: [], bank: null, …(6) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "bank": null,
+-   "declined": true,
++   "declined": false,
+    "drafts": [],
+    "escalated": true,
+    "kind": "unreadable",
+    "model": "claude-opus-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:253:50
+    251|     const who = await person()
+    252|     model.push(refusal(), opusReply())
+    253|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    254|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip…
+    255|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 42 passed (46)
+   Start at  01:28:36
+   Duration  3.05s (transform 909ms, setup 1.69s, import 36ms, tests 778ms, environment 0ms)
+

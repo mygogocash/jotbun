@@ -1,0 +1,73 @@
+--- a/apps/edge/src/vault/files/jobs.ts
++++ b/apps/edge/src/vault/files/jobs.ts
+@@ -1,4 +1,6 @@
+ import { logFailure } from '../../v1/log'
++import type { VaultContext } from '../context'
++import { pruneSlips, slipsDueAt } from '../slips/prune'
+ import type { UserVault } from '../user-vault'
+ import { attachmentsDueAt, pruneAttachments } from './attachments'
+ import type { FileContext } from './context'
+@@ -21,8 +23,11 @@
+ /** Every file job, in the order the alarm runs them. */
+ export const FILE_JOBS: readonly FileJob[] = ['prune_files', 'delete_objects', 'start_work']
+ 
+-/** One prune: it opens its own short blocks, so it is never called inside another (R21). */
+-export type FilePrune = (c: FileContext) => void
++/**
++ * One prune: it opens its own short blocks, so it is never called inside another (R21). It also
++ * gets the vault's registry, since the slip prune (P4-T7) commits the inbox change through it.
++ */
++export type FilePrune = (c: FileContext & Pick<VaultContext, 'registry'>) => void
+ 
+ // Each entry below calls its function when it runs, never while this module loads. retention.ts imports this
+ // module, which imports exports.ts and previews.ts, which import retention.ts; in that cycle this module can run
+@@ -31,16 +36,18 @@
+ // n5). The build would not say so either: Vite drops the bundler's circular-dependency warnings.
+ 
+ /**
+- * The five prunes: uploads (1B-T5), exports (1B-T6), receipts (1B-T9), imports (1B-T10), then snapshots (1B-T8)
+- * last. pruneExports and pruneImports purge records, which raises the purge watermark, so a ready snapshot that
+- * a purge in this run makes stale has its chunks released in this run too, and snapshotsDueAt is not left at
+- * now (the 1B-T11 review's m1; ruling R37).
++ * The six prunes: uploads (1B-T5), exports (1B-T6), receipts (1B-T9), imports (1B-T10), slips (P4-T7),
++ * then snapshots (1B-T8) last. pruneExports and pruneImports purge records, which raises the purge
++ * watermark, so a ready snapshot that a purge in this run makes stale has its chunks released in this run
++ * too, and snapshotsDueAt is not left at now (the 1B-T11 review's m1; ruling R37). The slip prune purges
++ * nothing; it commits one inbox change when drafts expire.
+  */
+ export const FILE_PRUNES: readonly FilePrune[] = [
+   (c) => pruneUploads(c),
+   (c) => pruneExports(c),
+   (c) => pruneAttachments(c),
+   (c) => pruneImports(c),
++  (c) => pruneSlips(c),
+   (c) => pruneSnapshots(c),
+ ]
+ 
+@@ -50,6 +57,7 @@
+   (c) => exportsDueAt(c),
+   (c) => attachmentsDueAt(c),
+   (c) => importsDueAt(c),
++  (c) => slipsDueAt(c),
+   (c) => snapshotsDueAt(c),
+ ]
+ 
+@@ -67,7 +75,7 @@
+  * - start_work: startDueAt, the starters' earliest due time, never sooner than
+  *   a minute after the last start attempt;
+  * - delete_objects: objectsDueAt, the earliest deadline in vault_objects;
+- * - prune_files: the earliest of the five prunes' due times.
++ * - prune_files: the earliest of the six prunes' due times.
+  */
+ export function fileJobsDue(c: FileContext, lastStartAttemptMs: number | null): Map<FileJob, number> {
+   const due = new Map<FileJob, number>()
+@@ -112,7 +120,8 @@
+     if (!failed.includes(job)) failed.push(job)
+   }
+   try {
+-    const c = v.fileContext()
++    // The prunes' context carries the registry the vault built once (P4-T7's slip prune commits a change).
++    const c = { ...v.fileContext(), registry: v.registry }
+     if (!v.isActive(c)) return failed
+     for (const prune of options.prunes ?? FILE_PRUNES) {
+       try {
