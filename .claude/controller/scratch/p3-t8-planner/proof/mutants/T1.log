@@ -1,0 +1,82 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 2 failed) 593ms
+     × Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3) 8ms
+     × a cap under 2 s makes no call and records a timeout that was never sent (the P3-T4 review's R9) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3)
+AssertionError: expected [ { …(2) }, …(1) ] to deeply equal [ { …(2) }, …(1) ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  [
+    {
+      "model": "claude-haiku-5-5",
+-     "timeoutMs": 20000,
++     "timeoutMs": 45000,
+    },
+    {
+      "model": "claude-opus-5-5",
+      "timeoutMs": 25000,
+    },
+
+ ❯ test/workers/slip-read.test.ts:427:19
+    425|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    426|     expect(HAIKU_SLIP_CAP_MS).toBe(20_000)
+    427|     expect(given).toEqual([
+       |                   ^
+    428|       { model: 'claude-haiku-5-5', timeoutMs: 20_000 },
+    429|       { model: 'claude-opus-5-5', timeoutMs: 25_000 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a cap under 2 s makes no call and records a timeout that was never sent (the P3-T4 review's R9)
+AssertionError: promise resolved "{ id: 'msg_r9kvxdin4gj', …(7) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "content": [
++     {
++       "citations": null,
++       "text": "{\"kind\":\"slip\",\"bank\":\"K PLUS\",\"drafts\":[{\"type\":\"expense\",\"amount_baht\":\"1,250.00\",\"date\":\"2026-11-12\",\"category_id\":null,\"wallet_id\":\"1a000000-0000-4000-8000-000000000001\",\"merchant\":\"ร้านป้าแดง\",\"note\":null,\"confidence\":\"high\",\"flags\":[]}]}",
++       "type": "text",
++     },
++   ],
++   "id": "msg_r9kvxdin4gj",
++   "model": "claude-opus-5-5",
++   "role": "assistant",
++   "stop_reason": "end_turn",
++   "stop_sequence": null,
++   "type": "message",
++   "usage": {
++     "input_tokens": 10,
++     "output_tokens": 10,
++   },
+  }
+
+ ❯ test/workers/slip-read.test.ts:449:132
+    447|     const params: MessageParams = { model: 'claude-haiku-5-5', max_tok…
+    448|     const trace = newTrace()
+    449|     await expect(tracedSend(transport, trace, new AiDeadline(25_000), …
+       |                                                                                                                                    ^
+    450|     expect(sends).toEqual([])
+    451|     expect(trace.calls).toMatchObject([{ feature: 'slip', requested: '…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  08:04:51
+   Duration  3.04s (transform 977ms, setup 1.89s, import 37ms, tests 593ms, environment 1ms)
+

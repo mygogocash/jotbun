@@ -1,0 +1,99 @@
+--- a/apps/edge/src/vault/schema.ts
++++ b/apps/edge/src/vault/schema.ts
+@@ -96,6 +96,8 @@
+   tripId: text('trip_id'),
+   // How the record was made (0005_transaction_source.sql, P3-T2): set only at create, null when none was named.
+   source: text('source'),
++  // The slip the record came from (0006_slips.sql, P4-T3): set by a slip confirm or a single read's slip ref, else null.
++  slipRefId: text('slip_ref_id'),
+ })
+ 
+ export const monthlyBudgets = sqliteTable('monthly_budgets', {
+@@ -365,8 +367,74 @@
+   homeCurrency: text('home_currency').notNull(),
+   version: integer('version').notNull(),
+   updatedAt: text('updated_at').notNull(),
++})
++
++// Slip import (migrations/0006_slips.sql, P4-T3). As everywhere in the vault, rows are read with
++// SQL; an amount leaves SQLite as text (CAST ... AS TEXT), never through these column types.
++
++export const slipSalt = sqliteTable('slip_salt', {
++  id: integer('id').primaryKey().notNull(),
++  salt: blob('salt', { mode: 'buffer' }).notNull(),
++  createdAt: text('created_at').notNull(),
++})
++
++export const slipAccounts = sqliteTable('slip_accounts', {
++  id: text('id').primaryKey().notNull(),
++  version: integer('version').notNull(),
++  bank: text('bank').notNull(),
++  accountLast4: text('account_last4').notNull(),
++  walletId: text('wallet_id'),
++  createdAt: text('created_at').notNull(),
++  updatedAt: text('updated_at').notNull(),
++})
++
++export const slipRefs = sqliteTable('slip_refs', {
++  id: text('id').primaryKey().notNull(),
++  refHash: text('ref_hash').notNull(),
++  state: text('state').notNull(),
++  transactionId: text('transaction_id'),
++  firstSeenAt: text('first_seen_at').notNull(),
++  updatedAt: text('updated_at').notNull(),
++})
++
++export const slipDrafts = sqliteTable('slip_drafts', {
++  id: text('id').primaryKey().notNull(),
++  refId: text('ref_id').notNull(),
++  amountMinor: integer('amount_minor'),
++  occurredOn: text('occurred_on'),
++  occurredTime: text('occurred_time'),
++  direction: text('direction').notNull(),
++  fromBank: text('from_bank'),
++  fromLast4: text('from_last4'),
++  fromName: text('from_name'),
++  toBank: text('to_bank'),
++  toLast4: text('to_last4'),
++  toName: text('to_name'),
++  categoryId: text('category_id'),
++  categoryGuessed: integer('category_guessed').notNull(),
++  flags: text('flags').notNull(),
++  album: text('album'),
++  origin: text('origin').notNull(),
++  model: text('model').notNull(),
++  escalated: integer('escalated').notNull(),
++  announced: integer('announced').notNull(),
++  createdAt: text('created_at').notNull(),
++  expiresAt: text('expires_at').notNull(),
+ })
+ 
++export const slipLeases = sqliteTable('slip_leases', {
++  id: text('id').primaryKey().notNull(),
++  expiresAt: integer('expires_at').notNull(),
++  purpose: text('purpose').notNull(),
++  day: text('day').notNull(),
++  reserved: integer('reserved').notNull(),
++})
++
++export const slipBackfillUses = sqliteTable('slip_backfill_uses', {
++  day: text('day').primaryKey().notNull(),
++  uses: integer('uses').notNull(),
++})
++
+ export const vaultSchema = {
+   accountState,
+   aiPreferences,
+@@ -392,6 +460,12 @@
+   revokedSessions,
+   schedule,
+   settings,
++  slipAccounts,
++  slipBackfillUses,
++  slipDrafts,
++  slipLeases,
++  slipRefs,
++  slipSalt,
+   snapshotChunks,
+   snapshots,
+   syncState,

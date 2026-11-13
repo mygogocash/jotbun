@@ -1,0 +1,66 @@
+--- a/apps/edge/test/workers/ai-uses.test.ts
++++ b/apps/edge/test/workers/ai-uses.test.ts
+@@ -204,6 +204,63 @@
+     expect((await remaining(user)).parse).toBe(AI_DAILY_LIMITS.parse - 1)
+   })
+ 
++  it("a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)", async () => {
++    const user = await consenting()
++    const original = VAULT_HANDLERS['ai.refund']
++    if (!original) throw new Error('the vault has no ai.refund step')
++    VAULT_HANDLERS['ai.refund'] = () => {
++      throw new Error('the vault write failed')
++    }
++    const warnings = vi.spyOn(console, 'warn')
++    try {
++      // Haiku declines and Opus is overloaded (P3-T8): no model read the slip, so its use goes back, and that refund fails.
++      model.push(refusal(), apiFailure(529))
++      const res = await slip(client, user)
++      // Read as soon as the answer is in: the refund ran before the route answered.
++      const logged = warnings.mock.calls.map(([line]) => String(line)).filter((line) => line.includes('"event":"ai_refund_failed"'))
++      expect(res.status).toBe(503)
++      expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: 'warn', event: 'ai_refund_failed', feature: 'slip', failure: 'ProblemException' }])
++    } finally {
++      VAULT_HANDLERS['ai.refund'] = original
++      warnings.mockRestore()
++    }
++    expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
++  })
++
++  it("one request gives its use back once, on every route (the P3-T7 second review's m1)", async () => {
++    // Uses counted earlier share each row, so a second refund would show; P3-T8 adds the slip's escalation before its refund.
++    const user = await consenting()
++    await vaultExec(user, 'INSERT INTO ai_usage (day, feature, uses) VALUES (?, ?, 5), (?, ?, 5), (?, ?, 1), (?, ?, 5)', today, 'parse', today, 'slip', today, 'note', today, 'ask')
++    const original = VAULT_HANDLERS['ai.refund']
++    if (!original) throw new Error('the vault has no ai.refund step')
++    const refunds: unknown[] = []
++    VAULT_HANDLERS['ai.refund'] = (c, call) => {
++      refunds.push(call.body)
++      return original(c, call)
++    }
++    try {
++      model.push(apiFailure(503), apiFailure(503), apiFailure(503), apiFailure(503))
++      expect((await parse(client, user)).status).toBe(200)
++      expect((await slip(client, user)).status).toBe(503)
++      expect((await client.as(user).get(`/v1/ai/note?date=${today}&locale=th`)).status).toBe(200)
++      expect((await ask(user)).status).toBe(503)
++    } finally {
++      VAULT_HANDLERS['ai.refund'] = original
++    }
++    expect(refunds).toEqual([
++      { feature: 'parse', day: today },
++      { feature: 'slip', day: today },
++      { feature: 'note', day: today },
++      { feature: 'ask', day: today },
++    ])
++    expect(await usage(user)).toEqual([
++      { day: today, feature: 'ask', uses: 5 },
++      { day: today, feature: 'note', uses: 1 },
++      { day: today, feature: 'parse', uses: 5 },
++      { day: today, feature: 'slip', uses: 5 },
++    ])
++  })
++
+   it('the refund step names one of the four features and a day, or changes nothing', async () => {
+     const user = await member(client)
+     await vaultExec(user, "INSERT INTO ai_usage (day, feature, uses) VALUES ('2026-11-10', 'slip', 2)")

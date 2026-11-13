@@ -1,0 +1,49 @@
+--- a/apps/edge/test/workers/ai-routing.test.ts
++++ b/apps/edge/test/workers/ai-routing.test.ts
+@@ -6,9 +6,9 @@
+ // vault session and a fake clock, so a 24-second turn takes no time (they
+ // carry the P3-T4 review's R1, R3 and R4, and its n2). No network.
+ //
+-// The scripted slip replies are complete reads carrying `kind: 'slip'`, which
+-// the service ignores until P3-T8, so P3-T8 escalates none of them. No case
+-// here counts uses, since P3-T7 gives some of them back.
++// The scripted slip replies are complete reads (a kind, and a draft with an
++// amount, a date and a receiver), so D25 sends none of them to Opus (P3-T8).
++// No case here counts uses, since P3-T7 gives some of them back.
+ import { randomUUID } from 'node:crypto'
+ 
+ import Anthropic from '@anthropic-ai/sdk'
+@@ -188,6 +188,10 @@
+   'ai.facts': [{ kind: 'spent_today', amount_minor: '6000', count: 1 }],
+   'ai.tool': { result: { total: '฿60' }, figures: [{ label: 'อาหาร', amount_minor: '6000' }], allow: { satang: ['6000'], counts: [1], dates: [] } },
+ }
++
++/** A complete slip read: a kind, and a draft with an amount, a date and a receiver, so D25 sends it to no Opus call (P3-T8). */
++const completeSlip = () =>
++  json({ kind: 'slip', bank: 'K PLUS', drafts: [{ type: 'expense', amount_baht: '89', date: DAY, category_id: FOOD, wallet_id: CASH, merchant: 'ร้านกาแฟ', note: null, confidence: 'high', flags: [] }] })
+ 
+ type Clock = { ms: number }
+ 
+@@ -234,18 +238,20 @@
+ describe('one deadline per route, on a fake clock', () => {
+   it("each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most", async () => {
+     // [route, the first vault step's time, the time the first call is given]: parse 15 s, slip 45 s, note 10 s,
+-    // ask 55 s with Haiku's turns capped at 25 s. The slip's row stays right once P3-T8 caps Haiku's read at 20 s.
++    // ask 55 s with Haiku's turns capped at 25 s. A slip's Haiku read is capped at 20 s, so Opus keeps the rest (P3-T8).
+     const rows: [AiFeature, number, number][] = [
+       ['parse', 0, 15_000],
+       ['parse', 5_000, 10_000],
+       ['note', 0, 10_000],
++      ['slip', 0, 20_000],
+       ['slip', 30_000, 15_000],
+       ['ask', 0, 25_000],
+       ['ask', 40_000, 15_000],
+     ]
+     for (const [route, firstStepMs, givenMs] of rows) {
+       const clock = { ms: NOW }
+-      const model = recording(() => json({ drafts: [] }))
++      // A slip's reply is a complete read, or D25 would send it to Opus as well (the P3-T6 review's m1).
++      const model = recording(() => (route === 'slip' ? completeSlip() : json({ drafts: [] })))
+       const service = new VaultAiService({ transport: model.transport, now: () => new Date(clock.ms) })
+       await run(service, fakeVault(clock, firstStepMs), route)
+       expect(model.calls.map((call) => call.timeoutMs), `${route} after ${firstStepMs} ms`).toEqual([givenMs])

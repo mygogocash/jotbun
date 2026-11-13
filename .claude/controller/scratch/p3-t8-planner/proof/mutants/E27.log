@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 1 failed) 1179ms
+     × when no model read the slip, SlipNotRead carries the last call's failure (A16) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16)
+AssertionError: expected SlipNotRead: No model read the slip (serv… { failure: '…' } to match object { name: 'SlipNotRead', …(1) }
+
+- Expected
++ Received
+
+- {
+-   "failure": "timeout",
++ SlipNotRead {
++   "failure": "server_error",
+    "name": "SlipNotRead",
+  }
+
+ ❯ test/workers/slip-read.test.ts:462:99
+    460|     // Haiku's outage or timeout: Opus is never asked.
+    461|     await expect(read(apiFailure(529))).rejects.toMatchObject({ name: …
+    462|     await expect(read(new Anthropic.APIConnectionTimeoutError({ messag…
+       |                                                                                                   ^
+    463|     await expect(read(apiFailure(400))).rejects.toMatchObject({ name: …
+    464|     // A decline, then Opus rate limited: Opus's failure.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  08:04:11
+   Duration  4.18s (transform 1.33s, setup 2.39s, import 46ms, tests 1.18s, environment 0ms)
+

@@ -49,6 +49,49 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 08:45: #451 (P2-T17) and #452 (P4-T3) open; P2-T26 and P3-T8 building; P3-T3 READY and held behind P4-T3; P3-T9 planner started.**
+  - **#451 (P2-T17, issue #163)** at `fa09a9c0`: all 13 `real/` files byte-identical; 94 of 94 mutants; CI 9 of 9. Reviews: Opus `mcp:launch:d38ed966159074830edb9734f6ec6142b399c0f841de8da323e77d2b61906a38`, Sonnet `mcp:launch:3b5f8a3faca371747a9d248c08c9d7a6cf30224d08cfecc0252426785e92acd1` (notes `scratch/dispatch/P2-T17-review-notes.md`).
+  - **#452 (P4-T3, issue #211):**
+    - At `6cb8d0d1`: 18 of 19 `real/` files byte-identical (the receipt adds one install line), 98 of 98 mutants. CI was **8 of 9**: `sync.test.ts` pins `buildVaultRegistry().entityNames()` exactly, and the gate had not run it.
+    - **Ruling R122:** the controller fixed it itself (test-only; `slip_inbox` added to the list, comments say `trip` waits for P5-T9) as `1eb4e5ed`. Proof in `scratch/p4-t3-ci-fix/`: 17 pass with 1 todo, and an unregister mutant is killed. CI is rerunning.
+    - Reviews, both told to review `1eb4e5ed` and R122: Opus `mcp:launch:4bcd79a28b0369cd4e537bf09bb397b28791b9d63ed9f1888fcb4e72bd983b0b`, Sonnet `mcp:launch:8a657324ae9a266c0c81218b73c5f9f5c82d7840ea3f7262958755479083522f`.
+  - **P2-T26 building (Haiku)** `mcp:launch:b2a6effc39fc0d7bfb947bd997142654f5a3b29dd0c0ba3b8f20eae81f1aa162`, worktree `p2-t26` on `p2/t26-record-detail` at `2062b89a`. Size L, re-proved on `437743e2`; `check_kit` 44 of 44, `orig/` 6 of 6. **P1 to P21 accepted.**
+    - For E2-B: its undo bar is rh-undo's pill, while P2-T17's toast Undo is a `toastLink` text link; the owner picks one (P10).
+  - **P3-T8 building (Haiku)** `mcp:launch:1371e5b3381f70d87aceb2da379727cc128886e2a37af62b0f541c31adb8f5b3`, worktree `p3-t8` on `p3/t8-slip-escalation` at `2062b89a`, `install-edge`, heavy lock. Re-proved on `437743e2`; `check_kit` 61 of 61, `orig/` 13 of 13. **P1 to P18 accepted.**
+    - Release: client minimum `AI_MIN_CLIENT_VERSION` 0.2.0. This joins owner item 7.
+  - **P3-T3 READY, held until #452 merges.** Kit `scratch/p3-t3-planner/` (size S), built on P4-T3's `real/` `routes.ts` and `route-coverage.test.ts`, and it reads `handler.ts`.
+    - Its planner rulings are not yet accepted; read them at dispatch. Main calls: P2 (no `handler.ts` edit), P3 (two test files build `new EdgeGates()`), P8 (`['ai']` pinned only on AI's four routes).
+    - Deploy order for the owner: ship this reader before any `config:v1` names `ai`. The planner thread is archived.
+  - **P3-T9 planner** `mcp:launch:9a11e816aee1f6cd4df907fee99a1299bc069b165bee56fb1b1a0c1e28fbbf23`, WT `p3-t9` on `p3/t9-ask-escalation`. It builds on P3-T8's `real/`. It carries followups lines 653 and 737, R116, and the rebuilt probe `scratch/p3-t7-second/probes/probe-refund.test.ts`.
+  - **Probe recovery:** the 08:00 cleanup deleted six review probe files that followups cite. Three were rebuilt from Claude Code transcripts into `scratch/<review>/probes/`; three came from Antigravity reviewers and are lost. followups.md now points at the rebuilt files and marks the lost ones with the review to rebuild from. Lesson recorded.
+  - **Live now:** P2-T26 and P3-T8 implementers (Haiku); four reviews (Opus and Sonnet on #451 and #452); P3-T13 and P3-T9 planners (Opus).
+- **13 Nov 08:15: P4-T3's brief is READY and its implementer is building (Haiku). Two more Opus planners started: P3-T3 and P3-T13.**
+  - **P4-T3 (the vault's slip tables; privacy path):**
+    - The kit is `scratch/p4-t3-planner/`, proved on `dffa9ee3`. `check_kit.sh` at `d229ebbc`: 65 of 65 sums, `orig/` 12 of 12. Nothing under `apps/edge`, `apps/api`, `packages` or the lockfile changed since its base.
+    - **P1 to P16 accepted.** These include P4, which edits P3-T2's `transaction-source.test.ts` upgrade case outside the plan's file list, and P8, which makes an unreleased route a 404 before the body, gates and token.
+    - Worktree `p4-t3` on `p4/t3-slip-tables` at `d229ebbc`, with `install-edge`. Implementer `mcp:launch:041c6f37d7c4022fccf0e7a5a83fbeb177cce171bc308d5c374b33719f1c3e09`, with the heavy lock (`PL/locked.sh`).
+    - Reviews when it is done: Opus and Sonnet (privacy). The planner thread is archived.
+  - **Planners** (common notes `scratch/dispatch/planner-common-notes-20261113c.md`, head `d229ebbc`; their new "building on an unmerged task's files" rule):
+    - **P3-T3, the ai gate:** `mcp:launch:1ac7ba92211f59c6a70e348503b375f0b7b2319714fb699b36e6ca88ff4d432b`, WT `p3-t3` on `p3/t3-ai-gate`. It builds on P4-T3's `real/` versions of `v1/routes.ts`, `v1/handler.ts` and `route-coverage.test.ts`, and starts after P4-T3 merges. Carries followups line 468.
+    - **P3-T13, the draft origin:** `mcp:launch:74ee3081b13c1ca731296b00ecd845c748793a83fe6fc5d3890c3089f4460de3`, WT `p3-t13` on `p3/t13-draft-origin`. It builds on P2-T17's `real/` version of `AddTray.render.test.tsx`, and on P4-T3's version of `transaction-source.test.ts` if it carries line 637. Carries lines 607, 637 and 785.
+  - **Lanes next:** P3-T9 (depth 8) waits for P3-T8's brief, since they share AI files. P4-T2 and P5-T9 (routes) wait behind P4-T3 and P3-T3.
+  - **Live now:** P2-T17 and P4-T3 implementers (Haiku); P2-T26, P3-T8, P3-T3 and P3-T13 planners (Opus).
+- **13 Nov 08:05: #449 (P5-T17) MERGED as `437743e`; the head is `437743e`. P2-T17's brief is READY and its implementer is building (Haiku).**
+  - **#449:**
+    - CI was 9 of 9 at `3f5670a9`. Both reviews approved: Opus with m1 to m3 and n1; Sonnet with m1 to m3, n1, n2 and N1 to N6.
+    - Every finding is carried in followups: P5-T18a must carry Sonnet's m1; the fake's next editor carries Opus's m1 and both m3s; `client.ts`'s next editor carries m2.
+    - Issue #250 closed, worktree and branch removed, promoted as **#450** (stack #379 holds 39). The review threads are archived.
+  - **P2-T17:**
+    - The Opus planner reported READY with its kit at `scratch/p2-t17-planner/`. `check_kit.sh` at `925c02f5`: 38 of 38 sums, `orig/` 5 of 5.
+    - Nothing under `apps/app` or `packages` changed between its base `40dfaf67` and `925c02f5`, so there was no pre-flight. #449's four files are the brief's expected Step 0.3 case.
+    - **P1 to P22 accepted.**
+    - Worktree `p2-t17` on `p2/t17-saved-moment` at `437743e2`, installed. Implementer `mcp:launch:7ef9c5616774196d92cb18777604e4486910f0e4b7907e0cb651964dea74d902`.
+    - Reviews when it is done: Opus, plus Sonnet on money (today's total, P6), Undo (P7 and P8) and private mode (P10).
+    - The planner thread is archived; unarchive it for a fix round.
+  - **Steers:** the P2-T26 planner was told to reuse `toastLink` and to name any of P2-T17's five shared files it touches. The P3-T8 and P4-T3 planners were told #449 moved the head, so they re-prove if they read its files.
+  - **Disk:** free space swung from 25 to 13 to 39 GiB because of work outside this build (`~/.t3/worktrees/gogocash` holds 112 GiB and is not ours). The controller deleted 3 GiB of repo copies (`tree*`, `src`) left in scratch by closed PRs; 42 GiB free after.
+  - **Keep-awake:** a new 14-hour caffeinate (pid 70361, until about 21:30).
+  - **Live now:** the P2-T17 implementer (Haiku), and the P2-T26, P3-T8 and P4-T3 planners (Opus).
 - **13 Nov 07:30: #449 (P5-T17) opened; Opus and Sonnet reviews and CI running.** The implementer reported DONE at `3f5670a9` on `87a37080` (RED 13 of 71 on assertions; GREEN 71; 96 of 96 mutants; `test:app` 37, `test:unit` 1101, routes 17, fake-built renders 41). 9 of 10 `real/` files byte-identical, the receipt differing only in its base SHA. PR body `pr-p5-t17.md`, issue #250. Reviews (notes `scratch/dispatch/P5-T17-review-notes.md`): Opus xhigh `mcp:launch:8551bb875316cecd87cd84a0443c96d85bf1163be1c391055c9bde357108a39a`; Sonnet high `mcp:launch:3c1b8289b70553cc7099c2321a9210d6c52a92da0b916ab8e530189b34847daa`.
 - **13 Nov 07:20: P5-T17 brief READY (Opus); its implementer is building (Haiku).** Size M: `api/client.ts`, `spend/v1/resources.ts`, `fakeResources.ts`, `ratesCache.ts` (new) and tests, plus `diaryRepository.test.ts` (followups line 726's four refusal tests) and a new `fakeResources.test.ts`. RED 13 of 71 on assertions, GREEN 71, 96 of 96 mutants; a dry run of the brief on a fresh copy. `check_kit.sh` at `dffa9ee3`: 35 of 35, `orig/` 6 of 6; nothing under `apps/app` or `packages` since its base. **P1 to P15 accepted.** Worktree `p5-t17` on `p5/t17-rates-client`, installed. Implementer `mcp:launch:db385f6ca377da5b12ef34b309092595a3ca7c30781c32bcba3ed3694ec191d9`. Reviews when done: Opus and Sonnet (money path). The planner thread is archived.
 - **13 Nov 07:15: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261113b.md`, head `aea5efbd`), one per lane:

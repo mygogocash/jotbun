@@ -1,0 +1,102 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 76ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 38ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 1ms
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 22ms
+   → expected [ { …(5) }, { …(5) }, { …(5) }, …(2) ] to deeply equal [ { …(5) }, { …(5) }, { …(5) } ]
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 23ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 48ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 24ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 32ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 30ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 32ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 66ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 32ms
+ × test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 25ms
+   → expected [ [ …(2) ], …(66) ] to deeply equal [ [ …(2) ], …(66) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits
+AssertionError: expected [ { …(5) }, { …(5) }, { …(5) }, …(2) ] to deeply equal [ { …(5) }, { …(5) }, { …(5) } ]
+
+- Expected
++ Received
+
+@@ -5,10 +5,24 @@
+      "id": "b2bc37c8-a5af-4660-b2a8-2fb4fee15f69",
+      "version": 1,
+      "wallet_id": null,
+    },
+    {
++     "account_last4": "1234",
++     "bank": "kbank",
++     "id": "0c6ac438-bed6-454b-bb5c-70130513d8d1",
++     "version": 1,
++     "wallet_id": null,
++   },
++   {
++     "account_last4": "1234",
++     "bank": "kbank",
++     "id": "a7fd386c-5660-4579-a900-1e39db90c6f2",
++     "version": 1,
++     "wallet_id": null,
++   },
++   {
+      "account_last4": "5678",
+      "bank": "kbank",
+      "id": "463530d3-e2bd-42a0-aa43-d915798f655b",
+      "version": 1,
+      "wallet_id": null,
+
+ ❯ test/workers/slips-vault.test.ts:105:135
+    103|     // A later call finds the same account.
+    104|     expect(await inVault(user, (c) => ensureSlipAccount(c, 'kbank', '1…
+    105|     expect(await sqlRows(user, 'SELECT id, bank, account_last4, versio…
+       |                                                                                                                                       ^
+    106|       { id: ids[0], bank: 'kbank', account_last4: '1234', version: 1, …
+    107|       { id: ids[3], bank: 'kbank', account_last4: '5678', version: 1, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule
+AssertionError: expected [ [ …(2) ], …(66) ] to deeply equal [ [ …(2) ], …(66) ]
+
+- Expected
++ Received
+
+@@ -51,11 +51,11 @@
+      "account: kbank 1234",
+      "ok",
+    ],
+    [
+      "account: kbank 1234 again",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: kbank 5678 in a wallet",
+      "ok",
+    ],
+
+ ❯ test/workers/slips-vault.test.ts:489:79
+    487|         ['uses: 500', 'slip_backfill_uses', uses(), 'ok'],
+    488|       ]
+    489|       expect(cases.map(([label, table, row]) => [label, insert(table, …
+       |                                                                               ^
+    490|     })
+    491|   })
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:24
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  07:48:38
+   Duration  3.55s (transform 1.39s, setup 2.49s, import 42ms, tests 450ms, environment 0ms)
+

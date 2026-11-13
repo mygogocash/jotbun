@@ -1,0 +1,11 @@
+red: stubs/apps/edge/src/v1/gates.ts
+red: stubs/apps/edge/src/v1/config.ts
+red: stubs/apps/edge/src/v1/routes.ts
+red: real/apps/edge/src/v1/worker-routes.ts
+red: real/apps/edge/test/edge-gates.test.ts
+red: real/apps/edge/test/route-coverage.test.ts
+red: real/apps/edge/test/workers/ai-gate.test.ts
+red: real/apps/edge/test/workers/config.test.ts
+red: real/apps/edge/test/workers/files-front-door.test.ts
+red: real/apps/edge/test/workers/imports-review.test.ts
+red: 10 files placed

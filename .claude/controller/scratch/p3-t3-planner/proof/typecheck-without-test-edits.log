@@ -1,0 +1,10 @@
+
+> gogospend@0.0.0 typecheck:edge
+> npm run typecheck --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 typecheck
+> tsc --noEmit
+
+test/workers/files-front-door.test.ts(139,5): error TS2739: Type 'FeatureGates' is missing the following properties from type 'EdgeGates': aiPaused, pausedEdgeScopes
+test/workers/imports-review.test.ts(803,7): error TS2739: Type 'FeatureGates' is missing the following properties from type 'EdgeGates': aiPaused, pausedEdgeScopes

@@ -1,0 +1,41 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+(node:80095) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/node_modules/expo-secure-store/build/SecureStore.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/node_modules/expo-secure-store/build/ExpoSecureStore.web.js" points to missing source files
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+TypeError: default.getValueWithKeyAsync is not a function
+ ❯ Module.getItemAsync ../../node_modules/expo-secure-store/build/SecureStore.ts:171:32
+ ❯ readStoredThemePreference src/theme/themePreferenceStorage.ts:13:43
+     11|   if (Platform.OS === 'web') return readStoredThemePreferenceSync();
+     12|   const store = await import('expo-secure-store');
+     13|   return parseThemePreference(await store.getItemAsync(THEME_PREFERENC…
+       |                                           ^
+     14| }
+     15| export async function writeStoredThemePreference(preference: ThemePref…
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:104:5
+ ❯ src/theme/ThemeProvider.tsx:82:22
+
+This error originated in "src/wallet/records/WalletRecord.render.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "a record deleted elsewhere says so, counts its days and restores with its own version". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+     Errors  1 error
+   Start at  07:18:21
+   Duration  6.07s (transform 1.20s, setup 74ms, import 1.56s, tests 4.18s, environment 146ms)
+

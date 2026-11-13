@@ -1,0 +1,11 @@
+--- a/docs/implementation/receipts/P3-T6.md
++++ b/docs/implementation/receipts/P3-T6.md
+@@ -34,7 +34,7 @@
+ - **Client minimum (P6C):** the phone's AI validators now need `model` and `escalated`, and an older app refuses the new results (exact keys). Any release carrying P3-T6 needs a client minimum of at least `AI_MIN_CLIENT_VERSION` (`0.2.0`), with the server's minimum versions raised in the same release.
+ - **Notes for later tasks:**
+   - **P3-T7:** a call the 2-second floor skips is recorded `failure: 'timeout'` with `sent: false`, and each route's deadline starts before its first vault step, so slow steps can make that happen. No `ai-routing` case counts uses, so refunds change none of them.
+-  - **P3-T8:** `HAIKU_SLIP_CAP_MS` is declared here and first passed as `capMs` by `readSlipImage`. The fake-clock slip row (30 s of steps, then 15,000 ms) reads the same under the 20 s cap. The scripted slip replies here are complete reads with `kind: 'slip'`.
++  - **P3-T8:** `HAIKU_SLIP_CAP_MS` is declared here and first passed as `capMs` by `readSlipImage`. The fake-clock slip row (30 s of steps, then 15,000 ms) reads the same under the 20 s cap. The front-door slip replies here are complete reads with `kind: 'slip'`, but the fake-clock rows scripted `json({ drafts: [] })` for every route, the slip's included, which P3-T8's escalation re-reads with Opus; P3-T8 scripts the slip rows as complete reads (the P3-T6 review's m1, corrected by P3-T8).
+   - **P3-T9:** Ask Bun's Haiku child deadline is made once, before the first turn. The fake-clock floor case pins only Ask Bun's calls, and the 24-second case counts only Haiku's calls, so an Opus escalation keeps both true.
+   - **P3-T10:** a result's `model` is the tier (`HAIKU`, `OPUS` or `rules`); the trace keeps `message.model` for `$ai_model`.
+   - **P3-T18:** owns `AiModelName = AiModel` in `events.ts` (followups, P3-T5's m3); `events.ts` is not edited here.

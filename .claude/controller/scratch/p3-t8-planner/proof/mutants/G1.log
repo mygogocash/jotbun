@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ❯ test/workers/slip-read.test.ts (30 tests | 2 failed) 724ms
+     × a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3) 27ms
+     × an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back 25ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+AssertionError: expected 9 to be 10 // Object.is equality
+
+- Expected
++ Received
+
+- 10
++ 9
+
+ ❯ test/workers/slip-read.test.ts:271:46
+    269|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+    270|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    271|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip)
+       |                                              ^
+    272|     // One line, naming the failure's class only (Global Constraints, …
+    273|     expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: '…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+AssertionError: expected 9 to be 10 // Object.is equality
+
+- Expected
++ Received
+
+- 10
++ 9
+
+ ❯ test/workers/slip-read.test.ts:283:46
+    281|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+    282|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+    283|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip)
+       |                                              ^
+    284|   })
+    285|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 28 passed (30)
+   Start at  08:14:34
+   Duration  2.93s (transform 867ms, setup 1.69s, import 26ms, tests 724ms, environment 0ms)
+

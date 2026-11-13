@@ -1,0 +1,46 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config whose published_at is not a date is malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unknown scope still fails the config closed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry 3ms
+ ✓ test/workers/config.test.ts > an absent config leaves gates open and policies unpublished 0ms
+ ✓ test/workers/config.test.ts > client minimums missing from both config and env answer 503 with a retry, never 426 0ms
+ ✓ test/workers/config.test.ts > a config whose published_at is not a date is malformed 1ms
+ ✓ test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too 0ms
+ ✓ test/workers/config.test.ts > GET /v1/policies answers the published policies from KV 10ms
+ ✓ test/workers/config.test.ts > a config that pauses ai is read, not malformed 1ms
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses ai too 0ms
+ ✓ test/workers/config.test.ts > an unknown scope still fails the config closed 0ms
+ ✓ test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication 52ms
+ ✓ test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused 35ms
+ ✓ test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open 37ms
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  08:23:05
+   Duration  4.26s (transform 3.41s, setup 6.27s, import 38ms, tests 142ms, environment 0ms)
+

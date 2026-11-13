@@ -1,0 +1,10 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+
+ Test Files  5 passed (5)
+      Tests  127 passed (127)
+   Start at  07:47:50
+   Duration  8.00s (transform 5.48s, setup 11.85s, import 288ms, tests 8.55s, environment 0ms)
+

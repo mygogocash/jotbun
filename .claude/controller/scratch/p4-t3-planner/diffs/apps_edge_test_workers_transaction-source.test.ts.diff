@@ -1,0 +1,23 @@
+--- a/apps/edge/test/workers/transaction-source.test.ts
++++ b/apps/edge/test/workers/transaction-source.test.ts
+@@ -202,13 +202,17 @@
+       const before = { columns: columns(), records: rows(records), links: rows(links) }
+       expect(before.columns).not.toContain('source')
+       await upgrade()
+-      expect(columns()).toEqual([...before.columns, 'source'])
+-      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, source: null })))
++      // A later migration adds its own columns after `source` (P4-T3's slip_ref_id), each null on a row the previous release wrote.
++      const added = columns().slice(before.columns.length)
++      expect(added[0]).toBe('source')
++      expect(columns()).toEqual([...before.columns, ...added])
++      const unset = Object.fromEntries(added.map((column) => [column, null]))
++      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, ...unset })))
+       expect(rows(links)).toEqual(before.links)
+       expect(rows('PRAGMA foreign_key_check')).toEqual([])
+       // The next wake migrates again and changes nothing.
+       await upgrade()
+-      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, source: null })))
++      expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, ...unset })))
+       expect(rows('SELECT count(*) AS n FROM __drizzle_migrations')).toEqual([{ n: VAULT_MIGRATIONS.journal.entries.length }])
+     })
+   })

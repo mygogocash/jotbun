@@ -1,0 +1,75 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config whose published_at is not a date is malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > a config that pauses ai is read, not malformed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_unreadable","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unreadable or malformed config pauses ai too
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+stderr | test/workers/config.test.ts > an unknown scope still fails the config closed
+{"level":"error","event":"config_malformed","failure":"Error"}
+
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses every gate scope, with a retry 2ms
+ ✓ test/workers/config.test.ts > an absent config leaves gates open and policies unpublished 0ms
+ ✓ test/workers/config.test.ts > client minimums missing from both config and env answer 503 with a retry, never 426 0ms
+ ✓ test/workers/config.test.ts > a config whose published_at is not a date is malformed 0ms
+ ✓ test/workers/config.test.ts > uploads stay unexposed unless IMPORT_UPLOADS_ENABLED is 1 or true, on the fail-closed path too 0ms
+ ✓ test/workers/config.test.ts > GET /v1/policies answers the published policies from KV 6ms
+ × test/workers/config.test.ts > a config that pauses ai is read, not malformed 4ms
+   → expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal []
+ ✓ test/workers/config.test.ts > an unreadable or malformed config pauses ai too 1ms
+ ✓ test/workers/config.test.ts > an unknown scope still fails the config closed 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/config.test.ts > a config that pauses ai is read, not malformed
+AssertionError: expected [ 'writes', 'imports', 'ocr', …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "writes",
++   "imports",
++   "ocr",
++   "uploads",
++   "jobs",
++ ]
+
+ ❯ test/workers/config.test.ts:100:39
+     98|   const config = await configFor(async () => ({ gates: { paused: ['ai'…
+     99|   expect(config.gates.isPaused('ai')).toBe(true)
+    100|   expect(config.gates.pausedScopes()).toEqual([])
+       |                                       ^
+    101|   expect(refusalOf(() => config.gates.assertOpen('writes'))).toBeNull()
+    102|   expect(config.policies).toEqual(TEST_POLICIES)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  08:24:05
+   Duration  3.39s (transform 1.46s, setup 2.69s, import 11ms, tests 14ms, environment 0ms)
+

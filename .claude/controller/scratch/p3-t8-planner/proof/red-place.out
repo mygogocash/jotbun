@@ -1,0 +1,15 @@
+red: real/packages/contracts/src/v1/ai.ts
+red: real/packages/contracts/src/index.ts
+red: orig/apps/edge/src/server/ai/prompts.ts
+red: stubs/apps/edge/src/v1/ai/slip-read.ts
+red: real/apps/edge/src/v1/ai/service.ts
+red: real/apps/edge/test/workers/ai.test.ts
+red: real/apps/edge/test/workers/ai-routing.test.ts
+red: real/apps/edge/test/workers/ai-uses.test.ts
+red: real/apps/edge/test/workers/slip-read.test.ts
+red: orig/apps/app/src/spend/v1/ai/aiResources.ts
+red: real/apps/app/src/spend/v1/ai/aiResources.test.ts
+red: real/apps/app/src/spend/v1/ai/testing/fakeAiResources.ts
+red: real/apps/app/src/dev/catalogue/companion/companionSections.tsx
+red: real/apps/app/src/screens/redesign/ai/TellBunSheet.render.test.tsx
+red: 14 files placed

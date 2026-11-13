@@ -1,0 +1,181 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t26-planner/tree/apps/app
+
+(node:2518) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/wallet/records/WalletRecord.render.test.tsx (20 tests | 1 failed) 4461ms
+   × the actions tray offers edit, copy and delete in 66 pt rows 36ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/records/WalletRecord.render.test.tsx > the actions tray offers edit, copy and delete in 66 pt rows
+TestingLibraryElementError: Found multiple elements with the text: ฿50
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33maria-label[39m=[32m"50 บาท"[39m
+  [33mclass[39m=[32m"css-text-146c3p1"[39m
+  [33mdir[39m=[32m"auto"[39m
+  [33mstyle[39m=[32m"font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; font-weight: 700; font-size: 28px; line-height: 37px; letter-spacing: -0.56px; color: rgba(17, 16, 20, 1.00);"[39m
+[36m>[39m
+  [0m฿50[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33maria-label[39m=[32m"50 บาท"[39m
+  [33mclass[39m=[32m"css-text-146c3p1"[39m
+  [33mdir[39m=[32m"auto"[39m
+  [33mstyle[39m=[32m"font-family: \"DM Sans\", Anuphan, system-ui, sans-serif; font-weight: 700; font-size: 13px; line-height: 17px; color: rgba(17, 16, 20, 1.00);"[39m
+[36m>[39m
+  [0m฿50[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33maria-label[39m=[32m"ข้าวมันไก่"[39m
+  [33maria-modal[39m=[32m"true"[39m
+  [33mclass[39m=[32m"css-view-g5y9jx r-bottom-1p0dtai r-left-1d2f490 r-position-1xcajam r-right-zchlnj r-top-ipm5af r-backgroundColor-1niwhzg"[39m
+  [33mrole[39m=[32m"dialog"[39m
+  [33mtabindex[39m=[32m"-1"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"css-view-g5y9jx r-flex-13awgt0 r-top-ipm5af"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"justify-content: flex-end; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73"[39m
+          [33mdata-testid[39m=[32m"tray-backdrop"[39m
+          [33mstyle[39m=[32m"position: absolute; top: 0px; right: 0px; bottom: 0px; left: 0px; background-color: rgba(17, 16, 20, 0.38);"[39m
+          [33mtabindex[39m=[32m"-1"[39m
+        [36m/>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx r-pointerEvents-12vffkv"[39m
+          [33mstyle[39m=[32m"flex-grow: 0; flex-shrink: 1; padding-top: 62px; transform: translateY(0px);"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mdata-testid[39m=[32m"record-actions"[39m
+            [33mstyle[39m=[32m"flex-grow: 0; flex-shrink: 1; margin-left: 8px; margin-right: 8px; margin-bottom: 42px; background-color: rgba(255, 255, 255, 1.00); box-shadow: 0px -10px 40px rgba(17, 16, 20, 0.18); gap: 12px; visibility: initial; animation-name: SlideInDown; animation-duration: 0.3s; animation-delay: 0s; animation-timing-function: cubic-bezier(0,0,1,1); padding: 18px; border-radius: 34px;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-view-g5y9jx"[39m
+              [33mstyle[39m=[32m"display: contents;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                [33mdata-testid[39m=[32m"tray-header"[39m
+                [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 10px; user-select: none; touch-action: none;"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33maria-label[39m=[32m"ข้าวมันไก่"[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mrole[39m=[32m"heading"[39m
+                  [33mstyle[39m=[32m"position: absolute; top: 0px; left: 0px; width: 1px; height: 1px; overflow-x: hidden; overflow-y: hidden;"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                  [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                    [33mstyle[39m=[32m"flex-direction: row; align-items: center; gap: 12px;"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"width: 48px; height: 48px; background-color: rgba(251, 231, 213, 1.00); align-items: center; justify-content: center; border-radius: 15px;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M4 12h16a8 8 0 0 1-16 0z"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mstroke[39m=[32m"#111014"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M13 9l3-6"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mstroke[39m=[32m"#111014"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M16 9l4-5"[39m
+                            [33mfill[39m=[32m"none"[39m
+                            [33mstroke[39m=[32m"#111014"[39m
+                            [33mstroke-linecap[39m=[32m"round"[39m
+                            [33mstroke-linejoin[39m=[32m"round"[39m
+                            [33mstroke-width[39m=[32m"2"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [33mstyle[39m=[32m"min-width: 0px; flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"css-text-146c3p1"[39m
+                          [33mdir[39m=[32m"auto"[39m
+                          [33mstyle[39m=[32m"font-family: Anuphan, \"DM Sans\", system-ui, sans-serif; font-size: 17px; font-weight: 700; line-height: 26px; color: rgba(17, 16, 20, 1.00);"[39m
+                        [36m>[39m
+                          [0mข้าวมันไก่[0m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"css-text-146c3p1"[39m
+                        [33mdir[39m=[32m"auto"[39m
+                        [33mstyle[39m=[32m"font-family: Anuphan, \"DM Sans\", system-ui, sa...
+ ❯ Object.getElementError ../../node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ shown src/wallet/records/WalletRecord.render.test.tsx:165:34
+    163| /** The element showing these words, which must be in the DOM. Fails o…
+    164| function shown(words: string | RegExp, inside: HTMLElement = document.…
+    165|   const element = within(inside).queryByText(words);
+       |                                  ^
+    166|   expect(element, `expected text "${words}" to be in DOM`).not.toBeNul…
+    167|   return element as HTMLElement;
+ ❯ src/wallet/records/WalletRecord.render.test.tsx:366:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  07:09:02
+   Duration  7.35s (transform 1.92s, setup 109ms, import 2.42s, tests 4.46s, environment 234ms)
+

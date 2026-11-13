@@ -1,0 +1,6 @@
+ × test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused
+ × test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication
+ × test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open
+ × test/workers/config.test.ts > a config that pauses ai is read, not malformed
+ × test/workers/config.test.ts > an unknown scope still fails the config closed
+ × test/workers/config.test.ts > an unreadable or malformed config pauses ai too

@@ -1,0 +1,37 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication 48ms
+   → POST /v1/ai/parse without a token: expected 426 to be 503 // Object.is equality
+ ↓ test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused
+ ↓ test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication
+AssertionError: POST /v1/ai/parse without a token: expected 426 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 426
+
+ ❯ expectAiPaused test/workers/ai-gate.test.ts:46:28
+     44| /** The exact refusal a paused `ai` scope answers with. */
+     45| async function expectAiPaused(res: Response, what: string): Promise<vo…
+     46|   expect(res.status, what).toBe(503)
+       |                            ^
+     47|   expect(res.headers.get('retry-after'), what).toBe('120')
+     48|   const problem = await res.json()
+ ❯ test/workers/ai-gate.test.ts:62:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  08:24:31
+   Duration  4.81s (transform 2.13s, setup 3.75s, import 27ms, tests 49ms, environment 0ms)
+

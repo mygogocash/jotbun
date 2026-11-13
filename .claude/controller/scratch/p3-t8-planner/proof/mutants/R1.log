@@ -1,0 +1,39 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (30 tests | 1 failed) 1671ms
+     × a complete slip is read once by Haiku 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+AssertionError: expected { type: 'object', …(3) } to match object { required: [ 'kind', …(2) ], …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -8,10 +8,9 @@
+        ],
+        "type": "string",
+      },
+    },
+    "required": [
+-     "kind",
+      "drafts",
+      "bank",
+    ],
+  }
+
+ ❯ test/workers/slip-read.test.ts:119:25
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  08:15:56
+   Duration  7.42s (transform 2.63s, setup 4.41s, import 120ms, tests 1.67s, environment 0ms)
+

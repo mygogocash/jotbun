@@ -1,0 +1,27 @@
+slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse
+slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year)
+slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver
+slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined
+slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands
+slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus
+slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read
+slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable
+slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent
+slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent
+slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3)
+slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+slip-read.test.ts > reading one slip through the front door > an escalated read spends one use
+slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept
+slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls)
+slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3)
+slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16)
+ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most

@@ -1,0 +1,24 @@
+--- a/apps/app/src/ui/dateStep.test.ts
++++ b/apps/app/src/ui/dateStep.test.ts
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+-import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthName, monthShortLabel, shortDateLabel, shortDayName, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
++import { canStepBack, canStepForward, dayLabel, displayYear, fullDateLabel, isCalendarDate, monthLabel, monthName, monthShortLabel, shortDateLabel, shortDateWithYear, shortDayName, stepDate, stepDay, weekdayInitials } from './dateStep.ts';
+ 
+ test('steps one day across month and year ends', () => {
+   assert.equal(stepDate('2026-10-17', 1), '2026-10-18');
+@@ -148,3 +148,12 @@
+   assert.deepEqual(['2026-10-24', '2026-10-25'].map((date) => shortDayName(date, 'vi')), ['T7, 24', 'CN, 25']);
+   assert.throws(() => shortDayName('2026-02-30', 'th'), TypeError);
+ });
++
++test("a record's day always carries its year, as bw-record writes it (P2-T26)", () => {
++  // This year's day too: the board writes เสาร์ 24 ต.ค. 2569 on 24 October 2569.
++  assert.equal(shortDateWithYear('2026-10-24', 'th'), 'เสาร์ 24 ต.ค. 2569');
++  assert.equal(shortDateWithYear('2026-10-24', 'en'), 'Sat 24 Oct 2026');
++  assert.equal(shortDateWithYear('2026-10-24', 'vi'), 'Thứ 7, 24 thg 10, 2026');
++  assert.equal(shortDateWithYear('2025-12-31', 'th'), 'พุธ 31 ธ.ค. 2568');
++  assert.throws(() => shortDateWithYear('2026-02-30', 'en'), TypeError);
++});

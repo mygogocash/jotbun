@@ -1,0 +1,11 @@
+new apps/app/src/wallet/records/WalletRecordScreen.tsx
+new apps/app/src/wallet/records/RecordActionsTray.tsx
+new apps/app/src/wallet/records/WalletUndoBar.tsx
+new apps/app/src/wallet/records/WalletRecord.render.test.tsx
+new apps/app/src/dev/catalogue/wallet/recordScreens.tsx
+shared apps/app/src/wallet/records/copy.ts
+shared apps/app/src/dev/catalogue/wallet/recordSections.tsx
+shared apps/app/app/spend/record/[id].tsx
+shared apps/app/src/screens/redesign/SpendRoutes.render.test.tsx
+shared apps/app/src/ui/dateStep.ts
+shared apps/app/src/ui/dateStep.test.ts

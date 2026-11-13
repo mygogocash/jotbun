@@ -1,0 +1,73 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 2ms
+   → expected [ 'GET /v1/ai/note', …(11) ] to deeply equal [ 'GET /v1/ai/note', …(10) ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 0ms
+   → expected [ 'GET /v1/me/analytics', …(3) ] to deeply equal [ 'GET /v1/me/analytics', …(4) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes
+AssertionError: expected [ 'GET /v1/ai/note', …(11) ] to deeply equal [ 'GET /v1/ai/note', …(10) ]
+
+- Expected
++ Received
+
+@@ -8,6 +8,7 @@
+    "GET /v1/sync/live",
+    "POST /v1/ai/ask",
+    "POST /v1/ai/parse",
+    "POST /v1/ai/slip",
+    "PUT /v1/me/ai-preferences",
++   "PUT /v1/slip-accounts/:id",
+  ]
+
+ ❯ test/route-coverage.test.ts:97:64
+     95|     const listed = [...served, ...VAULT_DEFERRED_ROUTES, ...VAULT_RETI…
+     96|     expect(new Set(listed).size).toBe(listed.length)
+     97|     expect(listed.filter((key) => !nestByKey.has(key)).sort()).toEqual…
+       |                                                                ^
+     98|     expect(VAULT_EDGE_ONLY_ROUTES.filter((key) => VAULT_ADDED_ROUTES.i…
+     99|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13)
+AssertionError: expected [ 'GET /v1/me/analytics', …(3) ] to deeply equal [ 'GET /v1/me/analytics', …(4) ]
+
+- Expected
++ Received
+
+  [
+    "GET /v1/me/analytics",
+    "GET /v1/slip-accounts",
+    "GET /v1/slips/salt",
+    "GET /v1/sync/live",
+-   "PUT /v1/slip-accounts/:id",
+  ]
+
+ ❯ test/route-coverage.test.ts:173:44
+    171|
+    172|   it('the slip salt and slip accounts are added routes, and only the a…
+    173|     expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analyt…
+       |                                            ^
+    174|     expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v…
+    175|       { method: 'GET', path: '/v1/slips/salt', access: 'bound_session'…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  07:53:06
+   Duration  472ms (transform 226ms, setup 0ms, import 343ms, tests 6ms, environment 0ms)
+

@@ -1,0 +1,9 @@
+C2 KILLED: the tray and the bar as screens [recordSections.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C3 KILLED: the draft section has no draft [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C4 KILLED: the undo section's words ignore private mode [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+C5 KILLED: the actions section opens closed [recordScreens.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+R1 KILLED: the wallet area shows today's record [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+R2 KILLED: the wallet record opens in view mode only [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+R3 KILLED: one wallet record kept across entries [[id].tsx / SpendRoutes.render.test.tsx] -> Tests 1 failed | 4 passed (5); 1 AssertionError; restored sha256 equal
+D1 KILLED: a record's day drops this year's year [dateStep.ts / dateStep.test.ts] -> Tests tests 15 pass 14 fail 1; 1 AssertionError; restored sha256 equal
+8 killed, 0 survived, 0 not as expected

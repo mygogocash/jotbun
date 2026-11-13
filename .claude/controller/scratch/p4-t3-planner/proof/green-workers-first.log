@@ -1,0 +1,79 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 19ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 20ms
+ ✓ test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 46ms
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 14ms
+ ✓ test/workers/currency-migration.test.ts > the rebuilt wallets keep every row and every reference to them 34ms
+ ✓ test/workers/currency-migration.test.ts > every table that references wallets keeps its rows 30ms
+ ✓ test/workers/currency-migration.test.ts > older records gain THB money fields 28ms
+ ✓ test/workers/currency-migration.test.ts > a wallet takes any ISO-shaped currency and never changes it 29ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 49ms
+ × test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 29ms
+   → expected 426 to be 401 // Object.is equality
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 17ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 59ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 38ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 16ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 13ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 19ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 16ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 16ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 16ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 17ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 13ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 27ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 48ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 22ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 28ms
+ ✓ test/workers/currency-migration.test.ts > the new columns keep their rules 33ms
+ ✓ test/workers/currency-migration.test.ts > the triggers and views naming wallets are the same after the rebuild 29ms
+ ✓ test/workers/currency-migration.test.ts > the new columns take what phase 5 writes and refuse every shape outside their rules 33ms
+ ✓ test/workers/currency-migration.test.ts > the trip indexes cover live tagged records and live trips 28ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 41ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 33ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 32ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 28ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 30ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 23ms
+ ✓ test/workers/currency-migration.test.ts > a record, wallet or category the previous release writes after the migration is in baht with no look, icon or pack key 28ms
+ ✓ test/workers/currency-migration.test.ts > an upgrade that fails part way leaves the vault as it was, and the next wake applies it 38ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 28ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 34ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 28ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 23ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 30ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 62ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 27ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404
+AssertionError: expected 426 to be 401 // Object.is equality
+
+- Expected
++ Received
+
+- 401
++ 426
+
+ ❯ test/workers/slips-vault.test.ts:82:78
+     80|     expect((await (await startV1({ ...CONFIG, gates: { paused: ['impor…
+     81|     const open = await startV1(CONFIG, RELEASED)
+     82|     expect((await open.raw(new Request(`${BASE}/v1/slip-accounts`))).s…
+       |                                                                              ^
+     83|     expect((await open.raw(put())).status).toBe(401)
+     84|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 45 passed (46)
+   Start at  07:31:58
+   Duration  5.33s (transform 5.63s, setup 10.45s, import 146ms, tests 1.29s, environment 0ms)
+

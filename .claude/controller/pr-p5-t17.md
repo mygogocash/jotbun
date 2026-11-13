@@ -23,8 +23,8 @@
   - the four routes tests 17;
   - the two render files built on the fake, 41;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs.
-- [ ] Independent review (Opus), and a second review: the money path (rates, the home currency, exact minor units) and the conditional reads.
+- [x] CI at `3f5670a9`: 9 of 9.
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `3f5670a9` (`.claude/controller/reviews/P5-T17.md`, `reviews/P5-T17-second.md`), with no blocker or major. Their minors (a 304 after a session change unpinned, the fake's `updateTrip` merging an `undefined` key, two fake rules unpinned, the draft refusals pinned for two of seven money keys, an ETag that is not a header value) are carried in `followups.md` to the tasks that next edit these files.
 - [ ] SKIPPED: the phone's conditional read against a deployed Worker (until P5-T6 exists).
 
 Closes #250 once merged (closed by hand, since the base is not the default branch).

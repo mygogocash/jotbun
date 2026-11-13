@@ -1,0 +1,26 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t3-planner/tree/apps/edge
+
+ ✓ test/edge-gates.test.ts > EdgeGates > ai is paused on its own and answers AI_PAUSED with its retry 2ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an EdgeGates is a FeatureGates 1ms
+ ✓ test/edge-gates.test.ts > EdgeGates > pausedEdgeScopes lists ai after the API's scopes 1ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an unreleased scope is 404 before any pause, and ai is always exposed 1ms
+ ✓ test/edge-gates.test.ts > EdgeGates > the first paused scope in the order given answers, and the API's scopes keep their own codes 0ms
+ ✓ test/edge-gates.test.ts > EdgeGates > an unknown scope is still refused, as FeatureGates refuses it 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 2ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 2ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does 0ms
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  08:22:39
+   Duration  1.10s (transform 790ms, setup 0ms, import 1.23s, tests 14ms, environment 0ms)
+

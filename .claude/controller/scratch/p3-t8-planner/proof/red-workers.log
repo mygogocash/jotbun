@@ -1,0 +1,1099 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku 50ms
+   → expected { drafts: [ { …(9) } ], …(7) } to deeply equal { drafts: [ { …(9) } ], …(7) }
+ × test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse 35ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse whose Haiku call is rate limited answers by the rules and gives the use back 42ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a parse Haiku declines answers by the rules and spends the use 22ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a slip read whose Haiku call is overloaded is 503 AI_PAUSED and gives the use back 24ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > parse, note, slip and ask call Haiku 5.5 with no betas, fallbacks, thinking, sampling or prefill 62ms
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > the results name the model 59ms
+ ✓ test/workers/ai.test.ts > consent > AI is off until the user agrees to the current notice 28ms
+ ✓ test/workers/ai.test.ts > consent > turning AI on needs the current notice version; tips can be set alone 28ms
+ ✓ test/workers/ai.test.ts > consent > preferences are the person's own 35ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:malformed"}
+
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"ModelUnavailable:refusal"}
+
+ × test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year) 28ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver 24ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined 25ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(4) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands 22ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(4) }
+(5 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+stderr | test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > consent > consent to another notice version does not count: the companion reads off, the routes that need consent refuse, and the note is the plain facts 27ms
+ ✓ test/workers/ai.test.ts > Tell Bun > turns a sentence into a grounded draft, asking Claude through the shared settings 28ms
+ ✓ test/workers/ai.test.ts > Tell Bun > never passes on an amount the person did not write 23ms
+ ✓ test/workers/ai.test.ts > Tell Bun > falls back to the offline rules when Claude refuses, fails or has nothing 36ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:truncated"}
+
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus 27ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus 27ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus 23ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(12 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus 21ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(12 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai.test.ts > Tell Bun > without AI configured, answers from the rules and spends no uses 21ms
+ ✓ test/workers/ai.test.ts > Tell Bun > stops at the daily limit until the next Bangkok day 19ms
+ ✓ test/workers/ai.test.ts > Tell Bun > validates the sentence 16ms
+ ✓ test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 44ms
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus 31ms
+   → expected { drafts: [], bank: 'K PLUS', …(6) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus 23ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(12 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a guessed category or wallet never escalates 17ms
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read 20ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an income slip without a receiver is not re-read 21ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+ ✓ test/workers/ai.test.ts > Tell Bun > the day's uses follow the vault clock in Bangkok: the last use is allowed, the next waits for midnight, and counts older than 35 days are forgotten 29ms
+ ✓ test/workers/ai.test.ts > slips > reads a slip image into drafts and keeps nothing 34ms
+ ✓ test/workers/ai.test.ts > slips > refuses other files and broken base64 before any model call 15ms
+ ✓ test/workers/ai.test.ts > slips > a slip read stores nothing: no object, no upload and no row but today's use 37ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+ × test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable 27ms
+   → expected { drafts: [], bank: null, …(6) } to deeply equal { drafts: [], bank: 'K PLUS', …(6) }
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent 23ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent 19ms
+   → expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3) 20ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(5) }
+(4 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3) 34ms
+   → expected [ 'claude-haiku-5-5' ] to deeply equal [ 'claude-haiku-5-5', …(1) ]
+   → expected 1 to be +0 // Object.is equality
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai.test.ts > slips > a slip's bank name is trimmed and cut to 60 characters, and anything else reads null 19ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > without consent: the plain facts, and no model call 20ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > uses Claude’s words only when every number is one of the facts 24ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > out of note uses, the facts still come 15ms
+ ✓ test/workers/ai.test.ts > Bun’s daily note > the note's words may use the day's date and every number of its facts, and nothing else, in at most 200 characters 35ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back 23ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14) 21ms
+ × test/workers/slip-read.test.ts > reading one slip through the front door > an escalated read spends one use 21ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(1) }
+(8 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept 22ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(2) }
+(15 matching properties omitted from actual)
+ × test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls) 26ms
+   → expected 503 to be 200 // Object.is equality
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included 26ms
+   → expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(2) }
+(5 matching properties omitted from actual)
+   → expected 1 to be +0 // Object.is equality
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 1ms
+   → a decline: expected false to be true // Object.is equality
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3) 0ms
+   → expected [ { model: 'claude-haiku-5-5', …(1) } ] to deeply equal [ { …(2) }, …(1) ]
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a cap under 2 s makes no call and records a timeout that was never sent (the P3-T4 review's R9) 0ms
+ × test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16) 1ms
+   → expected ModelUnavailable: The model did not produ… { reason: '…' } to match object { name: 'SlipNotRead', …(1) }
+(1 matching property omitted from actual)
+ ✓ test/workers/ai.test.ts > Ask Bun > answers through a read-only tool and returns the figures it used 25ms
+ ✓ test/workers/ai.test.ts > Ask Bun > an answer with a number no tool read becomes the plain figures 20ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a bad tool input is reported back to Claude, not run 15ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a budget_status question about a month before 1970 is answered as no budget, never refused after its use is spent 20ms
+ ✓ test/workers/ai.test.ts > Ask Bun > a tool's allowance reaches the grounding check 31ms
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"ProblemException"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > a session signed out while Ask Bun runs is refused at its next tool step, and no tool reads the records 47ms
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun stops after five tool turns and answers from the figures it read 20ms
+ ✓ test/workers/ai.test.ts > Ask Bun > two tools in one turn both run, and their results go back to Claude together 24ms
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+ ✓ test/workers/ai.test.ts > Ask Bun > Ask Bun answers from the figures it read when a later turn fails, and is paused when it read none 32ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > with no model given, the env decides: AI needs AI_ENABLED and an API key 28ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > every model call costs its use before it is made: a failed call still counts, and at the limit nothing is asked 41ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > without AI, a slip and a question are 503 AI_PAUSED and spend no use, and the note is the plain facts 19ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > each AI route is refused at its first step when a newer policy is pending, the session ended or the account stopped being active, before any model call 56ms
+ ✓ test/workers/ai.test.ts > the AI routes on the vault > the note and Ask Bun read their input before any step, and a HEAD on an AI read answers its GET with no body 37ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > the day's facts come from the vault's records in dayFacts' order: over budget first, then today, the pace, the week, the top category and the month 32ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > spending_total and category_totals read the records runTool read, and allow each number they return 31ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > top_merchants and budget_status read the records runTool read, and allow each number they return 30ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > category_totals answers at most 12 categories and top_merchants at most 8 places, largest first 29ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > a tool input the tool refuses comes back as its error, and an unknown tool is refused by name 20ms
+ ✓ test/workers/ai.test.ts > the vault's facts and tools > budget_status answers no budget for a month before 1970, as runTool did, and reads 1970-01 like any other month 21ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-out session with a malformed body gets 422, with no vault call and no model call; a well-formed body is 401 at its first step 20ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a signed-in person without consent who sends a malformed body gets 422, as the PostgreSQL route parsed before AiService checked consent, with no vault call 15ms
+ ✓ test/workers/ai.test.ts > the 1B-T7 review's pins: what each AI route checks, and in what order > a session signed out between the context step and the use is refused at the use: 401, no model call and no use spent 19ms
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a note whose Haiku call times out gives plain facts and the use back 2526ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back 28ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > an ungrounded answer spends the use 23ms
+ ✓ test/workers/ai-uses.test.ts > a failed model call gives its use back > a refund touches only the day it was counted on, and never goes below zero 16ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a use counted before Bangkok midnight goes back to that day when its call fails after midnight 22ms
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only
+{"level":"warn","event":"ai_refund_failed","feature":"parse","failure":"ProblemException"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"ModelUnavailable:refusal"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the use comes back even when the session ended while the model was asked 20ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > a refund the vault fails never changes the answer, and is logged by name only 17ms
+ × test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1) 17ms
+   → expected [] to deeply equal [ { level: 'warn', …(3) } ]
+   → expected 1 to be +0 // Object.is equality
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > one request gives its use back once, on every route (the P3-T7 second review's m1) 22ms
+ ✓ test/workers/ai-uses.test.ts > the refund on the vault > the refund step names one of the four features and a day, or changes nothing 15ms
+ ✓ test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 0ms
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"Error"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > each route answers inside its deadline when the model hangs 10044ms
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"parse","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"note","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ✓ test/workers/ai-routing.test.ts > Haiku first, and results that name their model > no prompt carries the account, the session or a balance 29ms
+ × test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most 2ms
+   → slip after 0 ms: expected [ 45000 ] to deeply equal [ 20000 ]
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > a route whose vault steps leave it less than 2 s makes no model call, and answers as it does without one 1ms
+ ✓ test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > Ask Bun's Haiku turns share one 25 s: a first turn that takes 24 s leaves no time for a second 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 27 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-routing.test.ts > one deadline per route, on a fake clock > each route's first call gets what is left of its deadline, counted from before its first vault step, and Ask Bun's Haiku turns 25 s at most
+AssertionError: slip after 0 ms: expected [ 45000 ] to deeply equal [ 20000 ]
+
+- Expected
++ Received
+
+  [
+-   20000,
++   45000,
+  ]
+
+ ❯ test/workers/ai-routing.test.ts:257:93
+    255|       const service = new VaultAiService({ transport: model.transport,…
+    256|       await run(service, fakeVault(clock, firstStepMs), route)
+    257|       expect(model.calls.map((call) => call.timeoutMs), `${route} afte…
+       |                                                                                             ^
+    258|     }
+    259|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/47]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "ProblemException",
+-     "feature": "slip",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ai-uses.test.ts:222:54
+    220|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    221|       expect(res.status).toBe(503)
+    222|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    223|     } finally {
+    224|       VAULT_HANDLERS['ai.refund'] = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/47]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/ai-uses.test.ts:37:24
+     35| afterEach(() => {
+     36|   // Every scripted reply was asked for.
+     37|   expect(model.left()).toBe(0)
+       |                        ^
+     38| })
+     39|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to deeply equal { drafts: [ { …(9) } ], …(7) }
+
+- Expected
++ Received
+
+@@ -17,9 +17,9 @@
+    "escalated": false,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+    "source": "ai",
+    "tokens": {
+-     "input": 10,
+-     "output": 10,
++     "input": 0,
++     "output": 0,
+    },
+  }
+
+ ❯ test/workers/slip-read.test.ts:105:29
+    103|     const res = await readSlip(who.user)
+    104|     expect(res.status).toBe(200)
+    105|     expect(await body(res)).toEqual({
+       |                             ^
+    106|       drafts: [{ type: 'expense', amount_minor: '125000', occurred_on:…
+    107|       bank: 'K PLUS',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": "SCB EASY",
++   "bank": "K PLUS",
+    "declined": false,
+    "drafts": [
+      {
+-       "amount_minor": "135000",
++       "amount_minor": null,
+        "merchant": "ร้านป้าแดง",
+      },
+    ],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:141:29
+    139|     const res = await readSlip(who.user)
+    140|     expect(res.status).toBe(200)
+    141|     expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', …
+       |                             ^
+    142|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    143|     const [haiku, opus] = model.calls
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an escalated read spends one use
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/workers/slip-read.test.ts:59:26
+     57|   afterEach(() => {
+     58|     // Every scripted reply was asked for.
+     59|     expect(model.left()).toBe(0)
+       |                          ^
+     60|   })
+     61|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year)
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": "SCB EASY",
++   "bank": "K PLUS",
+    "declined": false,
+    "drafts": [
+      {
+-       "amount_minor": "135000",
++       "amount_minor": "125000",
+        "merchant": "ร้านป้าแดง",
+      },
+    ],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:141:29
+    139|     const res = await readSlip(who.user)
+    140|     expect(res.status).toBe(200)
+    141|     expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', …
+       |                             ^
+    142|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    143|     const [haiku, opus] = model.calls
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(11 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": "SCB EASY",
++   "bank": "K PLUS",
+    "declined": false,
+    "drafts": [
+      {
+-       "amount_minor": "135000",
+-       "merchant": "ร้านป้าแดง",
++       "amount_minor": "125000",
++       "merchant": null,
+      },
+    ],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:141:29
+    139|     const res = await readSlip(who.user)
+    140|     expect(res.status).toBe(200)
+    141|     expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', …
+       |                             ^
+    142|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    143|     const [haiku, opus] = model.calls
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(4) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "declined": true,
+-   "drafts": [
+-     {
+-       "amount_minor": "125000",
+-     },
+-   ],
+-   "escalated": true,
+-   "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "793b2e0a-2ecb-4de6-9d85-251bf5f79683",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/slip-read.test.ts:160:50
+    158|     const who = await person()
+    159|     model.push(refusal(), slipReply('slip', [drafted(who)]))
+    160|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    161|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    162|     // A decline spends the use (A14).
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(4) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "declined": true,
++   "declined": false,
+    "drafts": [
+      {
+        "amount_minor": null,
+        "flags": [
+          "amount_unclear",
+        ],
+      },
+    ],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:169:50
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
+-   "declined": false,
+-   "drafts": [
+-     {
+-       "amount_minor": "8900",
+-     },
+-   ],
+-   "escalated": true,
+-   "kind": "receipt",
+-   "model": "claude-opus-5-5",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "6a33564c-72e3-46df-84f2-108893266ad4",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/slip-read.test.ts:184:50
+    182|     const who = await person()
+    183|     model.push(haikuReply(who), slipReply('receipt', [drafted(who, { a…
+    184|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    185|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    186|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
+-   "declined": false,
+-   "drafts": [
+-     {
+-       "amount_minor": "8900",
+-     },
+-   ],
+-   "escalated": true,
+-   "kind": "receipt",
+-   "model": "claude-opus-5-5",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "ab7010d9-d039-4cee-b529-dda63e82e360",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/slip-read.test.ts:184:50
+    182|     const who = await person()
+    183|     model.push(haikuReply(who), slipReply('receipt', [drafted(who, { a…
+    184|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    185|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    186|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(5) }
+(12 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
++   "bank": "K PLUS",
+    "declined": false,
+    "drafts": [
+      {
+-       "amount_minor": "8900",
++       "amount_minor": "125000",
+      },
+    ],
+-   "escalated": true,
+-   "kind": "receipt",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "kind": "slip",
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:184:50
+    182|     const who = await person()
+    183|     model.push(haikuReply(who), slipReply('receipt', [drafted(who, { a…
+    184|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    185|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    186|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus
+AssertionError: expected { drafts: [], bank: 'K PLUS', …(6) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
++   "bank": "K PLUS",
+    "declined": false,
+-   "drafts": [
+-     {
+-       "amount_minor": "8900",
+-     },
+-   ],
+-   "escalated": true,
+-   "kind": "receipt",
+-   "model": "claude-opus-5-5",
++   "drafts": [],
++   "escalated": false,
++   "kind": "slip",
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:184:50
+    182|     const who = await person()
+    183|     model.push(haikuReply(who), slipReply('receipt', [drafted(who, { a…
+    184|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    185|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    186|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(3) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -3,8 +3,8 @@
+      {
+        "merchant": null,
+      },
+    ],
+    "escalated": false,
+-   "kind": "receipt",
++   "kind": "slip",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:207:50
+    205|     const who = await person()
+    206|     model.push(slipReply(kind, [drafted(who, { ...changes, category_id…
+    207|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    208|     expect(modelsAsked()).toEqual(['claude-haiku-5-5'])
+    209|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable
+AssertionError: expected { drafts: [], bank: null, …(6) } to deeply equal { drafts: [], bank: 'K PLUS', …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "K PLUS",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
+-   "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "kind": "slip",
++   "model": "claude-haiku-5-5",
+    "source": "ai",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 0,
++     "output": 0,
+    },
+  }
+
+ ❯ test/workers/slip-read.test.ts:215:50
+    213|     // Opus names a slip but drafts nothing: a read with no draft is u…
+    214|     model.push(slipReply('unreadable', [], null), slipReply('slip', []…
+    215|     expect(await body(await readSlip(who.user))).toEqual({
+       |                                                  ^
+    216|       drafts: [],
+    217|       bank: 'K PLUS',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
+-   "declined": true,
+-   "drafts": [],
+-   "escalated": true,
+-   "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "f18d68f1-90e9-4133-af96-8c2e01c64806",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/slip-read.test.ts:235:50
+    233|     const who = await person()
+    234|     model.push(refusal(), opusReply())
+    235|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    236|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip…
+    237|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { model: 'claude-opus-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "bank": null,
+-   "declined": true,
+-   "drafts": [],
+-   "escalated": true,
+-   "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "e22d65db-ba42-4cf0-8b2f-f19bb8d73a54",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/slip-read.test.ts:235:50
+    233|     const who = await person()
+    234|     model.push(refusal(), opusReply())
+    235|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    236|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip…
+    237|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3)
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-haiku-5-5', …(5) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -8,9 +8,9 @@
+          "amount_unclear",
+        ],
+        "merchant": "ร้านป้าแดง",
+      },
+    ],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "slip",
+    "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:244:29
+    242|     const res = await readSlip(who.user)
+    243|     expect(res.status).toBe(200)
+    244|     expect(await body(res)).toMatchObject({
+       |                             ^
+    245|       model: 'claude-haiku-5-5',
+    246|       escalated: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+AssertionError: expected [ 'claude-haiku-5-5' ] to deeply equal [ 'claude-haiku-5-5', …(1) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+  ]
+
+ ❯ test/workers/slip-read.test.ts:270:27
+    268|     expect(res.status).toBe(503)
+    269|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_a…
+    270|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+       |                           ^
+    271|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip)
+    272|     // One line, naming the failure's class only (Global Constraints, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an escalated read spends one use
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(1) }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:297:50
+    295|     const who = await person()
+    296|     model.push(slipReply('slip', [drafted(who, { merchant: null })]), …
+    297|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    298|     expect(await vaultRows(who.user, 'SELECT feature, uses FROM ai_usa…
+    299|     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(2) }
+(15 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "drafts": [
+      {
+-       "amount_minor": "125000",
++       "amount_minor": null,
+      },
+    ],
+-   "escalated": true,
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "model": "claude-haiku-5-5",
+  }
+
+ ❯ test/workers/slip-read.test.ts:327:29
+    325|     }
+    326|     expect(res.status).toBe(200)
+    327|     expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', …
+       |                             ^
+    328|     expect(sent.map((request) => request.body.model)).toEqual(['claude…
+    329|     for (const request of sent) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls)
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ test/workers/slip-read.test.ts:349:47
+    347|     const who = await person()
+    348|     model.push(refusal(), slipReply('slip', [drafted(who)]))
+    349|     expect((await readSlip(who.user)).status).toBe(200)
+       |                                               ^
+    350|     expect(model.calls).toHaveLength(2)
+    351|     const wire = JSON.stringify(model.calls)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included
+AssertionError: expected { drafts: [ { …(9) } ], …(7) } to match object { model: 'claude-opus-5-5', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 3100,
+-     "output": 360,
++     "input": 0,
++     "output": 0,
+    },
+  }
+
+ ❯ test/workers/slip-read.test.ts:362:50
+    360|       used(slipReply('slip', [drafted(who)]), { input_tokens: 1_500, o…
+    361|     )
+    362|     expect(await body(await readSlip(who.user))).toMatchObject({ model…
+       |                                                  ^
+    363|   })
+    364| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing
+AssertionError: a decline: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/slip-read.test.ts:409:84
+    407|       ['a second draft with no amount', answer('receipt', [draft(), dr…
+    408|     ]
+    409|     for (const [what, outcome, opus] of rows) expect(slipNeedsOpus(out…
+       |                                                                                    ^
+    410|   })
+    411|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3)
+AssertionError: expected [ { model: 'claude-haiku-5-5', …(1) } ] to deeply equal [ { …(2) }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "model": "claude-haiku-5-5",
+-     "timeoutMs": 20000,
+-   },
+-   {
+-     "model": "claude-opus-5-5",
+-     "timeoutMs": 25000,
++     "timeoutMs": 45000,
+    },
+  ]
+
+ ❯ test/workers/slip-read.test.ts:427:19
+    425|     const read = await readSlipImage({ image, context, locale: 'th' },…
+    426|     expect(HAIKU_SLIP_CAP_MS).toBe(20_000)
+    427|     expect(given).toEqual([
+       |                   ^
+    428|       { model: 'claude-haiku-5-5', timeoutMs: 20_000 },
+    429|       { model: 'claude-opus-5-5', timeoutMs: 25_000 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/47]⎯
+
+ FAIL  test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16)
+AssertionError: expected ModelUnavailable: The model did not produ… { reason: '…' } to match object { name: 'SlipNotRead', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "failure": "rate_limited",
+-   "name": "SlipNotRead",
++ ModelUnavailable {
++   "name": "ModelUnavailable",
+  }
+
+ ❯ test/workers/slip-read.test.ts:465:51
+    463|     await expect(read(apiFailure(400))).rejects.toMatchObject({ name: …
+    464|     // A decline, then Opus rate limited: Opus's failure.
+    465|     await expect(read(refusal(), apiFailure(429))).rejects.toMatchObje…
+       |                                                   ^
+    466|     await expect(read(apiFailure(529))).rejects.toBeInstanceOf(SlipNot…
+    467|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/47]⎯
+
+
+ Test Files  3 failed | 1 passed (4)
+      Tests  27 failed | 67 passed (94)
+   Start at  08:13:38
+   Duration  14.32s (transform 6.91s, setup 12.87s, import 231ms, tests 14.82s, environment 0ms)
+

@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 14ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 16ms
+ × test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 26ms
+   → expected [ [ 'amount_minor', true ], …(23) ] to deeply equal [ [ 'amount_minor', true ], …(22) ]
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 11ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 12ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 11ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 11ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 12ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 12ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 11ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 11ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 11ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 22ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 19ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column
+AssertionError: expected [ [ 'amount_minor', true ], …(23) ] to deeply equal [ [ 'amount_minor', true ], …(22) ]
+
+- Expected
++ Received
+
+@@ -54,10 +54,14 @@
+    [
+      "rate_source",
+      true,
+    ],
+    [
++     "slip_ref_id",
++     false,
++   ],
++   [
+      "source",
+      false,
+    ],
+    [
+      "source_wallet_id",
+
+ ❯ test/workers/vault-schema.test.ts:41:67
+     39|     const config = getTableConfig(table)
+     40|     const pragma = await sql(stub, `PRAGMA table_info(${config.name})`)
+     41|     expect(config.columns.map((c) => [c.name, c.notNull]).sort()).toEq…
+       |                                                                   ^
+     42|   }
+     43|   // P3-T2 (B2): how a record was made is a TEXT column with no defaul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  07:50:41
+   Duration  2.53s (transform 958ms, setup 1.78s, import 7ms, tests 199ms, environment 0ms)
+

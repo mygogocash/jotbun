@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t8-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku 33ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse 17ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year) 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal is re-read by Opus and marked declined 17ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an Opus refusal marks the read declined too, and Haiku's draft stands 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that is not JSON is re-read by Opus 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that was cut short is re-read by Opus 14ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no kind is re-read by Opus 15ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has a kind that is not slip, receipt or unreadable is re-read by Opus 15ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that has no draft is re-read by Opus 17ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an answer that says unreadable, so its drafts are dropped is re-read by Opus 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a guessed category or wallet never escalates 13ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a receipt without a receiver is not re-read 19ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an income slip without a receiver is not re-read 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also finds nothing the slip is unreadable 22ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also declines after a Haiku decline, the slip is unreadable and the use is spent 17ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > when Opus also answers in broken JSON after a Haiku decline, the slip is unreadable and the use is spent 17ms
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+stderr | test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > Opus failing after a Haiku draft keeps Haiku's draft, and spends the use (Review Focus 3) 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3) 20ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back 20ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > a slip the API rejects (a 400) is 503 AI_PAUSED, with no Opus call, and spends the use (A14) 21ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > an escalated read spends one use 21ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > both requests carry the same bytes through the gateway, and nothing is kept 25ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > the prompts carry no account, session or device identifier, and no balance (both calls) 16ms
+ ✓ test/workers/slip-read.test.ts > reading one slip through the front door > tokens add up both calls, cache reads and writes included 18ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > slipNeedsOpus says yes only for a decline, an unusable answer, no draft, or a draft whose amount, date or receiver is missing 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > Haiku's read is capped at 20 s of the slip's 45, and Opus gets what is left (the P3-T4 review's m3) 0ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > a cap under 2 s makes no call and records a timeout that was never sent (the P3-T4 review's R9) 1ms
+ ✓ test/workers/slip-read.test.ts > D25's triggers and the slip's deadline, directly > when no model read the slip, SlipNotRead carries the last call's failure (A16) 0ms
+
+ Test Files  1 passed (1)
+      Tests  30 passed (30)
+   Start at  07:34:52
+   Duration  2.71s (transform 916ms, setup 1.66s, import 28ms, tests 470ms, environment 0ms)
+

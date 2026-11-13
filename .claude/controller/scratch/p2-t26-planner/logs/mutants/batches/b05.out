@@ -1,0 +1,15 @@
+S57 KILLED: a move's tile is an initial [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S58 KILLED: the last day reads as days left [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S59 KILLED: Restore sends version 1 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S60 KILLED: an unconfirmed Restore still says Restore [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S61 KILLED: a frozen delete's Try again sends nothing [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S62 KILLED: a missing entry reads as a load problem [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S63 KILLED: a failed load has no Try again [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S64 KILLED: no receipt section (W15) [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S65 KILLED: a receipt change does not read the record again [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S66 KILLED: the receipt section is not told the record's receipt [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T1 KILLED: rows of 60 pt [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+T2 KILLED: the copy row says the amount in private mode [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+T3 KILLED: the copy row says no amount [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 5 failed | 20 passed (25); 5 AssertionError; restored sha256 equal
+T4 KILLED: the drawn title is read again [RecordActionsTray.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+14 killed, 0 survived, 0 not as expected

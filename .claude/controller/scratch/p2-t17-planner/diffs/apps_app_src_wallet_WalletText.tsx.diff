@@ -1,0 +1,13 @@
+diff --git a/apps/app/src/wallet/WalletText.tsx b/apps/app/src/wallet/WalletText.tsx
+index db0c4a829118a2ba3dcfc6a00f797e0db441b472..9459bfb30e48d2a211985c442f2b66e21ed74688 100644
+--- a/apps/app/src/wallet/WalletText.tsx
++++ b/apps/app/src/wallet/WalletText.tsx
+@@ -8,7 +8,7 @@ import { useWalletColors } from '@mobile/theme/ThemeProvider';
+ import { THAI_UI_FONT_FAMILY } from '@mobile/theme/uiFontFamily';
+ import { WALLET_TYPE, walletLineHeight, type WalletTextRole } from '@mobile/theme/walletType';
+ 
+-export type WalletTone = 'ink' | 'quiet' | 'quietOnGround' | 'violet' | 'under' | 'over' | 'onPrimary' | 'onToast';
++export type WalletTone = 'ink' | 'quiet' | 'quietOnGround' | 'violet' | 'under' | 'over' | 'onPrimary' | 'onToast' | 'toastLink';
+ 
+ // TextProps.role is the ARIA role. This role is the type scale, so the two
+ // cannot share one property: their intersection is never.

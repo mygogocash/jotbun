@@ -1,0 +1,15 @@
+S29 KILLED: stacked, แก้ไข still shares the row [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S30 KILLED: more on every entry, live or not [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 4 failed | 21 passed (25); 4 AssertionError; restored sha256 equal
+S31 KILLED: the undo bar never goes [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S32 KILLED: the undo bar goes while its undo is unconfirmed [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S33 KILLED: the undo bar goes while its undo is on its way [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S34 KILLED: nothing says the entry was deleted once the bar has gone [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S35 KILLED: the page says the entry was deleted beside the bar [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S36 KILLED: the bar's words ignore private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S37 KILLED: the bar's amount keeps its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S38 KILLED: private mode's words carry the amount [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 2 failed | 23 passed (25); 2 AssertionError; restored sha256 equal
+S39 KILLED: the ghost ignores private mode [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S40 KILLED: the ghost is read [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S41 KILLED: the ghost drops its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 1 failed | 24 passed (25); 1 AssertionError; restored sha256 equal
+S42 KILLED: the amount drops its .00 [WalletRecordScreen.tsx / WalletRecord.render.test.tsx] -> Tests 3 failed | 22 passed (25); 3 AssertionError; restored sha256 equal
+14 killed, 0 survived, 0 not as expected
