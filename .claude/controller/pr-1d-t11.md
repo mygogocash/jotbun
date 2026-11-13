@@ -38,7 +38,7 @@
   - The proofs: CI's failure reproduced in the kit (3 of 111), then RED 1 of 159, an assertion; GREEN 159; **51 of 51 mutants killed**; `typecheck:edge`, `test:edge` 206 and `build:edge`. All 6 kit code files are byte-identical; the receipt adds the accepted calls.
   - Planned on Claude Opus, built on Claude Haiku 5.5.
 - [x] The controller merged the integration head (with #444 and #439, app only) as `1f306864`. Nothing under `apps/edge` or `packages` changed in the merge.
-- [ ] CI on this pull request is green at `1f306864`, the whole workers suite included.
+- [x] CI at `1f306864`: 9 of 9, the whole workers suite included.
 - [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: a live capture to PostHog EU (no project or keys, Q5).
 
