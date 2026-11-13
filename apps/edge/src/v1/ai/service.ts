@@ -26,11 +26,12 @@ import { factsText, figuresText } from '../../server/ai/fact-text'
 import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/grounding'
 import { ModelUnavailable, finishedJson, finishedText } from '../../server/ai/model'
 import type { MessageParams } from '../../server/ai/model'
-import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM, SLIP_SCHEMA, SLIP_SYSTEM } from '../../server/ai/prompts'
+import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM } from '../../server/ai/prompts'
 import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
 import type { VaultRouteId } from '../protocol'
 import type { VaultSession } from '../worker-routes'
 import { HAIKU, HAIKU_ASK_CAP_MS, haikuRequest } from './models'
+import { readSlipImage } from './slip-read'
 import { ASK_TOOLS } from './tools'
 import { AiDeadline, newTrace, tracedSend } from './transport'
 import type { AiTrace, ModelTransport } from './transport'
@@ -46,11 +47,13 @@ import { shouldRefund } from './uses'
 // one deadline (AI_ROUTE_DEADLINE_MS), and every result names its model (H4).
 // Since P3-T7 a call that fails with a rate limit, a 5xx, a timeout or no
 // connection gives its use back (H5, uses.ts) before the route answers.
+// Since P3-T8 a slip is read by readSlipImage (slip-read.ts): Haiku, then Opus
+// in the same request when D25 says so; the result names the read's model.
 
 /** Ask Bun's turns before it answers from the figures it read (AiService's ASK_MAX_TURNS). */
 const ASK_MAX_TURNS = 5
 
-/** Haiku wrote the words (H4). Every call here is Haiku's; escalation comes with P3-T8 and P3-T9. */
+/** Haiku wrote the words (H4): parse, the note and Ask Bun call Haiku only; Ask Bun's escalation comes with P3-T9. */
 const BY_HAIKU: { model: AiModel; escalated: boolean } = { model: HAIKU, escalated: false }
 /** The offline rules or the plain facts wrote them. */
 const BY_RULES: { model: AiModel; escalated: boolean } = { model: 'rules', escalated: false }
@@ -117,12 +120,14 @@ export class VaultAiService {
     if (!this.deps.transport) return rules()
     const use = await this.consume(s, 'parse')
     try {
+      const base = haikuRequest('low', 8_000)
       const message = await tracedSend(this.deps.transport, trace, deadline, {
         feature: 'parse',
         escalated: false,
         params: {
-          ...haikuRequest('low', 8_000),
-          output_config: { effort: 'low', format: { type: 'json_schema', schema: PARSE_SCHEMA } },
+          ...base,
+          // The base's effort, with the JSON format (the P3-T6 review's n2).
+          output_config: { ...base.output_config, format: { type: 'json_schema', schema: PARSE_SCHEMA } },
           system: PARSE_SYSTEM,
           messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
         },
@@ -136,34 +141,24 @@ export class VaultAiService {
     }
   }
 
-  /** A bank slip or receipt image into drafts. The image is never stored: it goes to the model and nowhere else. */
+  /**
+   * A bank slip or receipt image into drafts (P3-T8): Haiku reads it, and Opus
+   * reads it again in the same request when D25 says so. The image is never
+   * stored: it goes to the models and nowhere else, and the read writes only
+   * its use (B9). When no model read it (SlipNotRead), the use goes back on an
+   * outage (H5) and the route answers 503.
+   */
   async slip(s: VaultSession, request: AiSlipRequest): Promise<AiSlipResult> {
     const { trace, deadline } = this.start('slip')
     const ctx = await this.draftContext(s, request.today)
     if (!this.deps.transport) throw this.paused()
     const use = await this.consume(s, 'slip')
     try {
-      const message = await tracedSend(this.deps.transport, trace, deadline, {
-        feature: 'slip',
-        escalated: false,
-        params: {
-          ...haikuRequest('medium', 8_000),
-          output_config: { effort: 'medium', format: { type: 'json_schema', schema: SLIP_SCHEMA } },
-          system: SLIP_SYSTEM,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'image', source: { type: 'base64', media_type: request.media_type, data: request.image_base64 } },
-                { type: 'text', text: JSON.stringify({ today: ctx.today, locale: request.locale, ...this.choices(ctx) }) },
-              ],
-            },
-          ],
-        },
-      })
-      const raw = finishedJson(message) as { bank?: unknown }
-      const bank = typeof raw?.bank === 'string' && raw.bank.trim() ? raw.bank.trim().slice(0, 60) : null
-      return { drafts: sanitizeDrafts(raw, ctx), bank, source: 'ai', ...BY_HAIKU }
+      const read = await readSlipImage(
+        { image: { base64: request.image_base64, mediaType: request.media_type }, context: ctx, locale: request.locale },
+        { transport: this.deps.transport, trace, deadline },
+      )
+      return { drafts: read.drafts, bank: read.bank, source: 'ai', model: read.model, escalated: read.escalated, kind: read.kind, declined: read.declined, tokens: read.tokens }
     } catch (error) {
       this.logFailure('slip', error)
       await this.giveBack(s, use, trace)
@@ -190,12 +185,14 @@ export class VaultAiService {
     let use: CountedUse | undefined
     try {
       use = await this.consume(s, 'note')
+      const base = haikuRequest('low', 4_000)
       const message = await tracedSend(this.deps.transport, trace, deadline, {
         feature: 'note',
         escalated: false,
         params: {
-          ...haikuRequest('low', 4_000),
-          output_config: { effort: 'low', format: { type: 'json_schema', schema: NOTE_SCHEMA } },
+          ...base,
+          // The base's effort, with the JSON format (the P3-T6 review's n2).
+          output_config: { ...base.output_config, format: { type: 'json_schema', schema: NOTE_SCHEMA } },
           system: NOTE_SYSTEM,
           messages: [{ role: 'user', content: JSON.stringify({ locale, date: today, facts: facts.map((f) => ({ ...f, say: f.amount_minor ? formatBaht(f.amount_minor) : undefined })) }) }],
         },
