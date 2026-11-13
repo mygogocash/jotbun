@@ -137,8 +137,32 @@ export type AiParseRequest = { text: string; today: string; locale: AiLocale };
  */
 export type AiParseResult = { drafts: AiDraft[]; source: "ai" | "rules"; model: AiModel; escalated: boolean };
 
+/**
+ * What a slip read found (P3-T8, D25): a bank or e-wallet transfer `slip`, a
+ * shop `receipt` or bill, or `unreadable` when no amount could be read (then
+ * there is no draft). A photo Bun read is kept as a receipt only after a
+ * `receipt` read (B3).
+ */
+export const SLIP_KINDS = ["slip", "receipt", "unreadable"] as const;
+export type SlipKind = (typeof SLIP_KINDS)[number];
+
 export type AiSlipRequest = { image_base64: string; media_type: AiSlipMediaType; today: string; locale: AiLocale };
-export type AiSlipResult = { drafts: AiDraft[]; bank: string | null; source: "ai"; model: AiModel; escalated: boolean };
+/**
+ * A slip read (P3-T8). Haiku reads first; Opus reads the same image again when
+ * D25 says so (`escalated`), and `model` names the read that is shown.
+ * `declined` is true when either model refused; `tokens` adds up every model
+ * call's input (cache reads and writes included) and output.
+ */
+export type AiSlipResult = {
+  drafts: AiDraft[];
+  bank: string | null;
+  source: "ai";
+  model: AiModel;
+  escalated: boolean;
+  kind: SlipKind;
+  declined: boolean;
+  tokens: { input: number; output: number };
+};
 
 /** One true fact about the user's own numbers. Money is exact satang. */
 export const BUN_FACT_KINDS = [
