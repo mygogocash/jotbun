@@ -1,0 +1,32 @@
+# source-pins: Source preservation pins on the vault's write paths (P3-T2 follow-up)
+
+- **Status:** built and verified locally on `fix/source-pins`, from `a0aa42e3` (the controller's state only since the kit's base `b1ca3bfb`). Not pushed. Under ruling R87 this receipt is its own file; `premium-progress.md` is not edited. Under ruling R100 the whole workers suite is CI's. The independent review is the controller's, after this receipt. Test-only: no source file changes.
+- **Files:** `apps/edge/test/workers/transaction-source.test.ts` (`RECEIPT_RETENTION_CONSENT` and `seedImportImage` imported; a comment and the block `the write paths that never name the source keep it`, 2 cases); `apps/app/src/storage/diaryRepository.test.ts` (3 lines in `a pending entry may carry a source, and an unknown one is refused`; no new test). Both copied from the planner's `real/` (each base matched `SHA256SUMS.base`; the copies match the brief's hashes).
+- **Install:** not run. `node_modules` was already present at the root and in `apps/edge` (the controller's `npm ci` and `npm run install:edge`), so both install steps were skipped, as the controller's note asks.
+- **The items and their cases:**
+  - Both reviews' m1, restore (`transactions.ts:334`, the first review's R4): `a restore keeps the source, in the record and in the sync feed`.
+  - Both reviews' m1, a receipt's retain, replace and remove (`attachments.ts:222`, R5): `a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed`.
+  - Both reviews' m1, an import confirmation (`confirmation.ts:473`): no case here (the brief's P3). A confirmation never writes an existing record (`taken`, pinned by 1B-T10's `a record id already used is never written again, even if its progress row were lost`), and the source it gives its new records is P4-T11's (`statement`).
+  - The first review's n1 (R9): the transfer twin `cameraMove` in `a pending entry may carry a source, and an unknown one is refused`.
+- **RED** (`mutants.py --red`: R4, R5 and R9 at once, `red.out`): `typecheck:edge` and `typecheck:app` rc=0 on the RED tree; workers `[2 failed | 9 passed (11)]`, unit `[tests 25 pass 24 fail 1]`; exactly the three new pins failed, each on an `AssertionError`; every source file restored. `RED: failed 3, expected 3; as expected`.
+- **GREEN:** workers, under the heavy lock, `transaction-source.test.ts` `[Tests 11 passed (11)]`; unit `diaryRepository.test.ts` `[tests 25, pass 25, fail 0]`.
+- **Mutation check** (`mutants.out`): 3 mutants, 3 killed one at a time, each by its one case on an `AssertionError`, each restored byte for byte: R4 (a restore clears the source) by the restore case; R5 (the receipt commands' version bump clears it) by the receipt case; R9 (the outbox stops checking a transfer's source) by the outbox case. The planner's step mutants S1 to S3 (one command at a time) are in its kit (`proof/steps.out`), not rerun here.
+- **Gate** (worktree root): `typecheck:edge` rc=0; `typecheck:app` rc=0; the focused files after the mutants (11 of 11, 25 of 25); `test:edge` rc=0 (`214 passed`); `test:app` rc=0, fail 0; `test:unit` rc=0, fail 0; `git diff --check` clean. Not run: `build:edge` (no source change: the bundle is the base's); `export:web`, the iOS export, `typecheck:routes`, the routes tests and the kit render files (no route, screen or section). **CI:** `test:edge:workers` (whole), the full render suite, the exports, `test:db`, `test:ops`. **SKIPPED:** `test:edge:db` (Docker stopped; CI's edge job runs it).
+- **Deviations and calls:** the controller accepted the planner's calls P1 to P10 as written; they are recorded here as accepted by the controller:
+  - P1: ready and test-only; no write path loses `source`, so there is no finding to report.
+  - P2: RED is the reviewers' surviving mutants R4, R5 and R9 at once, with both typechecks run on that tree; no stubs.
+  - P3: the import confirmation waits for P4-T11: a confirmation never writes an existing record (1B-T10's case pins `taken`; the planner's probe T1), and the source of its new records is P4-T11's.
+  - P4: the cases live in `transaction-source.test.ts`, in their own block at the end; the receipt case seeds its images with `seedImportImage`.
+  - P5: the receipt case uses a `typed` record (H9) and checks each command; the planner's step mutants S1 to S3 show it.
+  - P6: the restore case checks the record and the sync feed's three snapshots.
+  - P7: n1 is three lines inside the existing case; the file stays at 25 tests.
+  - P8: followups lines 636, 643 and 644 are not carried here (below).
+  - P9: no `build:edge`, exports, routes tests or render files (no source, route, screen or section change); the app gate runs.
+  - P10: no new helper and no support file change.
+  - The install steps were skipped (see Install above), as the controller's note asks.
+- **Not carried, and where:** followups line 636 (m2, the client minimum) is the owner's and P6C's: this task changes no contract or build. Line 643 (n3, `events.ts:6`'s inline type import): an app source change, for the next task that edits `events.ts` (P3-T18). Line 644: see the corrections below.
+- **Corrections to `receipts/P3-T2.md`** (followups line 644; that file is left as merged): its gate counts do not match the implementer's own logs (`.claude/controller/scratch/p3-t2/gate-test-unit.log` says 1012 passed, against the receipt's 998; `gate-build-edge.log` says 248 ms for the server build, against the receipt's 266 ms); `CreateEntryInput` and `CreateTransferInput` (`apps/app/src/spend/v1/resources.ts:72` and `:74`) have `source?: TransactionSource`, with no `| null`; `transaction-source.test.ts` had 9 cases, not 8 (11 with this task's 2).
+- **Notes for later tasks:**
+  - P4-T11: write `statement` through `createTransactionRow` in the confirmation, and turn the second review's probe around for `confirmed statement rows carry source statement` (`.claude/controller/scratch/p3-t2-second/probes/zz-second-imports.test.ts`, the block at its line 1735): every confirmed record carries `statement` in the table, the sync feed and the history.
+  - P4-T7 (`createTransactionRow`): its Step 4 keeps `transaction-source.test.ts` passing unchanged, these two cases included.
+  - Any later task that rewrites the restore or a receipt command (its own `UPDATE`, a new column): these cases fail if the rewrite drops `source`; keep the statement free of `source`, as H9 says.

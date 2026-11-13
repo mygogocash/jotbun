@@ -128,6 +128,9 @@ test('a pending entry may carry a source, and an unknown one is refused', async 
   await assert.doesNotReject(store.savePending(siri, outbox(siri)));
   const camera = draft({ source: 'camera' as never });
   await assert.rejects(store.savePending(camera, outbox(camera)), { name: 'TypeError', message: 'A pending entry is not a valid create: source.' });
+  // A transfer's source is checked the same way (P3-T2's review, n1).
+  const cameraMove = { ...siri, id: randomUUID(), source: 'camera' as never };
+  await assert.rejects(store.savePending(cameraMove, outbox(cameraMove)), { name: 'TypeError', message: 'A pending entry is not a valid create: source.' });
   assert.deepEqual((await store.readState()).pending.map((entry) => entry.source), ['photo', null, 'siri']);
   assert.equal((await store.readOutbox()).length, 3);
 });
