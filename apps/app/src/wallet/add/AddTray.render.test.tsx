@@ -1093,7 +1093,7 @@ test("the host's sections come after the steps', and each opens in its state", a
   expect(list).not.toMatch(/AddTrayHost/);
   const ids = WALLET_SECTIONS.map((section) => section.id);
   const at = ids.indexOf('bw-tray-saving');
-  expect(ids.slice(at - 1, at + 4)).toEqual(['bw-tray-pick-category', 'bw-tray-saving', 'bw-tray-unconfirmed', 'bw-tray-add-large', 'bw-wallets']);
+  expect(ids.slice(at - 1, at + 4)).toEqual(['bw-tray-pick-category', 'bw-tray-saving', 'bw-tray-unconfirmed', 'bw-tray-add-large', 'bw-saved-toast']);
   // A save in flight: Save says it is saving, and close is unavailable.
   await openSection('bw-tray-saving');
   expect(named('button', 'กำลังบันทึก…').getAttribute('aria-busy')).toBe('true');
