@@ -10,6 +10,7 @@ import { analyticsIdFor, createServerAnalytics } from '../analytics/server-analy
 import type { ServerAnalytics, ServerEvent } from '../analytics/server-analytics'
 import type { ModelTransport } from './ai/transport'
 import { transportFromEnv } from './ai/transport'
+import { flag } from '../server/env'
 import { BASE_HEADERS, errorResponse, jsonResponse, problemResponse } from '../server/http/problem'
 import { queryOf, readJsonBody, reqLike } from '../server/http/request'
 import { bindCatalogueFetch } from './bridge'
@@ -112,6 +113,8 @@ export async function handleVaultV1(request: Request, env: V1Env, deps: V1Deps =
   const match = matchRoute(VAULT_V1_ROUTES, method, url.pathname)
   if (!match) return problemResponse(404, 'NOT_FOUND', requestId)
   const { route, params } = match
+  // An unreleased route (P4-T3, S13) is 404 before its body, gates and token, as if it did not exist.
+  if (route.release && !flag(env[route.release])) return problemResponse(404, 'NOT_FOUND', requestId)
   try {
     const { body, stream } = await readRouteBody(request, route)
     const config = await (deps.config ?? ((e: V1Env) => readEdgeConfig(e.CONFIG, e)))(env)

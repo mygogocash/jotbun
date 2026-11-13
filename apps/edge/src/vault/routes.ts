@@ -28,6 +28,8 @@ import { AI_FEATURES, parseAiDate, parseAiLocale, parseAiPreferencesUpdate } fro
 import type { AiFeature } from '@gogospend/contracts'
 import { aiContext, aiDayFacts, aiPreferences, aiTool, consumeAi, refundAi, setAiPreferences } from './ai'
 import { analyticsConsent, weeksSinceSignup } from './analytics'
+import { listSlipAccounts, updateSlipAccount } from './slips/accounts'
+import { slipSalt } from './slips/salt'
 
 export type VaultHandler = (c: VaultContext, call: VaultCall) => VaultReply
 
@@ -224,4 +226,8 @@ export const VAULT_HANDLERS: Partial<Record<VaultRouteId, VaultHandler>> = {
     const { name, input, locale } = stepBody(call.body)
     return okReply(call.route, aiTool(c, String(name), (input ?? {}) as Record<string, unknown>, parseAiLocale(locale)))
   },
+  // P4-T3: the slip salt (S16) and the slip accounts; a mapping is a plain write (S1).
+  'slips.salt': (c, call) => okReply(call.route, slipSalt(c)),
+  'slipAccounts.list': (c, call) => okReply(call.route, listSlipAccounts(c)),
+  'slipAccounts.update': (c, call) => okReply(call.route, updateSlipAccount(c, call)),
 }

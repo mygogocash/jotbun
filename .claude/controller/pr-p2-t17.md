@@ -32,7 +32,9 @@
   - the catalogue's `bw-` sections 110 and the registry rule;
   - `git diff --check`.
 - [x] CI at `fa09a9c0`: 9 of 9, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review (Sonnet): today's total (P6), Undo and its event (P7 and P8), and private mode (P10).
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `fa09a9c0` (`.claude/controller/reviews/P2-T17.md`, `reviews/P2-T17-second.md`), with no blocker or major. Both found the same two minors, which P2-T18 must carry as its first step, before it mounts the host (the host is mounted nowhere but the catalogue until then):
+  - today's total can leave out the save it reports when the draft syncs and leaves the outbox before a slow read lands. The fix is one guard: unknown when the diary has applied past the page's revision;
+  - private mode's iOS announcement is right, but no case holds it.
 - [ ] SKIPPED: device checks:
   - the toast and the chip as the tray's Modal leaves on iOS;
   - VoiceOver hearing the toast and Undo's answer;

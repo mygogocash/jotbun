@@ -14,11 +14,11 @@ const USER_TABLES = "SELECT name FROM sqlite_master WHERE type = 'table' AND nam
 it('a new vault has every core table, migrated once', async () => {
   const stub = vault()
   expect((await sql(stub, USER_TABLES)).map((r) => r.name)).toEqual([...VAULT_CORE_TABLES])
-  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachment_checks', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
+  expect(VAULT_CORE_TABLES).toEqual(['account_state', 'ai_preferences', 'ai_usage', 'attachment_checks', 'attachments', 'audit_events', 'budget_category_limits', 'categories', 'command_receipts', 'consents', 'entity_changes', 'entity_heads', 'exports', 'import_candidates', 'import_parts', 'import_previews', 'import_row_progress', 'import_selection_rows', 'import_selections', 'import_uploads', 'monthly_budgets', 'revoked_sessions', 'schedule', 'settings', 'slip_accounts', 'slip_backfill_uses', 'slip_drafts', 'slip_leases', 'slip_refs', 'slip_salt', 'snapshot_chunks', 'snapshots', 'sync_state', 'transaction_attachments', 'transactions', 'trips', 'vault_objects', 'wallets'])
   // The journal runs in order: idx 0 to n - 1, one key each, and each `when` later than the last, so an upgrade applies every new entry.
   const entries = VAULT_MIGRATIONS.journal.entries
-  // Every migration, in order; each vault migration adds its tag here (P3-T2: 0005_transaction_source).
-  expect(entries.map((entry) => entry.tag)).toEqual(['0000_vault_core', '0001_vault_files', '0002_currencies_trips', '0003_alarm_indexes', '0004_alarm_bounds', '0005_transaction_source'])
+  // Every migration, in order; each vault migration adds its tag here (P3-T2: 0005_transaction_source; P4-T3: 0006_slips).
+  expect(entries.map((entry) => entry.tag)).toEqual(['0000_vault_core', '0001_vault_files', '0002_currencies_trips', '0003_alarm_indexes', '0004_alarm_bounds', '0005_transaction_source', '0006_slips'])
   expect(entries.map((entry) => entry.idx)).toEqual(entries.map((_entry, i) => i))
   expect(Object.keys(VAULT_MIGRATIONS.migrations).sort()).toEqual(entries.map((entry) => `m${String(entry.idx).padStart(4, '0')}`))
   expect(entries.every((entry, i) => i === 0 || entry.when > entries[i - 1].when)).toBe(true)
@@ -43,6 +43,15 @@ it('the Drizzle schema matches the migrated tables column for column', async () 
   // P3-T2 (B2): how a record was made is a TEXT column with no default, NULL until a create names it.
   const source = (await sql(stub, 'PRAGMA table_info(transactions)')).filter((column) => column.name === 'source')
   expect(source.map(({ type, notnull, dflt_value }) => ({ type, notnull, dflt_value }))).toEqual([{ type: 'TEXT', notnull: 0, dflt_value: null }])
+  // P4-T3: the slip a record came from is a TEXT column with no default, NULL until a slip names it, and a key to slip_refs.
+  const slipRef = (await sql(stub, 'PRAGMA table_info(transactions)')).filter((column) => column.name === 'slip_ref_id')
+  expect(slipRef.map(({ type, notnull, dflt_value }) => ({ type, notnull, dflt_value }))).toEqual([{ type: 'TEXT', notnull: 0, dflt_value: null }])
+  expect((await sql(stub, 'PRAGMA foreign_key_list(transactions)')).filter((key) => key.from === 'slip_ref_id').map(({ table, to }) => ({ table, to }))).toEqual([{ table: 'slip_refs', to: 'id' }])
+  // The drafts' reading order, and the merchant index P4-T6's category guess reads (S3).
+  expect(await sql(stub, "SELECT name, sql FROM sqlite_master WHERE type = 'index' AND name IN ('slip_drafts_order_idx', 'transactions_merchant_idx') ORDER BY name")).toEqual([
+    { name: 'slip_drafts_order_idx', sql: 'CREATE INDEX slip_drafts_order_idx ON slip_drafts (occurred_on, occurred_time, id)' },
+    { name: 'transactions_merchant_idx', sql: 'CREATE INDEX transactions_merchant_idx ON transactions (lower(merchant)) WHERE deleted_at IS NULL AND merchant IS NOT NULL' },
+  ])
 })
 
 it('foreign keys hold: a transaction naming an unknown wallet is refused', async () => {

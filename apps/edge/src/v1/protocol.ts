@@ -65,6 +65,8 @@ export type VaultRouteId =
   | 'ai.refund'
   // 1D-T11: the analytics answer's vault half (the Worker adds the analytics id).
   | 'me.analytics'
+  // P4-T3: the slip salt and the slip accounts.
+  | 'slips.salt' | 'slipAccounts.list' | 'slipAccounts.update'
 
 export type VaultCall = {
   route: VaultRouteId

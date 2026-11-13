@@ -49,6 +49,14 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 08:55: #451 (P2-T17) MERGED as `9cdc1f8`; #454 (P3-T8) opened.**
+  - **#451:** both reviews approved `fa09a9c0` and CI was 9 of 9. Both found the same two minors, now a must-carry first step for P2-T18 before it mounts the host:
+    - today's total misses a save that syncs and leaves the outbox before a slow read lands, and Sonnet adds an acknowledged-then-deleted overcount;
+    - private mode's iOS announcement is unpinned.
+    - The probes and Sonnet's prototype fix are copied to `scratch/p2-t17-review/probes/` and `scratch/p2-t17-second/probes/`.
+    - Issue #163 closed, worktree and branch removed, promoted as **#453** (stack #379 holds 40). Followups recorded; the review threads are archived.
+  - **#454 (P3-T8, issue #192)** at `53d24947`: all 16 `real/` files byte-identical; 64 of 64 mutants; the gate passed. PR body `pr-p3-t8.md`. Reviews (notes `scratch/dispatch/P3-T8-review-notes.md`): Opus `mcp:launch:ffed3c45844ecb22108ad5a517d4a5857bed3fc77f560f16e559cf7d0da2d578`, Sonnet `mcp:launch:ad3543a918cee9074f8f42d48931f1c2275ff2329b040ff15c72f00e4cb2c831`. The implementer thread is archived.
+  - **Live now:** the P2-T26 implementer (Haiku); reviews on #452 (with R122) and #454; the P3-T13 and P3-T9 planners. P3-T3 is held behind #452.
 - **13 Nov 08:45: #451 (P2-T17) and #452 (P4-T3) open; P2-T26 and P3-T8 building; P3-T3 READY and held behind P4-T3; P3-T9 planner started.**
   - **#451 (P2-T17, issue #163)** at `fa09a9c0`: all 13 `real/` files byte-identical; 94 of 94 mutants; CI 9 of 9. Reviews: Opus `mcp:launch:d38ed966159074830edb9734f6ec6142b399c0f841de8da323e77d2b61906a38`, Sonnet `mcp:launch:3b5f8a3faca371747a9d248c08c9d7a6cf30224d08cfecc0252426785e92acd1` (notes `scratch/dispatch/P2-T17-review-notes.md`).
   - **#452 (P4-T3, issue #211):**
