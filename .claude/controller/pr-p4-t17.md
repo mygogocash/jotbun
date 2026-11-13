@@ -43,7 +43,7 @@
   Proof: `.claude/controller/scratch/p4-t17-pins/`.
 - [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide.
 - [x] Independent review (Opus), and a second review (Sonnet): privacy (the session hash, the request body, no log or analytics line), the lock and the tap's route, the foreground handler (R126), and the permission. Both approve.
-- [ ] The Opus reviewer confirms `b5458587`.
+- [x] The Opus reviewer confirms `b5458587`: approved. Its own mutants, including no-timer variants of the chain's, are each killed in the intended case, and the order case passed 5 of 5 run alone.
 - [ ] SKIPPED, until D33's EAS project, APNs and FCM: device checks (a real token, delivery, a tap behind the lock, the permission prompt, the foreground handler per OS, Android's channel, an iOS build with `aps-environment`).
 
 Closes #226 once merged (closed by hand, since the base is not the default branch).

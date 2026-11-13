@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 04:00: #466 fully approved: the confirmation of `b5458587` approves.** Eight PRs are now fully approved and wait only on CI. Merge order once runners return:
+  1. #460 P3-T13 (`14da2b4e`)
+  2. #461 P3-T9 (`5cb1055e`)
+  3. #462 source-pins (`d9b4dfb1`)
+  4. #463 P4-T2 (`19ef67fb`)
+  5. #456 P2-T26 (`e4313772`)
+  6. #464 P2-T18a (`7e2ae0dc`)
+  7. #465 P2-T18 (`74142ebc`)
+  8. #466 P4-T17 (`b5458587`)
+
+  #466 shares no file with the others, but `app/_layout.tsx` and `app.json` are hot files, so check a local merge before it goes.
+  - The confirmation (`reviews/P4-T17.md`, "Confirmation of b5458587") reran the files and 19 mutants, including no-timer variants of the chain's, and found nothing new. The #466 Opus thread is archived.
+  - **Live now:** the 1D-T14 planner (R125 rework; its brief was rewritten at 03:07, and the kit is still being re-proved).
 - **14 Nov 03:51: #466 approved twice; the controller's pins pushed as `b5458587` (the Opus reviewer confirms).**
   - **Sonnet (`reviews/P4-T17-second.md`)** found m1 (the sign-out race), m2 (the chain unpinned), m3 (quiet delivery reads as granted, the owner's question) and m4 (one handler unpinned), plus n1 to n4.
   - **Opus (`reviews/P4-T17.md`)** found m1 (the chain unpinned), m2 (quiet delivery read as `granted` by the hook) and m3 (no native config change: `aps-environment` is already at the base; the PR body and the handover are corrected), plus n1 to n3.
