@@ -138,3 +138,25 @@ Every killed run failed exactly one case, on an `AssertionError`, and every muta
 - **CI:** all nine jobs on #462 are queued behind the org-wide block. Merge only once they pass.
 
 VERDICT: Approved
+
+## Confirmation of d9b4dfb1
+
+- **What it is:** one commit on `a5d93d8a`, by the controller, pushed to `fix/source-pins`; it is PR #462's head now, still `MERGEABLE`. It adds one case at the end of the block in `transaction-source.test.ts` (lines 265 to 298) and one receipt line, and changes no source file. `git diff --check origin/claude/p1a-vault-core...d9b4dfb1` is clean.
+- **The case is m1's fix as asked.** A record made with no `source` key goes through an edit, a delete and a restore, then a receipt kept, replaced and removed: versions 2 to 7, each command answering 200.
+  - After each step it records `'source' in` the record read. For the delete, that read is Recently deleted, with a `{ version: 'missing' }` fallback, so a missing item fails on its version.
+  - It compares all six rows at once (line 289), then checks all seven sync snapshots for the key (line 297).
+- **My check:** a fresh `git archive` copy of `d9b4dfb1` at `scratch/source-pins-review/tree-d9b4`, with installs linked from the worktree (clean at the same commit, lockfiles equal), and logs in `runs-d9b4/`. Every run held the heavy lock.
+  - GREEN: `transaction-source.test.ts` 12 passed (12); `tsc --noEmit` in `apps/edge` rc=0, no output.
+  - V5, V6 and V7, rerun on this file alone (C5 to C7): each fails only the new case, on an `AssertionError`, at line 289. The rows flip to `true` from the step each one breaks: the receipt mutant the last 3, the restore mutant the last 4, the edit mutant all 6.
+  - Two more of mine:
+    - C8: the receipt commands' feed snapshot names `photo` while the record has none. It passes the per-step reads and fails only the snapshot check at line 297, so that check works on its own.
+    - C9: a delete fills a missing source. It fails at line 289 from the delete step on, read through Recently deleted.
+    - Both fail only the new case, on an `AssertionError`.
+  - Every mutated file was written back and its SHA-256 checked. After the runs, the copy's `apps/` and `packages/` equal the worktree.
+- **The controller's proof agrees:** `scratch/source-pins-m1/mutants.out` has V5 to V7 each at `1 failed | 11 passed (12)`, restored. Each log fails only the new case, at line 289, on an `AssertionError`, and `green.log` reads 12 passed (12).
+- **Nothing else moves:** only this task's own kit pins the file's SHA-256 (`source-pins-planner/SHA256SUMS.base`, now historical), and no brief in flight expects this file's case count.
+- **Nit (optional):** the receipt's Files line still says the block has "2 cases" (line 4), and its corrections bullet says "11 with this task's 2" (line 29). The new m1 line (line 15) gives the file's 12. A reader can reconcile them; fix them only if the receipt is touched again.
+- **CI:** the nine check runs on `d9b4dfb1` are all queued (the org-wide block). Merge only once they pass.
+- **Result:** m1 is resolved. No blocker, no major.
+
+VERDICT: Approved

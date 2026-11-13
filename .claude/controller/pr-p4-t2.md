@@ -29,7 +29,9 @@
   - `build:edge` (the built `wrangler.json` binds `CATALOG_DB`);
   - `git diff --check`.
 - [ ] CI on this pull request is green: the nine jobs, with the whole workers suite. Note: GitHub Actions is queued org-wide.
-- [ ] Independent review (Opus).
+- [x] Independent review (Opus): **approved** on `4e95b987` (`.claude/controller/reviews/P4-T2.md`), with no blocker or major. Its m1: the whole-word rule was unheld at a word's start and beside Thai (MY1 and MY2 survived).
+- [x] **The controller added m1's three rows, `19ef67fb` (test-only):** `SUPERMAKRO` and `ร้าน Makrobiotic` match nothing, and `ร้าน MAKRO บางนา` is shopping. `catalog.test.ts` passes 10 of 10 under the heavy lock, and MY1 and MY2 are each killed on an assertion (`.claude/controller/scratch/p4-t2-m1/`). Nits n1 to n3 are carried in `followups.md`.
+- [ ] The reviewer's confirmation of `19ef67fb`.
 - [ ] SKIPPED: the hosted D1 database (the owner's resource).
 
 Closes #210 once merged (closed by hand, since the base is not the default branch).
