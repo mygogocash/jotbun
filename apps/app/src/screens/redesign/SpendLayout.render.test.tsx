@@ -31,7 +31,7 @@ import { spendTab } from './SpendTabShell';
 
 const nav = vi.hoisted(() => ({
   pathname: '/spend',
-  params: {} as Record<string, string>,
+  params: {} as Record<string, string | string[]>,
   // The route the Slot draws; the stand-in screen unless a case names one.
   slot: null as ComponentType | null,
   router: { push: vi.fn(), navigate: vi.fn(), replace: vi.fn(), back: vi.fn() },
@@ -437,6 +437,22 @@ test('/spend/add?type=income in the wallet area opens the income tray over Home'
     expect([nav.router.replace.mock.calls, nav.router.push.mock.calls], JSON.stringify(flag)).toEqual([[], []]);
     cleanup();
   }
+});
+
+test('a link to /spend/add is read through addRequestOf: an unknown type, an amount, an empty id and a list open the plain spending tray with nothing from the link', async () => {
+  // A deep link is untrusted text: only what addRequestOf accepts reaches the tray.
+  const wallet: WalletSnapshot = { id: '0000000a-0000-4000-8000-000000000001', name: 'เงินสด', currency: 'THB', opening_minor: '0', tracking_start: '2026-01-01', archived: false, version: 1 };
+  flags({ redesign: 'wallet' });
+  shared.resources = createFakeResources({ wallets: [wallet], categories: BUILTINS }).resources;
+  nav.pathname = '/spend/add';
+  nav.params = { type: 'refund', amount: '999999', walletId: '', copyOf: ['a', 'b'], note: 'x' };
+  nav.slot = SpendAddRoute;
+  mount(<SpendLayout />, 'th');
+  await settle();
+  startAnimations();
+  theOne('dialog', 'จดรายจ่าย');
+  expect(screen.queryAllByTestId('add-amount').map((amount) => amount.textContent)).toEqual(['฿0']);
+  expect(nav.router.replace.mock.calls).toEqual([['/spend']]);
 });
 
 test("a record's copy linked to /spend/add in the wallet area opens in the shell's tray, never today's Quick add", async () => {

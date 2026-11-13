@@ -96,3 +96,11 @@ test('the app mounts one add tray host for its life: the wallet shell\'s', () =>
     .flatMap((path) => readFileSync(join(appRoot, path), 'utf8').match(/<AddTrayHost\b/g)?.map(() => path) ?? []);
   assert.deepEqual(mounts, ['src/wallet/home/WalletShell.tsx']);
 });
+
+test('only the spend layout mounts a wallet shell, so no route nests a second host inside it', () => {
+  const mounts = [...appSources(join(appRoot, 'app')), ...appSources(join(appRoot, 'src'))]
+    .map((path) => relative(appRoot, path).split(sep).join('/'))
+    .filter((path) => !path.startsWith('src/dev/catalogue/') && !path.includes('/testing/'))
+    .flatMap((path) => readFileSync(join(appRoot, path), 'utf8').match(/<WalletShell\b/g)?.map(() => path) ?? []);
+  assert.deepEqual(mounts, ['app/spend/_layout.tsx']);
+});

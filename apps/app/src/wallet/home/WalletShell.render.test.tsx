@@ -237,12 +237,20 @@ test('the bar has กระเป๋า and สรุป as tabs and ฉัน a
         // The selected item in ink, the others quiet on the ground; the labels stop at iOS's largest standard size.
         const labels = within(found('wallet-tab-bar')).queryAllByText(new RegExp(`^(${words.wallets}|${words.insights}|${words.me})$`));
         expect(labels.map((label) => label.style.color), at).toEqual([rgb(colors.ink), rgb(colors.quietOnGround), rgb(colors.quietOnGround)]);
+        // The icons follow too (at the largest sizes the labels hide, and an icon's colour is the only cue left).
+        const icons = [words.wallets, words.insights, words.me].map((name) => {
+          const item = within(found('wallet-tab-bar')).queryAllByLabelText(name)[0];
+          return item?.querySelector('rect')?.getAttribute('fill') ?? item?.querySelector('path, circle')?.getAttribute('stroke');
+        });
+        expect(icons, at).toEqual([colors.ink, colors.quietOnGround, colors.quietOnGround]);
         // A tablist row under the screen, above the phone's own bottom inset (34 pt here).
         expect([found('wallet-tab-bar').getAttribute('role'), found('wallet-tab-bar').style.paddingBottom], at).toEqual(['tablist', '34px']);
         // The + : 60 pt, primary, named จดรายการ, at the bottom right of the screen and above the bar.
         const add = named('button', words.add);
         expect([add.style.width, add.style.height, add.style.backgroundColor], at).toEqual(['60px', '60px', rgb(colors.primary)]);
         expect([add.style.position, add.style.right, add.style.bottom], at).toEqual(['absolute', '18px', '16px']);
+        // Its + in onPrimary (primary equals ink in both palettes, so an ink + would not be seen), lifted by day only.
+        expect([add.querySelector('path')?.getAttribute('stroke'), add.style.boxShadow !== ''], at).toEqual([colors.onPrimary, mode === 'light']);
         expect(add.getAttribute('aria-disabled'), at).toBeNull();
         expect(found('wallet-shell').contains(found('wallet-tab-bar')), at).toBe(true);
         expect(add.compareDocumentPosition(found('wallet-tab-bar')) & Node.DOCUMENT_POSITION_FOLLOWING, at).toBeTruthy();
@@ -333,7 +341,8 @@ test("a save's chip drops into its wallet's card on the screen: the card frames 
   tap(named('button', 'ถัดไป'));
   tap(named('button', 'บันทึก'));
   await waitFor(() => expect(screen.queryAllByTestId('save-flight')).toHaveLength(1));
-  expect(found('save-flight').textContent).toContain('−฿50');
+  // The chip names the save's category, in Thai (the save's lookups and tc reach the notice), and its amount.
+  expect(found('save-flight').textContent).toBe('อาหาร−฿50');
 });
 
 test("in private mode the shell's toast masks today's money out and quotes nothing typed", async () => {
@@ -363,6 +372,8 @@ test('a draft paused for an update, or an update-required outcome, disables the 
       await mount({ diary: diary.diary });
       const add = named('button', 'จดรายการ');
       expect(add.getAttribute('aria-disabled'), label).toBe('true');
+      // Dimmed too: the only sign a sighted person gets that the + is off.
+      expect(add.style.opacity, label).toBe('0.4');
       fireEvent.click(add);
       const magicTap = magicTapOfRoot();
       expect(typeof magicTap, label).toBe('function');
