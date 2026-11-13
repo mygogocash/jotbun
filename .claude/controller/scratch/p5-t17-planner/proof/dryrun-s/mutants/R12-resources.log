@@ -1,0 +1,91 @@
+$ node scripts/test-unit.mjs src/spend/v1/resources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app)
+(node:51138) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51138) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (10.007458ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.222958ms)
+✔ commands send their key, the command schema and If-Match with the exact body (3.451917ms)
+✔ a lost response is retried as the same immutable command (257.553583ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (4.612416ms)
+✔ problems map to outcomes a screen can act on (6.498584ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.1275ms)
+✔ history builds its query from the filter; a month without a budget is null (0.750125ms)
+✔ totals may name their currency (0.7965ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (3.004125ms)
+✔ only https, or loopback http, API addresses are accepted (0.202958ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.595917ms)
+✔ a sign-out during a command retry stops resending (252.567875ms)
+✔ an acknowledgement for another command or entity is refused (1.284834ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.59325ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (0.734792ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.154417ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.306708ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (2.1605ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.340209ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.659208ms)
+✔ a yen create sends its money fields (0.738625ms)
+✔ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (3.671ms)
+✔ the home currency is changed with If-Match only when a version is known (0.882ms)
+✔ the home currency preview is read for the currency asked and checked against its validator (0.837458ms)
+✖ today's rates answer unchanged for the cached ETag (1.675834ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 25
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 689.10475
+
+✖ failing tests:
+
+test at src/spend/v1/resources.test.ts:521:1
+✖ today's rates answer unchanged for the cached ETag (1.675834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      [
+        'GET',
+        '/v1/rates/today',
+        null
+  ...
+        '/v1/rates/today',
+  +     null
+  -     '"r3"'
+      ],
+      [
+        'GET',
+        '/v1/rates/today',
+  +     null
+  -     '"r3"'
+      ],
+      [
+        'GET',
+        '/v1/rates/today',
+        null
+  ...
+        '/v1/rates/today',
+  +     null
+  -     '"r3"'
+      ]
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts:532:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', null ] ],
+    expected: [ [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', '"r3"' ], [ 'GET', '/v1/rates/today', '"r3"' ], [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', '"r3"' ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

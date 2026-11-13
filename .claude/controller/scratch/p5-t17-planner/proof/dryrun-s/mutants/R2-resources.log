@@ -1,0 +1,78 @@
+$ node scripts/test-unit.mjs src/spend/v1/resources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app)
+(node:50108) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:50108) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (9.749875ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.220958ms)
+✔ commands send their key, the command schema and If-Match with the exact body (3.587375ms)
+✔ a lost response is retried as the same immutable command (255.841ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (2.176833ms)
+✔ problems map to outcomes a screen can act on (4.612708ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.096958ms)
+✔ history builds its query from the filter; a month without a budget is null (0.773542ms)
+✔ totals may name their currency (0.877333ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (2.942041ms)
+✔ only https, or loopback http, API addresses are accepted (0.200833ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.565042ms)
+✔ a sign-out during a command retry stops resending (253.05175ms)
+✔ an acknowledgement for another command or entity is refused (5.881416ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.623958ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (0.687375ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.219875ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.055917ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.880292ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.227791ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.625542ms)
+✔ a yen create sends its money fields (0.59475ms)
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (2.49625ms)
+✔ the home currency is changed with If-Match only when a version is known (1.307ms)
+✔ the home currency preview is read for the currency asked and checked against its validator (1.193958ms)
+✔ today's rates answer unchanged for the cached ETag (1.29525ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 25
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 695.78625
+
+✖ failing tests:
+
+test at src/spend/v1/resources.test.ts:442:1
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (2.49625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      [
+        'POST',
+        '/v1/trips',
+  -     '51793ae2-b2ec-42e2-9bb8-13eb1096528d',
+  -     '1',
+        null,
+  +     null,
+  +     null,
+        {
+          budget_minor: '120000',
+          currency: 'JPY',
+          ends_on: '2026-11-08',
+          id: '7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/resources.test.ts:460:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ 'POST', '/v1/trips', null, null, null, [Object] ], [ 'PATCH', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', '9bc783d0-f2e5-45e2-ad0c-59650d133d2e', '1', '"1"', [Object] ], [ 'DELETE', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', '0cd93ee0-2f9c-4680-ada0-7f110f7cbd98', '1', '"2"', null ], [ 'GET', '/v1/trips', null, null, null, null ], [ 'GET', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/summary', null, null, null, null ] ],
+    expected: [ [ 'POST', '/v1/trips', '51793ae2-b2ec-42e2-9bb8-13eb1096528d', '1', null, [Object] ], [ 'PATCH', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', '9bc783d0-f2e5-45e2-ad0c-59650d133d2e', '1', '"1"', [Object] ], [ 'DELETE', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', '0cd93ee0-2f9c-4680-ada0-7f110f7cbd98', '1', '"2"', null ], [ 'GET', '/v1/trips', null, null, null, null ], [ 'GET', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/summary', null, null, null, null ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

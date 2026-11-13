@@ -1,0 +1,6 @@
+459abd2a117ecf0b83c436288549626e1772e60af3fc7f680311fd5976949162  apps/app/src/api/client.ts
+8c73d12290b4ff886c131db9bf14636fc59950490cd7a336cf6e1174e9256ea1  apps/app/src/api/client.test.ts
+4dc740631ec170c61185ddae323eeaa061043c217da202f54befc565841d844b  apps/app/src/spend/v1/resources.ts
+365a9e46fcc6c63e4f26e41b19578f4de53b4983145b7513dbc0dc0fae177d8e  apps/app/src/spend/v1/resources.test.ts
+2f494855c2f625e26f39f116e0b3c5d579c6d1a50c62235d84d87e3bcdf9fd23  apps/app/src/spend/v1/testing/fakeResources.ts
+1eb8fd86e9288511eb9f6ef8956aded1e97b16f0513bcdd001cf2019b5561bfe  apps/app/src/storage/diaryRepository.test.ts

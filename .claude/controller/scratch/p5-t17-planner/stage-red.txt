@@ -1,0 +1,9 @@
+S apps/app/src/api/client.ts
+S apps/app/src/spend/v1/resources.ts
+S apps/app/src/spend/v1/ratesCache.ts
+S apps/app/src/spend/v1/testing/fakeResources.ts
+R apps/app/src/api/client.test.ts
+R apps/app/src/spend/v1/resources.test.ts
+R apps/app/src/spend/v1/ratesCache.test.ts
+R apps/app/src/spend/v1/testing/fakeResources.test.ts
+R apps/app/src/storage/diaryRepository.test.ts

@@ -1,0 +1,85 @@
+$ node scripts/test-unit.mjs src/spend/v1/resources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:74954) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:74954) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (10.367667ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.236666ms)
+✔ commands send their key, the command schema and If-Match with the exact body (3.90725ms)
+✔ a lost response is retried as the same immutable command (254.460292ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (1.913792ms)
+✔ problems map to outcomes a screen can act on (4.295583ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.098375ms)
+✔ history builds its query from the filter; a month without a budget is null (0.6765ms)
+✔ totals may name their currency (0.729708ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (2.841291ms)
+✔ only https, or loopback http, API addresses are accepted (0.221334ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.630541ms)
+✔ a sign-out during a command retry stops resending (252.217875ms)
+✔ an acknowledgement for another command or entity is refused (0.936708ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.564666ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (0.709083ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.383584ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.108584ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.931541ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.177416ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.584417ms)
+✔ a yen create sends its money fields (0.625375ms)
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (4.075083ms)
+✔ the home currency is changed with If-Match only when a version is known (0.993583ms)
+✔ the home currency preview is read for the currency asked and checked against its validator (0.757417ms)
+✔ today's rates answer unchanged for the cached ETag (1.257625ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 25
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 694.2095
+
+✖ failing tests:
+
+test at src/spend/v1/resources.test.ts:442:1
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (4.075083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      [
+        'invalid_response',
+        'invalid_response',
+  +     {
+  +       command_id: '53647570-37a0-4ed5-b9e0-a5ff040ec97c',
+  +       committed_revision: '7',
+  +       entity_id: '8aa15dea-4bbb-4126-92e0-53ac38c665b1',
+  +       entity_state: 'deleted',
+  +       outcome: 'deleted',
+  +       version: 3
+  +     },
+        'invalid_response',
+        'invalid_response',
+        'invalid_response',
+  -     'invalid_response',
+        'invalid',
+        'invalid',
+        'invalid'
+      ],
+      0
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts:486:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ 'invalid_response', 'invalid_response', [Object], 'invalid_response', 'invalid_response', 'invalid_response', 'invalid', 'invalid', 'invalid' ], 0 ],
+    expected: [ [ 'invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid', 'invalid', 'invalid' ], 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

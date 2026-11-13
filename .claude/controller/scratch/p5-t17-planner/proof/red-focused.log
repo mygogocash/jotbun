@@ -1,0 +1,965 @@
+(node:49391) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.336834ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (11.651875ms)
+✔ multipart uploads let the runtime generate a matching boundary (2.320083ms)
+✔ server failures stay failures with their actionable code (1.006292ms)
+✔ absolute URLs cannot receive session credentials (0.132917ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.431167ms)
+✔ a v1 request with no session id is refused before anything is sent (0.186458ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (0.9565ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (0.621833ms)
+✔ a response from the previous account cannot become the current diary (0.975417ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (2.790625ms)
+✖ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.972ms)
+(node:49392) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ a refresh stores a new set with its ETag (1.322792ms)
+✖ a 304 or a failure keeps the cache (0.365625ms)
+✖ a damaged cache reads as none (0.143458ms)
+✖ a refresh never fails: a store that cannot be read or written still answers the new set (0.094ms)
+(node:49393) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49393) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (11.979375ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.269ms)
+✔ commands send their key, the command schema and If-Match with the exact body (3.903834ms)
+✔ a lost response is retried as the same immutable command (255.399125ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (1.96625ms)
+✔ problems map to outcomes a screen can act on (4.788417ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.125ms)
+✔ history builds its query from the filter; a month without a budget is null (1.275959ms)
+✔ totals may name their currency (1.088125ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (2.725334ms)
+✔ only https, or loopback http, API addresses are accepted (0.224792ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.719125ms)
+✔ a sign-out during a command retry stops resending (252.951083ms)
+✔ an acknowledgement for another command or entity is refused (1.697292ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.840583ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (0.9185ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.761042ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.004375ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.339292ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.161958ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.572833ms)
+✔ a yen create sends its money fields (0.501167ms)
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (0.962333ms)
+✖ the home currency is changed with If-Match only when a version is known (0.159166ms)
+✖ the home currency preview is read for the currency asked and checked against its validator (0.12775ms)
+✖ today's rates answer unchanged for the cached ETag (0.102833ms)
+(node:49394) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49394) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (1.785875ms)
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.405959ms)
+✖ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.483709ms)
+✖ the fake changes the home currency with versions, and previews from its records (0.21325ms)
+(node:49395) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49395) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (23.929792ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (2.421333ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (2.961542ms)
+✔ a pending entry may carry a source, and an unknown one is refused (2.7455ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (22.077958ms)
+✔ a page fetched before the cursor moved is refused, never written back (2.276166ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (2.743584ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (1.5005ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (25.578542ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (2.645042ms)
+✔ stores exact integer strings and no credentials (1.932583ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (2.138834ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (1.348959ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (1.474458ms)
+✔ a build that knows the import entities stores them (1.544709ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (3.620417ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (1.863125ms)
+✔ logged days are the distinct dates of live records and drafts (1.822083ms)
+✔ the applied revision is read without loading the diary (1.808459ms)
+✔ a pending choice is kept, replaced per record and dropped (5.181916ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (1.217375ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (5.099416ms)
+✔ choices survive a lock and reopen, and go with the erase (3.1795ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (2.494292ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (4.247167ms)
+ℹ tests 71
+ℹ suites 0
+ℹ pass 58
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 705.271417
+
+✖ failing tests:
+
+test at src/api/client.test.ts:177:1
+✖ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.972ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      null,
+  -   '"a1"',
+  -   '"a1"',
+      null,
+  -   '"a2"',
+      null,
+  +   null,
+  +   null,
+  +   null
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/api/client.test.ts:224:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ null, null, null, null, null, null ],
+    expected: [ null, '"a1"', '"a1"', null, '"a2"', null ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/ratesCache.test.ts:59:1
+✖ a refresh stores a new set with its ETag (1.322792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      },
+  +   null
+  -   {
+  -     etag: '"r2"',
+  -     rates: {
+  -       as_of: '2026-11-02',
+  -       base: 'USD',
+  -       rates: {
+  -         JPY: {
+  -           day: '2026-11-02',
+  -           per_base: '150'
+  -         },
+  -         THB: {
+  -           day: '2026-11-02',
+  -           per_base: '34.62'
+  -         }
+  -       }
+  -     }
+  -   }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts:65:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { value: null }, null ],
+    expected: [ { value: [Object] }, { etag: '"r2"', rates: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/ratesCache.test.ts:73:1
+✖ a 304 or a failure keeps the cache (0.365625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      },
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      },
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      },
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts:79:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { value: null }, { value: null }, { value: null }, { value: null } ],
+    expected: [ { value: [Object] }, { value: [Object] }, { value: [Object] }, { value: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/ratesCache.test.ts:84:1
+✖ a damaged cache reads as none (0.143458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   value: null
+  -   value: {
+  -     etag: '"r2"',
+  -     rates: {
+  -       as_of: '2026-11-02',
+  -       base: 'USD',
+  -       rates: {
+  -         JPY: {
+  -           day: '2026-11-02',
+  -           per_base: '150'
+  -         },
+  -         THB: {
+  -           day: '2026-11-02',
+  -           per_base: '34.62'
+  -         }
+  -       }
+  -     }
+  -   }
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts:87:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { value: null },
+    expected: { value: { etag: '"r2"', rates: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/ratesCache.test.ts:104:1
+✖ a refresh never fails: a store that cannot be read or written still answers the new set (0.094ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   value: null
+  -   value: {
+  -     etag: '"r3"',
+  -     rates: {
+  -       as_of: '2026-11-03',
+  -       base: 'USD',
+  -       rates: {
+  -         JPY: {
+  -           day: '2026-11-03',
+  -           per_base: '150'
+  -         },
+  -         THB: {
+  -           day: '2026-11-03',
+  -           per_base: '34.68'
+  -         }
+  -       }
+  -     }
+  -   }
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts:107:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { value: null },
+    expected: { value: { etag: '"r3"', rates: [Object] } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/resources.test.ts:442:1
+✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (0.962333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     'POST',
+  -     '/v1/trips',
+  -     '46b9d98f-3a65-46b2-b16d-5372517cfa91',
+  -     '1',
+  -     null,
+  -     {
+  -       budget_minor: '120000',
+  -       currency: 'JPY',
+  -       ends_on: '2026-11-08',
+  -       id: '7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+  -       name: 'ทริปญี่ปุ่น',
+  -       starts_on: '2026-11-01'
+  -     }
+  -   ],
+  -   [
+  -     'PATCH',
+  -     '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+  -     '4238db91-f53f-4a6a-99c0-7c284d1e3f37',
+  -     '1',
+  -     '"1"',
+  -     {
+  -       ends_on: '2026-11-09'
+  -     }
+  -   ],
+  -   [
+  -     'DELETE',
+  -     '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+  -     'ade04920-9231-4b0d-bf46-cfbcc714c61c',
+  -     '1',
+  -     '"2"',
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/trips',
+  -     null,
+  -     null,
+  -     null,
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/summary',
+  -     null,
+  -     null,
+  -     null,
+  -     null
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts:460:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ 'POST', '/v1/trips', '46b9d98f-3a65-46b2-b16d-5372517cfa91', '1', null, [Object] ], [ 'PATCH', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', '4238db91-f53f-4a6a-99c0-7c284d1e3f37', '1', '"1"', [Object] ], [ 'DELETE', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', 'ade04920-9231-4b0d-bf46-cfbcc714c61c', '1', '"2"', null ], [ 'GET', '/v1/trips', null, null, null, null ], [ 'GET', '/v1/trips/7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d/summary', null, null, null, null ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/resources.test.ts:489:1
+✖ the home currency is changed with If-Match only when a version is known (0.159166ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     'PUT',
+  -     '/v1/me/home-currency',
+  -     '6340316a-6d3e-4a6e-a74b-4cb2235c3f86',
+  -     '1',
+  -     null,
+  -     {
+  -       currency: 'JPY'
+  -     }
+  -   ],
+  -   [
+  -     'PUT',
+  -     '/v1/me/home-currency',
+  -     '56598181-4890-49b3-91e2-55ef1ad41c0a',
+  -     '1',
+  -     '"1"',
+  -     {
+  -       currency: 'USD'
+  -     }
+  -   ],
+  -   [
+  -     'PUT',
+  -     '/v1/me/home-currency',
+  -     '694319d4-2770-4dea-a42c-5fb231cf4e91',
+  -     '1',
+  -     '"2"',
+  -     {
+  -       currency: 'THB'
+  -     }
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts:499:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ 'PUT', '/v1/me/home-currency', '6340316a-6d3e-4a6e-a74b-4cb2235c3f86', '1', null, [Object] ], [ 'PUT', '/v1/me/home-currency', '56598181-4890-49b3-91e2-55ef1ad41c0a', '1', '"1"', [Object] ], [ 'PUT', '/v1/me/home-currency', '694319d4-2770-4dea-a42c-5fb231cf4e91', '1', '"2"', [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/resources.test.ts:508:1
+✖ the home currency preview is read for the currency asked and checked against its validator (0.12775ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     'GET',
+  -     '/v1/me/home-currency/preview?currency=JPY',
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/me/home-currency/preview?currency=JPY',
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/me/home-currency/preview?currency=J%26Y',
+  -     null
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts:513:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ 'GET', '/v1/me/home-currency/preview?currency=JPY', null ], [ 'GET', '/v1/me/home-currency/preview?currency=JPY', null ], [ 'GET', '/v1/me/home-currency/preview?currency=J%26Y', null ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/resources.test.ts:521:1
+✖ today's rates answer unchanged for the cached ETag (0.102833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   [
+  -     'GET',
+  -     '/v1/rates/today',
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/rates/today',
+  -     '"r3"'
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/rates/today',
+  -     '"r3"'
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/rates/today',
+  -     null
+  -   ],
+  -   [
+  -     'GET',
+  -     '/v1/rates/today',
+  -     '"r3"'
+  -   ]
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts:532:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', '"r3"' ], [ 'GET', '/v1/rates/today', '"r3"' ], [ 'GET', '/v1/rates/today', null ], [ 'GET', '/v1/rates/today', '"r3"' ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/testing/fakeResources.test.ts:29:1
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (1.785875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     code: 'NOT_BUILT',
+  -     code: 'VALIDATION_FAILED',
+  -     fields: {
+  -       starts_on: 'errors.trip_overlap'
+  -     },
+        outcome: 'invalid',
+  +     status: 0
+  -     status: 422
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     command_id: 'k2',
+  -     committed_revision: '11',
+  -     entity_id: '7a000000-0000-4000-8000-000000000004',
+  -     entity_state: 'active',
+  -     outcome: 'created',
+  -     version: 1
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     command_id: 'k3',
+  -     committed_revision: '12',
+  -     entity_id: '7a000000-0000-4000-8000-000000000003',
+  -     entity_state: 'active',
+  -     outcome: 'created',
+  -     version: 1
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'VERSION_CONFLICT',
+  -     current: {
+  -       budget_minor: '120000',
+  -       currency: 'JPY',
+  -       deleted_at: null,
+  -       ends_on: '2026-11-08',
+  -       id: '7a000000-0000-4000-8000-000000000001',
+  -       name: 'ทริปญี่ปุ่น',
+  -       starts_on: '2026-11-01',
+  -       version: 1
+  -     },
+  -     outcome: 'conflict',
+  -     status: 409
+      },
+      {
+  +     code: 'NOT_BUILT',
+  -     code: 'VALIDATION_FAILED',
+  -     fields: {
+  -       ends_on: 'errors.trip_overlap'
+  -     },
+        outcome: 'invalid',
+  +     status: 0
+  -     status: 422
+      },
+      {
+  +     code: 'NOT_BUILT',
+  -     code: 'VALIDATION_FAILED',
+  -     fields: {
+  -       starts_on: 'errors.trip_overlap'
+  -     },
+        outcome: 'invalid',
+  +     status: 0
+  -     status: 422
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     command_id: 'k7',
+  -     committed_revision: '13',
+  -     entity_id: '7a000000-0000-4000-8000-000000000001',
+  -     entity_state: 'active',
+  -     outcome: 'updated',
+  -     version: 2
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'VERSION_CONFLICT',
+  -     current: {
+  -       budget_minor: null,
+  -       currency: 'JPY',
+  -       deleted_at: null,
+  -       ends_on: '2026-11-08',
+  -       id: '7a000000-0000-4000-8000-000000000001',
+  -       name: 'ทริปโตเกียว',
+  -       starts_on: '2026-11-01',
+  -       version: 2
+  -     },
+  -     outcome: 'conflict',
+  -     status: 409
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     command_id: 'k9',
+  -     committed_revision: '14',
+  -     entity_id: '7a000000-0000-4000-8000-000000000001',
+  -     entity_state: 'deleted',
+  -     outcome: 'deleted',
+  -     version: 3
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'ENTITY_DELETED',
+  -     outcome: 'deleted',
+  -     status: 409
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'NOT_FOUND',
+  -     outcome: 'not_found',
+  -     status: 404
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:52:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' } ],
+    expected: [ { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k2', entity_id: '7a000000-0000-4000-8000-000000000004', version: 1, committed_revision: '11', outcome: 'created', entity_state: 'active' }, { command_id: 'k3', entity_id: '7a000000-0000-4000-8000-000000000003', version: 1, committed_revision: '12', outcome: 'created', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k7', entity_id: '7a000000-0000-4000-8000-000000000001', version: 2, committed_revision: '13', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { command_id: 'k9', entity_id: '7a000000-0000-4000-8000-000000000001', version: 3, committed_revision: '14', outcome: 'deleted', entity_state: 'deleted' }, { outcome: 'deleted', status: 409, code: 'ENTITY_DELETED' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/testing/fakeResources.test.ts:112:1
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.405959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   code: 'NOT_BUILT',
+  +   outcome: 'invalid',
+  +   status: 0
+  -   as_of_revision: '10',
+  -   categories: [
+  -     {
+  -       category_id: '2c000000-0000-4000-8000-000000000002',
+  -       other_home_minor: '0',
+  -       spent_home_minor: '184178',
+  -       spent_trip_minor: '7980'
+  -     },
+  -     {
+  -       category_id: '2c000000-0000-4000-8000-000000000001',
+  -       other_home_minor: '0',
+  -       spent_home_minor: '106216',
+  -       spent_trip_minor: '4600'
+  -     },
+  -     {
+  -       category_id: '2c000000-0000-4000-8000-000000000000',
+  -       other_home_minor: '74550',
+  -       spent_home_minor: '74550',
+  -       spent_trip_minor: '0'
+  -     },
+  -     {
+  -       category_id: '2c000000-0000-4000-8000-000000000003',
+  -       other_home_minor: '74550',
+  -       spent_home_minor: '74550',
+  -       spent_trip_minor: '0'
+  -     }
+  -   ],
+  -   count: 8,
+  -   days: [
+  -     {
+  -       date: '2026-11-02',
+  -       other_home_minor: '0',
+  -       spent_home_minor: '262650',
+  -       spent_trip_minor: '11380'
+  -     },
+  -     {
+  -       date: '2026-11-03',
+  -       other_home_minor: '74550',
+  -       spent_home_minor: '102294',
+  -       spent_trip_minor: '1200'
+  -     },
+  -     {
+  -       date: '2026-11-04',
+  -       other_home_minor: '74550',
+  -       spent_home_minor: '74550',
+  -       spent_trip_minor: '0'
+  -     }
+  -   ],
+  -   home_currency: 'THB',
+  -   rates: [
+  -     {
+  -       currency: 'JPY',
+  -       date: '2026-11-02',
+  -       rate: '0.2308',
+  -       rate_date: '2026-11-02',
+  -       rate_source: 'reference'
+  -     },
+  -     {
+  -       currency: 'JPY',
+  -       date: '2026-11-03',
+  -       rate: '0.2312',
+  -       rate_date: '2026-11-03',
+  -       rate_source: 'reference'
+  -     },
+  -     {
+  -       currency: 'USD',
+  -       date: '2026-11-03',
+  -       rate: '34.68',
+  -       rate_date: '2026-11-03',
+  -       rate_source: 'reference'
+  -     }
+  -   ],
+  -   totals: {
+  -     other_home_minor: '149100',
+  -     spent_home_minor: '439494',
+  -     spent_trip_minor: '12580'
+  -   },
+  -   trip: {
+  -     budget_minor: '120000',
+  -     currency: 'JPY',
+  -     deleted_at: null,
+  -     ends_on: '2026-11-08',
+  -     id: '7a000000-0000-4000-8000-000000000001',
+  -     name: 'ทริปญี่ปุ่น',
+  -     starts_on: '2026-11-01',
+  -     version: 1
+  -   }
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:114:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { outcome: 'invalid', status: 0, code: 'NOT_BUILT' },
+    expected: { trip: { id: '7a000000-0000-4000-8000-000000000001', name: 'ทริปญี่ปุ่น', currency: 'JPY', starts_on: '2026-11-01', ends_on: '2026-11-08', budget_minor: '120000', deleted_at: null, version: 1 }, home_currency: 'THB', count: 8, totals: { spent_home_minor: '439494', spent_trip_minor: '12580', other_home_minor: '149100' }, days: [ [Object], [Object], [Object] ], categories: [ [Object], [Object], [Object], [Object] ], rates: [ [Object], [Object], [Object] ], as_of_revision: '10' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/testing/fakeResources.test.ts:151:1
+✖ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.483709ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'SERVICE_UNAVAILABLE',
+  -     outcome: 'unavailable',
+  -     retryAfterSeconds: 300,
+  -     status: 503
+      },
+      [
+        {
+  +       code: 'NOT_BUILT',
+  +       outcome: 'invalid',
+  +       status: 0
+  -       etag: null,
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+        },
+  -     'unchanged',
+        {
+  +       code: 'NOT_BUILT',
+  +       outcome: 'invalid',
+  +       status: 0
+  -       etag: null,
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+        },
+  +     {
+  +       code: 'NOT_BUILT',
+  +       outcome: 'invalid',
+  +       status: 0
+  +     }
+      ],
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     etag: null,
+  -     rates: {
+  -       as_of: '2026-11-03',
+  -       base: 'USD',
+  -       rates: {
+  -         JPY: {
+  -           day: '2026-11-03',
+  -           per_base: '150'
+  -         },
+  -         THB: {
+  -           day: '2026-11-03',
+  -           per_base: '34.68'
+  -         }
+  -       }
+  -     }
+      },
+      {
+  +     code: 'NOT_BUILT',
+  +     outcome: 'invalid',
+  +     status: 0
+  -     code: 'SERVICE_UNAVAILABLE',
+  -     outcome: 'unavailable',
+  -     retryAfterSeconds: 300,
+  -     status: 503
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:162:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, [ [Object], [Object], [Object] ], { outcome: 'invalid', status: 0, code: 'NOT_BUILT' }, { outcome: 'invalid', status: 0, code: 'NOT_BUILT' } ],
+    expected: [ { outcome: 'unavailable', status: 503, code: 'SERVICE_UNAVAILABLE', retryAfterSeconds: 300 }, [ [Object], 'unchanged', [Object] ], { etag: null, rates: [Object] }, { outcome: 'unavailable', status: 503, code: 'SERVICE_UNAVAILABLE', retryAfterSeconds: 300 } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/testing/fakeResources.test.ts:172:1
+✖ the fake changes the home currency with versions, and previews from its records (0.21325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   code: 'NOT_BUILT',
+  +   outcome: 'invalid',
+  +   status: 0
+  -   budgets: 2,
+  -   currency: 'JPY',
+  -   own_rates: 2,
+  -   records: 5
+    }
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:182:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { outcome: 'invalid', status: 0, code: 'NOT_BUILT' },
+    expected: { currency: 'JPY', records: 5, own_rates: 2, budgets: 2 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

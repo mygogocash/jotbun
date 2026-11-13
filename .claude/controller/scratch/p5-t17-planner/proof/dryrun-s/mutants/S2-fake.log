@@ -1,0 +1,55 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app)
+(node:53448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:53448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ the fake keeps trips with versions and refuses an overlap on create and edit (4.506625ms)
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.768916ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.164333ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.257209ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 129.854125
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:112:1
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.768916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+        code: 'NOT_FOUND',
+        outcome: 'not_found',
+        status: 404
+      },
+      {
+  +     thrown: 'TypeError'
+  -     code: 'NOT_FOUND',
+  -     outcome: 'not_found',
+  -     status: 404
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/testing/fakeResources.test.ts:137:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { outcome: 'not_found', status: 404, code: 'NOT_FOUND' }, { thrown: 'TypeError' } ],
+    expected: [ { outcome: 'not_found', status: 404, code: 'NOT_FOUND' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

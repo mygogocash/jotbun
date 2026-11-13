@@ -1,0 +1,4 @@
+apps/app/src/spend/v1/ratesCache.ts
+apps/app/src/spend/v1/ratesCache.test.ts
+apps/app/src/spend/v1/testing/fakeResources.test.ts
+docs/implementation/receipts/P5-T17.md

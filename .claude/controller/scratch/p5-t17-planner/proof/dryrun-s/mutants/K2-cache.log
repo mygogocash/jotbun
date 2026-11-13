@@ -1,0 +1,67 @@
+$ node scripts/test-unit.mjs src/spend/v1/ratesCache.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app)
+(node:52367) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/ratesCache.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:52367) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ a refresh stores a new set with its ETag (0.845167ms)
+✖ a 304 or a failure keeps the cache (0.999209ms)
+✔ a damaged cache reads as none (0.206625ms)
+✔ a refresh never fails: a store that cannot be read or written still answers the new set (0.082542ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.419084
+
+✖ failing tests:
+
+test at src/spend/v1/ratesCache.test.ts:73:1
+✖ a 304 or a failure keeps the cache (0.999209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     value: null
+  -     value: {
+  -       etag: '"r2"',
+  -       rates: {
+  -         as_of: '2026-11-02',
+  -         base: 'USD',
+  -         rates: {
+  -           JPY: {
+  -             day: '2026-11-02',
+  -             per_base: '150'
+  -           },
+  -           THB: {
+  -             day: '2026-11-02',
+  -             per_base: '34.62'
+  -           }
+  -         }
+  -       }
+  -     }
+      },
+      {
+        value: {
+          etag: '"r2"',
+          rates: {
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/ratesCache.test.ts:79:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { value: null }, { value: [Object] }, { value: [Object] }, { value: [Object] } ],
+    expected: [ { value: [Object] }, { value: [Object] }, { value: [Object] }, { value: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

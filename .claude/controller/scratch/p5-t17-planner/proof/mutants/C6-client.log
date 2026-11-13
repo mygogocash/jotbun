@@ -1,0 +1,52 @@
+$ node scripts/test-unit.mjs src/api/client.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:74066) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.152458ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (9.1365ms)
+✔ multipart uploads let the runtime generate a matching boundary (2.4245ms)
+✔ server failures stay failures with their actionable code (0.770667ms)
+✔ absolute URLs cannot receive session credentials (0.114459ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.391375ms)
+✔ a v1 request with no session id is refused before anything is sent (0.177583ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (0.783375ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (0.567542ms)
+✔ a response from the previous account cannot become the current diary (0.682333ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (2.228166ms)
+✖ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.866709ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136.467959
+
+✖ failing tests:
+
+test at src/api/client.test.ts:177:1
+✖ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.866709ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      '"a1"',
+      null,
+  +   '"a3"'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/api/client.test.ts:226:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '"a1"', null, '"a3"' ],
+    expected: [ '"a1"', null ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

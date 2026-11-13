@@ -1,0 +1,59 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:77764) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77764) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (5.374458ms)
+✔ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.400375ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.170208ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.269208ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.627625
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:29:1
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (5.374458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  -   'createTrip',
+  -   'createTrip',
+  -   'createTrip',
+  -   'createTrip',
+      'updateTrip',
+      'updateTrip',
+      'updateTrip',
+      'updateTrip',
+      'deleteTrip',
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:70:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'updateTrip', 'updateTrip', 'updateTrip', 'updateTrip', 'deleteTrip', 'updateTrip', 'deleteTrip', 'trips' ],
+    expected: [
+      'createTrip', 'createTrip',
+      'createTrip', 'createTrip',
+      'updateTrip', 'updateTrip',
+      'updateTrip', 'updateTrip',
+      'deleteTrip', 'updateTrip',
+      'deleteTrip', 'trips'
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1
