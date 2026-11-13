@@ -49,6 +49,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 08:15: P4-T3's brief is READY and its implementer is building (Haiku). Two more Opus planners started: P3-T3 and P3-T13.**
+  - **P4-T3 (the vault's slip tables; privacy path):**
+    - The kit is `scratch/p4-t3-planner/`, proved on `dffa9ee3`. `check_kit.sh` at `d229ebbc`: 65 of 65 sums, `orig/` 12 of 12. Nothing under `apps/edge`, `apps/api`, `packages` or the lockfile changed since its base.
+    - **P1 to P16 accepted.** These include P4, which edits P3-T2's `transaction-source.test.ts` upgrade case outside the plan's file list, and P8, which makes an unreleased route a 404 before the body, gates and token.
+    - Worktree `p4-t3` on `p4/t3-slip-tables` at `d229ebbc`, with `install-edge`. Implementer `mcp:launch:041c6f37d7c4022fccf0e7a5a83fbeb177cce171bc308d5c374b33719f1c3e09`, with the heavy lock (`PL/locked.sh`).
+    - Reviews when it is done: Opus and Sonnet (privacy). The planner thread is archived.
+  - **Planners** (common notes `scratch/dispatch/planner-common-notes-20261113c.md`, head `d229ebbc`; their new "building on an unmerged task's files" rule):
+    - **P3-T3, the ai gate:** `mcp:launch:1ac7ba92211f59c6a70e348503b375f0b7b2319714fb699b36e6ca88ff4d432b`, WT `p3-t3` on `p3/t3-ai-gate`. It builds on P4-T3's `real/` versions of `v1/routes.ts`, `v1/handler.ts` and `route-coverage.test.ts`, and starts after P4-T3 merges. Carries followups line 468.
+    - **P3-T13, the draft origin:** `mcp:launch:74ee3081b13c1ca731296b00ecd845c748793a83fe6fc5d3890c3089f4460de3`, WT `p3-t13` on `p3/t13-draft-origin`. It builds on P2-T17's `real/` version of `AddTray.render.test.tsx`, and on P4-T3's version of `transaction-source.test.ts` if it carries line 637. Carries lines 607, 637 and 785.
+  - **Lanes next:** P3-T9 (depth 8) waits for P3-T8's brief, since they share AI files. P4-T2 and P5-T9 (routes) wait behind P4-T3 and P3-T3.
+  - **Live now:** P2-T17 and P4-T3 implementers (Haiku); P2-T26, P3-T8, P3-T3 and P3-T13 planners (Opus).
 - **13 Nov 08:05: #449 (P5-T17) MERGED as `437743e`; the head is `437743e`. P2-T17's brief is READY and its implementer is building (Haiku).**
   - **#449:**
     - CI was 9 of 9 at `3f5670a9`. Both reviews approved: Opus with m1 to m3 and n1; Sonnet with m1 to m3, n1, n2 and N1 to N6.

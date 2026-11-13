@@ -1,0 +1,20 @@
+--- a/apps/edge/src/vault/migrations/index.ts
++++ b/apps/edge/src/vault/migrations/index.ts
+@@ -4,6 +4,7 @@
+ import alarmIndexes from './0003_alarm_indexes.sql?raw'
+ import alarmBounds from './0004_alarm_bounds.sql?raw'
+ import transactionSource from './0005_transaction_source.sql?raw'
++import slips from './0006_slips.sql?raw'
+ 
+ // The journal drizzle-orm's durable-sqlite migrator reads (handwritten SQL, so
+ // no drizzle-kit). The migrator applies an entry only when its `when` is later
+@@ -21,7 +22,8 @@
+       { idx: 3, when: 1761609600000, tag: '0003_alarm_indexes', breakpoints: true },
+       { idx: 4, when: 1761696000000, tag: '0004_alarm_bounds', breakpoints: true },
+       { idx: 5, when: 1761782400000, tag: '0005_transaction_source', breakpoints: true },
++      { idx: 6, when: 1761868800000, tag: '0006_slips', breakpoints: true },
+     ],
+   },
+-  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds, m0005: transactionSource },
++  migrations: { m0000: core, m0001: files, m0002: currenciesTrips, m0003: alarmIndexes, m0004: alarmBounds, m0005: transactionSource, m0006: slips },
+ }

@@ -1,0 +1,55 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 13ms
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 14ms
+ × test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 27ms
+   → expected [ { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 11ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 12ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 10ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 12ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 12ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 11ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 13ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 11ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 10ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 23ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column
+AssertionError: expected [ { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "name": "slip_drafts_order_idx",
+      "sql": "CREATE INDEX slip_drafts_order_idx ON slip_drafts (occurred_on, occurred_time, id)",
+    },
+-   {
+-     "name": "transactions_merchant_idx",
+-     "sql": "CREATE INDEX transactions_merchant_idx ON transactions (lower(merchant)) WHERE deleted_at IS NULL AND merchant IS NOT NULL",
+-   },
+  ]
+
+ ❯ test/workers/vault-schema.test.ts:51:168
+     49|   expect((await sql(stub, 'PRAGMA foreign_key_list(transactions)')).fi…
+     50|   // The drafts' reading order, and the merchant index P4-T6's categor…
+     51|   expect(await sql(stub, "SELECT name, sql FROM sqlite_master WHERE ty…
+       |                                                                                                                                                                        ^
+     52|     { name: 'slip_drafts_order_idx', sql: 'CREATE INDEX slip_drafts_or…
+     53|     { name: 'transactions_merchant_idx', sql: 'CREATE INDEX transactio…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  07:50:47
+   Duration  2.19s (transform 745ms, setup 1.50s, import 6ms, tests 195ms, environment 0ms)
+

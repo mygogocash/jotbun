@@ -1,0 +1,83 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 45ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 26ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 14ms
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 24ms
+   → expected [ [ 'kbank', '1234', 1 ], …(4) ] to deeply equal [ [ 'kbank', '1234', 3 ], …(4) ]
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 29ms
+   → expected { …(6) } to deeply equal { …(6) }
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 17ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 22ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 18ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 34ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 56ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 27ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 24ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts
+AssertionError: expected [ [ 'kbank', '1234', 1 ], …(4) ] to deeply equal [ [ 'kbank', '1234', 3 ], …(4) ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  [
+    [
+      "kbank",
+      "1234",
+-     3,
++     1,
+    ],
+    [
+      "scb",
+      "9876",
+      1,
+
+ ❯ test/workers/slips-vault.test.ts:141:99
+    139|     expect(isSlipAccountsDto(body)).toBe(true)
+    140|     const accounts = body.accounts as { bank: string; account_last4: s…
+    141|     expect(accounts.map((account) => [account.bank, account.account_la…
+       |                                                                                                   ^
+    142|       ['kbank', '1234', 3],
+    143|       ['scb', '9876', 1],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps
+AssertionError: expected { …(6) } to deeply equal { …(6) }
+
+- Expected
++ Received
+
+  {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "id": "df6784fe-12b5-4735-be01-689750ed6899",
+-   "open_drafts": 1,
++   "open_drafts": 0,
+    "version": 2,
+    "wallet_id": "1cc4dfa6-0d14-4215-954a-bb3cbd24be4f",
+  }
+
+ ❯ test/workers/slips-vault.test.ts:164:21
+    162|     expect(mapped.status).toBe(200)
+    163|     const account = await json(mapped)
+    164|     expect(account).toEqual({ id, version: 2, bank: 'kbank', account_l…
+       |                     ^
+    165|     expect(isSlipAccountDto(account)).toBe(true)
+    166|     // A stale version is 409 with the current account.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  07:51:15
+   Duration  2.66s (transform 918ms, setup 1.76s, import 33ms, tests 337ms, environment 0ms)
+

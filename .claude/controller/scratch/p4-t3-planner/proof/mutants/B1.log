@@ -1,0 +1,63 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 40ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 26ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 1ms
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 16ms
+   → expected [ { …(2) }, { …(2) }, null, …(3) ] to deeply equal [ { …(2) }, null, null, null, …(2) ]
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 21ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 42ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 25ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 31ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 27ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 25ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 66ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 33ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits
+AssertionError: expected [ { …(2) }, { …(2) }, null, …(3) ] to deeply equal [ { …(2) }, null, null, null, …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "id": "566196ef-af04-4685-afe0-878f6c35e01f",
+      "wallet_id": null,
+    },
+-   null,
+-   null,
++   {
++     "id": "566196ef-af04-4685-afe0-878f6c35e01f",
++     "wallet_id": null,
++   },
+    null,
++   {
++     "id": "566196ef-af04-4685-afe0-878f6c35e01f",
++     "wallet_id": null,
++   },
+    null,
+    null,
+  ]
+
+ ❯ test/workers/slips-vault.test.ts:120:7
+    118|         slipAccountFor(c, null, null),
+    119|       ]),
+    120|     ).toEqual([{ id: ids[0], wallet_id: null }, null, null, null, null…
+       |       ^
+    121|   })
+    122|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  07:51:05
+   Duration  2.74s (transform 962ms, setup 1.82s, import 32ms, tests 377ms, environment 0ms)
+

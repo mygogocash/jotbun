@@ -1,0 +1,12 @@
+2a723efdd92d52cfd76b79f80ecc155f71df552fc5b805dd55e001ea5d84a0ec  apps/edge/src/v1/env.ts
+b6a0b18492e324c8b8e3e6b28931662206a932419d4965aecc30bfb1573951af  apps/edge/src/v1/handler.ts
+2d0c5f44bc1f3cb69d7c05fb47e72b69f83eb235a91be4a04b7230a75fc3a743  apps/edge/src/v1/protocol.ts
+0b541425dffeb72ea8b392bf6ec47217a2cb79e64c0c69557df949eee2b134bf  apps/edge/src/v1/routes.ts
+a68eb3f4d76dd94917f53679c4411dd88dd18a63a27170a6a03ce6a849a9e632  apps/edge/src/vault/commands/registry.ts
+b39b32cc6dad29f19b10945fcc011e2ec54171f232d4b6ac956562253282be5d  apps/edge/src/vault/migrations/index.ts
+f3401ac326075bcf16cc2516f2fb2feeab0dc248011aa32539cc45ad960d42b5  apps/edge/src/vault/routes.ts
+961af699c3a4c12303a8f3a28e12e584424907abe319ad11595219f847236588  apps/edge/src/vault/schema.ts
+027a6fff5c8d2bb89dc97cdc5c222c015c78e72ed4ed65eda337b58a327bb1a8  apps/edge/test/route-coverage.test.ts
+f1ecbd61e30e2fd12e55006503c9875898a5f88201b339b2e63d847e05ef36fb  apps/edge/test/workers/transaction-source.test.ts
+600e5dd8e79bbd5e2a9f8c121fcc2872485fbcb81082d53275ddf279465b063b  apps/edge/test/workers/vault-schema.test.ts
+cca4a84c20166d15c67a9713ce0cb2043096f7f6448d670994a5256b936b1e87  apps/edge/wrangler.jsonc

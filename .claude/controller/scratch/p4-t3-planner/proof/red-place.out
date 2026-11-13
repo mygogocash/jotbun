@@ -1,0 +1,14 @@
+red: real/apps/edge/src/v1/protocol.ts
+red: real/apps/edge/src/v1/env.ts
+red: stubs/apps/edge/src/v1/routes.ts
+red: real/apps/edge/src/vault/migrations/index.ts
+red: stubs/apps/edge/src/vault/migrations/0006_slips.sql
+red: stubs/apps/edge/src/vault/slips/salt.ts
+red: stubs/apps/edge/src/vault/slips/accounts.ts
+red: stubs/apps/edge/src/vault/slips/inbox.ts
+red: real/apps/edge/test/workers/support/slips.ts
+red: real/apps/edge/test/workers/slips-vault.test.ts
+red: real/apps/edge/test/workers/vault-schema.test.ts
+red: real/apps/edge/test/workers/transaction-source.test.ts
+red: real/apps/edge/test/route-coverage.test.ts
+red: 13 files placed

@@ -1,0 +1,744 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 17ms
+   → expected [ 'account_state', …(37) ] to deeply equal [ 'account_state', …(31) ]
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 15ms
+ × test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 29ms
+   → expected [] to deeply equal [ { type: 'TEXT', notnull: +0, …(1) } ]
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 13ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 12ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 10ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 60ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 30ms
+ × test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 13ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 20ms
+   → expected 404 to be 200 // Object.is equality
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 12ms
+   → expected 1 to be 3 // Object.is equality
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 17ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 22ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 12ms
+   → expected 404 to be 200 // Object.is equality
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 13ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 12ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 11ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 13ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 15ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 18ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 29ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 21ms
+ × test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 12ms
+   → expected [ -1, { entity: 'slip_inbox', …(4) } ] to deeply equal [ +0, { entity: 'slip_inbox', …(4) } ]
+ × test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 18ms
+   → expected { …(17) } to deeply equal { …(17) }
+ × test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 31ms
+   → expected [ null, null, null, null, null, null ] to deeply equal [ …(6) ]
+ × test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 14ms
+   → expected 404 to be 200 // Object.is equality
+ × test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 28ms
+   → expected [ 'id', 'type', 'amount_minor', …(20) ] to deeply equal [ 'id', 'type', 'amount_minor', …(21) ]
+ × test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 15ms
+   → expected [ [ …(2) ], …(66) ] to deeply equal [ [ …(2) ], …(66) ]
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 32ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 40ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 33ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 28ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 24ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 22ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 20ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:44:26
+     42|     const user = newUser()
+     43|     const first = await client.as(user).get('/v1/slips/salt')
+     44|     expect(first.status).toBe(200)
+       |                          ^
+     45|     const body = await json(first)
+     46|     expect(isSlipSaltDto(body)).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:64:25
+     62|     const user = await member(hidden)
+     63|     const salt = await hidden.as(user).get('/v1/slips/salt')
+     64|     expect(salt.status).toBe(200)
+       |                         ^
+     65|     expect(isSlipSaltDto(await salt.json())).toBe(true)
+     66|     const put = (body = '{}', headers: Record<string, string> = {}) =>
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits
+AssertionError: expected 1 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 1
+
+ ❯ test/workers/slips-vault.test.ts:102:31
+    100|     const ids = await inVault(user, (c) => [ensureSlipAccount(c, 'kban…
+    101|     expect(ids[1]).toBe(ids[0])
+    102|     expect(new Set(ids).size).toBe(3)
+       |                               ^
+    103|     // A later call finds the same account.
+    104|     expect(await inVault(user, (c) => ensureSlipAccount(c, 'kbank', '1…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:137:24
+    135|     await seedSlipDraft(user, { from: party(null, null), to: party(nul…
+    136|     const res = await client.as(user).get('/v1/slip-accounts')
+    137|     expect(res.status).toBe(200)
+       |                        ^
+    138|     const body = await json(res)
+    139|     expect(isSlipAccountsDto(body)).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:162:27
+    160|     const put = (body: unknown, ifMatch?: number) => client.as(user).p…
+    161|     const mapped = await put({ wallet_id: cash }, 1)
+    162|     expect(mapped.status).toBe(200)
+       |                           ^
+    163|     const account = await json(mapped)
+    164|     expect(account).toEqual({ id, version: 2, bank: 'kbank', account_l…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:201:69
+    199|     const user = newUser()
+    200|     const id = await inVault(user, (c) => ensureSlipAccount(c, 'kbank'…
+    201|     expect((await client.as(user).get('/v1/slip-accounts')).status).to…
+       |                                                                     ^
+    202|     expect(await shape(await client.as(user).put(`/v1/slip-accounts/${…
+    203|     await member(client, user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward
+AssertionError: expected [ -1, { entity: 'slip_inbox', …(4) } ] to deeply equal [ +0, { entity: 'slip_inbox', …(4) } ]
+
+- Expected
++ Received
+
+  [
+-   0,
++   -1,
+    {
+      "entity": "slip_inbox",
+      "id": "5b1f0c2a-6d3e-4f70-8a19-2c4d6e8f0a1b",
+-     "snapshot": {
+-       "id": "5b1f0c2a-6d3e-4f70-8a19-2c4d6e8f0a1b",
+-       "open": 0,
+-       "version": 1,
+-     },
++     "snapshot": null,
+      "state": "active",
+-     "version": 1,
++     "version": 0,
+    },
+  ]
+
+ ❯ test/workers/slips-vault.test.ts:214:77
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact
+AssertionError: expected { …(17) } to deeply equal { …(17) }
+
+- Expected
++ Received
+
+  {
+    "album": null,
+-   "amount_minor": "99999999999",
+-   "category_guessed": true,
+-   "category_id": "a0a49d31-c39e-8163-afbb-b14c79a28ed7",
+-   "created_at": "2026-10-25T00:00:00.000Z",
+-   "direction": "in",
+-   "duplicate_of": "07fd5b5f-eec8-4281-9a5f-44df2527e580",
+-   "escalated": true,
+-   "expires_at": "2026-11-24T00:00:00.000Z",
+-   "flags": [
+-     "date_guessed",
+-     "category_guessed",
+-   ],
++   "amount_minor": null,
++   "category_guessed": false,
++   "category_id": null,
++   "created_at": "",
++   "direction": "out",
++   "duplicate_of": null,
++   "escalated": false,
++   "expires_at": "",
++   "flags": [],
+    "from": {
+-     "account_last4": "1234",
+-     "bank": "kbank",
+-     "name": "นาย สมชาย ใจดี",
++     "account_last4": null,
++     "bank": null,
++     "name": null,
+    },
+    "id": "856fd113-d22d-4c3c-861b-96542205a1c1",
+-   "model": "claude-opus-5-5",
+-   "occurred_on": "2026-10-20",
+-   "occurred_time": "23:59",
+-   "origin": "share",
++   "model": "claude-haiku-5-5",
++   "occurred_on": null,
++   "occurred_time": null,
++   "origin": "photo",
+    "to": {
+-     "account_last4": "9876",
+-     "bank": "scb",
+-     "name": "ร้านป้าแดง",
++     "account_last4": null,
++     "bank": null,
++     "name": null,
+    },
+  }
+
+ ❯ test/workers/slips-vault.test.ts:255:17
+    253|       inVault(user, (c) => slipDraftDto(c.sql.exec<SlipDraftRow>(`SELE…
+    254|     const dto = await read(shared.draftId, duplicate)
+    255|     expect(dto).toEqual({
+       |                 ^
+    256|       id: shared.draftId,
+    257|       amount_minor: '99999999999',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate
+AssertionError: expected [ null, null, null, null, null, null ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,7 @@
+  [
+-   "ae649fe7-2d00-4b5c-aef0-617cd557385a",
++   null,
+    null,
+    null,
+    null,
+    null,
+    null,
+
+ ❯ test/workers/slips-vault.test.ts:299:7
+    297|         slipDuplicateOf(c, '6500', null),
+    298|       ]),
+    299|     ).toEqual([older, null, null, null, null, null])
+       |       ^
+    300|   })
+    301| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7)
+AssertionError: expected 404 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 404
+
+ ❯ test/workers/slips-vault.test.ts:307:66
+    305|     const client = await startV1(CONFIG, RELEASED)
+    306|     const user = await member(client)
+    307|     expect((await client.as(user).get('/v1/slips/salt')).status).toBe(…
+       |                                                                  ^
+    308|     await inVault(user, (c) => void ensureSlipAccount(c, 'kbank', '123…
+    309|     await seedSlipDraft(user)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row
+AssertionError: expected [ 'id', 'type', 'amount_minor', …(20) ] to deeply equal [ 'id', 'type', 'amount_minor', …(21) ]
+
+- Expected
++ Received
+
+@@ -20,7 +20,6 @@
+    "home_amount_minor",
+    "wallet_amount_minor",
+    "to_amount_minor",
+    "trip_id",
+    "source",
+-   "slip_ref_id",
+  ]
+
+ ❯ test/workers/slips-vault.test.ts:350:25
+    348|       expect(slipTables()).toEqual([])
+    349|       await upgrade()
+    350|       expect(columns()).toEqual([...before.columns, 'slip_ref_id'])
+       |                         ^
+    351|       expect(rows(records)).toEqual(before.records.map((row) => ({ ...…
+    352|       expect(rows(links)).toEqual(before.links)
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule
+AssertionError: expected [ [ …(2) ], …(66) ] to deeply equal [ [ …(2) ], …(66) ]
+
+- Expected
++ Received
+
+@@ -1,109 +1,109 @@
+  [
+    [
+      "salt: another id than 1",
+-     "refused",
++     "ok",
+    ],
+    [
+      "salt: 31 bytes",
+-     "refused",
++     "ok",
+    ],
+    [
+      "salt: text, not bytes (STRICT)",
+      "refused",
+    ],
+    [
+      "salt: 32 bytes",
+-     "ok",
++     "refused",
+    ],
+    [
+      "account: version 0",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: version 1.5 (STRICT)",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: a bank in capitals",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: a bank of one letter",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: a bank of 17 letters",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: three digits",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: a letter among the digits",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: an unknown wallet",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: kbank 1234",
+      "ok",
+    ],
+    [
+      "account: kbank 1234 again",
+-     "refused",
++     "ok",
+    ],
+    [
+      "account: kbank 5678 in a wallet",
+      "ok",
+    ],
+    [
+      "ref: 63 hex digits",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: hex in capitals",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: not hex",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: an unknown state",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: confirmed without its record",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: recorded without its record",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: a draft with a record",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: dismissed with a record",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: first seen as bytes (STRICT)",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: a draft",
+      "ok",
+    ],
+    [
+      "ref: the same hash again",
+-     "refused",
++     "ok",
+    ],
+    [
+      "ref: confirmed with its record",
+      "ok",
+    ],
+@@ -111,151 +111,151 @@
+      "ref: dismissed",
+      "ok",
+    ],
+    [
+      "draft: amount 0",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: amount over the cap",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: amount 6500.5 (STRICT)",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: 30 February",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a time with a dot",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: minute 60",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a time of four characters",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an unknown direction",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a sender bank in capitals",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a sender with five digits",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a sender with an empty name",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a receiver bank of one letter",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a receiver with letters",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: a receiver name of 121 characters",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an unknown category",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: category_guessed 2",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: flags as an object",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: flags that are not JSON",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an empty album",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an album of 61 characters",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an unknown origin",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: another model",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: escalated 2",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: announced 2",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: an unknown slip reference",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: everything read",
+      "ok",
+    ],
+    [
+      "draft: a second draft of the same slip",
+-     "refused",
++     "ok",
+    ],
+    [
+      "draft: nothing read but its direction",
+      "ok",
+    ],
+    [
+      "lease: expiring before 0",
+-     "refused",
++     "ok",
+    ],
+    [
+      "lease: an unknown purpose",
+-     "refused",
++     "ok",
+    ],
+    [
+      "lease: month 13",
+-     "refused",
++     "ok",
+    ],
+    [
+      "lease: -1 reserved",
+-     "refused",
++     "ok",
+    ],
+    [
+      "lease: 1.5 reserved (STRICT)",
+-     "refused",
++     "ok",
+    ],
+    [
+      "lease: a backfill lease",
+      "ok",
+    ],
+    [
+      "uses: a day that is not a date",
+-     "refused",
++     "ok",
+    ],
+    [
+      "uses: 501",
+-     "refused",
++     "ok",
+    ],
+    [
+      "uses: -1",
+      "refused",
+    ],
+@@ -263,8 +263,8 @@
+      "uses: 2.5 (STRICT)",
+      "refused",
+    ],
+    [
+      "uses: 500",
+-     "ok",
++     "refused",
+    ],
+  ]
+
+ ❯ test/workers/slips-vault.test.ts:489:79
+    487|         ['uses: 500', 'slip_backfill_uses', uses(), 'ok'],
+    488|       ]
+    489|       expect(cases.map(([label, table, row]) => [label, insert(table, …
+       |                                                                               ^
+    490|     })
+    491|   })
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:24
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  test/workers/vault-schema.test.ts > a new vault has every core table, migrated once
+AssertionError: expected [ 'account_state', …(37) ] to deeply equal [ 'account_state', …(31) ]
+
+- Expected
++ Received
+
+@@ -21,10 +21,16 @@
+    "import_uploads",
+    "monthly_budgets",
+    "revoked_sessions",
+    "schedule",
+    "settings",
++   "slip_accounts",
++   "slip_backfill_uses",
++   "slip_drafts",
++   "slip_leases",
++   "slip_refs",
++   "slip_salt",
+    "snapshot_chunks",
+    "snapshots",
+    "sync_state",
+    "transaction_attachments",
+    "transactions",
+
+ ❯ test/workers/vault-schema.test.ts:16:61
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column
+AssertionError: expected [] to deeply equal [ { type: 'TEXT', notnull: +0, …(1) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "dflt_value": null,
+-     "notnull": 0,
+-     "type": "TEXT",
+-   },
+- ]
++ []
+
+ ❯ test/workers/vault-schema.test.ts:48:91
+     46|   // P4-T3: the slip a record came from is a TEXT column with no defau…
+     47|   const slipRef = (await sql(stub, 'PRAGMA table_info(transactions)'))…
+     48|   expect(slipRef.map(({ type, notnull, dflt_value }) => ({ type, notnu…
+       |                                                                                           ^
+     49|   expect((await sql(stub, 'PRAGMA foreign_key_list(transactions)')).fi…
+     50|   // The drafts' reading order, and the merchant index P4-T6's categor…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  14 failed | 22 passed (36)
+   Start at  07:47:26
+   Duration  2.94s (transform 2.86s, setup 5.71s, import 88ms, tests 735ms, environment 0ms)
+

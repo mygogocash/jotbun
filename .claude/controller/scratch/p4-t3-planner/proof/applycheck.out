@@ -1,0 +1,13 @@
+rebuilt: apps/edge/src/v1/protocol.ts
+rebuilt: apps/edge/src/v1/env.ts
+rebuilt: apps/edge/src/v1/routes.ts
+rebuilt: apps/edge/src/v1/handler.ts
+rebuilt: apps/edge/src/vault/routes.ts
+rebuilt: apps/edge/src/vault/commands/registry.ts
+rebuilt: apps/edge/src/vault/schema.ts
+rebuilt: apps/edge/src/vault/migrations/index.ts
+rebuilt: apps/edge/wrangler.jsonc
+rebuilt: apps/edge/test/workers/vault-schema.test.ts
+rebuilt: apps/edge/test/workers/transaction-source.test.ts
+rebuilt: apps/edge/test/route-coverage.test.ts
+applycheck: ok

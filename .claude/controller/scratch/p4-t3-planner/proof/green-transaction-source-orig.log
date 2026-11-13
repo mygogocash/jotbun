@@ -1,0 +1,50 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 57ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 51ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 38ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 33ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 24ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 30ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 48ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 43ms
+ × test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 38ms
+   → expected [ 'id', 'type', 'amount_minor', …(21) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row
+AssertionError: expected [ 'id', 'type', 'amount_minor', …(21) ] to deeply equal [ 'id', 'type', 'amount_minor', …(20) ]
+
+- Expected
++ Received
+
+@@ -20,6 +20,7 @@
+    "home_amount_minor",
+    "wallet_amount_minor",
+    "to_amount_minor",
+    "trip_id",
+    "source",
++   "slip_ref_id",
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:205:25
+    203|       expect(before.columns).not.toContain('source')
+    204|       await upgrade()
+    205|       expect(columns()).toEqual([...before.columns, 'source'])
+       |                         ^
+    206|       expect(rows(records)).toEqual(before.records.map((row) => ({ ...…
+    207|       expect(rows(links)).toEqual(before.links)
+ ❯ maybeHandleRunRequest Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:157:18
+ ❯ DurableObject.Wrapper.fetch Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:552:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)
+   Start at  07:32:36
+   Duration  3.22s (transform 1.27s, setup 2.27s, import 33ms, tests 363ms, environment 1ms)
+

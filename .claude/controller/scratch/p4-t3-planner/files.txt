@@ -1,0 +1,24 @@
+# P4-T3's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it, later = the
+# receipt, copied at the end). GREEN holds real/ for every line. Shared files
+# are marked in the brief's Scope table. The base is the integration head
+# dffa9ee3 (code aea5efb, #445's merge).
+M real apps/edge/src/v1/protocol.ts
+M real apps/edge/src/v1/env.ts
+M stub apps/edge/src/v1/routes.ts
+M base apps/edge/src/v1/handler.ts
+M base apps/edge/src/vault/routes.ts
+M base apps/edge/src/vault/commands/registry.ts
+M base apps/edge/src/vault/schema.ts
+M real apps/edge/src/vault/migrations/index.ts
+A stub apps/edge/src/vault/migrations/0006_slips.sql
+A stub apps/edge/src/vault/slips/salt.ts
+A stub apps/edge/src/vault/slips/accounts.ts
+A stub apps/edge/src/vault/slips/inbox.ts
+M base apps/edge/wrangler.jsonc
+A real apps/edge/test/workers/support/slips.ts
+A real apps/edge/test/workers/slips-vault.test.ts
+M real apps/edge/test/workers/vault-schema.test.ts
+M real apps/edge/test/workers/transaction-source.test.ts
+M real apps/edge/test/route-coverage.test.ts
+A later docs/implementation/receipts/P4-T3.md

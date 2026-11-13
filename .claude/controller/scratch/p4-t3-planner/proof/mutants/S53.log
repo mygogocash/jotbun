@@ -1,0 +1,106 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t3-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/vault-schema.test.ts > a new vault has every core table, migrated once 14ms
+   → expected [ 'account_state', …(31) ] to deeply equal [ 'account_state', …(37) ]
+ ✓ test/workers/vault-schema.test.ts > a vault keeps its rows and does not migrate again after it sleeps 14ms
+ × test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column 19ms
+   → expected [ [ 'account_last4', true ], …(6) ] to deeply equal []
+ ✓ test/workers/vault-schema.test.ts > foreign keys hold: a transaction naming an unknown wallet is refused 10ms
+ ✓ test/workers/vault-schema.test.ts > command log rows must use the current revision, and entity heads only move forward 12ms
+ ✓ test/workers/vault-schema.test.ts > a primary key cannot be NULL 10ms
+ ✓ test/workers/vault-schema.test.ts > a category's type and built-in key never change 10ms
+ ✓ test/workers/vault-schema.test.ts > a category id never changes 12ms
+ ✓ test/workers/vault-schema.test.ts > a replace that reuses another category's built-in key is refused, and the other category survives 11ms
+ ✓ test/workers/vault-schema.test.ts > INSERT OR REPLACE cannot flip a category in use, but an identical ON CONFLICT DO NOTHING insert is allowed 11ms
+ ✓ test/workers/vault-schema.test.ts > a category is never deleted 10ms
+ ✓ test/workers/vault-schema.test.ts > a category has a label or a built-in key 9ms
+ ✓ test/workers/vault-schema.test.ts > a receipt can drop its digest pair, but never just one half 20ms
+ ✓ test/workers/vault-schema.test.ts > a record can hold only a retained receipt, and letting go of the last holder releases it and makes its object due 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/vault-schema.test.ts > a new vault has every core table, migrated once
+AssertionError: expected [ 'account_state', …(31) ] to deeply equal [ 'account_state', …(37) ]
+
+- Expected
++ Received
+
+@@ -21,16 +21,10 @@
+    "import_uploads",
+    "monthly_budgets",
+    "revoked_sessions",
+    "schedule",
+    "settings",
+-   "slip_accounts",
+-   "slip_backfill_uses",
+-   "slip_drafts",
+-   "slip_leases",
+-   "slip_refs",
+-   "slip_salt",
+    "snapshot_chunks",
+    "snapshots",
+    "sync_state",
+    "transaction_attachments",
+    "transactions",
+
+ ❯ test/workers/vault-schema.test.ts:16:61
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/vault-schema.test.ts > the Drizzle schema matches the migrated tables column for column
+AssertionError: expected [ [ 'account_last4', true ], …(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   [
++     "account_last4",
++     true,
++   ],
++   [
++     "bank",
++     true,
++   ],
++   [
++     "created_at",
++     true,
++   ],
++   [
++     "id",
++     true,
++   ],
++   [
++     "updated_at",
++     true,
++   ],
++   [
++     "version",
++     true,
++   ],
++   [
++     "wallet_id",
++     false,
++   ],
++ ]
+
+ ❯ test/workers/vault-schema.test.ts:41:67
+     39|     const config = getTableConfig(table)
+     40|     const pragma = await sql(stub, `PRAGMA table_info(${config.name})`)
+     41|     expect(config.columns.map((c) => [c.name, c.notNull]).sort()).toEq…
+       |                                                                   ^
+     42|   }
+     43|   // P3-T2 (B2): how a record was made is a TEXT column with no defaul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  07:50:52
+   Duration  2.19s (transform 762ms, setup 1.52s, import 6ms, tests 177ms, environment 0ms)
+
