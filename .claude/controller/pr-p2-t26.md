@@ -33,8 +33,22 @@
   - `export:web` (the route changed);
   - `git diff --check`.
 - [x] CI at `52110318`: 9 of 9, including the full render suite and the iOS export.
-- [ ] Independent review (Opus), and a second review (Sonnet): private mode (P3, and R123's receipt photo), the actions tray's order (R69), the undo bar's rules, and the events.
-- [ ] Fix round for R123, with the reviews' findings.
+- [x] Independent review (Opus) and second review (Sonnet): **both Needs fixes** on `52110318` (`.claude/controller/reviews/P2-T26.md`, `reviews/P2-T26-second.md`). Both found M1, R123: in private mode the page drew, downloaded and opened the receipt photo. Opus also found m1 (the undo bar spoke `฿50`, not `50 บาท`) and test pins; Sonnet found four unpinned behaviours and the iOS dismissal bound.
+- [x] **Fix round** (`0c062e3d`, brief `.claude/controller/briefs/P2-T26-fix.md`; rulings R123 and R124):
+  - **R123:** while private mode is on, the page does not mount `RecordReceipt`, so nothing is downloaded or drawn. A record with a receipt, with the import area on, shows the one-row card "รูปใบเสร็จ ซ่อนอยู่", read as one element; with no receipt, nothing.
+  - **R124:** `deletedBarText` returns the drawn and the spoken words. `WalletUndoBar`'s optional `spoken` labels them and is what iOS announces ("ลบ ข้าวมันไก่ 50 บาท แล้ว").
+  - The reviews' pins: a new delete is a new bar, the tray's Close, Back, the pill's fill, the refused-delete words from the page and the tray, a failed draft Remove, AX5 stacking, and the decorative tile and swatch. Also a late first screen-reader answer is ignored once a change has arrived.
+  - The proofs: RED 7 of 39, all assertions; GREEN 39; **139 of 139 mutants killed** (C1 by a load failure, as designed). All 7 fix-kit files are byte-identical, and the mutant log is identical to the planner's.
+  - Planned on Claude Opus, built on Claude Haiku 5.5.
+- [x] The controller merged the integration head (P2-T17, P4-T3, P3-T8 and P3-T3) as `e4313772`, with no conflicts. On the merged tree:
+  - `typecheck:app` 0 and `test:unit` 1110;
+  - the five record files 167;
+  - the eight kit files with `AddTray` and `SavedMoment` 180;
+  - the routes 18;
+  - the catalogue's record, deleted and saved sections 20;
+  - `git diff --check` on the range.
+- [ ] CI at `e4313772` (queued org-wide: GitHub Actions).
+- [ ] Confirming review (Opus) of the fix round.
 - [ ] SKIPPED: device checks (the record, the tray and the bar on a phone; VoiceOver; the largest text).
 
 Closes #172 once merged (closed by hand, since the base is not the default branch).
