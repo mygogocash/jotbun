@@ -132,6 +132,11 @@ export type V1CommandHeaders = { id: string; schemaVersion: number; ifMatch?: nu
  * original file name. Never combined with `body`.
  */
 export type V1RawBody = { bytes: Uint8Array; contentType: string; fileName?: string };
+/**
+ * What a conditional read (`ifNoneMatch`) answers when the server's copy has
+ * not changed (304, P5-T17): handed to `validate`, then returned.
+ */
+export const NOT_MODIFIED: unique symbol = Symbol('NOT_MODIFIED');
 export type V1RequestOptions<T> = {
   body?: unknown;
   raw?: V1RawBody;
@@ -169,6 +174,14 @@ export type V1RequestOptions<T> = {
    * decides; a hidden resend could commit and then be reported as refused).
    */
   resendLost?: boolean;
+  /**
+   * A conditional read: sent as If-None-Match. A 304 then answers
+   * `NOT_MODIFIED`; to a request without it, a 304 is refused like any other
+   * status outside 2xx.
+   */
+  ifNoneMatch?: string;
+  /** Hears a JSON success's ETag, or null when it has none, once the body passed `validate`. */
+  etag?: (value: string | null) => void;
   /** Rejects any response that is not exactly the expected DTO. */
   validate: (payload: unknown) => payload is T;
 };
@@ -250,7 +263,9 @@ function privateIpv4(hostname: string): boolean {
  * Responses must pass the caller's exact DTO validator; nothing is coerced.
  * A binary read (a receipt's image) gets the same headers, refresh and
  * session checks, with a success read as bytes. A request with its own
- * deadline ends by then, resends and a refreshed resend included.
+ * deadline ends by then, resends and a refreshed resend included. A
+ * conditional read sends If-None-Match and answers `NOT_MODIFIED` for a 304;
+ * `etag` hears a JSON success's ETag (P5-T17).
  */
 export function createV1Transport(options: {
   baseUrl: string;
@@ -282,22 +297,23 @@ export function createV1Transport(options: {
   const timeoutMs = options.timeoutMs ?? 20_000;
   const credentials = options.credentials;
 
-  type Answer = { status: number; payload: unknown; readable: boolean; text: string; bytes?: Uint8Array };
+  type Answer = { status: number; payload: unknown; readable: boolean; text: string; bytes?: Uint8Array; etag: string | null };
   async function once(url: string, init: RequestInit, limitMs: number, binary: boolean): Promise<Answer> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), limitMs);
     try {
       const response = await fetchImpl(url, { ...init, signal: controller.signal, redirect: 'error' });
+      const etag = response.headers.get('etag');
       if (binary && response.status >= 200 && response.status <= 299) {
-        return { status: response.status, payload: null, readable: true, text: '', bytes: new Uint8Array(await response.arrayBuffer()) };
+        return { status: response.status, payload: null, readable: true, text: '', bytes: new Uint8Array(await response.arrayBuffer()), etag };
       }
       const text = await response.text();
       try {
-        return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true, text };
+        return { status: response.status, payload: text ? JSON.parse(text) : null, readable: true, text, etag };
       } catch {
         // A gateway's HTML error page: classified by status below, so a 5xx
         // while the origin may have committed stays "unavailable".
-        return { status: response.status, payload: null, readable: false, text };
+        return { status: response.status, payload: null, readable: false, text, etag };
       }
     } catch (error) {
       if (error instanceof V1Error) throw error;
@@ -358,6 +374,7 @@ export function createV1Transport(options: {
         if (request.command.ifMatch !== undefined) headers['If-Match'] = `"${request.command.ifMatch}"`;
       }
       if (request.acceptLanguage) headers['Accept-Language'] = request.acceptLanguage;
+      if (request.ifNoneMatch !== undefined) headers['If-None-Match'] = request.ifNoneMatch;
       // Serialized once, so every retry sends byte-identical content.
       const body: string | Uint8Array | undefined = request.raw ? request.raw.bytes : request.body === undefined ? undefined : JSON.stringify(request.body);
       const send = async (): Promise<Answer> => {
@@ -395,7 +412,13 @@ export function createV1Transport(options: {
         result = await send();
       }
       stillCurrent();
-      const { status, payload, readable, text, bytes } = result;
+      const { status, payload, readable, text, bytes, etag } = result;
+      // The copy a conditional read named has not changed: there is no body to read.
+      if (status === 304 && request.ifNoneMatch !== undefined) {
+        const unchanged: unknown = NOT_MODIFIED;
+        if (!request.validate(unchanged)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+        return unchanged;
+      }
       if (status >= 200 && status <= 299 && request.bytes) {
         if (!bytes || !request.validate(bytes)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
         return bytes;
@@ -420,6 +443,7 @@ export function createV1Transport(options: {
         throw new V1Error(outcomeFor(status, code), status, code, { fields, current: problem.current, retryAfterSeconds });
       }
       if (!request.validate(payload)) throw new V1Error('invalid_response', status, 'INVALID_RESPONSE');
+      request.etag?.(etag);
       return payload;
     },
   };

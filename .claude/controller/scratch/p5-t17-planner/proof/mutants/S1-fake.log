@@ -1,0 +1,73 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:77873) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77873) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ the fake keeps trips with versions and refuses an overlap on create and edit (5.260042ms)
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (1.150708ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.177708ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.360459ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 148.88
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:112:1
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (1.150708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      {
+  +     as_of_revision: '10',
+  +     categories: [],
+  +     count: 0,
+  +     days: [],
+  +     home_currency: 'THB',
+  +     rates: [],
+  +     totals: {
+  +       other_home_minor: '0',
+  +       spent_home_minor: '0',
+  +       spent_trip_minor: '0'
+  +     },
+  +     trip: {
+  +       budget_minor: null,
+  +       currency: 'THB',
+  +       deleted_at: '2026-10-20T00:00:00.000Z',
+  +       ends_on: '2026-10-05',
+  +       id: '7a000000-0000-4000-8000-000000000002',
+  +       name: 'ทริปเชียงใหม่',
+  +       starts_on: '2026-10-01',
+  +       version: 2
+  +     }
+  -     code: 'NOT_FOUND',
+  -     outcome: 'not_found',
+  -     status: 404
+      },
+      {
+        code: 'NOT_FOUND',
+        outcome: 'not_found',
+        status: 404
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:137:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { trip: [Object], home_currency: 'THB', count: 0, totals: [Object], days: [], categories: [], rates: [], as_of_revision: '10' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    expected: [ { outcome: 'not_found', status: 404, code: 'NOT_FOUND' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

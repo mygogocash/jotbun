@@ -1,0 +1,228 @@
+--- a/apps/app/src/spend/v1/testing/fakeResources.ts
++++ b/apps/app/src/spend/v1/testing/fakeResources.ts
+@@ -1,29 +1,47 @@
+ // An in-memory SpendV1Resources for render tests: owned ids, versions,
+ // soft deletion, history and "Recently deleted" pages and month totals, with scripted failures and a
+ // call log. It mirrors the server's rules only as far as the screens need.
++// Phase 5 (P5-T17): trips with versions and the overlap rule, their summary
++// from the stored amounts of their records, today's rates (503 until a test
++// sets a set, then that set with an ETag), and the home currency with its
++// preview. Records are not converted when the home currency changes.
+ // Test use only.
++import { DEFAULT_HOME_CURRENCY } from '@gogospend/contracts';
+ import type {
+   BudgetDto,
+   CategoryDto,
+   CommandAck,
+   CommandOutcome,
+   CreateCategoryRequest,
++  CreateTripRequest,
+   CreateWalletRequest,
++  CurrencyCode,
+   DeletedHistoryPage,
+   DeletedTransactionDto,
++  EntryDto,
+   HistoryFilter,
+   HistoryPage,
++  HomeCurrencyPreview,
+   MonthSummary,
++  RatesTodayDto,
++  RecordMoney,
+   SetMonthlyBudgetRequest,
++  SettingsSnapshot,
+   TransactionDto,
++  TripDto,
++  TripMoney,
++  TripRateUsed,
++  TripSummaryDto,
+   UpdateCategoryRequest,
++  UpdateTripRequest,
+   UpdateWalletRequest,
+   WalletDto,
+   WalletSnapshot,
+ } from '@gogospend/contracts';
+ 
+-import { V1Error } from '../../../api/client';
+-import type { V1Outcome } from '../../../api/client';
++// With its extension, so Node's test runner loads this fake too (fakeResources.test.ts).
++import { V1Error } from '../../../api/client.ts';
++import type { V1Outcome } from '../../../api/client.ts';
+ import type { CreateEntryInput, CreateTransferInput, SpendV1Resources } from '../resources';
+ 
+ export type FakeCall = { method: keyof SpendV1Resources; args: unknown[] };
+@@ -39,7 +57,27 @@
+   ['salary', 'income', '#A8CC4A'], ['gift', 'income', '#F291C4'],
+ ].map(([key, type, color], i) => ({ id: `0000000c-0000-4000-8000-00000000000${i + 1}`, type: type as 'expense' | 'income', builtin_key: key as CategoryDto['builtin_key'], label: null, color, archived: false, version: 1 }));
+ 
+-export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?: TransactionDto[]; categories?: CategoryDto[]; budgets?: BudgetDto[] } = {}) {
++/** A record tagged with a trip: it carries every money key (P5-T2: all or none). */
++type TaggedRecord = TransactionDto & RecordMoney;
++type TaggedExpense = EntryDto & RecordMoney;
++
++/** Larger amounts first. */
++const largerFirst = (a: string, b: string) => (BigInt(a) === BigInt(b) ? 0 : BigInt(a) > BigInt(b) ? -1 : 1);
++
++/** P5-T12's sums (X17) over expenses: their stored amounts, never a rate. */
++function tripMoney(expenses: readonly TaggedRecord[], tripCurrency: CurrencyCode): TripMoney {
++  let home = 0n;
++  let inTrip = 0n;
++  let other = 0n;
++  for (const record of expenses) {
++    home += BigInt(record.home_amount_minor);
++    if (record.currency === tripCurrency) inTrip += BigInt(record.amount_minor);
++    else other += BigInt(record.home_amount_minor);
++  }
++  return { spent_home_minor: home.toString(), spent_trip_minor: inTrip.toString(), other_home_minor: other.toString() };
++}
++
++export function createFakeResources(seed: { wallets?: WalletSnapshot[]; records?: TransactionDto[]; categories?: CategoryDto[]; budgets?: BudgetDto[]; trips?: TripDto[]; settings?: SettingsSnapshot | null } = {}) {
+   const wallets = new Map((seed.wallets ?? []).map((wallet) => [wallet.id, { ...wallet }]));
+   const records = new Map((seed.records ?? []).map((record) => [record.id, { ...record }]));
+   const categories = new Map<string, CategoryDto>((seed.categories ?? []).map((category) => [category.id, { ...category }]));
+@@ -53,6 +91,12 @@
+   const receipts = new Map<string, CommandAck>();
+   const pending = new Map<keyof SpendV1Resources, Promise<void>>();
+   let revision = 10;
++  const trips = new Map((seed.trips ?? []).map((trip) => [trip.id, { ...trip }]));
++  // The home currency's settings row: none, so THB, until the first change (X5).
++  let settings: SettingsSnapshot | null = seed.settings ? { ...seed.settings } : null;
++  // Today's rates as the server's KV holds them: none (503) until a test sets a set.
++  let rates: { set: RatesTodayDto; etag: string } | null = null;
++  let rateSets = 0;
+ 
+   const balance = (wallet: WalletSnapshot): string => {
+     let total = BigInt(wallet.opening_minor);
+@@ -89,6 +133,17 @@
+     if (category.version !== version) throw conflict(category);
+     return category;
+   }
++  function lockedTrip(id: string, version: number): TripDto {
++    const trip = trips.get(id);
++    if (!trip) throw notFound();
++    if (trip.deleted_at) throw new V1Error('deleted', 409, 'ENTITY_DELETED');
++    if (trip.version !== version) throw conflict(trip);
++    return trip;
++  }
++  /** A live trip, other than `except`, that shares a day with `startsOn` to `endsOn` (both ends count). */
++  const overlaps = (startsOn: string, endsOn: string, except?: string) =>
++    [...trips.values()].some((trip) => trip.id !== except && !trip.deleted_at && trip.starts_on <= endsOn && startsOn <= trip.ends_on);
++  const homeCurrency = (): CurrencyCode => settings?.home_currency ?? DEFAULT_HOME_CURRENCY;
+   function budgetUsage(month: string): MonthSummary['budget'] {
+     const budget = budgets.get(month);
+     if (!budget) return null;
+@@ -357,6 +412,95 @@
+       await step('commandStatus', [ids]);
+       return ids.map((id) => ({ command_id: id, state: 'unknown' as const }));
+     },
++    async trips() {
++      await step('trips', []);
++      return [...trips.values()].filter((trip) => !trip.deleted_at).sort((a, b) => b.starts_on.localeCompare(a.starts_on)).map((trip) => ({ ...trip }));
++    },
++    async createTrip(input: CreateTripRequest, commandId: string) {
++      await step('createTrip', [input, commandId]);
++      return command('createTrip', commandId, () => {
++        const existing = trips.get(input.id);
++        if (existing) throw conflict(existing);
++        if (overlaps(input.starts_on, input.ends_on)) throw stateProblem('starts_on', 'errors.trip_overlap');
++        trips.set(input.id, { id: input.id, name: input.name, currency: input.currency, starts_on: input.starts_on, ends_on: input.ends_on, budget_minor: input.budget_minor ?? null, deleted_at: null, version: 1 });
++        return ack(commandId, input.id, 1, 'created');
++      });
++    },
++    async updateTrip(id: string, version: number, changes: UpdateTripRequest, commandId: string) {
++      await step('updateTrip', [id, version, changes, commandId]);
++      return command('updateTrip', commandId, () => {
++        const trip = lockedTrip(id, version);
++        const next = { ...trip, ...changes, version: trip.version + 1 };
++        // As the vault names it: on ends_on when only the end moves, else on starts_on.
++        if (overlaps(next.starts_on, next.ends_on, id)) throw stateProblem(changes.starts_on === undefined ? 'ends_on' : 'starts_on', 'errors.trip_overlap');
++        trips.set(id, next);
++        return ack(commandId, id, next.version, 'updated');
++      });
++    },
++    async deleteTrip(id: string, version: number, commandId: string) {
++      await step('deleteTrip', [id, version, commandId]);
++      return command('deleteTrip', commandId, () => {
++        const trip = lockedTrip(id, version);
++        trips.set(id, { ...trip, deleted_at: '2026-09-29T00:00:00.000Z', version: version + 1 });
++        return ack(commandId, id, version + 1, 'deleted', 'deleted');
++      });
++    },
++    async tripSummary(id: string) {
++      await step('tripSummary', [id]);
++      const trip = trips.get(id);
++      if (!trip || trip.deleted_at) throw notFound();
++      const tagged = [...records.values()].filter((record): record is TaggedRecord => !record.deleted_at && record.trip_id === id);
++      const expenses = tagged.filter((record): record is TaggedExpense => record.type === 'expense');
++      const groups = (key: (record: TaggedExpense) => string): [string, TaggedExpense[]][] => {
++        const by = new Map<string, TaggedExpense[]>();
++        for (const record of expenses) by.set(key(record), [...(by.get(key(record)) ?? []), record]);
++        return [...by];
++      };
++      // Each distinct rate a tagged record in another currency used, by date, then currency.
++      const home = homeCurrency();
++      const used = new Map<string, TripRateUsed>();
++      for (const record of tagged) {
++        if (record.currency === home) continue;
++        const rate: TripRateUsed = { date: record.occurred_on, currency: record.currency, rate: record.rate, rate_source: record.rate_source, rate_date: record.rate_date };
++        used.set(JSON.stringify(rate), rate);
++      }
++      const summary: TripSummaryDto = {
++        trip: { ...trip },
++        home_currency: home,
++        count: tagged.length,
++        totals: tripMoney(expenses, trip.currency),
++        days: groups((record) => record.occurred_on).sort(([a], [b]) => a.localeCompare(b)).map(([date, list]) => ({ date, ...tripMoney(list, trip.currency) })),
++        categories: groups((record) => record.category_id)
++          .map(([categoryId, list]) => ({ category_id: categoryId, ...tripMoney(list, trip.currency) }))
++          .sort((a, b) => largerFirst(a.spent_home_minor, b.spent_home_minor) || a.category_id.localeCompare(b.category_id)),
++        rates: [...used.values()].sort((a, b) => a.date.localeCompare(b.date) || a.currency.localeCompare(b.currency)),
++        as_of_revision: String(revision),
++      };
++      return summary;
++    },
++    async ratesToday(etag?: string) {
++      await step('ratesToday', [etag]);
++      if (!rates) throw new V1Error('unavailable', 503, 'SERVICE_UNAVAILABLE', { retryAfterSeconds: 300 });
++      if (etag === rates.etag) return 'unchanged' as const;
++      return { etag: rates.etag, rates: rates.set };
++    },
++    async homeCurrencyPreview(currency: CurrencyCode) {
++      await step('homeCurrencyPreview', [currency]);
++      // Records not purged (deleted ones included), those at an own or exchange rate, and stored budget months.
++      const all = [...records.values()];
++      const preview: HomeCurrencyPreview = { currency, records: all.length, own_rates: all.filter((record) => record.rate_source === 'own' || record.rate_source === 'exchange').length, budgets: budgets.size };
++      return preview;
++    },
++    async setHomeCurrency(currency: CurrencyCode, version: number | null, commandId: string) {
++      await step('setHomeCurrency', [currency, version, commandId]);
++      return command('setHomeCurrency', commandId, () => {
++        // If-Match names the settings' version; none is sent before the first change.
++        if (version !== (settings?.version ?? null)) throw conflict(settings);
++        if (currency === homeCurrency()) throw stateProblem('currency', 'errors.home_currency_same');
++        settings = { id: settings?.id ?? uuid(), home_currency: currency, version: (settings?.version ?? 0) + 1 };
++        return ack(commandId, settings.id, settings.version, 'updated');
++      });
++    },
+   };
+ 
+   return {
+@@ -385,6 +529,19 @@
+     wallets,
+     categories,
+     budgets,
++    trips,
++    /** Sets today's rates (a fresh ETag each time, returned), or none again (503). */
++    setRates(set: RatesTodayDto | null): string | null {
++      if (!set) {
++        rates = null;
++        return null;
++      }
++      rateSets += 1;
++      rates = { set, etag: `"rates-${rateSets}"` };
++      return rates.etag;
++    },
++    /** The settings row, or null before the first home currency change. */
++    settings: (): SettingsSnapshot | null => (settings ? { ...settings } : null),
+     newId: uuid,
+   };
+ }

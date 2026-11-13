@@ -1,0 +1,115 @@
+$ mkdir -p /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17
+    [exit 0]
+$ test -d /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/node_modules && echo installed
+    installed
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && shasum -a 256 -c SHA256SUMS | grep -c ': OK$'
+    35
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && shasum -a 256 -c SHA256SUMS | grep -vc ': OK$'
+    0
+    [exit 1]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && shasum -a 256 -c /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p
+    apps/app/src/spend/v1/resources.test.ts: OK
+    apps/app/src/spend/v1/testing/fakeResources.ts: OK
+    apps/app/src/storage/diaryRepository.test.ts: OK
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && for file in $(cat /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/
+    checked
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/sc
+    rc=0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && while read -r kind file; do if [ "$kind" = S ]; then src="stubs/$
+    copied
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && while read -r kind file; do if [ "$kind" = S ]; then src="stubs/$
+    verified
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/sc
+    rc=0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/apps/app && node scripts/test-unit.mjs src/api/client.test.ts src/spend/v1/resources.
+    rc=1
+    [exit 0]
+$ grep -E "^ℹ (tests|pass|fail) " /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/red-focused.log
+    ℹ tests 71
+    ℹ pass 58
+    ℹ fail 13
+    [exit 0]
+$ grep -E "^✖ " /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/red-focused.log | grep -v "failing tests:" | sed 's/ ([0-9.]*m\{0
+    ✖ a 304 or a failure keeps the cache
+    ✖ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag
+    ✖ a damaged cache reads as none
+    ✖ a refresh never fails: a store that cannot be read or written still answers the new set
+    ✖ a refresh stores a new set with its ETag
+    ✖ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag
+    ✖ the fake changes the home currency with versions, and previews from its records
+    ✖ the fake keeps trips with versions and refuses an overlap on create and edit
+    ✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does
+    ✖ the home currency is changed with If-Match only when a version is known
+    ✖ the home currency preview is read for the currency asked and checked against its validator
+    ✖ today's rates answer unchanged for the cached ETag
+    ✖ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators
+    [exit 0]
+$ grep -c "code: 'ERR_ASSERTION'" /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/red-focused.log
+    13
+    [exit 0]
+$ grep -cE "TypeError|ReferenceError|SyntaxError|ERR_MODULE_NOT_FOUND|Cannot find" /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t1
+    0
+    [exit 1]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && for file in $(grep -E '^[MA] ' files.txt | cut -c3- | grep -v '^d
+    copied
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && for file in $(grep -E '^[MA] ' files.txt | cut -c3- | grep -v '^d
+    verified
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && npm run typecheck:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/sc
+    rc=0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/apps/app && node scripts/test-unit.mjs src/api/client.test.ts src/spend/v1/resources.
+    rc=0
+    [exit 0]
+$ grep -E "^ℹ (tests|pass|fail) " /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/green-focused.log
+    ℹ tests 71
+    ℹ pass 71
+    ℹ fail 0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && python3 -I mutants.py --tree /Users/kunanonjarat/Developer/jotbun
+    rc=0
+    [exit 0]
+$ tail -1 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/mutants-check.out
+    96 of 96 apply; missing []
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && python3 -I mutants.py --tree /Users/kunanonjarat/Developer/jotbun
+    rc=0
+    [exit 0]
+$ tail -1 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/mutants.out
+    96 of 96 killed; survivors []; not as expected []; not by an assertion []; not restored []
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner && for file in $(grep -E '^[MA] ' files.txt | cut -c3- | grep -v '^d
+    verified
+    [exit 0]
+$ cp /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/real/docs/implementation/receipts/P5-T17.md /Users/kunanonjarat/Deve
+    [exit 0]
+$ grep -c "BASE_SHA" /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/docs/implementation/receipts/P5-T17.md
+    0
+    [exit 1]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && npm run test:app > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch
+    test:app rc=0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17 && npm run test:unit > /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratc
+    test:unit rc=0
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/apps/app && npx vitest run --config vitest.render.config.ts src/screens/redesign/Spen
+    routes rc=0
+    [exit 0]
+$ grep -E "Test Files" /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/gate-routes.log
+    Test Files  4 passed (4)
+    [exit 0]
+$ cd /Users/kunanonjarat/Developer/jotbun/.claude/worktrees/p5-t17/apps/app && npx vitest run --config vitest.render.config.ts src/screens/redesign/Rece
+    fake render rc=0
+    [exit 0]
+$ grep -E "Test Files" /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17/gate-fake-render.log
+    Test Files  2 passed (2)
+    [exit 0]

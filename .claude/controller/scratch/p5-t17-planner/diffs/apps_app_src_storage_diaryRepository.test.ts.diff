@@ -1,0 +1,22 @@
+--- a/apps/app/src/storage/diaryRepository.test.ts
++++ b/apps/app/src/storage/diaryRepository.test.ts
+@@ -98,6 +98,9 @@
+   await refused({ ...entry, extra: true });
+   await refused({ ...entry, amount_minor: '0' });
+   await refused({ ...entry, note: ' padded ' });
++  // A record's money keys (P5-T2) stay out of a draft until the outbox checks them as the server does (P5-T18a).
++  await refused({ ...entry, currency: 'JPY' });
++  await refused({ ...entry, trip_id: null });
+   await refused({ ...entry, wallet_id: '1a000000-0000-4000-8000-0000000000ff' });
+   await refused({ ...entry, wallet_id: '1a000000-0000-4000-8000-0000000000aa' }); // archived
+   await refused({ ...entry, type: 'income' }); // the category is an expense category
+@@ -442,6 +445,9 @@
+   await assert.rejects(store.keepChoice({ ...valid, recordId: 'not-a-uuid' }), TypeError);
+   await assert.rejects(store.keepChoice({ ...valid, changes: {} }), TypeError);
+   await assert.rejects(store.keepChoice({ ...valid, changes: { version: 9 } as never }), TypeError);
++  // This build's edits send no money key (P5-T2) until a task widens the edit rules.
++  await assert.rejects(store.keepChoice({ ...valid, changes: { currency: 'JPY' } }), TypeError);
++  await assert.rejects(store.keepChoice({ ...valid, changes: { trip_id: null } }), TypeError);
+   await assert.rejects(store.keepChoice({ ...valid, changes: { amount_minor: 7000 } as never }), TypeError);
+   await assert.rejects(store.keepChoice({ ...valid, original: { ...valid.original, extra: true } as never }), TypeError);
+   await assert.rejects(store.keepChoice({ ...valid, refusedAt: 'yesterday' }), TypeError);

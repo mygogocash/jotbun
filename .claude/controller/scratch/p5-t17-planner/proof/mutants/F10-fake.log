@@ -1,0 +1,64 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:77594) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:77594) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (1.569625ms)
+✔ the fake's trip summary adds its tagged records' stored amounts, as the vault does (4.20525ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.168958ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.270459ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 141.948875
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:29:1
+✖ the fake keeps trips with versions and refuses an overlap on create and edit (1.569625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        code: 'VALIDATION_FAILED',
+        fields: {
+          starts_on: 'errors.trip_overlap'
+  ...
+      {
+  +     command_id: 'k10',
+  +     committed_revision: '15',
+  +     entity_id: '7a000000-0000-4000-8000-000000000001',
+  +     entity_state: 'active',
+  +     outcome: 'updated',
+  +     version: 4
+  -     code: 'ENTITY_DELETED',
+  -     outcome: 'deleted',
+  -     status: 409
+      },
+      {
+        code: 'NOT_FOUND',
+        outcome: 'not_found',
+        status: 404
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:52:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k2', entity_id: '7a000000-0000-4000-8000-000000000004', version: 1, committed_revision: '11', outcome: 'created', entity_state: 'active' }, { command_id: 'k3', entity_id: '7a000000-0000-4000-8000-000000000003', version: 1, committed_revision: '12', outcome: 'created', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k7', entity_id: '7a000000-0000-4000-8000-000000000001', version: 2, committed_revision: '13', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { command_id: 'k9', entity_id: '7a000000-0000-4000-8000-000000000001', version: 3, committed_revision: '14', outcome: 'deleted', entity_state: 'deleted' }, { command_id: 'k10', entity_id: '7a000000-0000-4000-8000-000000000001', version: 4, committed_revision: '15', outcome: 'updated', entity_state: 'active' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    expected: [ { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k2', entity_id: '7a000000-0000-4000-8000-000000000004', version: 1, committed_revision: '11', outcome: 'created', entity_state: 'active' }, { command_id: 'k3', entity_id: '7a000000-0000-4000-8000-000000000003', version: 1, committed_revision: '12', outcome: 'created', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'k7', entity_id: '7a000000-0000-4000-8000-000000000001', version: 2, committed_revision: '13', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { command_id: 'k9', entity_id: '7a000000-0000-4000-8000-000000000001', version: 3, committed_revision: '14', outcome: 'deleted', entity_state: 'deleted' }, { outcome: 'deleted', status: 409, code: 'ENTITY_DELETED' }, { outcome: 'not_found', status: 404, code: 'NOT_FOUND' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

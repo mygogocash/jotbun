@@ -1,0 +1,10 @@
+M apps/app/src/api/client.ts
+M apps/app/src/api/client.test.ts
+M apps/app/src/spend/v1/resources.ts
+M apps/app/src/spend/v1/resources.test.ts
+M apps/app/src/spend/v1/testing/fakeResources.ts
+M apps/app/src/storage/diaryRepository.test.ts
+A apps/app/src/spend/v1/ratesCache.ts
+A apps/app/src/spend/v1/ratesCache.test.ts
+A apps/app/src/spend/v1/testing/fakeResources.test.ts
+A docs/implementation/receipts/P5-T17.md

@@ -1,0 +1,111 @@
+(node:36815) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.256625ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (11.77775ms)
+✔ multipart uploads let the runtime generate a matching boundary (3.216791ms)
+✔ server failures stay failures with their actionable code (1.129708ms)
+✔ absolute URLs cannot receive session credentials (0.140875ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.427875ms)
+✔ a v1 request with no session id is refused before anything is sent (0.193ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (1.071041ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (0.665375ms)
+✔ a response from the previous account cannot become the current diary (0.763708ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (2.7435ms)
+✔ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.448833ms)
+(node:36816) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/ratesCache.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36816) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ a refresh stores a new set with its ETag (1.206834ms)
+✔ a 304 or a failure keeps the cache (0.456958ms)
+✔ a damaged cache reads as none (0.194625ms)
+✔ a refresh never fails: a store that cannot be read or written still answers the new set (0.11025ms)
+(node:36817) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/resources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36817) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ reads send the access token, binding and client version, and no command headers (11.429ms)
+✔ signed out, unbound or unsupported clients fail before any request (0.232625ms)
+✔ commands send their key, the command schema and If-Match with the exact body (4.83525ms)
+✔ a lost response is retried as the same immutable command (255.168459ms)
+✔ DTOs with number money or unknown fields are refused, not coerced (2.260458ms)
+✔ problems map to outcomes a screen can act on (4.736042ms)
+✔ a response that arrives after a sign-out or account switch is dropped (0.115125ms)
+✔ history builds its query from the filter; a month without a budget is null (0.915375ms)
+✔ totals may name their currency (1.086542ms)
+✔ recently deleted pages by cursor and accepts only deleted records in the record shape (3.13675ms)
+✔ only https, or loopback http, API addresses are accepted (0.226792ms)
+✔ a gateway error page is "unavailable" (maybe committed), never a definite refusal (0.619792ms)
+✔ a sign-out during a command retry stops resending (252.892208ms)
+✔ an acknowledgement for another command or entity is refused (1.33775ms)
+✔ FORBIDDEN and RESYNC_REQUIRED are not field errors (0.727292ms)
+✔ an outbox command is sent as itself: its own key, its own schema version and its exact body (0.743166ms)
+✔ delta pages are fetched by opaque cursor and checked group by group (1.430292ms)
+✔ delta pages and snapshot chunks may carry entity types this build does not know; a malformed one is still refused (1.169625ms)
+✔ snapshots: requested with a key, polled, and each chunk verified by size and SHA-256 (1.868083ms)
+✔ planning commands: budget set, wallet and category changes, each with its key, If-Match and exact body (2.137292ms)
+✔ planning commands refuse an acknowledgement for another command or entity, and a malformed month or id before sending (0.5545ms)
+✔ a yen create sends its money fields (0.536875ms)
+✔ trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators (3.664625ms)
+✔ the home currency is changed with If-Match only when a version is known (0.733458ms)
+✔ the home currency preview is read for the currency asked and checked against its validator (0.728292ms)
+✔ today's rates answer unchanged for the cached ETag (1.521417ms)
+(node:36818) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36818) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ the fake keeps trips with versions and refuses an overlap on create and edit (5.50425ms)
+✔ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.418042ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.193041ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.283917ms)
+(node:36819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/storage/diaryRepository.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ a saved draft and its outbox command persist together, or not at all (24.388209ms)
+✔ saving the same draft again (a retry after an unknown outcome) is a no-op; a different body under the same ids is refused (2.400791ms)
+✔ a draft must match its command and account, be a valid create, and use synced, open references (3.073667ms)
+✔ a pending entry may carry a source, and an unknown one is refused (2.6655ms)
+✔ delta records, totals and cursor commit together: a failure at any statement keeps the previous state (21.8165ms)
+✔ a page fetched before the cursor moved is refused, never written back (1.986542ms)
+✔ applies versions forward only, keeps tombstones, drops purged data, and recomputes exact totals (2.169417ms)
+✔ refuses out-of-order or already-applied groups and invalid changes, applying nothing (1.800542ms)
+✔ failed_snapshot_swap_preserves_cursor_and_outbox (29.04575ms)
+✔ a confirmed replacement swaps the confirmed state but never removes unresolved outbox commands or drafts (2.702833ms)
+✔ stores exact integer strings and no credentials (1.763459ms)
+✔ a build without the import validators skips import changes, applies the rest and advances the cursor (2.144541ms)
+✔ a snapshot with import entities replaces the confirmed state without them for a build that does not know them (1.467208ms)
+✔ a known entity that does not match its validator, and an unknown entity that is not an entity change at all, still refuse the page (1.578125ms)
+✔ a build that knows the import entities stores them (1.517375ms)
+✔ import draft rows are written, replaced, listed and removed, kept across a restart, and leave with the diary (3.964625ms)
+✔ import draft rows follow the store: refused once it is locked or from an earlier session, and a write racing a session change rolls back (1.927041ms)
+✔ logged days are the distinct dates of live records and drafts (1.838125ms)
+✔ the applied revision is read without loading the diary (1.849875ms)
+✔ a pending choice is kept, replaced per record and dropped (2.63725ms)
+✔ a choice for a mismatched record, or one that is not a valid choice, is refused (1.340708ms)
+✔ a choice written after the session moved is refused, and a write racing the move rolls back (4.101333ms)
+✔ choices survive a lock and reopen, and go with the erase (2.512ms)
+✔ a stored choice that no longer validates is left out of the list and not deleted (2.312833ms)
+✔ migration 3 adds the table and keeps a version 2 diary's drafts (3.181791ms)
+ℹ tests 71
+ℹ suites 0
+ℹ pass 71
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 707.959375

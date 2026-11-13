@@ -1,0 +1,75 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app)
+(node:53662) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:53662) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ the fake keeps trips with versions and refuses an overlap on create and edit (4.518292ms)
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.858917ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.153083ms)
+✔ the fake changes the home currency with versions, and previews from its records (0.24375ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.751
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:112:1
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (0.858917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      as_of_revision: '10',
+      categories: [
+        {
+          category_id: '2c000000-0000-4000-8000-000000000002',
+  ...
+          category_id: '2c000000-0000-4000-8000-000000000003',
+  +       other_home_minor: '32450',
+  -       other_home_minor: '74550',
+          spent_home_minor: '74550',
+          spent_trip_minor: '0'
+        }
+      ],
+      count: 8,
+  ...
+          date: '2026-11-03',
+  +       other_home_minor: '32450',
+  -       other_home_minor: '74550',
+          spent_home_minor: '102294',
+          spent_trip_minor: '1200'
+        },
+        {
+          date: '2026-11-04',
+  ...
+      totals: {
+  +     other_home_minor: '107000',
+  -     other_home_minor: '149100',
+        spent_home_minor: '439494',
+        spent_trip_minor: '12580'
+      },
+      trip: {
+        budget_minor: '120000',
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/sim/wt/apps/app/src/spend/v1/testing/fakeResources.test.ts:114:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { trip: { id: '7a000000-0000-4000-8000-000000000001', name: 'ทริปญี่ปุ่น', currency: 'JPY', starts_on: '2026-11-01', ends_on: '2026-11-08', budget_minor: '120000', deleted_at: null, version: 1 }, home_currency: 'THB', count: 8, totals: { spent_home_minor: '439494', spent_trip_minor: '12580', other_home_minor: '107000' }, days: [ [Object], [Object], [Object] ], categories: [ [Object], [Object], [Object], [Object] ], rates: [ [Object], [Object], [Object] ], as_of_revision: '10' },
+    expected: { trip: { id: '7a000000-0000-4000-8000-000000000001', name: 'ทริปญี่ปุ่น', currency: 'JPY', starts_on: '2026-11-01', ends_on: '2026-11-08', budget_minor: '120000', deleted_at: null, version: 1 }, home_currency: 'THB', count: 8, totals: { spent_home_minor: '439494', spent_trip_minor: '12580', other_home_minor: '149100' }, days: [ [Object], [Object], [Object] ], categories: [ [Object], [Object], [Object], [Object] ], rates: [ [Object], [Object], [Object] ], as_of_revision: '10' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

@@ -1,0 +1,131 @@
+$ node scripts/test-unit.mjs src/spend/v1/testing/fakeResources.test.ts  (in /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app)
+(node:78448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:78448) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/packages/contracts/package.json.
+✔ the fake keeps trips with versions and refuses an overlap on create and edit (5.170458ms)
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (1.006334ms)
+✔ the fake answers 503 until rates are set, then the set with its ETag, and unchanged for that ETag (0.186125ms)
+✖ the fake changes the home currency with versions, and previews from its records (0.417834ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 142.203041
+
+✖ failing tests:
+
+test at src/spend/v1/testing/fakeResources.test.ts:112:1
+✖ the fake's trip summary adds its tagged records' stored amounts, as the vault does (1.006334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+  +   'THB',
+  -   'JPY',
+      [
+        {
+  +       currency: 'JPY',
+  +       date: '2026-11-02',
+  +       rate: '0.2308',
+  +       rate_date: '2026-11-02',
+  +       rate_source: 'reference'
+  +     },
+  +     {
+  +       currency: 'JPY',
+  -       currency: 'THB',
+          date: '2026-11-03',
+  +       rate: '0.2312',
+  +       rate_date: '2026-11-03',
+  -       rate: '1',
+  -       rate_date: null,
+          rate_source: 'reference'
+        },
+        {
+          currency: 'USD',
+          date: '2026-11-03',
+  ...
+        },
+  -     {
+  -       currency: 'THB',
+  -       date: '2026-11-04',
+  -       rate: '1',
+  -       rate_date: null,
+  -       rate_source: 'reference'
+  -     }
+      ]
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:144:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'THB', [ [Object], [Object], [Object] ] ],
+    expected: [ 'JPY', [ [Object], [Object], [Object] ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at src/spend/v1/testing/fakeResources.test.ts:172:1
+✖ the fake changes the home currency with versions, and previews from its records (0.417834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        code: 'VERSION_CONFLICT',
+        current: null,
+        outcome: 'conflict',
+  ...
+      {
+  +     command_id: 'h5',
+  -     code: 'VALIDATION_FAILED',
+  -     fields: {
+  -       currency: 'errors.home_currency_same'
+  -     },
+  -     outcome: 'invalid',
+  -     status: 422
+  -   },
+  -   {
+  -     command_id: 'h6',
+        committed_revision: '12',
+        entity_id: '00000000-0000-4000-8000-000000000001',
+        entity_state: 'active',
+        outcome: 'updated',
+        version: 2
+      },
+  +   {
+  +     code: 'VERSION_CONFLICT',
+  +     current: {
+  +       home_currency: 'JPY',
+  +       id: '00000000-0000-4000-8000-000000000001',
+  +       version: 2
+  +     },
+  +     outcome: 'conflict',
+  +     status: 409
+  +   }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p5-t17-planner/tree/apps/app/src/spend/v1/testing/fakeResources.test.ts:195:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: null }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'h3', entity_id: '00000000-0000-4000-8000-000000000001', version: 1, committed_revision: '11', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { command_id: 'h5', entity_id: '00000000-0000-4000-8000-000000000001', version: 2, committed_revision: '12', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] } ],
+    expected: [ { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: null }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'h3', entity_id: '00000000-0000-4000-8000-000000000001', version: 1, committed_revision: '11', outcome: 'updated', entity_state: 'active' }, { outcome: 'conflict', status: 409, code: 'VERSION_CONFLICT', current: [Object] }, { outcome: 'invalid', status: 422, code: 'VALIDATION_FAILED', fields: [Object] }, { command_id: 'h6', entity_id: '00000000-0000-4000-8000-000000000001', version: 2, committed_revision: '12', outcome: 'updated', entity_state: 'active' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

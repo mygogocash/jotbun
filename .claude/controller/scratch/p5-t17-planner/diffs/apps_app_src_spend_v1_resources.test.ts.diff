@@ -1,0 +1,170 @@
+--- a/apps/app/src/spend/v1/resources.test.ts
++++ b/apps/app/src/spend/v1/resources.test.ts
+@@ -9,7 +9,7 @@
+ import { V1_COMMAND_SCHEMA, createSpendV1Resources, createSyncResources } from './resources.ts';
+ 
+ type Seen = { method: string; url: string; headers: IncomingHttpHeaders; body: string };
+-type Reply = { status: number; body?: unknown; raw?: string; drop?: boolean };
++type Reply = { status: number; body?: unknown; raw?: string; drop?: boolean; headers?: Record<string, string> };
+ 
+ const WALLET = { id: '0b8a4d1e-6f0a-4c51-9a8e-2f5f6d1f9c11', name: 'Cash', currency: 'THB', opening_minor: '403200', tracking_start: '2026-09-01', archived: false, version: 1, balance_minor: '235000' };
+ const ACK = { command_id: '5f2c9d64-3b1e-4f7a-8c2d-9e0a1b2c3d4e', entity_id: '6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', version: 1, committed_revision: '7', outcome: 'created', entity_state: 'active' };
+@@ -26,7 +26,7 @@
+     req.socket.destroy();
+     return;
+   }
+-  res.writeHead(reply.status, { 'content-type': 'application/json' });
++  res.writeHead(reply.status, { 'content-type': 'application/json', ...reply.headers });
+   res.end(reply.raw ?? JSON.stringify(reply.body ?? null));
+ });
+ 
+@@ -46,6 +46,16 @@
+   throw new Error('expected a V1Error');
+ }
+ 
++/** A call's answer, or its refusal's outcome, so a case's every check is an assertion. */
++async function answer(run: () => Promise<unknown>): Promise<unknown> {
++  try {
++    return await run();
++  } catch (error) {
++    if (error instanceof V1Error) return error.outcome;
++    throw error;
++  }
++}
++
+ before(async () => {
+   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+   const address = server.address();
+@@ -400,3 +410,132 @@
+   await assert.rejects(resources().archiveCategory('not-a-uuid', 1, randomUUID()), (error: unknown) => error instanceof V1Error && error.outcome === 'invalid');
+   assert.equal(seen.length, before);
+ });
++
++// Phase 5 (P5-T17): records in any currency, trips, today's rates and the home currency.
++const TRIP = { id: '7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d', name: 'ทริปญี่ปุ่น', currency: 'JPY', starts_on: '2026-11-01', ends_on: '2026-11-08', budget_minor: '120000', deleted_at: null, version: 1 };
++const TRIP_DAY = { date: '2026-11-03', spent_trip_minor: '6180', spent_home_minor: '142881', other_home_minor: '0' };
++const SUMMARY = {
++  trip: TRIP, home_currency: 'THB', count: 13,
++  totals: { spent_home_minor: '883184', spent_trip_minor: '38200', other_home_minor: '0' },
++  days: [TRIP_DAY], categories: [],
++  rates: [{ date: '2026-11-03', currency: 'JPY', rate: '0.2312', rate_source: 'reference', rate_date: '2026-11-03' }],
++  as_of_revision: '7',
++};
++const NOV_3 = { base: 'USD', as_of: '2026-11-03', rates: { THB: { per_base: '34.68', day: '2026-11-03' }, JPY: { per_base: '150', day: '2026-11-03' } } };
++
++test('a yen create sends its money fields', async () => {
++  const entryKey = randomUUID();
++  const exchangeKey = randomUUID();
++  const exchangeId = randomUUID();
++  replies.push({ status: 201, body: { ...ACK, command_id: entryKey } }, { status: 201, body: { ...ACK, command_id: exchangeKey, entity_id: exchangeId } });
++  // tc-rate-edit's ¥4,620 charged ฿1,075.50 on a baht card, tagged with the trip; tc-exchange's ฿10,000 for ¥43,000.
++  const entry = { id: ACK.entity_id, type: 'expense' as const, amount_minor: '4620', occurred_on: '2026-11-03', wallet_id: WALLET.id, category_id: '1d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a', currency: 'JPY', rate_source: 'own' as const, home_amount_minor: '107550', home_currency: 'THB', trip_id: TRIP.id };
++  const exchange = { id: exchangeId, amount_minor: '1000000', occurred_on: '2026-11-03', source_wallet_id: WALLET.id, destination_wallet_id: ACK.entity_id, currency: 'THB', to_amount_minor: '43000', trip_id: TRIP.id };
++  const answers = [await answer(() => resources().createTransaction(entry, entryKey)), await answer(() => resources().createTransfer(exchange, exchangeKey))];
++  assert.deepEqual(seen.map((request) => [request.method, request.url, request.headers['idempotency-key'], JSON.parse(request.body)]), [
++    ['POST', '/v1/transactions', entryKey, entry],
++    ['POST', '/v1/transactions', exchangeKey, { ...exchange, type: 'transfer' }],
++  ]);
++  assert.deepEqual(answers, [{ ...ACK, command_id: entryKey }, { ...ACK, command_id: exchangeKey, entity_id: exchangeId }]);
++});
++
++test('trips are created, edited and deleted with their keys and versions, and listed and summarised against their validators', async () => {
++  const keys = [randomUUID(), randomUUID(), randomUUID()];
++  const acks = [
++    { ...ACK, command_id: keys[0], entity_id: TRIP.id, outcome: 'created' },
++    { ...ACK, command_id: keys[1], entity_id: TRIP.id, version: 2, outcome: 'updated' },
++    { ...ACK, command_id: keys[2], entity_id: TRIP.id, version: 3, outcome: 'deleted', entity_state: 'deleted' },
++  ];
++  replies.push({ status: 201, body: acks[0] }, { status: 200, body: acks[1] }, { status: 200, body: acks[2] }, { status: 200, body: [TRIP] }, { status: 200, body: SUMMARY });
++  const create = { id: TRIP.id, name: TRIP.name, currency: 'JPY', starts_on: '2026-11-01', ends_on: '2026-11-08', budget_minor: '120000' };
++  const r = resources();
++  const answers = [
++    await answer(() => r.createTrip(create, keys[0])),
++    await answer(() => r.updateTrip(TRIP.id, 1, { ends_on: '2026-11-09' }, keys[1])),
++    await answer(() => r.deleteTrip(TRIP.id, 2, keys[2])),
++    await answer(() => r.trips()),
++    await answer(() => r.tripSummary(TRIP.id)),
++  ];
++  const schema = String(V1_COMMAND_SCHEMA);
++  assert.deepEqual(seen.map((request) => [request.method, request.url, request.headers['idempotency-key'] ?? null, request.headers['x-gogospend-command-schema'] ?? null, request.headers['if-match'] ?? null, request.body === '' ? null : JSON.parse(request.body)]), [
++    ['POST', '/v1/trips', keys[0], schema, null, create],
++    ['PATCH', `/v1/trips/${TRIP.id}`, keys[1], schema, '"1"', { ends_on: '2026-11-09' }],
++    ['DELETE', `/v1/trips/${TRIP.id}`, keys[2], schema, '"2"', null],
++    ['GET', '/v1/trips', null, null, null, null],
++    ['GET', `/v1/trips/${TRIP.id}/summary`, null, null, null, null],
++  ]);
++  assert.deepEqual(answers, [...acks, [TRIP], SUMMARY]);
++  // Refused, never coerced: an acknowledgement for another trip, a trip or a summary its validator refuses.
++  const other = randomUUID();
++  const refused: [() => Promise<unknown>, Reply][] = [
++    [() => r.createTrip(create, keys[0]), { status: 201, body: { ...acks[0], entity_id: other } }],
++    [() => r.updateTrip(TRIP.id, 1, { ends_on: '2026-11-09' }, keys[1]), { status: 200, body: { ...acks[1], entity_id: other } }],
++    [() => r.deleteTrip(TRIP.id, 2, keys[2]), { status: 200, body: { ...acks[2], entity_id: other } }],
++    [() => r.trips(), { status: 200, body: [{ ...TRIP, budget_minor: 120000 }] }],
++    [() => r.trips(), { status: 200, body: [{ ...TRIP, owner: 'x' }] }],
++    [() => r.tripSummary(TRIP.id), { status: 200, body: { ...SUMMARY, days: [{ spent_trip_minor: '6180', spent_home_minor: '142881', other_home_minor: '0' }] } }],
++  ];
++  const outcomes: unknown[] = [];
++  for (const [run, reply] of refused) {
++    replies.push(reply);
++    outcomes.push(await answer(run));
++  }
++  // A malformed id is refused before anything is sent.
++  const sent = seen.length;
++  outcomes.push(await answer(() => r.updateTrip('not-a-uuid', 1, { name: 'x' }, randomUUID())), await answer(() => r.deleteTrip('not-a-uuid', 1, randomUUID())), await answer(() => r.tripSummary('not-a-uuid')));
++  assert.deepEqual([outcomes, seen.length - sent], [['invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid_response', 'invalid', 'invalid', 'invalid'], 0]);
++});
++
++test('the home currency is changed with If-Match only when a version is known', async () => {
++  const keys = [randomUUID(), randomUUID(), randomUUID()];
++  const settingsId = randomUUID();
++  const acks = [
++    { ...ACK, command_id: keys[0], entity_id: settingsId, outcome: 'updated' },
++    { ...ACK, command_id: keys[1], entity_id: settingsId, version: 2, outcome: 'updated' },
++  ];
++  replies.push({ status: 200, body: acks[0] }, { status: 200, body: acks[1] }, { status: 200, body: { ...acks[1], command_id: randomUUID(), version: 3 } });
++  const r = resources();
++  const answers = [await answer(() => r.setHomeCurrency('JPY', null, keys[0])), await answer(() => r.setHomeCurrency('USD', 1, keys[1])), await answer(() => r.setHomeCurrency('THB', 2, keys[2]))];
++  assert.deepEqual(seen.map((request) => [request.method, request.url, request.headers['idempotency-key'] ?? null, request.headers['x-gogospend-command-schema'] ?? null, request.headers['if-match'] ?? null, JSON.parse(request.body)]), [
++    ['PUT', '/v1/me/home-currency', keys[0], String(V1_COMMAND_SCHEMA), null, { currency: 'JPY' }],
++    ['PUT', '/v1/me/home-currency', keys[1], String(V1_COMMAND_SCHEMA), '"1"', { currency: 'USD' }],
++    ['PUT', '/v1/me/home-currency', keys[2], String(V1_COMMAND_SCHEMA), '"2"', { currency: 'THB' }],
++  ]);
++  // The settings' id is the server's, so any entity is taken, but only in this command's acknowledgement.
++  assert.deepEqual(answers, [...acks, 'invalid_response']);
++});
++
++test('the home currency preview is read for the currency asked and checked against its validator', async () => {
++  const preview = { currency: 'JPY', records: 120, own_rates: 3, budgets: 2 };
++  replies.push({ status: 200, body: preview }, { status: 200, body: { ...preview, records: -1 } }, { status: 422, body: { code: 'VALIDATION_FAILED', request_id: 'r', message_key: 'm', fields: { currency: 'errors.currency' } } });
++  const r = resources();
++  const answers = [await answer(() => r.homeCurrencyPreview('JPY')), await answer(() => r.homeCurrencyPreview('JPY')), await answer(() => r.homeCurrencyPreview('J&Y'))];
++  assert.deepEqual(seen.map((request) => [request.method, request.url, request.headers['idempotency-key'] ?? null]), [
++    ['GET', '/v1/me/home-currency/preview?currency=JPY', null],
++    ['GET', '/v1/me/home-currency/preview?currency=JPY', null],
++    ['GET', '/v1/me/home-currency/preview?currency=J%26Y', null],
++  ]);
++  assert.deepEqual(answers, [preview, 'invalid_response', 'invalid']);
++});
++
++test("today's rates answer unchanged for the cached ETag", async () => {
++  replies.push(
++    { status: 200, body: NOV_3, headers: { etag: '"r3"' } },
++    { status: 304, headers: { etag: '"r3"' } },
++    { status: 200, body: NOV_3 },
++    { status: 200, body: { ...NOV_3, rates: { ...NOV_3.rates, JPY: { per_base: '0', day: '2026-11-03' } } }, headers: { etag: '"r4"' } },
++    { status: 503, body: { code: 'SERVICE_UNAVAILABLE', request_id: 'r', message_key: 'm', retry_after_seconds: 300 } },
++  );
++  const r = resources();
++  const answers: unknown[] = [];
++  for (const etag of [undefined, '"r3"', '"r3"', undefined, '"r3"']) answers.push(await answer(() => r.ratesToday(etag)));
++  assert.deepEqual(seen.map((request) => [request.method, request.url, request.headers['if-none-match'] ?? null]), [
++    ['GET', '/v1/rates/today', null],
++    ['GET', '/v1/rates/today', '"r3"'],
++    ['GET', '/v1/rates/today', '"r3"'],
++    ['GET', '/v1/rates/today', null],
++    ['GET', '/v1/rates/today', '"r3"'],
++  ]);
++  // A 200 without an ETag answers null, never the ETag the read was sent with.
++  assert.deepEqual(answers, [{ etag: '"r3"', rates: NOV_3 }, 'unchanged', { etag: null, rates: NOV_3 }, 'invalid_response', 'unavailable']);
++});

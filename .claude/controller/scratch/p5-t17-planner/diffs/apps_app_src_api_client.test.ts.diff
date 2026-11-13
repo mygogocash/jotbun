@@ -1,0 +1,67 @@
+--- a/apps/app/src/api/client.test.ts
++++ b/apps/app/src/api/client.test.ts
+@@ -1,7 +1,7 @@
+ import { after, before, test } from 'node:test';
+ import assert from 'node:assert/strict';
+ import { createServer } from 'node:http';
+-import { ApiError, V1Error, createMobileApiClient, createV1Transport } from './client.ts';
++import { ApiError, NOT_MODIFIED, V1Error, createMobileApiClient, createV1Transport } from './client.ts';
+ import type { V1Credentials } from './client.ts';
+ 
+ let baseUrl = '';
+@@ -173,3 +173,55 @@
+   off = false;
+   assert.equal((await read()).analytics, null);
+ });
++
++test("a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag", async () => {
++  const sent: (string | null)[] = [];
++  const answers: Response[] = [];
++  const fetchImpl: typeof fetch = async (_url, init) => {
++    sent.push(new Headers(init?.headers).get('if-none-match'));
++    const answer = answers.shift();
++    if (!answer) throw new Error('no answer queued');
++    return answer;
++  };
++  const transport = createV1Transport({
++    baseUrl,
++    client: { platform: 'ios', version: '1.2.3' },
++    credentials: { getAccessToken: async () => 'token-1', getSessionSnapshot: () => ({ binding: 'b'.repeat(43), epoch: 1 }) },
++    fetchImpl,
++  });
++  const heard: (string | null)[] = [];
++  const isSet = (value: unknown): value is { n: number } => typeof value === 'object' && value !== null && 'n' in value;
++  const setOrUnchanged = (value: unknown): value is { n: number } | typeof NOT_MODIFIED => value === NOT_MODIFIED || isSet(value);
++  // Each read's answer, or its refusal as "<outcome> <status>".
++  const read = async (ifNoneMatch: string | undefined, validate: (value: unknown) => value is unknown = setOrUnchanged) => {
++    try {
++      return await transport.request('GET', '/v1/rates/today', { ifNoneMatch, etag: (value) => { heard.push(value); }, validate });
++    } catch (error) {
++      if (error instanceof V1Error) return `${error.outcome} ${error.status}`;
++      throw error;
++    }
++  };
++  const json = (body: unknown, etag?: string) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json', ...(etag === undefined ? {} : { ETag: etag }) } });
++  answers.push(
++    json({ n: 1 }, '"a1"'),
++    new Response(null, { status: 304, headers: { ETag: '"a1"' } }),
++    json({ n: 2 }),
++    new Response(null, { status: 304 }),
++    new Response(null, { status: 304 }),
++    json({ m: 3 }, '"a3"'),
++  );
++  const results = [
++    await read(undefined),
++    await read('"a1"'),
++    await read('"a1"'),
++    // A 304 to a read that sent no ETag is refused, as any status outside 2xx.
++    await read(undefined),
++    // A read whose validator does not take NOT_MODIFIED refuses it.
++    await read('"a2"', isSet),
++    // A body its validator refuses reports no ETag.
++    await read(undefined),
++  ];
++  assert.deepEqual(sent, [null, '"a1"', '"a1"', null, '"a2"', null]);
++  assert.deepEqual(results, [{ n: 1 }, NOT_MODIFIED, { n: 2 }, 'invalid 304', 'invalid_response 304', 'invalid_response 200']);
++  assert.deepEqual(heard, ['"a1"', null]);
++});
