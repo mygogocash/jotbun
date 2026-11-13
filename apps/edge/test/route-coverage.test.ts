@@ -153,4 +153,10 @@ describe('the one Worker covers every NestJS v1 route', () => {
       expect(VAULT_ADDED_ROUTES).toContain(keyOf(route))
     }
   })
+
+  it('GET /v1/me/analytics is an added route with a vault handler, and the added routes are exactly these two (1D-T11)', () => {
+    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analytics', 'GET /v1/sync/live'])
+    expect(VAULT_V1_ROUTES.filter((route) => keyOf(route) === 'GET /v1/me/analytics')).toEqual([{ method: 'GET', path: '/v1/me/analytics', access: 'bound_session', vault: 'me.analytics' }])
+    expect(VAULT_HANDLERS['me.analytics']).toBeTypeOf('function')
+  })
 })

@@ -259,6 +259,8 @@ function preparesSeen(kinds: string[]): DurableObjectNamespace<UserVault> {
                   return reply
                 }
               }
+              // A vault route's call (1D-T11), forwarded unbound: on an RPC stub `.bind` is itself a remote call.
+              if (p === 'callWithAnalytics') return (call: VaultCall) => s.callWithAnalytics(call)
               const value = Reflect.get(s, p)
               return typeof value === 'function' ? value.bind(s) : value
             },
