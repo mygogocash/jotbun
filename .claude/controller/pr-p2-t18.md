@@ -17,7 +17,15 @@
   - The controller checked the commit: all 12 `real/` files are byte-identical.
   - The receipt is its own file under R87: `docs/implementation/receipts/P2-T18.md`.
   - No package, lockfile, edge or database change.
-- **Follow-up:** Insights (P2-T31's screen) pads `insets.bottom + 24`, so under the shell the + covers about 18 pt of its last row. It needs `useWalletTabInset()`.
+- **The reviews' pins (the controller's commit `74142ebc`, test-only plus the receipt).** Both reviews approve. Their findings were guards no case held, and two receipt lines:
+  - the chip names the save's category in Thai (Opus m2);
+  - the + glyph in `onPrimary`, its lift by day only, the blocked + dimmed, and each tab icon following the selection, in both modes (Opus n3, Sonnet m3);
+  - only the spend layout mounts a wallet shell (Opus n1);
+  - a hostile link to `/spend/add` opens the plain spending tray with nothing from the link (Sonnet m2);
+  - the receipt: the shell is mounted once per spend layout, since Settings' links push a second (Opus m1, the controller's carry); the window-filling device check (Sonnet n4); Magic Tap's risk on Fabric iOS (Sonnet m1).
+- **Follow-ups (the controller's `shell-carry`, before P2-T24's card stack):**
+  - share the looks between spend layouts (Opus m1);
+  - Insights (P2-T31's screen) pads `insets.bottom + 24`, so under the shell the + covers 18 pt of its last row with a 34 pt inset and 52 pt with none; it needs `useWalletTabInset()` (Opus n2, Sonnet m4).
 
 ## Test plan
 - [x] RED: Node 8 of 8 and render 15 of 39 failing, every one an `AssertionError`.
@@ -31,8 +39,15 @@
   - the other neighbours 131;
   - `export:web` (exported);
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide.
-- [ ] Independent review (Opus), and a second review (Sonnet): the single host and the copy route (P13, P14), private mode under the shell (P16), the layout order (P5, P6) and Magic Tap.
+- [x] The reviews' pins (`74142ebc`), under the heavy lock:
+  - the two render files 34 of 34, the Node file 6 of 6, and `typecheck:app`;
+  - the reviews' mutants V1, V2, V4, V5, V9, M1, M2, M3, M5 and N3 are each killed on an assertion;
+  - the planner's A1 to A8, B1 to B20, D1 to D7, S10 to S12 and L1 to L9 are still killed.
+
+  Proof: `.claude/controller/scratch/p2-t18-pins/`.
+- [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide. It runs again once #464 has merged.
+- [x] Independent review (Opus), and a second review (Sonnet): the single host and the copy route (P13, P14), private mode under the shell (P16), the layout order (P5, P6) and Magic Tap. Both approve.
+- [ ] The Opus reviewer confirms `74142ebc`.
 - [ ] SKIPPED: device checks (the refused present on iOS, the + and Magic Tap under VoiceOver, the bar at the largest text size).
 
 Closes #164 once merged, after #464 (closed by hand, since the base is not the default branch).

@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 03:05: #464 fully approved (the confirmation of `7e2ae0dc` approves); #465 approved twice, its pins pushed as `74142ebc`.**
+  - **#464 (P2-T18a)** waits only on CI. The confirmation (`reviews/P2-T18a.md`, "Confirmation of 7e2ae0dc") reran 15 mutants, each killed by the case meant for it. Its optional n2 (race A's opening part dressed as an online save) goes to `saved-pins` in followups. Both #464 review threads are archived.
+  - **#465 (P2-T18):**
+    - **The Sonnet second review approves** (`reviews/P2-T18-second.md`): m1 Magic Tap on Fabric iOS (a device check decides), m2 the add route's `addRequestOf` unpinned, m3 the + and icon looks, m4 Insights' 52 pt, n1 to n4.
+    - **The controller's commit `74142ebc`** holds both reviews' test pins and the receipt corrections. Proof `scratch/p2-t18-pins/`:
+      - green 34 of 34 and 6 of 6, and `typecheck:app`;
+      - the reviews' 10 mutants each killed;
+      - the planner's A, B, D, S10 to S12 and L still killed.
+    - One new case first failed on the real code (no wallet in the fakes, so no amount step). It was fixed in the scratch tree, and green and N3 were rerun cleanly.
+    - **The Opus reviewer (`mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, run 2) confirms `74142ebc`** in a new section of `reviews/P2-T18.md`. The Sonnet thread is archived.
+    - The followups entry for P2-T18 is written. The controller's `shell-carry` task, to plan once #465 merges, holds the looks shared across spend layouts (Opus m1), Insights' inset (Opus n2, Sonnet m4) and the hint's words (Sonnet n1).
+  - **Live now:** the P4-T17 and 1D-T14 planners; the #465 confirmation (Opus).
 - **14 Nov 02:40: #465's Opus review approves; two planners started (P4-T17, 1D-T14).**
   - **#465 (P2-T18), `reviews/P2-T18.md`:** no blocker or major.
     - Test-only pins, each proved in the reviewer's scratch: m2 (the chip reads `อาหาร−฿50`, `WalletShell.render.test.tsx:336`, kills V1 and V2), n1 (a sixth `spendLayoutOrder.test.ts` case scanning `<WalletShell\b`, kills V9) and n3 (the + at `0.4` opacity while blocked, kills V4).

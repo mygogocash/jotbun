@@ -37,7 +37,7 @@
 - [x] The reviews' pins (`7e2ae0dc`), under the heavy lock: the three render files 56 of 56 and `typecheck:app`. The reviews' mutants O1, O2, O6, O9, OF1, R1 and R3 are each killed on an assertion, by the case meant for it. The planner's H1 to H7 and W1 to W5 are still killed. Proof: `.claude/controller/scratch/p2-t18a-pins/`.
 - [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide.
 - [x] Independent review (Opus), and a second review (Sonnet): today's total (races A and B, the closed diary), PV1, and the flow left once. Both approve.
-- [ ] The Opus reviewer confirms `7e2ae0dc`.
+- [x] The Opus reviewer confirms `7e2ae0dc`: approved, with 15 mutants rerun, each killed by the case meant for it.
 - [ ] SKIPPED: device checks (VoiceOver hearing the toast in private mode; the flow's back on a phone).
 
 Part of #164 (P2-T18); P2-T18's own PR closes it.
