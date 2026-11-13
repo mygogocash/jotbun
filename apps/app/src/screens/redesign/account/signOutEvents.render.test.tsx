@@ -59,9 +59,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-function memorySessions(): SessionRecordStore {
+function memorySessions(): SessionRecordStore & { current(): StoredSession | null } {
   let value: StoredSession | null = null;
   return {
+    current: () => value,
     async load() { return value; },
     async save(next) { value = next; },
     async clear() { value = null; },
@@ -73,7 +74,13 @@ const trail = (sent: readonly Recorded[]) => sent.map((item) => (item.kind === '
 const captures = (sent: readonly Recorded[]) => trail(sent).filter((item) => Array.isArray(item));
 const kinds = (sent: readonly Recorded[]) => sent.map((item) => item.kind);
 
-type Run = { recorder: Awaited<ReturnType<typeof recordAnalytics>>; provider: CredentialProvider; signIn(email: string): Promise<SignInResult> };
+type Run = {
+  recorder: Awaited<ReturnType<typeof recordAnalytics>>;
+  provider: CredentialProvider;
+  server: ReturnType<typeof createFakeAuthServer>;
+  sessions: ReturnType<typeof memorySessions>;
+  signIn(email: string): Promise<SignInResult>;
+};
 
 /** A, signed in by email on 1C's fake server, in the app's installed provider, with 1D-T1's recorder answering yes. */
 async function signedIn(): Promise<Run> {
@@ -81,7 +88,8 @@ async function signedIn(): Promise<Run> {
   const recorder = await recordAnalytics({ consent: 'yes' });
   const server = createFakeAuthServer();
   const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
-  const provider = createCredentialProvider({ port, sessions: memorySessions() });
+  const sessions = memorySessions();
+  const provider = createCredentialProvider({ port, sessions });
   installCredentialProvider(provider);
   me.account = () => provider.getSessionSnapshot().accountId;
   end = () => {
@@ -94,7 +102,7 @@ async function signedIn(): Promise<Run> {
     return provider.signIn({ method: 'email', email, code: server.codeFor(email) });
   };
   expect((await signIn(A)).outcome).toBe('active');
-  return { recorder, provider, signIn };
+  return { recorder, provider, server, sessions, signIn };
 }
 
 /** The screen with AnalyticsUpkeep beside it; resolves once the follower has named A and A's yes is in force, with `sent` emptied. */
@@ -142,6 +150,29 @@ test("Privacy's Done after an accepted deletion sends no signed_out, and the nex
   fireEvent.click(within(screen.getByRole('dialog', { name: 'Delete your account?' })).getByRole('button', { name: 'Delete my account' }));
   expect(await within(card).findByText('Your account is being deleted')).toBeTruthy();
   fireEvent.click(within(card).getByRole('button', { name: 'Done' }));
+  await waitFor(() => expect(run.provider.getSessionSnapshot().state).toBe('signed_out'));
+  await nextAccount(run);
+  expect(captures(run.recorder.sent)).toEqual([SIGNED_UP]);
+});
+
+// The reviews' pins: the guards the Node stand-in holds, on the real AnalyticsUpkeep too.
+test('an account switch under the real AnalyticsUpkeep sends the new sign-up only after the reset and the new identify', async () => {
+  const run = await signedIn();
+  await mount(run, <SettingsScreen services={{ ...fakeAccount().services, signOut: signOutOfThisDevice }} />);
+  await nextAccount(run);
+  // Entering B's yes also sends the screen on display (1D-T6's m3).
+  expect(trail(run.recorder.sent)).toEqual(['reset', 'reset', 'identify', SIGNED_UP, 'screen']);
+});
+
+test("a locked session's Settings Sign out, under the real AnalyticsUpkeep, sends nothing, and the next account's yes sends only its own sign-up", async () => {
+  const run = await signedIn();
+  await mount(run, <SettingsScreen services={{ ...fakeAccount().services, signOut: signOutOfThisDevice }} />);
+  run.server.deleteSession(run.sessions.current()?.sessionId ?? '');
+  await act(async () => { expect(await run.provider.getAccessToken()).toBeNull(); });
+  expect(run.provider.getSessionSnapshot().state).toBe('locked');
+  await waitFor(() => expect(trail(run.recorder.sent)).toEqual(['reset']));
+  fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Sign out?' })).getByRole('button', { name: 'Sign out' }));
   await waitFor(() => expect(run.provider.getSessionSnapshot().state).toBe('signed_out'));
   await nextAccount(run);
   expect(captures(run.recorder.sent)).toEqual([SIGNED_UP]);

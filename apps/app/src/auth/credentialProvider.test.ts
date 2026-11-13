@@ -38,7 +38,28 @@ function memoryEpochs(initial = 0): EpochStore & { value(): number } {
   };
 }
 
-function setup(identities: { apple?: { sub: string; email: string }; google?: { sub: string; email: string } } = {}) {
+/** An epoch store whose saves wait while held. */
+function heldEpochs(): EpochStore & { hold(): void; release(): void; waiting(): number } {
+  let value = 0;
+  let gate: Promise<void> | null = null;
+  let open: (() => void) | null = null;
+  let waiting = 0;
+  return {
+    async load() { return value; },
+    async save(epoch) {
+      if (gate) {
+        waiting += 1;
+        await gate;
+      }
+      value = epoch;
+    },
+    hold() { gate = new Promise((resolve) => { open = resolve; }); },
+    release() { open?.(); gate = null; open = null; },
+    waiting: () => waiting,
+  };
+}
+
+function setup(identities: { apple?: { sub: string; email: string }; google?: { sub: string; email: string } } = {}, epochStore?: EpochStore) {
   const server = createFakeAuthServer();
   const sessions = memorySessions();
   const epochs = memoryEpochs();
@@ -48,7 +69,7 @@ function setup(identities: { apple?: { sub: string; email: string }; google?: { 
   const provider = createCredentialProvider({
     port,
     sessions,
-    epochs,
+    epochs: epochStore ?? epochs,
     logoutVault: async (credentials) => {
       order.push('logoutVault');
       vaultLogouts.push(credentials);
@@ -968,9 +989,9 @@ function followSessions(provider: CredentialProvider, analytics: Analytics, onli
 }
 
 /** A provider on 1C's fake server, followed as the app follows it, by 1D-T1's recorder answering `consent`. `sent` starts empty. */
-async function followed(consent: 'yes' | 'unasked', identities: { apple?: { sub: string; email: string } } = {}, online: () => boolean = () => true) {
+async function followed(consent: 'yes' | 'unasked', identities: { apple?: { sub: string; email: string } } = {}, online: () => boolean = () => true, epochStore?: EpochStore) {
   const recorder = await recordAnalytics({ consent });
-  const ready = setup(identities);
+  const ready = setup(identities, epochStore);
   const stop = followSessions(ready.provider, recorder.analytics, online);
   await settled();
   recorder.sent.length = 0;
@@ -1145,5 +1166,114 @@ test('a sign-out with event: false sends no signed_out, and nothing waits for th
     assert.deepEqual(trail(run.recorder.sent), ['reset', 'reset', 'identify', ['signed_up', { method: 'email', origin: 'app' }]]);
   } finally {
     run.end();
+  }
+});
+
+// The reviews' pins (both approved): orderings that keep one account's event away from the next account's yes.
+const UP = ['signed_up', { method: 'email', origin: 'app' }];
+const OUT = ['signed_out', { method: 'email', origin: 'app' }];
+
+test('two sign-out taps send one signed_out, and the next account gets nothing of it', async () => {
+  const run = await followed('yes');
+  try {
+    assert.equal((await emailSignIn(run, EMAIL)).outcome, 'active');
+    await settled();
+    run.recorder.sent.length = 0;
+    await Promise.all([run.provider.signOut(), run.provider.signOut()]);
+    assert.equal((await emailSignIn(run, OTHER)).outcome, 'active');
+    await settled();
+    assert.deepEqual(trail(run.recorder.sent), [OUT, 'reset', 'reset', 'identify', UP]);
+  } finally {
+    run.end();
+  }
+});
+
+test('a sign-out during a first sign-in, while its record saves, sends nothing, and nothing waits for the next account', async () => {
+  const run = await followed('yes');
+  try {
+    const held = holdNextSave(run.sessions);
+    await run.port.sendEmailCode(EMAIL);
+    const signing = run.provider.signIn({ method: 'email', email: EMAIL, code: run.server.codeFor(EMAIL) });
+    await held.reached;
+    assert.equal(run.provider.getSessionSnapshot().state, 'bootstrap_pending');
+    const out = run.provider.signOut();
+    held.release();
+    assert.equal((await signing).outcome, 'cancelled');
+    await out;
+    await settled();
+    assert.equal((await emailSignIn(run, OTHER)).outcome, 'active');
+    await settled();
+    assert.deepEqual(trail(run.recorder.sent), ['reset', 'identify', UP]);
+  } finally {
+    run.end();
+  }
+});
+
+test("a sign-out while a sign-in waits on its epoch reservation never sends that sign-in's event with the next account", async () => {
+  // The event comes before `await reservation` (P3): a sign-out during the reservation's save must find it sent.
+  const epochs = heldEpochs();
+  const run = await followed('yes', {}, () => true, epochs);
+  try {
+    // 16 sign-ins and sign-outs move the epoch to 32, so the next sign-in's session change reserves a new block.
+    for (let i = 0; i < 16; i += 1) {
+      assert.equal((await emailSignIn(run, EMAIL)).outcome, 'active');
+      await run.provider.signOut();
+    }
+    await settled();
+    assert.equal(run.provider.getSessionSnapshot().epoch, 32);
+    run.recorder.sent.length = 0;
+    epochs.hold();
+    const signing = emailSignIn(run, OTHER);
+    while (epochs.waiting() === 0) await settled();
+    await settled();
+    assert.equal(run.provider.getSessionSnapshot().state, 'active');
+    const out = run.provider.signOut();
+    epochs.release();
+    await signing;
+    await out;
+    await settled();
+    assert.equal((await emailSignIn(run, THIRD)).outcome, 'active');
+    await settled();
+    assert.deepEqual(trail(run.recorder.sent), ['reset', 'identify', UP, OUT, 'reset', 'reset', 'identify', UP]);
+  } finally {
+    run.end();
+  }
+});
+
+test("a fresh sign-in (Confirm it's you) sends no account event", async () => {
+  const run = await followed('yes');
+  try {
+    assert.equal((await emailSignIn(run, EMAIL)).outcome, 'active');
+    await settled();
+    run.recorder.sent.length = 0;
+    await run.port.sendEmailCode(EMAIL);
+    assert.equal(await run.provider.freshSignIn({ method: 'email', email: EMAIL, code: run.server.codeFor(EMAIL) }), 'fresh');
+    await settled();
+    assert.deepEqual(trail(run.recorder.sent), ['reset', 'reset', 'identify']);
+  } finally {
+    run.end();
+  }
+});
+
+test('a launch that restores the session sends no account event', async () => {
+  const recorder = await recordAnalytics({ consent: 'yes' });
+  const server = createFakeAuthServer();
+  const sessions = memorySessions();
+  const port = createBetterAuthPort({ client: server.client, native: server.native({}) });
+  const first = createCredentialProvider({ port, sessions });
+  await port.sendEmailCode(EMAIL);
+  assert.equal((await first.signIn({ method: 'email', email: EMAIL, code: server.codeFor(EMAIL) })).outcome, 'active');
+  const relaunched = createCredentialProvider({ port, sessions });
+  const stop = followSessions(relaunched, recorder.analytics, () => true);
+  try {
+    await settled();
+    recorder.sent.length = 0;
+    await relaunched.hydrate();
+    await settled();
+    assert.equal(relaunched.getSessionSnapshot().state, 'active');
+    assert.deepEqual(trail(recorder.sent), ['reset', 'identify']);
+  } finally {
+    stop();
+    recorder.restore();
   }
 });
