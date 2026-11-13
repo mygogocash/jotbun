@@ -49,6 +49,32 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 06:01: #467 fully approved (the confirmation of `e3c2ae74` approves). Nine PRs are fully approved and wait only on CI. Disk recovered to 218 GiB free.**
+  - **Merge order once runners return:**
+
+    | Order | PR | Task | Head |
+    | --- | --- | --- | --- |
+    | 1 | #460 | P3-T13 | `14da2b4e` |
+    | 2 | #461 | P3-T9 | `5cb1055e` |
+    | 3 | #462 | source-pins | `d9b4dfb1` |
+    | 4 | #463 | P4-T2 | `19ef67fb` |
+    | 5 | #456 | P2-T26 | `e4313772` |
+    | 6 | #464 | P2-T18a | `7e2ae0dc` |
+    | 7 | #465 | P2-T18 | `74142ebc` |
+    | 8 | #466 | P4-T17 | `b5458587` |
+    | 9 | #467 | 1D-T14 | `e3c2ae74` |
+
+    #467's worktree `p1-1d-t14` uses a link farm onto `p4-t17`, so remove `p4-t17` only after #467 merges, or re-farm first.
+  - **The confirmation** (`reviews/1D-T14.md`, "Confirmation of e3c2ae74") found:
+    - c1: Sonnet's R4 with the mutant U1 is the only case on the real follower for a never-named account's sign-out. Carried to 1D-T15's `AnalyticsUpkeep` round, in followups.
+    - c2: the receipt overstates "Sonnet m1 to m3" (a nit).
+
+    The #467 Opus thread is archived.
+  - **Disk:** free space went from 2.7 to 218 GiB between 05:54 and 06:01. The other project released it. Full installs are fine again; the stale 9.8 GB folder can wait.
+  - **Live now:** nothing. Every PR is approved and waiting on CI, and no planner or builder is running. Next, when CI returns:
+    - merge in order, promoting each into stack #379;
+    - dispatch P4-T4 after #461, and P4-T7 after #463;
+    - plan `saved-pins` after #464, and `shell-carry` after #465.
 - **14 Nov 05:54: #467 approved twice; the controller's pins pushed as `e3c2ae74` (the Opus reviewer confirms). Disk 2.7 GiB free.**
   - **Sonnet (`reviews/1D-T14-second.md`)** found:
     - m1 (MX2): the event's place before `await reservation`;

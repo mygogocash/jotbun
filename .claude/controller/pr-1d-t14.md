@@ -39,7 +39,7 @@
   Proof: `.claude/controller/scratch/1d-t14-pins/`.
 - [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide.
 - [x] Independent review (Opus), and a second review (Sonnet): what reaches analytics, the event order around the session change, the active-session guard, and R125 at both callers. Both approve.
-- [ ] The Opus reviewer confirms `e3c2ae74`.
+- [x] The Opus reviewer confirms `e3c2ae74`: approved, with the 7 reviewer mutants each killed by the case meant for it. One carry for 1D-T15's `AnalyticsUpkeep` round: Sonnet's R4 with the mutant U1.
 
 Closes #145 once merged (closed by hand, since the base is not the default branch).
 
