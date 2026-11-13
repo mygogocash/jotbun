@@ -24,6 +24,8 @@
     "AI_ENABLED": "false",
     "GOGOCASH_BRIDGE_ENABLED": "false",
     "IMPORT_UPLOADS_ENABLED": "false",
+    // Slip import stays 404 until the owner's release step turns it on (P4-T3, S13; P6C-T14b).
+    "SLIP_IMPORT_ENABLED": "false",
     "AUTH_BASE_URL": "http://localhost:8092",
     "AUTH_ISSUER": "http://localhost:8092",
     "AUTH_AUDIENCE": "jotbun-v1",

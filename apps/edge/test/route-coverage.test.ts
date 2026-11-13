@@ -16,6 +16,15 @@ import { VAULT_HANDLERS } from '../src/vault/routes'
 // AI companion and the bridge) and the added ones (1D). vault-route-coverage
 // checked the same against the PostgreSQL edge's table, which retired.
 const API_SRC = fileURLToPath(new URL('../../api/src/', import.meta.url))
+const EDGE = fileURLToPath(new URL('../', import.meta.url))
+/** wrangler.jsonc as c1-shape.test.ts reads it: every comment is on a line of its own. */
+const wranglerVars = (): Record<string, string> =>
+  JSON.parse(
+    readFileSync(join(EDGE, 'wrangler.jsonc'), 'utf8')
+      .split('\n')
+      .filter((line) => !/^\s*\/\//.test(line))
+      .join('\n'),
+  ).vars
 
 type NestRoute = { key: string; access: string | undefined; gates: string[]; status: number }
 
@@ -154,9 +163,24 @@ describe('the one Worker covers every NestJS v1 route', () => {
     }
   })
 
-  it('GET /v1/me/analytics is an added route with a vault handler, and the added routes are exactly these two (1D-T11)', () => {
-    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analytics', 'GET /v1/sync/live'])
+  it('GET /v1/me/analytics is an added route with a vault handler (1D-T11)', () => {
+    expect(VAULT_ADDED_ROUTES).toContain('GET /v1/me/analytics')
     expect(VAULT_V1_ROUTES.filter((route) => keyOf(route) === 'GET /v1/me/analytics')).toEqual([{ method: 'GET', path: '/v1/me/analytics', access: 'bound_session', vault: 'me.analytics' }])
     expect(VAULT_HANDLERS['me.analytics']).toBeTypeOf('function')
+  })
+
+  it('the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13)', () => {
+    expect([...VAULT_ADDED_ROUTES].sort()).toEqual(['GET /v1/me/analytics', 'GET /v1/slip-accounts', 'GET /v1/slips/salt', 'GET /v1/sync/live', 'PUT /v1/slip-accounts/:id'])
+    expect(VAULT_V1_ROUTES.filter((route) => route.path.startsWith('/v1/slip'))).toEqual([
+      { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
+      { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
+      { method: 'PUT', path: '/v1/slip-accounts/:id', access: 'current_policy', vault: 'slipAccounts.update', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
+    ])
+    for (const id of ['slips.salt', 'slipAccounts.list', 'slipAccounts.update'] as const) expect(VAULT_HANDLERS[id], id).toBeTypeOf('function')
+    // Every release names a var that wrangler.jsonc keeps off, so a deploy without it hides the route.
+    const released = VAULT_V1_ROUTES.filter((route) => route.release !== undefined)
+    expect(released.map(keyOf)).toEqual(['GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id'])
+    const vars = wranglerVars()
+    for (const route of released) expect(vars[route.release as string], keyOf(route)).toBe('false')
   })
 })
