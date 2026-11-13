@@ -30,9 +30,19 @@
 //   a note it guessed reads as hidden; what the person typed shows (R106). The
 //   amount step's quick chips are the type's often-logged entries, named by
 //   their place only (R106), so the sheet offers none of its own.
-// - Saving is useEntrySave's save with the track (W27): Tell Bun's source while
-//   any of its guesses stand, the category's analytics key and when the tray
-//   opened. This file sends no record_saved (R61: 1D-T7's call in finish reads
+// - applyAiDraft (P3-T13; P3-T17's slip read and P3-T18's tell step call it):
+//   an AI draft fills the entry as the sheet's does, its rows Bun's guesses,
+//   and the record says the meta's source. Its review (P3-T5) is sent once:
+//   kept, or edited with the fields changed, when the entry is saved; dropped
+//   when the tray closes unsaved or a new draft takes its place (the sheet's
+//   too). While a save is on its way or its outcome is unknown the entry takes
+//   no draft, so a review is always of the draft that was saved. The sheet's
+//   draft says tell_bun, with no review: the sheet does not say which model
+//   read the sentence.
+// - Saving is useEntrySave's save with the entry's origin (P3-T13, H9), the
+//   record's source, and the track (W27): that source, the category's
+//   analytics key, when the tray opened, and no photo until P3-T15 attaches
+//   one. This file sends no record_saved (R61: 1D-T7's call in finish reads
 //   the track). While a save is in flight nothing closes the tray (Review
 //   Focus 1); when it lands the host is told, with the lookups and whether it
 //   stayed on the phone unsynced, and the tray closes. An unconfirmed online
@@ -56,6 +66,7 @@ import type { ReactNode } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { trackRecordStarted } from '@mobile/analytics/events';
+import type { AiModelName } from '@mobile/analytics/events';
 import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
 import { TellBunSheet } from '@mobile/screens/redesign/ai/TellBunSheet';
 import { earliestFor, firstDraft, KEYPAD_PROBLEM_TEXT, rank, withDefaults } from '@mobile/screens/redesign/entry/entryHelpers';
@@ -64,8 +75,10 @@ import { useEntryReferences } from '@mobile/screens/redesign/entry/entryReferenc
 import type { EntryReferences } from '@mobile/screens/redesign/entry/entryReferences';
 import { useEntrySave } from '@mobile/screens/redesign/entry/entrySave';
 import type { SavedEntry } from '@mobile/screens/redesign/entry/entrySave';
+import { savedOutcome } from '@mobile/spend/v1/ai/draftReview';
 import { oftenLogged } from '@mobile/spend/v1/ai/oftenLogged';
 import { applyDraft } from '@mobile/spend/v1/ai/tellBun';
+import { useDraftReview } from '@mobile/spend/v1/ai/useDraftReview';
 import { analyticsCategoryKey } from '@mobile/spend/v1/redesign/planning/thaiPack';
 import type { QuickAddDraft } from '@mobile/spend/v1/redesign/quickAddModel';
 import type { Lookups } from '@mobile/spend/v1/redesign/shared';
@@ -73,7 +86,7 @@ import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
 import { todayInBangkok } from '@mobile/spend/v1/viewModels';
 import { useWalletColors } from '@mobile/theme/ThemeProvider';
 import { useAnnouncement } from '@mobile/ui/a11y';
-import { EMPTY_KEYPAD } from '@mobile/ui/keypadExpression';
+import { EMPTY_KEYPAD, settleForSave } from '@mobile/ui/keypadExpression';
 import type { KeypadState } from '@mobile/ui/keypadExpression';
 import { COMMON_COPY } from '../common/copy';
 import { useDraftCopy } from '../copy/useDraftCopy';
@@ -88,6 +101,8 @@ import type { AddStep, AddType, StepProps } from './addFlow';
 import { AmountFooter, AmountStep, useCanTellBun } from './AmountStep';
 import { ConfirmStep, confirmTitle } from './ConfirmStep';
 import { COPY } from './copy';
+import { draftFieldsOf, TYPED_ORIGIN } from './draftOrigin';
+import type { DraftOrigin } from './draftOrigin';
 import { CategoryPick, DatePick, isPickStep, NotePick, WalletPick } from './PickSteps';
 import type { QuickChip } from './QuickChips';
 import { TransferFooter, TransferStep } from './TransferStep';
@@ -95,19 +110,31 @@ import { TypeSwitchHeader, useSwitchInHeader } from './TypeSwitchHeader';
 
 export type AddRequest = { type?: AddType; walletId?: string; copyOf?: string };
 export type SavedContext = { lookups: Lookups; offline: boolean };
-export type AddTray = { open(request?: AddRequest): void; close(): void; isOpen: boolean; blocked: boolean; whenClosed(run: () => void): void };
+/** An AI draft's own word on itself (P3-T13): the source its record gets, the model whose draft it is, and whether Opus answered. */
+export type AiDraftMeta = { source: 'tell_bun' | 'photo'; model: AiModelName; escalated: boolean };
+export type AddTray = {
+  open(request?: AddRequest): void;
+  close(): void;
+  isOpen: boolean;
+  blocked: boolean;
+  whenClosed(run: () => void): void;
+  applyAiDraft(draft: AiDraft, meta: AiDraftMeta): void;
+};
 
 const LINES = { ...COMMON_COPY, ...COPY } as const;
 
 /** One opening of the tray: its request and when it opened (the track's openedAt). */
 type Entry = { key: number; request: AddRequest; openedAt: number };
 type Ready = Extract<EntryReferences, { state: 'ready' }>;
+type ApplyAi = (draft: AiDraft, meta: AiDraftMeta) => void;
 
 const AddTrayContext = createContext<AddTray | null>(null);
 
 const NONE: ReadonlySet<string> = new Set();
 const NO_WALLETS: readonly WalletSnapshot[] = [];
 const NO_CATEGORIES: readonly CategoryDto[] = [];
+/** A draft from P2's Tell Bun sheet: tell_bun, and nothing to review. */
+const SHEET_ORIGIN: DraftOrigin = { source: 'tell_bun', review: null };
 
 /**
  * How long a hidden tray waits for its Modal to say it has gone before its
@@ -130,6 +157,7 @@ export function useAddTray(): AddTray {
     isOpen: false,
     blocked: false,
     whenClosed: (run) => run(),
+    applyAiDraft: () => undefined,
   }), [router]);
   return host ?? outside;
 }
@@ -154,6 +182,11 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
   }, [blocked]);
   const queue = useRef<(() => void)[]>([]);
   const keys = useRef(0);
+  // The open entry's applyAiDraft, as it last drew; null while no entry is mounted.
+  const applier = useRef<ApplyAi | null>(null);
+  const register = useCallback((apply: ApplyAi | null) => {
+    applier.current = apply;
+  }, []);
   const show = useCallback((next: Entry | null, shown: boolean) => {
     now.current.entry = next;
     now.current.visible = shown;
@@ -181,7 +214,8 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
       if (now.current.saving) return;
       show(now.current.entry, false);
     };
-    return { open, close, whenClosed, isOpen: visible, blocked };
+    const applyAiDraft = (draft: AiDraft, meta: AiDraftMeta) => applier.current?.(draft, meta);
+    return { open, close, whenClosed, applyAiDraft, isOpen: visible, blocked };
   }, [visible, blocked]);
   const saving = useCallback((inFlight: boolean) => {
     now.current.saving = inFlight;
@@ -203,6 +237,7 @@ export function AddTrayHost({ children, onSaved, blocked = false }: {
           onClose={value.close}
           onClosed={closed}
           onSaving={saving}
+          onApplier={register}
           onSaved={(saved, context) => {
             onSaved?.(saved, context);
             show(now.current.entry, false);
@@ -244,12 +279,19 @@ function guessedBy(draft: AiDraft): string[] {
   return Object.entries(filled).filter(([, value]) => Boolean(value)).map(([key]) => key);
 }
 
-function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
+/** The amount a keypad holds as Save would settle it, or null while it holds none. */
+function settledMinor(keypad: KeypadState): string | null {
+  const settled = settleForSave(keypad);
+  return settled.outcome.ok ? settled.outcome.minor : null;
+}
+
+function AddEntry({ entry, visible, onClose, onClosed, onSaving, onApplier, onSaved }: {
   entry: Entry;
   visible: boolean;
   onClose(): void;
   onClosed(gone: Entry): void;
   onSaving(inFlight: boolean): void;
+  onApplier(apply: ApplyAi | null): void;
   onSaved(saved: SavedEntry, context: SavedContext): void;
 }) {
   const tc = useCopy();
@@ -283,6 +325,9 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
   const [telling, setTelling] = useState(false);
   // The place Bun last filled (R117): while the entry's merchant is still it, private mode does not draw it on confirm.
   const [bunMerchant, setBunMerchant] = useState<string | null>(null);
+  // How the entry was made (P3-T13): its record's source, and an AI draft's review until the entry is saved or goes unsaved.
+  const origin = useRef<DraftOrigin>(TYPED_ORIGIN);
+  const review = useDraftReview();
   // The entry starts once its lists are ready (a copy once it has loaded).
   if (ready !== null && live !== null && draft === null) {
     setDraft(startDraft(ready, entry.request, live));
@@ -293,7 +338,15 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
   const entrySave = useEntrySave({
     today,
     savedHaptic: 'success',
-    onSaved: (saved) => onSaved(saved, { lookups, offline: saved.via === 'device' && diaryView.outcome?.status !== 'synced' }),
+    onSaved: (saved) => {
+      // A saved AI draft is reviewed once, against the entry as the draft filled it: kept, or edited with its count.
+      const pending = origin.current.review;
+      if (pending !== null) {
+        origin.current = { ...origin.current, review: null };
+        review({ ...savedOutcome(pending.original, draftFieldsOf(saved.draft, saved.draft.amountMinor)), model: pending.model, escalated: pending.escalated });
+      }
+      onSaved(saved, { lookups, offline: saved.via === 'device' && diaryView.outcome?.status !== 'synced' });
+    },
   });
   const { status, resendBlocked, locked } = entrySave;
   const inFlight = status === 'saving';
@@ -307,6 +360,18 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
     const timer = setTimeout(leave, CLOSED_BOUND_MS);
     return () => clearTimeout(timer);
   }, [visible, leave]);
+  /** An AI draft the entry lets go of unsaved (the tray closed, or a new draft took its place) is reviewed dropped, once. */
+  const dropUnsaved = useCallback(() => {
+    const pending = origin.current.review;
+    if (pending === null) return;
+    origin.current = { ...origin.current, review: null };
+    review({ outcome: 'dropped', fieldsEdited: 0, model: pending.model, escalated: pending.escalated });
+  }, [review]);
+  // The tray closes (close, the backdrop, escape, a swipe or a conflict's Done): an AI draft still unsaved was dropped.
+  // A landed save has reviewed its draft already, before the host hides the tray.
+  useEffect(() => {
+    if (!visible) dropUnsaved();
+  }, [visible, dropUnsaved]);
   // The save's problem in today's words: its message, else the first field the check refused. A conflict's words
   // quote the amount Jotbun holds, so in private mode they mask it, and say it is hidden (R117).
   const conflictMasked = hidden && status === 'conflict';
@@ -328,17 +393,36 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
     setGuessed((now) => stillGuessed(now, current, next));
     setDraft(next);
   };
-  /** A draft laid over the entry (applyDraft): a quick chip's, or Bun's, whose rows become its guesses. The amount is a fill (R106). */
-  const fill = (filled: AiDraft, bun: boolean) => {
-    if (current === null) return;
+  /**
+   * A draft laid over the entry (applyDraft): a quick chip's, or Bun's, whose rows become its guesses. The amount is a
+   * fill (R106). What the entry then shows comes back: its draft, and the amount Save would settle on.
+   */
+  const fill = (filled: AiDraft, bun: boolean): { draft: QuickAddDraft; amountMinor: string | null } | null => {
+    if (current === null) return null;
     const applied = applyDraft(current, filled);
-    edit({ ...current, ...applied.fields });
+    const next = { ...current, ...applied.fields };
+    edit(next);
     if (bun) {
       setGuessed((now) => new Set([...now, ...guessedBy(filled)]));
       // A draft that names no place keeps the one Bun named before, as applyDraft does.
       setBunMerchant((was) => filled.merchant ?? was);
     }
     if (applied.amountMinor !== null) setKeypad(filledKeypad(applied.amountMinor));
+    return { draft: next, amountMinor: applied.amountMinor ?? settledMinor(keypad) };
+  };
+  /** P2's Tell Bun sheet: its draft fills the entry, and the record says tell_bun, with no review. */
+  const fromSheet = (filled: AiDraft) => {
+    dropUnsaved();
+    fill(filled, true);
+    origin.current = SHEET_ORIGIN;
+  };
+  /** applyAiDraft: an AI draft fills the entry and gives its origin; none while a save is on its way or its outcome unknown. */
+  const applyAi: ApplyAi = (filled, meta) => {
+    if (locked) return;
+    dropUnsaved();
+    const shown = fill(filled, true);
+    if (shown === null) return;
+    origin.current = { source: meta.source, review: { original: draftFieldsOf(shown.draft, shown.amountMinor), model: meta.model, escalated: meta.escalated } };
   };
   const goTo = (next: AddStep) => {
     if (locked) return;
@@ -357,13 +441,20 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
     if (current === null) return;
     const categoryId = current.type === 'transfer' ? null : current.categoryByType[current.type];
     const category = categories.find((each) => each.id === categoryId) ?? null;
+    const { source } = origin.current;
     void entrySave.save({
       draft: current,
       keypad,
       wallets,
-      track: { source: guessed.size > 0 ? 'tell_bun' : 'typed', categoryKey: analyticsCategoryKey(category), openedAt: entry.openedAt },
+      source,
+      track: { source, categoryKey: analyticsCategoryKey(category), openedAt: entry.openedAt, hasPhoto: false },
     });
   };
+  // The host's applyAiDraft reaches this entry's rule as it last drew; an entry that has gone takes none.
+  useEffect(() => {
+    onApplier(applyAi);
+    return () => onApplier(null);
+  });
 
   if (current === null || ready === null || live === null) {
     return (
@@ -403,7 +494,7 @@ function AddEntry({ entry, visible, onClose, onClosed, onSaving, onSaved }: {
       onClose={() => setTelling(false)}
       context={{ today, wallets, categories }}
       locale={locale}
-      onUse={(bunDraft) => fill(bunDraft, true)}
+      onUse={fromSheet}
     />
   ) : null;
 

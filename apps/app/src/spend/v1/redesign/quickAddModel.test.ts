@@ -213,3 +213,21 @@ test('the date chip steps by days, never into the future or before 1970', () => 
   assert.equal(stepDay('2026-10-16', 1, TODAY), '2026-10-17');
   assert.equal(stepDay('1970-01-01', -1, TODAY), '1970-01-01');
 });
+
+test('buildQuickAdd puts the source on the create and the device entry only when given', () => {
+  const draft = { ...newQuickAddDraft({ ids: { recordId: uuid(), commandId: uuid() }, today: TODAY, wallets: WALLETS, categories: [FOOD] }), amountMinor: '6500' };
+  const plain = buildQuickAdd(draft, { today: TODAY, tc });
+  const photo = buildQuickAdd(draft, { today: TODAY, tc, source: 'photo' });
+  assert.ok(plain.ok && photo.ok);
+  // None given (Quick add's way, H9): no key at all, so the create is the JSON it always was.
+  assert.deepEqual(['source' in plain.input, 'source' in plain.entry], [false, false]);
+  // Given: the create and the device entry both carry it, and nothing else changes.
+  assert.deepEqual(photo.input, { ...plain.input, source: 'photo' });
+  assert.deepEqual(photo.entry, { ...plain.entry, source: 'photo' });
+  // A move carries it the same way.
+  const move = buildQuickAdd({ ...draft, type: 'transfer' }, { today: TODAY, tc, source: 'tell_bun' });
+  assert.ok(move.ok);
+  assert.deepEqual([move.input.source, move.entry.source, move.entry.type], ['tell_bun', 'tell_bun', 'transfer']);
+  // A draft the check refuses builds nothing to carry it.
+  assert.deepEqual(buildQuickAdd({ ...draft, amountMinor: '' }, { today: TODAY, tc, source: 'photo' }), { ok: false, errors: { amount_minor: 'Enter an amount' } });
+});

@@ -75,6 +75,20 @@ test('a tally that fails never fails the review, and leaves nothing unhandled', 
   }
 });
 
+test('a tally that throws at once never fails the review', async () => {
+  const recorded = await recordAnalytics();
+  try {
+    // P3-T5's review (m1): a count that throws before it hands back a promise is dropped as one that rejects is,
+    // and the review it follows is sent all the same.
+    assert.doesNotThrow(() => reviewDraft({ outcome: 'kept', fieldsEdited: 0, model: 'claude-haiku-5-5', escalated: false }, () => {
+      throw new Error('the tally is not there');
+    }));
+    assert.deepEqual(recorded.sent.map((event) => [event.name, event.properties.outcome]), [['ai_draft_reviewed', 'kept']]);
+  } finally {
+    recorded.restore();
+  }
+});
+
 test('useDraftReview.ts imports with __DEV__ undefined, and its review is sent with no tally', async () => {
   assert.equal(typeof (globalThis as { __DEV__?: unknown }).__DEV__, 'undefined');
   const loading = import('./useDraftReview.ts');
