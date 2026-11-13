@@ -49,6 +49,16 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 02:45: 1D-T14's planner reported READY. The controller accepted P1 to P9 and sent the brief back for R125.**
+  - The kit is `scratch/1d-t14-planner/`: 23 of 23 sums OK, and its 2 `orig/` files match the head. RED was 8 of 46, GREEN 46 of 46, mutants 7 of 7.
+  - **P4, the planner's guard:** `signed_out` is sent only from an active session. Without it, Settings' Sign out from an ended session would hold the event and send it under the next account's yes (M5). Accepted.
+  - **R125 (the planner's P10, ruled in):** `signOut()` sends no `signed_out` on two paths.
+    - Settings' sign-out everywhere (`SettingsScreen.tsx:250`): the plan's own rule, "sends nothing in phase 1".
+    - Privacy's Done after an accepted deletion (`PrivacyScreen.tsx:436`): an event under the deleted person's id could recreate the PostHog person after 1D-T13's step 6 (Global Constraints, Q11).
+
+    `signOut` gets an option that skips the event, passed from those two callers only. Both are pinned with a yes, and Settings' plain Sign out stays pinned to send it. Neither screen is touched by anything in flight.
+  - The same thread (`mcp:launch:be2008fe0f8556f9d69a56d0100a74eeffa078534354318b690700999ffa6726`, run 2) revises the brief and the kit, then reports READY again.
+  - Then: worktree `p1-1d-t14` on `p1/1d-t14-account-events` (`install`), and a Haiku implementer. It depends on no PR in flight, so it can build while CI is blocked.
 - **14 Nov 02:25: #465 fully approved: the confirmation of `74142ebc` approves.** Seven PRs are now fully approved and wait only on CI. Merge order once runners return:
   1. #460 P3-T13 (`14da2b4e`)
   2. #461 P3-T9 (`5cb1055e`)
