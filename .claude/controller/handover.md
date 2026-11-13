@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb`.**
+  - All 12 `real/` files are byte-identical. RED was Node 8 of 8 and render 15 of 39; GREEN passes. 87 mutants: 86 killed and 1 equivalent, identical to the planner's.
+  - Gate: `typecheck:app` and `:routes`, `test:unit` 1117, kit eight 142, routes 17, neighbours 131, `export:web`.
+  - Reviews: Opus `mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, Sonnet `mcp:launch:b699098f4b6f9f2e876f0fc036e922a2f25326b7da301688d934e8cf8f9d84cb`. The implementer thread is archived.
+  - **Live now:** reviews on #464 and #465 (Opus and Sonnet each); the P4-T4 and P4-T7 planners (Opus). No builder is running.
 - **14 Nov 01:35: #464 (P2-T18a, part of #164) opened at `fc58825a`.**
   - All 10 `real/` files are byte-identical. RED was Node 1 of 8 and render 6 of 54; GREEN passes. Mutants 20 of 20, identical to the planner's. Gate: `test:unit` 1110, kit eight 142, routes 17, catalogue 24.
   - Reviews: Opus `mcp:launch:94c5884601504349cb697d18f6b873d2e2bd3acbb7212a5253684ae148b304a4`, Sonnet `mcp:launch:e467e1140cf5fde54a0e8d8d90ed65c09b84862e98f7490b67534a1af3a445eb`. The implementer thread is archived.
