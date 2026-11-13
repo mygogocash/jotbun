@@ -49,6 +49,9 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 01:35: #464 (P2-T18a, part of #164) opened at `fc58825a`.**
+  - All 10 `real/` files are byte-identical. RED was Node 1 of 8 and render 6 of 54; GREEN passes. Mutants 20 of 20, identical to the planner's. Gate: `test:unit` 1110, kit eight 142, routes 17, catalogue 24.
+  - Reviews: Opus `mcp:launch:94c5884601504349cb697d18f6b873d2e2bd3acbb7212a5253684ae148b304a4`, Sonnet `mcp:launch:e467e1140cf5fde54a0e8d8d90ed65c09b84862e98f7490b67534a1af3a445eb`. The implementer thread is archived.
 - **14 Nov 01:25: P2-T18 was split in two, P2-T18a and P2-T18, and both are building (Haiku). P2-T18a merges first.**
   - **P2-T18a, shell guards (size M):**
     - kit `scratch/p2-t18a-planner/`, `check_kit` 51 of 51, `orig/` 10 of 10;
