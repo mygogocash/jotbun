@@ -21,6 +21,14 @@
 // a button that says what it was given, as RecordReceiptReload.render.test.tsx
 // does for today's record. Every lookup asserts one match, so a missing
 // element fails on an AssertionError.
+//
+// The fix round (R123, R124 and the reviews' pins): the undo bar's words are
+// read, and said on iOS, with the amount in words; in private mode today's
+// receipt section is not mounted (its real panel runs in
+// WalletRecordReceipt.render.test.tsx). A refused delete, a failed draft
+// Remove or Discard, a draft at the largest size, the tray's Close, Back, a
+// second delete's bar, the Undo pill's fill, the art that is never read, and a
+// screen-reader change before the phone's first answer each have a case.
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { AccessibilityInfo, Platform } from 'react-native';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
@@ -165,6 +173,7 @@ const WORDS = {
     baht: '50 บาท', pay: '28,000 บาท', hidden: 'ซ่อนยอดเงินอยู่', noteHidden: 'ซ่อนอยู่', today: 'วันนี้',
     editRow: 'แก้ไข ยอด หมวด กระเป๋า วันที่ หรือโน้ต', copyRow: (amount: string) => `ทำซ้ำ จดใหม่เป็นของวันนี้ ${amount}`, deleteRow: 'ลบ กู้คืนได้ภายใน 30 วัน',
     deletedBar: 'ลบ ข้าวมันไก่ ฿50 แล้ว', deletedBarHidden: 'ลบ อาหาร แล้ว', daysLeft: 'เหลือ 30 วัน', lastDay: 'วันสุดท้ายที่กู้คืนได้',
+    deletedBarSpoken: 'ลบ ข้าวมันไก่ 50 บาท แล้ว',
   },
   en: {
     edit: 'Edit', copyToday: 'Again today', delete: 'Delete', more: 'More options', back: 'Back', close: 'Close', undo: 'Undo',
@@ -172,6 +181,7 @@ const WORDS = {
     baht: '50 baht', pay: '28,000 baht', hidden: 'Amount hidden', noteHidden: 'Hidden', today: 'Today',
     editRow: 'Edit Amount, category, wallet, date or note', copyRow: (amount: string) => `Log it again A new entry for today ${amount}`, deleteRow: 'Delete You can restore it for 30 days',
     deletedBar: 'Deleted ข้าวมันไก่ ฿50', deletedBarHidden: 'Deleted Food', daysLeft: '30 days left', lastDay: 'Last day to restore',
+    deletedBarSpoken: 'Deleted ข้าวมันไก่ 50 baht',
   },
 } as const;
 
@@ -182,6 +192,10 @@ const NOT_CONFIRMED = 'Not confirmed yet. Your entry is kept; try again.';
 const LAZY = 10_000;
 /** The saved check on the status row (§5.3: neutral). */
 const CHECK = 'path[d="M5 12.5l4.5 4.5L19 7.5"]';
+/** The undo bar's pill and its mark's circle: the toast's words at 12%. */
+const ON_TOAST_FILL = 'rgba(255, 255, 255, 0.12)';
+/** An amount, drawn or in words. */
+const AMOUNT = /฿\s*\d|\d\s*(บาท|baht)/;
 
 // Every lookup takes the queryAll form and asserts one match, so a missing or doubled element fails on an
 // AssertionError, never a TestingLibraryElementError (a closing tray's Modal stays in the DOM for its exit).
@@ -378,6 +392,8 @@ test('ลบ deletes, and Undo restores with the version the delete returned', a
       const bar = await findFound('wallet-undo-bar');
       expect([bar.getAttribute('role'), bar.getAttribute('aria-live'), bar.style.backgroundColor], `${locale} ${mode}: the bar`).toEqual(['status', 'polite', rgba(colors.toast)]);
       expect(shown(words.deletedBar, bar).style.color, `${locale} ${mode}: its words`).toBe(rgba(colors.onToast));
+      // Read with the amount in words: ฿ is read as บาท (R124).
+      expect(shown(words.deletedBar, bar).getAttribute('aria-label'), `${locale} ${mode}: its words, read`).toBe(words.deletedBarSpoken);
       expect(fake.callsOf('deleteTransaction'), `${locale} ${mode}: one delete`).toHaveLength(1);
       const [removal] = fake.callsOf('deleteTransaction');
       expect(removal.args.slice(0, 2), `${locale} ${mode}: the delete`).toEqual([LUNCH.id, 3]);
@@ -509,6 +525,8 @@ test("private mode hides the record's amount and the ghost, and draws none of th
       const facts = found('wallet-record-facts');
       expect(facts.textContent, `${locale} ${mode}: the note`).toContain(`${words.note}${words.noteHidden}`);
       expect(facts.querySelectorAll(`[aria-label="${words.note} ${words.noteHidden}"]`), `${locale} ${mode}: the note, read`).toHaveLength(1);
+      // Today's receipt section is not mounted while amounts are hidden (R123; the real panel's cases are in WalletRecordReceipt.render.test.tsx).
+      expect(screen.queryAllByText(/^receipt of /), `${locale} ${mode}: no receipt section`).toHaveLength(0);
       const tray = await openActions(locale, words.food);
       named('button', words.copyRow(words.hidden), tray);
       for (const text of [document.body.textContent ?? '', mounted.container.textContent ?? '']) {
@@ -519,8 +537,10 @@ test("private mode hides the record's amount and the ghost, and draws none of th
       // A delete's undo bar names the entry without its amount, on screen and in every live region.
       tap(named('button', words.deleteRow, tray));
       const bar = await findFound('wallet-undo-bar');
-      shown(words.deletedBarHidden, bar);
+      expect(shown(words.deletedBarHidden, bar).getAttribute('aria-label'), `${locale} ${mode}: its words, read`).toBe(words.deletedBarHidden);
       for (const region of liveRegions(mounted.container)) expect(region.textContent, `${locale} ${mode}: a live region`).not.toMatch(/฿\s*\d|50/);
+      // Nothing labelled carries an amount, drawn or in words.
+      for (const labelled of document.querySelectorAll('[aria-label]')) expect(labelled.getAttribute('aria-label'), `${locale} ${mode}: a label`).not.toMatch(AMOUNT);
       cleanup();
     }
   }
@@ -704,6 +724,9 @@ test('the undo bar: a 44 pt Undo on the toast colour, gone after toastLong, but 
       expect([bar.getAttribute('role'), bar.getAttribute('aria-live'), bar.style.backgroundColor], `${locale} ${mode}`).toEqual(['status', 'polite', rgba(colors.toast)]);
       const undo = named('button', words.undo, bar);
       expect(undo.style.minHeight, `${locale} ${mode}: 44 pt`).toBe('44px');
+      // The pill and the mark's circle (the bar's first art): the toast's words at 12%.
+      const mark = bar.querySelector<HTMLElement>('[aria-hidden="true"]');
+      expect([undo.style.backgroundColor, mark?.style.backgroundColor], `${locale} ${mode}: the fills`).toEqual([ON_TOAST_FILL, ON_TOAST_FILL]);
       expect(shown(words.undo, undo).style.color, `${locale} ${mode}: its words`).toBe(rgba(colors.onToast));
       const dismissals = barTimers(timers);
       expect(dismissals, `${locale} ${mode}: toastLong`).toHaveLength(1);
@@ -758,6 +781,36 @@ test("the undo bar's time follows the phone: no answer counts as no screen reade
   expect(removed.filter((name) => name === 'screenReaderChanged'), 'the listener goes with the bar').toHaveLength(1);
 });
 
+test("the undo bar drops the phone's first answer once the phone has told of a change (the reviews' n3 and n5)", async () => {
+  for (const fails of [false, true]) {
+    const label = fails ? 'an answer that failed' : 'a late no';
+    const handlers: Record<string, (value: boolean) => void> = {};
+    vi.spyOn(AccessibilityInfo, 'addEventListener').mockImplementation(((name: string, handler: (value: boolean) => void) => {
+      handlers[name] = handler;
+      return { remove: () => undefined };
+    }) as never);
+    const answer: { give: (on: boolean) => void; fail: (error: Error) => void } = { give: () => undefined, fail: () => undefined };
+    vi.spyOn(AccessibilityInfo, 'isScreenReaderEnabled').mockImplementation(() => new Promise<boolean>((resolve, reject) => {
+      answer.give = resolve;
+      answer.fail = reject;
+    }));
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    mountWallet(<WalletUndoBar message={WORDS.th.deletedBar} onUndo={vi.fn()} onDismiss={vi.fn()} />);
+    await settle();
+    // A screen reader turned on before the first answer lands: that answer is old news.
+    expect(handlers.screenReaderChanged, `${label}: a listener`).toBeTypeOf('function');
+    act(() => handlers.screenReaderChanged(true));
+    await act(async () => {
+      if (fails) answer.fail(new Error('no answer'));
+      else answer.give(false);
+    });
+    await settle();
+    expect(barTimers(timers), `${label}: no time under a screen reader`).toHaveLength(0);
+    cleanup();
+    vi.restoreAllMocks();
+  }
+});
+
 test('the undo bar says its words once on iOS', async () => {
   const view = mountWallet(<WalletUndoBar message={WORDS.en.deletedBar} onUndo={vi.fn()} onDismiss={vi.fn()} />);
   await settle();
@@ -768,6 +821,28 @@ test('the undo bar says its words once on iOS', async () => {
   view.rerender(<WalletUndoBar message={WORDS.th.deletedBar} onUndo={vi.fn()} onDismiss={vi.fn()} />);
   await settle();
   expect(said.mock.calls.map(([text]) => text)).toEqual([WORDS.th.deletedBar]);
+});
+
+test('on iOS the page says its undo bar once, with the amount in words, and in private mode without one (R124)', async () => {
+  for (const locale of LOCALES) {
+    for (const hidden of [false, true]) {
+      const label = `${locale}${hidden ? ' private' : ''}`;
+      const words = WORDS[locale];
+      mount({ locale, device: hidden ? PRIVATE : {} });
+      await findNamed('button', words.delete);
+      await settle();
+      // iOS from here on (the app's providers have read the web's settings).
+      Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+      const said = vi.spyOn(AccessibilityInfo, 'announceForAccessibility');
+      tap(named('button', words.delete));
+      await findFound('wallet-undo-bar');
+      await settle();
+      expect(said.mock.calls.map(([text]) => text), label).toEqual([hidden ? words.deletedBarHidden : words.deletedBarSpoken]);
+      cleanup();
+      Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
+      vi.restoreAllMocks();
+    }
+  }
 });
 
 test('a record deleted elsewhere says so, counts its days and restores with its own version', async () => {
@@ -889,6 +964,143 @@ test('at the largest text size the three buttons stack and nothing is clamped', 
   }
 });
 
+// ---------------------------------------------------------------------------
+// The reviews' pins (the fix round): behaviour that was right, now held
+
+test('a new delete after an undo whose bar ran out is a new bar (Opus m2)', async () => {
+  screenReader(false);
+  const timers = vi.spyOn(globalThis, 'setTimeout');
+  const { fake } = mount();
+  tap(await findNamed('button', WORDS.th.delete));
+  const bar = await findFound('wallet-undo-bar');
+  await settle();
+  const release = fake.hold('restoreTransaction');
+  tap(named('button', WORDS.th.undo, bar));
+  const first = barTimers(timers);
+  expect(first, "the first bar's time").toHaveLength(1);
+  act(() => first[0].run());
+  await act(async () => { release(); });
+  await findNamed('button', WORDS.th.edit);
+  // Live again: deleted once more, with the version the undo returned.
+  tap(named('button', WORDS.th.delete));
+  await findFound('wallet-undo-bar');
+  expect(fake.callsOf('deleteTransaction').map((call) => call.args[1]), 'the versions').toEqual([3, 5]);
+  expect(screen.queryAllByText(tc('Entry deleted', 'th')), 'not gone yet').toHaveLength(0);
+});
+
+test("the actions tray's Close closes it (Opus m3)", async () => {
+  for (const locale of LOCALES) {
+    mount({ locale });
+    const tray = await openActions(locale);
+    tap(named('button', WORDS[locale].close, tray));
+    await wait(300);
+    expect(screen.queryAllByRole('dialog', { name: 'ข้าวมันไก่' }), `${locale}: the tray has gone`).toHaveLength(0);
+    named('button', WORDS[locale].more);
+    cleanup();
+  }
+});
+
+test('Back goes back, or to History when there is nowhere to go back to (Opus n1)', async () => {
+  mount();
+  tap(await findNamed('button', WORDS.th.back));
+  expect([router.back.mock.calls.length, router.replace.mock.calls.length], 'back').toEqual([1, 0]);
+  cleanup();
+  router.canGoBack.mockReturnValue(false);
+  mount();
+  tap(await findNamed('button', WORDS.th.back));
+  expect([router.back.mock.calls.length, router.replace.mock.calls], 'to History').toEqual([1, [['/spend/all']]]);
+});
+
+/** A delete refused for good, and today's words for it. */
+const REFUSALS = [
+  ['conflict', 'This entry changed on another device.'],
+  ['deleted', 'This entry was already deleted.'],
+  ['not_found', 'This entry was already deleted.'],
+  ['invalid', 'This entry could not be saved.'],
+] as const;
+
+test('a refused delete says why, sends once, reads the record again and keeps the page live (Sonnet m1)', async () => {
+  for (const locale of LOCALES) {
+    const words = WORDS[locale];
+    for (const [outcome, english] of REFUSALS) {
+      const label = `${locale} ${outcome}`;
+      const { fake } = mount({ locale });
+      fake.fail('deleteTransaction', outcome);
+      tap(await findNamed('button', words.delete));
+      await findShown(tc(english, locale));
+      await settle();
+      expect(screen.queryAllByTestId('wallet-undo-bar'), `${label}: no undo bar`).toHaveLength(0);
+      expect([fake.callsOf('deleteTransaction').length, fake.callsOf('transaction').length], `${label}: one send, two reads`).toEqual([1, 2]);
+      for (const name of [words.edit, words.copyToday, words.delete, words.more]) named('button', name);
+      cleanup();
+    }
+  }
+});
+
+test('the same refusal from the actions tray: the tray goes and the page says why (Sonnet m1)', async () => {
+  for (const [outcome, english] of REFUSALS) {
+    const { fake } = mount();
+    fake.fail('deleteTransaction', outcome);
+    const tray = await openActions('th');
+    tap(named('button', WORDS.th.deleteRow, tray));
+    await findShown(tc(english, 'th'));
+    await wait(300);
+    expect(screen.queryAllByRole('dialog', { name: 'ข้าวมันไก่' }), `${outcome}: the tray has gone`).toHaveLength(0);
+    expect(screen.queryAllByTestId('wallet-undo-bar'), `${outcome}: no undo bar`).toHaveLength(0);
+    expect(fake.callsOf('deleteTransaction'), `${outcome}: one send`).toHaveLength(1);
+    named('button', WORDS.th.edit);
+    cleanup();
+  }
+});
+
+test("a draft whose Remove or Discard fails says so and stays (Sonnet m1)", async () => {
+  for (const locale of LOCALES) {
+    const unsent = draft('unsent', 5);
+    const review = draft('needs_review', 6);
+    const diary = createFakeDiary({ wallets: WALLETS, categories: BUILTINS, outbox: [unsent, review] });
+    diary.diary.removeDraft = async () => { throw new Error('disk'); };
+    diary.diary.discardDraft = async () => { throw new Error('disk'); };
+    const failed = tc("Couldn't change this device's copy. Try again.", locale);
+    mount({ locale, id: unsent.payload.id, diary: diary.diary });
+    tap(await findNamed('button', tc('Remove', locale)));
+    await findShown(failed);
+    expect(router.back, `${locale}: stays after a failed remove`).not.toHaveBeenCalled();
+    named('button', tc('Remove', locale));
+    cleanup();
+    mount({ locale, id: review.payload.id, diary: diary.diary });
+    tap(await findNamed('button', tc('Discard', locale)));
+    await findShown(failed);
+    expect(router.back, `${locale}: stays after a failed discard`).not.toHaveBeenCalled();
+    named('button', tc('Discard', locale));
+    cleanup();
+  }
+});
+
+test("a draft's buttons stack at the largest text size too (Sonnet m1)", async () => {
+  for (const locale of LOCALES) {
+    const unsent = draft('unsent', 7);
+    const diary = createFakeDiary({ wallets: WALLETS, categories: BUILTINS, outbox: [unsent] });
+    const names = [WORDS[locale].copyToday, tc('Remove', locale)];
+    mount({ locale, id: unsent.payload.id, diary: diary.diary, fontScale: AX5 });
+    await findNamed('button', tc('Remove', locale));
+    expect(found('wallet-record-actions').style.flexDirection, `${locale}: stacked`).toBe('column');
+    expect(names.map((name) => named('button', name).style.flexGrow), `${locale}: no grow`).toEqual(['', '']);
+    cleanup();
+    mount({ locale, id: unsent.payload.id, diary: diary.diary });
+    await findNamed('button', tc('Remove', locale));
+    expect(found('wallet-record-actions').style.flexDirection, `${locale}: a row`).toBe('row');
+    expect(names.map((name) => named('button', name).style.flexGrow), `${locale}: they share the row`).toEqual(['1', '1']);
+    cleanup();
+  }
+});
+
+test("the tile and the wallet's swatch are art, never read (Sonnet n2)", async () => {
+  mount();
+  await findNamed('button', WORDS.th.edit);
+  await settle();
+  expect(['wallet-record-tile', 'wallet-record-swatch'].map((testID) => found(testID).getAttribute('aria-hidden'))).toEqual(['true', 'true']);
+});
+
 test('the catalogue draws the record, a draft, a deleted entry, the actions tray and the undo bar on their own fakes', async () => {
   const ids = WALLET_SECTIONS.map((section) => section.id);
   const at = ids.indexOf('bw-deleted');
@@ -932,11 +1144,14 @@ test('the catalogue draws the record, a draft, a deleted entry, the actions tray
     cleanup();
     mountWallet(<>{section('bw-record-undo').render()}</>, { locale });
     const bar = await findFound('wallet-undo-bar', LAZY);
-    shown(locale === 'th' ? 'ลบ ข้าวมันไก่ ฿50 แล้ว' : 'Deleted Chicken rice ฿50', bar);
+    // Read with the amount in words (R124).
+    const read = shown(locale === 'th' ? 'ลบ ข้าวมันไก่ ฿50 แล้ว' : 'Deleted Chicken rice ฿50', bar).getAttribute('aria-label');
+    expect(read, `${locale}: the bar, read`).toBe(locale === 'th' ? 'ลบ ข้าวมันไก่ 50 บาท แล้ว' : 'Deleted Chicken rice 50 baht');
     cleanup();
-    // In private mode, the screen's words without the amount.
+    // In private mode, the screen's words without the amount, drawn and read.
     mountWallet(<>{section('bw-record-undo').render()}</>, { locale, device: PRIVATE });
-    shown(locale === 'th' ? 'ลบ ข้าวมันไก่ แล้ว' : 'Deleted Chicken rice', await findFound('wallet-undo-bar', LAZY));
+    const hiddenWords = locale === 'th' ? 'ลบ ข้าวมันไก่ แล้ว' : 'Deleted Chicken rice';
+    expect(shown(hiddenWords, await findFound('wallet-undo-bar', LAZY)).getAttribute('aria-label'), `${locale}: private, read`).toBe(hiddenWords);
     cleanup();
   }
 }, 30_000);

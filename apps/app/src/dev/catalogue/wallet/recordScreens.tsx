@@ -21,6 +21,7 @@ import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
 import { BUILTINS, createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
 import type { PendingEntry } from '@mobile/storage/types';
 import { BUN_SPACE } from '@mobile/ui/layout';
+import { COMMON_COPY } from '@mobile/wallet/common/copy';
 import type { DraftTable } from '@mobile/wallet/copy/draftText';
 import { useDraftCopy } from '@mobile/wallet/copy/useDraftCopy';
 import { WalletCategoryIcon } from '@mobile/wallet/looks/WalletCategoryIcon';
@@ -72,6 +73,7 @@ function onThisPhone(): ScreenFixture {
 }
 
 const SAMPLES = {
+  ...COMMON_COPY,
   ...COPY,
   'sample.open': { th: 'เปิดถาด', en: 'Open the tray' },
   'sample.chickenRice': { th: 'ข้าวมันไก่', en: 'Chicken rice' },
@@ -108,10 +110,12 @@ function ActionsTraySection() {
 function UndoBarSection() {
   const t = useDraftCopy(SAMPLES);
   const { hidden } = usePrivateMode();
+  // Drawn and spoken (R124): the spoken amount needs common.baht, so SAMPLES carries COMMON_COPY.
+  const words = deletedBarText(t('sample.chickenRice'), '5000', hidden, t);
   return (
     <View style={{ flex: 1, gap: BUN_SPACE.md, padding: BUN_SPACE.md, justifyContent: 'space-between' }}>
       <SpecimenLabel>{t('sample.undo')}</SpecimenLabel>
-      <WalletUndoBar message={deletedBarText(t('sample.chickenRice'), '5000', hidden, t)} onUndo={() => undefined} onDismiss={() => undefined} />
+      <WalletUndoBar message={words.text} spoken={words.spoken} onUndo={() => undefined} onDismiss={() => undefined} />
     </View>
   );
 }
