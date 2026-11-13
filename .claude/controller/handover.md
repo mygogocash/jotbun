@@ -49,6 +49,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 20:10: #461 (P3-T9) opened; source-pins and P4-T2 building; #460's Opus review approved.**
+  - **#461 (P3-T9, issue #193)** at `5cb1055e`: all 20 `real/` files byte-identical. RED was phone 3 of 4, edge Node 6 of 46 and Workers 26 of 126. Mutants: 79 of 79 in six batches, each identical to the planner's.
+    - Reviews: Opus `mcp:launch:585ae86cc8c795e7b9408bbe54d85f51228361ee34ab13782d3fb13d3ad47946`, Sonnet `mcp:launch:9f345364b995bb1e1d5196f13a324e2c91df3c08ee4bd73380171da441fc532a`.
+  - **#460 (P3-T13):** the Opus review **approved**; the Sonnet review and CI are pending.
+  - **source-pins building (Haiku)** `mcp:launch:23f203d563e809b37aa689a4284bc79fcbf6fc03aa8fe42427c90ebc0d160034`, worktree `source-pins` on `fix/source-pins` at `a0aa42e3`, `install-edge`, heavy lock.
+    - Test-only: two edge cases and three app lines; no source change, no finding.
+    - **P1 to P10 accepted.** P3: the import-confirmation pin waits for P4-T11.
+  - **P4-T2 building (Haiku)** `mcp:launch:a7de68dd82efbad0f0bba136c732f09362f3f9ddf188cbc8c64ce11e05a82f3e`, worktree `p4-t2` on `p4/t2-catalog-db` at `a0aa42e3`, `install-edge`, heavy lock.
+    - `check_kit` 57 of 57, `orig/` 9 of 9. **P1 to P15 accepted.**
+    - **Owner item (new):** create the Cloudflare D1 database `jotbun-catalog` (D33, `apac` hint) and apply `migrations/catalog` before any deploy. Nothing waits on it: the binding uses a local placeholder id, as `AUTH_DB` and `ERASURE_DB` do.
+  - **Live now:** the source-pins and P4-T2 implementers (Haiku); reviews on #460 (Sonnet) and #461 (both); the P2-T26 fix planner (Opus).
 - **13 Nov 19:50: P3-T9's brief is READY and its implementer is building (Haiku).**
   - Size L, 20 files. It carries every P3-T8 review item (P14): the `isRealDate` guard, the `readOnce` catch, the MO2 rows, PC2, one `draftChoices` and the test pins.
   - **P6, R116 extended to every route through `shouldRefund`** (the slip's "Haiku answered, Opus never started" is now spent): **accepted** by the controller.

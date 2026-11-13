@@ -1,0 +1,54 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+ × test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container 3ms
+   → expected [ [ 'AUTH_DB', 'ERASURE_DB' ], …(1) ] to deeply equal [ …(2) ]
+ ✓ test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > the Workers-runtime tests load the vault module, never TanStack Start, on the one config (B15) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/c1-shape.test.ts > C1: the vault moves into the HTTP Worker > one Worker hosts the vault, its Workflows, its queue consumer and its container
+AssertionError: expected [ [ 'AUTH_DB', 'ERASURE_DB' ], …(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "AUTH_DB",
+      "ERASURE_DB",
+-     "CATALOG_DB",
+    ],
+    [
+      "EMAIL",
+    ],
+  ]
+
+ ❯ test/c1-shape.test.ts:47:134
+     45|     expect([config.r2_buckets[0].binding, config.kv_namespaces[0].bind…
+     46|     // Better Auth's databases and the email binding (1C-T1) stay with…
+     47|     expect([config.d1_databases.map((d: { binding: string }) => d.bind…
+       |                                                                                                                                      ^
+     48|     // The catalog's migrations are the folder the Workers-runtime tes…
+     49|     const catalog = config.d1_databases.find((d: { binding: string }) …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed (14)
+   Start at  19:52:08
+   Duration  441ms (transform 234ms, setup 0ms, import 346ms, tests 8ms, environment 0ms)
+

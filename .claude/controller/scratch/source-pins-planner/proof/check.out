@@ -1,0 +1,7 @@
+R4: text found 1 time(s) in apps/edge/src/vault/domain/transactions.ts; case present: True
+R5: text found 1 time(s) in apps/edge/src/vault/files/attachments.ts; case present: True
+R9: text found 1 time(s) in apps/app/src/storage/diaryRepository.ts; case present: True
+S1: text found 1 time(s) in apps/edge/src/vault/files/attachments.ts; case present: True
+S2: text found 1 time(s) in apps/edge/src/vault/files/attachments.ts; case present: True
+S3: text found 1 time(s) in apps/edge/src/vault/files/attachments.ts; case present: True
+3 mutants and 3 step mutants; every text found exactly once and every case present: True

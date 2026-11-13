@@ -1,0 +1,26 @@
+--- a/apps/edge/wrangler.jsonc
++++ b/apps/edge/wrangler.jsonc
+@@ -35,7 +35,7 @@
+   // Published policies, gates and client minimums (config:v1). The ids here are
+   // local placeholders until the owner creates the resources.
+   "kv_namespaces": [{ "binding": "CONFIG", "id": "00000000000000000000000000000000" }],
+-  // The owner creates both databases with the `apac` location hint
++  // The owner creates the three databases with the `apac` location hint
+   // (default pending owner Q6).
+   "d1_databases": [
+     {
+@@ -49,6 +49,14 @@
+       "database_name": "jotbun-erasure",
+       "database_id": "00000000-0000-0000-0000-000000000001",
+       "migrations_dir": "migrations/erasure"
++    },
++    // The shared catalog (P4-T2): bank albums and merchant patterns. The id is a
++    // local placeholder until the owner creates jotbun-catalog (D33).
++    {
++      "binding": "CATALOG_DB",
++      "database_name": "jotbun-catalog",
++      "database_id": "00000000-0000-0000-0000-000000000002",
++      "migrations_dir": "migrations/catalog"
+     }
+   ],
+   // `remote` stays unset: setting it would reach the real Email Service from `wrangler dev`.

@@ -1,0 +1,147 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 5ms
+   → expected [ { pattern: '7-eleven', …(2) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(2) }, …(6) ]
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 10ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 7ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 1ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 1ms
+   → expected [ [ { …(2) }, …(6) ], 1 ] to deeply equal [ [ { …(2) }, …(6) ], 1 ]
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 1ms
+   → expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 1ms
+   → expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms
+AssertionError: expected [ { pattern: '7-eleven', …(2) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(2) }, …(6) ]
+
+- Expected
++ Received
+
+@@ -5,11 +5,11 @@
+      "pattern": "7-eleven",
+    },
+    {
+      "category_key": "shopping",
+      "gogocash_eligible": 0,
+-     "pattern": "big c",
++     "pattern": "big  c",
+    },
+    {
+      "category_key": "travel",
+      "gogocash_eligible": 0,
+      "pattern": "bts",
+
+ ❯ test/workers/catalog.test.ts:105:23
+    103|     expect(await select('SELECT bank, platform, album_name FROM bank_a…
+    104|     const merchants = await select('SELECT pattern, category_key, gogo…
+    105|     expect(merchants).toEqual(SEED_MERCHANTS.map((merchant) => ({ ...m…
+       |                       ^
+    106|     // Each pattern is stored as its own merchant key.
+    107|     for (const { pattern } of SEED_MERCHANTS) expect(merchantKey(patte…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own
+AssertionError: expected [ [ { …(2) }, …(6) ], 1 ] to deeply equal [ [ { …(2) }, …(6) ], 1 ]
+
+- Expected
++ Received
+
+@@ -4,11 +4,11 @@
+        "category_key": "food",
+        "pattern": "7-eleven",
+      },
+      {
+        "category_key": "shopping",
+-       "pattern": "big c",
++       "pattern": "big  c",
+      },
+      {
+        "category_key": "travel",
+        "pattern": "bts",
+      },
+
+ ❯ test/workers/catalog.test.ts:219:89
+    217|     expect(MERCHANTS_TTL_MS).toBe(3_600_000)
+    218|     const counted = countedCatalog()
+    219|     expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT), co…
+       |                                                                                         ^
+    220|     expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT + 3_…
+    221|     expect([await merchantPatterns({ CATALOG_DB: counted.db }, AT + 3_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call
+AssertionError: expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+      "category_key": "food",
+      "pattern": "7-eleven",
+    },
+    {
+      "category_key": "shopping",
+-     "pattern": "big c",
++     "pattern": "big  c",
+    },
+    {
+      "category_key": "travel",
+      "pattern": "bts",
+    },
+
+ ❯ test/workers/catalog.test.ts:244:65
+    242|     const errors = vi.spyOn(console, 'error').mockImplementation(() =>…
+    243|     try {
+    244|       expect(await merchantPatterns({ CATALOG_DB: flaky }, AT)).toEqua…
+       |                                                                 ^
+    245|       down = true
+    246|       expect(await merchantPatterns({ CATALOG_DB: flaky }, AT + 3_600_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing
+AssertionError: expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal [ { pattern: '7-eleven', …(1) }, …(6) ]
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+      "category_key": "food",
+      "pattern": "7-eleven",
+    },
+    {
+      "category_key": "shopping",
+-     "pattern": "big c",
++     "pattern": "big  c",
+    },
+    {
+      "category_key": "travel",
+      "pattern": "bts",
+    },
+
+ ❯ test/workers/catalog.test.ts:261:18
+    259|   it('matchMerchant takes the longest whole-word Latin pattern or a Th…
+    260|     const seed = await merchantPatterns(env, AT)
+    261|     expect(seed).toEqual(SEED_MERCHANTS)
+       |                  ^
+    262|     const cases: [string | null, string | null][] = [
+    263|       ['7-ELEVEN สาขา 01234', 'food'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 6 passed (10)
+   Start at  19:49:18
+   Duration  2.23s (transform 822ms, setup 1.68s, import 12ms, tests 29ms, environment 0ms)
+

@@ -1,0 +1,10 @@
+RED with R4, R5, R9
+typecheck:edge on the RED tree: rc=0
+typecheck:app on the RED tree: rc=0
+workers: 2 failed | 9 passed (11); rc=1; assertion failures 2 of 2; other errors 0
+  failed as expected: a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed
+  failed as expected: a restore keeps the source, in the record and in the sync feed
+unit: tests 25 pass 24 fail 1; rc=1; assertion failures 1 of 1; other errors 0
+  failed as expected: a pending entry may carry a source, and an unknown one is refused
+restored=True
+RED: failed 3, expected 3; as expected

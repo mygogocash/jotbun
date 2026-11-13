@@ -1,0 +1,6 @@
+apps/edge/migrations/catalog/0001_catalog.sql
+apps/edge/migrations/catalog/0002_catalog_seed.sql
+apps/edge/src/catalog/catalog.ts
+apps/edge/test/workers/support/apply-catalog-migrations.ts
+apps/edge/test/workers/catalog.test.ts
+docs/implementation/receipts/P4-T2.md

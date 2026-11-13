@@ -1,0 +1,85 @@
+
+> gogospend@0.0.0 test:app
+> npm run test -w gogospend-app
+
+
+> gogospend-app@0.1.0 test
+> node --test src/api/*.test.ts
+
+(node:79388) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/src/api/aiClientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:79388) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/package.json.
+✔ this build is at least the minimum client version (0.374875ms)
+(node:79389) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/src/api/client.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ signed-out reads fail before any network request (1.677083ms)
+✔ JSON writes send the active bearer credential and preserve integer satang (12.751ms)
+✔ multipart uploads let the runtime generate a matching boundary (3.445291ms)
+✔ server failures stay failures with their actionable code (1.362ms)
+✔ absolute URLs cannot receive session credentials (0.200541ms)
+✔ a development build may reach wrangler dev on the LAN; a release build may not (0.542708ms)
+✔ a v1 request with no session id is refused before anything is sent (0.285209ms)
+✔ a bound v1 request sends no X-GoGoSpend-Session header (1.640625ms)
+✔ acceptLanguage sends Accept-Language and nothing else changes (1.02425ms)
+✔ a response from the previous account cannot become the current diary (1.311958ms)
+✔ requests carry X-GoGoSpend-Analytics: off unless this phone's answer is yes (3.327708ms)
+✔ a conditional read hands a 304 back as NOT_MODIFIED and reports a 200's ETag (0.786084ms)
+(node:79390) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/src/api/clientVersion.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:79390) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/package.json.
+✔ this build is at least the minimum client version, which is above P3's and shared with no other (0.806625ms)
+(node:79391) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/src/api/sessionEpoch.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:79391) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/package.json.
+✔ a token renewed while a request is in flight keeps its response (same identity) (33.037042ms)
+✔ a sign-out, account switch or A -> B -> A during a request drops its response (44.896375ms)
+✔ one 401 allows one refresh and one resend of the same body and key; a second 401 signs out (3.112875ms)
+✔ 426 never triggers a refresh or a sign-out; other auth refusals are not refreshed either (1.305292ms)
+✔ token-only routes need no binding and send none, even from a bound session (0.879333ms)
+✔ a session change while the token is read sends nothing (never one identity's binding with another's token) (0.087417ms)
+✔ a 401 that arrives after the session changed is neither refreshed nor resent (21.922416ms)
+✔ a session change while the token is re-read or refreshed stops the resend (never sent under another identity) (1.4405ms)
+✔ a lost command is not resent once the session changed (252.796833ms)
+✔ a 401 for a token another request already renewed is resent with the new token, without a second refresh (44.064ms)
+✔ credentials that cannot be read right now are a network outcome, never a sign-out (0.983792ms)
+✔ a request with its own credentials uses them, is never refreshed and never ends the session (1.172917ms)
+✔ a server-ended session is reported with the epoch the request started under; proof and token-only refusals are not (2.194375ms)
+✔ return_to_a_does_not_accept_old_a_response (3.061958ms)
+✔ a server-ended session leaves active through the seam; a stale report from an earlier session changes nothing (2.871208ms)
+✔ sign-out from a locked session still revokes its binding over the transport (0.830333ms)
+✔ a request begun during an account switch sends nothing: never the next session's token under the first session (R86) (0.611958ms)
+✔ offline token reads neither lock the session nor close the diary (S4 resolver) (6.444542ms)
+(node:79392) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/src/api/v1Contracts.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:79392) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/packages/contracts/package.json.
+✔ money parses as exact satang and never accepts JS numbers (0.628958ms)
+✔ totals beyond the safe-integer range stay exact (0.069875ms)
+✔ Bangkok day boundary and occurred-on window (0.902084ms)
+✔ command normalization is order-independent and matches the server form (0.166458ms)
+✔ unknown request fields and malformed client headers are rejected (0.433459ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 612.091125

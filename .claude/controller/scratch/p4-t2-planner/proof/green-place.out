@@ -1,0 +1,15 @@
+green: real/apps/edge/migrations/catalog/0001_catalog.sql
+green: real/apps/edge/migrations/catalog/0002_catalog_seed.sql
+green: real/apps/edge/src/catalog/catalog.ts
+green: real/apps/edge/src/cloudflare-workers.d.ts
+green: real/apps/edge/src/v1/env.ts
+green: real/apps/edge/src/v1/protocol.ts
+green: real/apps/edge/src/v1/routes.ts
+green: real/apps/edge/src/v1/worker-routes.ts
+green: real/apps/edge/wrangler.jsonc
+green: real/apps/edge/vitest.workers.config.ts
+green: real/apps/edge/test/workers/support/apply-catalog-migrations.ts
+green: real/apps/edge/test/workers/catalog.test.ts
+green: real/apps/edge/test/route-coverage.test.ts
+green: real/apps/edge/test/c1-shape.test.ts
+green: 14 files placed
