@@ -14,8 +14,11 @@
 // - Today's money out (todayOutMinor): the read's confirmed total, plus each
 //   expense command dated today whose record the read does not list, so its
 //   money is not in that total yet, whatever its state; but never one Jotbun
-//   refused (needs review), which counts nowhere. The caller reads a page that
-//   holds every expense of the day, so a listed record is never counted twice.
+//   refused (needs review), which counts nowhere, nor one Jotbun acknowledged
+//   at or before the read's revision (P2-T18a, the P2-T17 reviews' m1): it was
+//   committed when the read was made, so a read that does not list it saw it
+//   deleted since. The caller reads a page that holds every expense of the
+//   day, so a listed record is never counted twice.
 // - The toast's words (toastWords): bw-saved's บันทึกแล้ว · วันนี้ ฿182, the
 //   amount masked in private mode and said to be hidden (R65); บันทึกแล้ว
 //   while the total is unknown; rh-offline's words offline, with no total.
@@ -63,12 +66,17 @@ export function undoPlan(notice: SavedNotice, outbox: readonly OutboxCommand[]):
   return canUndoDraft(command) ? { kind: 'remove_draft', commandId: command.commandId } : { kind: 'none' };
 }
 
-/** The confirmed total plus each expense command dated today whose record is not confirmed, unless Jotbun refused it. */
-export function todayOutMinor(input: { summaryExpenseMinor: Minor; confirmedIds: ReadonlySet<string>; outbox: readonly OutboxCommand[]; today: string }): Minor {
+/**
+ * The confirmed total plus each expense command dated today whose record is not confirmed, unless Jotbun refused it,
+ * or acknowledged it at or before the read's revision (`readRevision`, the page's `as_of_revision`).
+ */
+export function todayOutMinor(input: { summaryExpenseMinor: Minor; confirmedIds: ReadonlySet<string>; outbox: readonly OutboxCommand[]; today: string; readRevision?: string }): Minor {
   let total = BigInt(input.summaryExpenseMinor);
-  for (const { payload, state } of input.outbox) {
+  for (const { payload, state, ackedRevision } of input.outbox) {
     if (payload.type !== 'expense' || payload.occurred_on !== input.today) continue;
     if (state === 'needs_review' || input.confirmedIds.has(payload.id)) continue;
+    // Committed by the time of the read, yet not listed: deleted since, so not money out.
+    if (state === 'acknowledged' && ackedRevision !== null && input.readRevision !== undefined && BigInt(ackedRevision) <= BigInt(input.readRevision)) continue;
     total += BigInt(payload.amount_minor);
   }
   return total.toString();

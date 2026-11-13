@@ -326,12 +326,16 @@ test('opened with ?setup=1 the ceremony returns to /spend/setup', async () => {
     cleanup();
     router.dismissTo.mockReset();
   }
-  // Back on the first step leaves the flow: back where it came from, or to where it would return.
+  // Back on the first step leaves the flow: back where it came from, or to where it would return (a mount of its
+  // own, since the flow is left once).
   mountWallet(at({ setup: '1' }, <SpendNewWalletRoute />));
   await settle();
   fireEvent.click(named('button', 'กลับ'));
   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
+  cleanup();
   router.canGoBack.mockReturnValue(false);
+  mountWallet(at({ setup: '1' }, <SpendNewWalletRoute />));
+  await settle();
   fireEvent.click(named('button', 'กลับ'));
   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, [['/spend/setup']]]);
 });
@@ -473,6 +477,51 @@ test("step 2's back is held only while the create is out; once its answer is unk
   expect([router.back.mock.calls.length, router.replace.mock.calls, keptLooks(again.stored)]).toEqual([0, [['/spend/wallets']], {}]);
 });
 
+// P2-T18a (P2-T21's confirming review, m2 and n1). Once the shell hides its bar on /spend/wallet/*, step 2's back is
+// the flow's only way out while a create's answer is unknown, so the flow is left once.
+test("the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown", async () => {
+  mountWallet(<NewWalletFlow now={NOW} />);
+  await settle();
+  const first = named('button', 'กลับ');
+  act(() => {
+    fireEvent.click(first);
+    fireEvent.click(first);
+  });
+  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
+  cleanup();
+  router.back.mockReset();
+  const lost = createFakeResources();
+  lost.loseResponse('createWallet');
+  mountWallet(<NewWalletFlow now={NOW} />, { resources: lost.resources });
+  await settle();
+  fillBank();
+  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
+  await settle();
+  const second = named('button', 'กลับ');
+  act(() => {
+    fireEvent.click(second);
+    fireEvent.click(second);
+  });
+  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
+});
+
+test("after a refusal, held or not, step 2's back goes to the kinds and leaves nothing", async () => {
+  for (const outcome of ['signed_out', 'upgrade_required'] as const) {
+    const refused = createFakeResources();
+    refused.fail('createWallet', outcome);
+    mountWallet(<NewWalletFlow now={NOW} />, { resources: refused.resources });
+    await settle();
+    fillBank();
+    fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
+    await settle();
+    // Back is never held after a refusal; เพิ่มกระเป๋า is held only until Jotbun is updated.
+    expect([named('button', 'กลับ').getAttribute('aria-disabled'), named('button', 'เพิ่มกระเป๋า').getAttribute('aria-disabled')], outcome).toEqual([null, outcome === 'upgrade_required' ? 'true' : null]);
+    fireEvent.click(named('button', 'กลับ'));
+    expect([found('new-wallet-step').textContent, router.back.mock.calls.length, router.replace.mock.calls], outcome).toEqual([WORDS.th.step(1), 0, []]);
+    cleanup();
+  }
+});
+
 test("while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported", async () => {
   const { sent, restore } = await recordAnalytics();
   try {
@@ -601,6 +650,8 @@ test("the new card drops in a place of its own, so it falls about one card's hei
   // height above where it rests, not above the scroll view's top (the review's n1).
   const place = found('new-wallet-card-place');
   expect([found('new-wallet-card').parentElement === place, place.children.length, drops.asked]).toEqual([true, 1, [false]]);
+  // A stacking context on a phone too: a nativeID, which react-native-web draws as the id (P2-T21's confirming review m1).
+  expect(place.id).toBe('new-wallet-card-place');
 });
 
 test('at AX5 nothing is clamped to a line, and the kinds and the looks wrap', async () => {

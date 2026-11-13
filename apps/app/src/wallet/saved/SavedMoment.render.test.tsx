@@ -631,3 +631,68 @@ test("the saved moment's sections come after the add tray's, and each opens in i
     cleanup();
   }
 }, 60_000);
+
+// P2-T18a, before the wallet shell mounts this host (the P2-T17 reviews' m1 and m2). A figure shows only when the
+// read and the diary are one moment: the diary has applied nothing past the read's revision, and a diary open when
+// the toast began is open still. An acknowledged command committed by the read's revision, which the read does not
+// list, was deleted since. In private mode iOS hears that the amount is hidden, and nothing typed.
+
+/**
+ * A save whose read is held: Jotbun's page lists `records`, at the fake's revision 10. While the read is on its way
+ * the diary moves to `during`; then the read lands. Returns the toast's line.
+ */
+async function raced(records: TransactionDto[], before: Parameters<typeof createFakeDiary>[0], during: Parameters<ReturnType<typeof createFakeDiary>['set']>[0]) {
+  const fake = resources(records);
+  const release = fake.hold('history');
+  const diary = readyDiary(before);
+  await mount(<Host />, { resources: fake.resources, diary: diary.diary });
+  vi.useFakeTimers();
+  act(() => { probe.toast?.show(notice({ via: 'device' })); });
+  await flush();
+  tick(TOTAL_WAIT_MS);
+  startAnimations();
+  expect(text('saved-line')).toBe(PLAIN);
+  act(() => { diary.set(during); });
+  release();
+  await flush();
+  return text('saved-line');
+}
+
+test('a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A)', async () => {
+  // The read ran at revision 10 and lists only the ฿82. The sync then committed this ฿50 at 11, the diary applied 11
+  // and the draft left the outbox before the read's answer was handled: ฿82 would leave out the very save.
+  expect(await raced([EARLIER], { outbox: [OWN], appliedRevision: '10' }, { outbox: [], appliedRevision: '11' })).toBe(PLAIN);
+  cleanup();
+  vi.useRealTimers();
+  // Applied at the read's revision, the save is listed, and counted once: ฿82 and ฿50.
+  expect(await raced([EARLIER, SAVED], { outbox: [OWN], appliedRevision: '9' }, { outbox: [], appliedRevision: '10' })).toBe('บันทึกแล้ว · วันนี้ ฿132');
+});
+
+test("an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B)", async () => {
+  // Acknowledged at 9 (as queued() acknowledges), the read at 10 lists only the ฿82; the diary is at 9, behind the
+  // read, as numbers (as text "9" sorts after "10").
+  const acknowledged = queued(draft(RECORD_ID, '5000'), 'acknowledged', COMMAND_ID);
+  expect(await raced([EARLIER], { outbox: [acknowledged], appliedRevision: '9' }, { appliedRevision: '9' })).toBe('บันทึกแล้ว · วันนี้ ฿82');
+});
+
+test('a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว', async () => {
+  // Its drafts are not known once the diary has closed, so ฿82 would leave this ฿50 out.
+  expect(await raced([EARLIER], { outbox: [OWN] }, { phase: 'unavailable', outbox: [] })).toBe(PLAIN);
+});
+
+test('in private mode iOS hears that the amount is hidden, and nothing typed, also after Undo', async () => {
+  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+  await mount(<Host />, { resources: resources([EARLIER, SAVED]).resources, device: { [PRIVATE_MODE_NAME]: '1' } });
+  // iOS from here on (the theme read the web's store as the mount began).
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  await show(notice({ via: 'online' }));
+  fireEvent.click(named('button', 'เลิกทำ'));
+  await settle();
+  const heard = announce.mock.calls.map(([words]) => words);
+  expect(heard).toEqual(['บันทึกแล้ว · วันนี้ ซ่อนยอดเงินอยู่', UNDONE_DELETED]);
+  for (const words of heard) expect(words).not.toMatch(/\d|ข้าวมันไก่/);
+  // Nothing in the toast, drawn or labelled, has a digit or the typed name.
+  const toast = found('saved-toast');
+  expect(toast.textContent).not.toMatch(/\d|ข้าวมันไก่/);
+  for (const node of toast.querySelectorAll('[aria-label]')) expect(node.getAttribute('aria-label')).not.toMatch(/\d|ข้าวมันไก่/);
+});

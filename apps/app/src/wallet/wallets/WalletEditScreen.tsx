@@ -150,7 +150,13 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
   // The person leaves once: back, a save or an archive that lands, or this screen gone. A save that lands after that,
   // or a second press before React draws again, navigates nothing more (R115, m1).
   const left = useRef(false);
-  useEffect(() => () => { left.current = true; }, []);
+  // Set again at each mount, so React's development double run (StrictMode) leaves it unset (P2-T21's confirming review n2).
+  useEffect(() => {
+    left.current = false;
+    return () => {
+      left.current = true;
+    };
+  }, []);
   const leave = (go: () => void) => {
     if (left.current) return;
     left.current = true;
