@@ -912,6 +912,15 @@ function recordingVault(log: VaultCall[], after?: (call: VaultCall) => Promise<v
                   return reply
                 }
               }
+              // A vault route's call (1D-T11): recorded and forwarded as `call` is. Never `.bind`: on an RPC stub that is a remote call.
+              if (p === 'callWithAnalytics') {
+                return async (call: VaultCall) => {
+                  log.push(structuredClone(call))
+                  const answered = await s.callWithAnalytics(call)
+                  if (after) await after(call)
+                  return answered
+                }
+              }
               const value = Reflect.get(s, p)
               return typeof value === 'function' ? value.bind(s) : value
             },

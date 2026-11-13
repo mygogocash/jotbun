@@ -1,0 +1,155 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 6 failed) 732ms
+     × the off header also stops what a reply says: a stale cursor and a failing sync read send nothing under the person 37ms
+     × a vault failure on the outbox's routes sends sync_failed, beside its anonymous count 26ms
+     × a deliberate refusal is never an error count 49ms
+     × an unexpected failure sends its class name only, without the person 24ms
+     × a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person 30ms
+     × a failed consent read fails closed: the failed create is counted, and nothing is sent under the person 27ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > the off header also stops what a reply says: a stale cursor and a failing sync read send nothing under the person
+AssertionError: expected [] to deeply equal [ '$exception' ]
+
+- Expected
++ Received
+
+- [
+-   "$exception",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:323:52
+    321|     await r.settled()
+    322|     // The failure is counted, anonymously; nothing goes under the per…
+    323|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+       |                                                    ^
+    324|     // The same stale read, not marked off: resync_required.
+    325|     expect((await read({})).status).toBe(410)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault failure on the outbox's routes sends sync_failed, beside its anonymous count
+AssertionError: expected [] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "transactions.create",
+-     "TypeError",
+-   ],
+-   [
+-     "sync.changes",
+-     "SyntaxError",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:408:133
+    406|     ])
+    407|     const counts = r.sent.filter((message) => message.event === '$exce…
+    408|     expect(counts.map((message) => [message.properties.route, (message…
+       |                                                                                                                                     ^
+    409|       ['transactions.create', 'TypeError'],
+    410|       ['sync.changes', 'SyntaxError'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a deliberate refusal is never an error count
+AssertionError: expected [] to deeply equal [ '$exception' ]
+
+- Expected
++ Received
+
+- [
+-   "$exception",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:453:52
+    451|     }
+    452|     await r.settled()
+    453|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+       |                                                    ^
+    454|   })
+    455|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an unexpected failure sends its class name only, without the person
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:473:20
+    471|     }
+    472|     await r.settled()
+    473|     expect(r.sent).toHaveLength(1)
+       |                    ^
+    474|     const [count] = r.sent
+    475|     expect(count).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a vault that holds another account reads no consent: the failure is counted, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ [ '$exception', …(2) ] ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "$exception",
+-     "transactions.create",
+-     "VaultOwnerMismatch",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:515:162
+    513|     })
+    514|     await r.settled()
+    515|     expect(r.sent.map((message) => [message.event, message.properties.…
+       |                                                                                                                                                                  ^
+    516|       ['$exception', 'transactions.create', 'VaultOwnerMismatch'],
+    517|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > a failed consent read fails closed: the failed create is counted, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ '$exception' ]
+
+- Expected
++ Received
+
+- [
+-   "$exception",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:640:52
+    638|     })
+    639|     await r.settled()
+    640|     expect(r.sent.map((message) => message.event)).toEqual(['$exceptio…
+       |                                                    ^
+    641|     expect(lines.filter((line) => line.includes('"event":"vault_analyt…
+    642|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 20 passed (26)
+   Start at  03:06:02
+   Duration  3.42s (transform 1.09s, setup 2.09s, import 44ms, tests 732ms, environment 0ms)
+

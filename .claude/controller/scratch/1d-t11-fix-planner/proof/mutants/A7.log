@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 1 failed) 552ms
+     × the change log counts a create once, by its first version, inside the revision range only 28ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the vault half > the change log counts a create once, by its first version, inside the revision range only
+AssertionError: expected [ Array(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
++   {
++     "name": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:683:64
+    681|     await expect(events('transactions.create', afterFirst, afterEdit))…
+    682|     // Any other route reads nothing (Q16).
+    683|     await expect(events('transactions.update', '0', afterEdit)).resolv…
+       |                                                                ^
+    684|     // A first version that is not active (a purged change has no snap…
+    685|     await sqlExec(user, 'UPDATE sync_state SET revision = revision + 1…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:04:17
+   Duration  2.85s (transform 893ms, setup 1.75s, import 46ms, tests 552ms, environment 0ms)
+

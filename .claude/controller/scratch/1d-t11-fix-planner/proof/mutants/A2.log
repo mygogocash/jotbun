@@ -1,0 +1,71 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 2 failed) 690ms
+     × the analytics id is the HMAC of the caller's id, with the weeks and the consent 34ms
+     × nothing is sent for a person who said no, or while their phone says off 31ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > the analytics id is the HMAC of the caller's id, with the weeks and the consent
+AssertionError: expected { status: 200, body: { …(3) } } to deeply equal { status: 200, body: { …(3) } }
+
+- Expected
++ Received
+
+  {
+    "body": {
+      "analytics_id": "a00c2028e70918af1d6f89b074b7ab14066988e15049ca2ade17c8f4641522c8",
+-     "consent": "no",
++     "consent": "yes",
+      "weeks_since_signup": 0,
+    },
+    "status": 200,
+  }
+
+ ❯ test/workers/server-events.test.ts:170:16
+    168|     await answer(client, user, false)
+    169|     const no = await read()
+    170|     expect(no).toEqual({ status: 200, body: { analytics_id: id, weeks_…
+       |                ^
+    171|     for (const reply of [first, yes, no]) expect(JSON.stringify(reply.…
+    172|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [ { …(3) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "distinctId": "f0cda0f5e4cd6ad20de7434b7e5e94b201fa820d2645ddb7614586ff2d3e9ef8",
++     "event": "record_saved",
++     "properties": {
++       "category_key": "food",
++       "kind": "expense",
++       "origin": "server",
++     },
++   },
++ ]
+
+ ❯ test/workers/server-events.test.ts:275:20
+    273|     await saved(client, user, wallet, { 'x-gogospend-analytics': 'OFF'…
+    274|     await r.settled()
+    275|     expect(r.sent).toEqual([])
+       |                    ^
+    276|     // The same person, once a request is not marked off: one record_s…
+    277|     await saved(client, user, wallet)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 24 passed (26)
+   Start at  03:03:59
+   Duration  3.29s (transform 1.04s, setup 2.00s, import 41ms, tests 690ms, environment 0ms)
+

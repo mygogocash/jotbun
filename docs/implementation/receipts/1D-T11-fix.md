@@ -1,0 +1,40 @@
+# 1D-T11-fix: The vault doubles forward the new call, and the privacy path's pins
+
+- **Status:** built and verified locally on `p1/1d-t11-server-events` (`.claude/worktrees/p1-1d-t11`): one commit on PR #445's reviewed head `6390b20a`, with no merge (the controller merges the integration branch up afterwards). Not pushed. Under R87 this receipt is its own file; `1D-T11.md` gains one line pointing here, and `premium-progress.md` is not edited. Under R100 whole suites are CI's.
+- **Why:** CI's Edge Worker job was red on `6390b20a` (`test:edge:workers`: `Tests 3 failed | 821 passed | 1 todo (825)`, with three unhandled `TypeError: The RPC receiver does not implement the method "bind"`), so CI skipped `build:edge` and the database suites. Both reviews of #445 said Needs fixes, with the same blocker: `reviews/1D-T11.md` (Opus: the blocker, m1, m2, n1, n2) and `reviews/1D-T11-second.md` (Sonnet: B1, m1 with its mutants M-A to M-E). The controller ruled R121.
+- **What changed:**
+  - **The blocker (R121.1), tests only.** `handleVaultV1` now calls `stub.callWithAnalytics`, which the plan names, and three test doubles over `env.VAULT` intercepted only `call` and returned every other member as `value.bind(stub)`. On a Durable Object RPC stub, `.bind` is itself a remote call, so a vault route through a double failed (500), and `member()` threw "accepting the terms answered 500".
+    - `ai.test.ts`'s `recordingVault` records and forwards `callWithAnalytics` as it does `call`: it exists to log every vault call the Worker makes, and a vault route's call now arrives that way.
+    - Both `preparesSeen` doubles (`attachments.test.ts`, `download-aborts.test.ts`) forward it unbound. `download-aborts.test.ts` passed on `6390b20a` only because its wrapped front door serves Worker routes alone; it gets the same line so the next vault route through it cannot fail the same way.
+    - No production change.
+  - **The off header as a list (R121.3, the first review's n1), `handler.ts`.** A request is off when any comma-separated value of `X-GoGoSpend-Analytics`, trimmed and in any case, is `off`. A header sent twice reaches the Worker as one list (`off, off`), which the first round read as on. It fails closed: a list with no `off` value (`on, offline`) is not off. The app sends one `off`, so nothing changes for it.
+  - **The privacy path's pins (R121.2 and R121.4), `server-events.test.ts`.** Each pins code that was already right, and each has its own mutant:
+    - a port that throws while sending leaves a committed create answered 201, with one `server_events_failed` line naming the class only (`sendServerEvents` never throws; the reviews' M1 and M-C);
+    - an analytics client that cannot be built leaves the Worker's own 500 problem as it was (`countWorkerFailure` never throws; M2 and M-D);
+    - a create of a purged id (410 `ENTITY_PURGED`) sends no `resync_required`, and a stale cursor's 410 on the same front door does (the code check; M3 and M-E);
+    - the off header also stops what a reply says: a stale cursor's 410 and a failing `sync.changes` send nothing under the person, and the failure is still counted anonymously (M-A, the plan's Review Focus 2);
+    - a failed consent read fails closed: a create that fails with the consents table gone sends its anonymous count and no `sync_failed` (M-B);
+    - a call with nothing to send builds no PostHog client (P8; M4).
+- **Files:**
+  - `apps/edge/src/v1/handler.ts`: `analyticsOff` reads the header as a list.
+  - `apps/edge/test/workers/server-events.test.ts`: 7 cases (26 in all), and the header comment.
+  - `apps/edge/test/workers/ai.test.ts`, `attachments.test.ts`, `download-aborts.test.ts`: one branch each in their vault doubles (R121.1 widened the scope to these three).
+  - `docs/implementation/receipts/1D-T11.md`: one line; this receipt.
+- **Before:** CI's failure, reproduced on `6390b20a` under the heavy lock (`ai.test.ts`, `attachments.test.ts`, `download-aborts.test.ts`): `Tests  3 failed | 108 passed (111)`, three errors (`The RPC receiver does not implement the method "bind"`). The three failing cases: `ai.test.ts`'s two 1B-T7 review pins (a signed-out session with a malformed body; a person without consent with a malformed body) and `attachments.test.ts`'s "a second request for an image whose copy is held only waits…".
+- **RED to GREEN** (no stub: the round's four test files over `6390b20a`'s `handler.ts`; `typecheck:edge` passes at RED). The five focused workers files under the heavy lock (`server-events`, `live`, `ai`, `attachments`, `download-aborts`):
+  - RED `Tests  1 failed | 158 passed (159)`, one `AssertionError` and no other error: "an off header sent twice, or as a list, still says off…" (`expected [ { …(3) }, { …(3) } ] to deeply equal []`).
+  - The other six new cases pass at RED by design: they pin code that was already right. The three doubles' files pass at RED too: their fix is in the test files.
+  - GREEN `Tests  159 passed (159)`: `server-events` 26, `live` 22, `ai` 43, `attachments` 61, `download-aborts` 7.
+- **Mutation check:** `mutants.py`, 51 of 51 killed, every one by an assertion (`killcheck.sh`: every failing case of every kill is an `AssertionError`, with no other error and nothing unhandled); each file restored byte for byte. The 51: the first round's 41, with H2 re-pointed at the new `analyticsOff`; F1 to F6, one per pin above (F1 `sendServerEvents`, F2 `countWorkerFailure`, F3 the 410's code, F4 the off header on what a reply says, F5 the failed consent read, F6 P8); F7 to F10, the off header's list (one value, the first value only, untrimmed values, a value that only contains `off`). The doubles' branches have no mutant: they are test doubles, not guards, and their proof is CI's failure above, reproduced and then gone.
+- **Fast local gate (R100):** `npm run typecheck:edge`: passed. The five focused workers files: as above. `npm run test:edge`: passed. `npm run build:edge`: passed, with PostHog's EU host in `dist/server/index.js`. `git diff --check`: clean.
+- **CI (R100):** the full `test:edge:workers`, `build:edge` and `test:edge:db` (all three unrun or red on `6390b20a`), the full render suite and sections 1 to 3, `export:web` and the iOS export, `test:db`, `test:ops`.
+- **SKIPPED (hosted; no PostHog project or keys yet, D33 and Q5):** as in `1D-T11.md`.
+- **Deviations:** none from the plan. The controller accepted the planner's calls P14 to P24 as written under R121: the three test files outside the task's list (test-only), the off header read as a list, and the privacy pins.
+- **Not in this round** (R121.5, for the controller's followups):
+  - the second review's note for 1D-T13 and P6C: the anonymous counts go whatever the consent and the off header (L6); if counsel makes crash reports consent-only (Q4), the Worker needs the app's switch too;
+  - the dashboards: a vault step's failure under a Worker route is counted as the Worker's (`ProblemException`, route `worker`); naming the step needs `failure` threaded through `vaultSession.call`;
+  - later person-level events must go through the shared transport, which sends the off header (1D-T6's m4);
+  - the SDK's wire format (gzip to `/batch/`, the properties it adds) as the target of a future server-side "never sent" test.
+- **Notes for later tasks:**
+  - Before a task changes which vault method the Worker calls, or adds a Worker-to-vault RPC, run every Workers file that wraps the vault stub: `grep -rln "new Proxy(real" apps/edge/test` lists them (today `ai.test.ts`, `attachments.test.ts`, `download-aborts.test.ts`). 1D-T12's `serveV1` touches the same path.
+  - One shared double under `test/workers/support/` would end the three copies: forward every member as a call (`(...args) => stub[p](...args)` or `Reflect.apply`), never `.bind`, and let each test hook `call` and `callWithAnalytics`. Left for a clean-up task: this round keeps R121's three small branches.

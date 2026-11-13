@@ -1,0 +1,7 @@
+rebuilt: apps/edge/src/v1/handler.ts
+rebuilt: apps/edge/test/workers/server-events.test.ts
+rebuilt: apps/edge/test/workers/ai.test.ts
+rebuilt: apps/edge/test/workers/attachments.test.ts
+rebuilt: apps/edge/test/workers/download-aborts.test.ts
+rebuilt: docs/implementation/receipts/1D-T11.md
+applycheck: ok

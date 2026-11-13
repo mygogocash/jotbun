@@ -1,0 +1,237 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/1d-t11-fix-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/server-events.test.ts (26 tests | 9 failed) 789ms
+     × without the key the analytics id is null, and nothing is sent under the person 33ms
+     × a record saved by a person who said yes sends one record_saved with kind and category only 24ms
+     × a transfer sends its kind only, and a record in a category of its own is sent as custom 29ms
+     × a resent command sends no second event 23ms
+     × nothing is sent for a person who said no, or while their phone says off 34ms
+     × an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3) 44ms
+     × an edit, a delete or an import is not a record_saved 70ms
+     × a port that throws while sending never changes a committed create, and is logged by its class name only 24ms
+     × a call with nothing to send builds no client (P8) 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/server-events.test.ts > the analytics answer: GET /v1/me/analytics > without the key the analytics id is null, and nothing is sent under the person
+AssertionError: expected [] to deeply equal [ [ 'record_saved', …(1) ] ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "record_saved",
+-     "1cfeafcddb58644872f04cd19f260be84e1fd8801571ab52af39b1d04014bd36",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:188:74
+    186|     await saved(keyed, user, wallet)
+    187|     await r.settled()
+    188|     expect(r.sent.map((message) => [message.event, message.distinctId]…
+       |                                                                          ^
+    189|   })
+    190|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a record saved by a person who said yes sends one record_saved with kind and category only
+AssertionError: expected [] to deeply equal [ { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "fe40629b311e02e57f4bea6cff7372545df6bbae58b0d4b291a321d5afa48560",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "food",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:223:20
+    221|     expect((await record(client, user, body)).status).toBe(201)
+    222|     await r.settled()
+    223|     expect(r.sent).toEqual([{ distinctId: await hmacOf(user.sub), even…
+       |                    ^
+    224|     const text = JSON.stringify(r.sent)
+    225|     for (const value of [user.sub, String(body.id), wallet, '6500', 'ร…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a transfer sends its kind only, and a record in a category of its own is sent as custom
+AssertionError: expected [] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "distinctId": "f7951aebaad296aaa10dd6f6330c086c5b7b67df2d708f0cd7551d8cddd0b589",
+-     "event": "record_saved",
+-     "properties": {
+-       "kind": "transfer",
+-       "origin": "server",
+-     },
+-   },
+-   {
+-     "distinctId": "f7951aebaad296aaa10dd6f6330c086c5b7b67df2d708f0cd7551d8cddd0b589",
+-     "event": "record_saved",
+-     "properties": {
+-       "category_key": "custom",
+-       "kind": "expense",
+-       "origin": "server",
+-     },
+-   },
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:241:20
+    239|     await r.settled()
+    240|     const id = await hmacOf(user.sub)
+    241|     expect(r.sent).toEqual([
+       |                    ^
+    242|       { distinctId: id, event: 'record_saved', properties: { kind: 'tr…
+    243|       { distinctId: id, event: 'record_saved', properties: { kind: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > a resent command sends no second event
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:260:52
+    258|     expect(again).toEqual(first)
+    259|     await r.settled()
+    260|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    261|   })
+    262|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > nothing is sent for a person who said no, or while their phone says off
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:279:52
+    277|     await saved(client, user, wallet)
+    278|     await r.settled()
+    279|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    280|   })
+    281|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an off header sent twice, or as a list, still says off: any value, trimmed and in any case (R121.3)
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:299:52
+    297|     await saved(client, user, wallet, { 'x-gogospend-analytics': 'on, …
+    298|     await r.settled()
+    299|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    300|   })
+    301|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > server events > an edit, a delete or an import is not a record_saved
+AssertionError: expected [] to deeply equal [ 'record_saved' ]
+
+- Expected
++ Received
+
+- [
+-   "record_saved",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:338:52
+    336|     expect((await record(client, user, body)).status).toBe(201)
+    337|     await r.settled()
+    338|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+       |                                                    ^
+    339|     const path = `/v1/transactions/${String(body.id)}`
+    340|     expect((await client.as(user).patch(path, { amount_minor: '7000' }…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > a port that throws while sending never changes a committed create, and is logged by its class name only
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "{\"level\":\"error\",\"event\":\"server_events_failed\",\"failure\":\"TypeError\"}",
+- ]
++ []
+
+ ❯ test/workers/server-events.test.ts:564:85
+    562|     })
+    563|     expect(status).toBe(201)
+    564|     expect(lines.filter((line) => line.includes('"event":"server_event…
+       |                                                                                     ^
+    565|     expect(lines.join('\n')).not.toContain('ร้านป้าแดง')
+    566|     expect(lines.join('\n')).not.toContain('1,234')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  test/workers/server-events.test.ts > the Worker half: what analytics may never change, and when it costs anything > a call with nothing to send builds no client (P8)
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/workers/server-events.test.ts:611:19
+    609|     expect(built).toBe(0)
+    610|     await saved(client, user, wallet)
+    611|     expect(built).toBe(1)
+       |                   ^
+    612|     await r.settled()
+    613|     expect(r.sent.map((message) => message.event)).toEqual(['record_sa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 17 passed (26)
+   Start at  03:04:57
+   Duration  3.43s (transform 1.10s, setup 2.05s, import 39ms, tests 789ms, environment 0ms)
+

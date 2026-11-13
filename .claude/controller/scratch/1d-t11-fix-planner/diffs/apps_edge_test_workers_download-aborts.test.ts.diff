@@ -1,0 +1,11 @@
+--- a/apps/edge/test/workers/download-aborts.test.ts
++++ b/apps/edge/test/workers/download-aborts.test.ts
+@@ -259,6 +259,8 @@
+                   return reply
+                 }
+               }
++              // A vault route's call (1D-T11), forwarded unbound: on an RPC stub `.bind` is itself a remote call.
++              if (p === 'callWithAnalytics') return (call: VaultCall) => s.callWithAnalytics(call)
+               const value = Reflect.get(s, p)
+               return typeof value === 'function' ? value.bind(s) : value
+             },

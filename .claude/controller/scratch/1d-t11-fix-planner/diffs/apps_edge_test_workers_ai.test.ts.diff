@@ -1,0 +1,18 @@
+--- a/apps/edge/test/workers/ai.test.ts
++++ b/apps/edge/test/workers/ai.test.ts
+@@ -912,6 +912,15 @@
+                   return reply
+                 }
+               }
++              // A vault route's call (1D-T11): recorded and forwarded as `call` is. Never `.bind`: on an RPC stub that is a remote call.
++              if (p === 'callWithAnalytics') {
++                return async (call: VaultCall) => {
++                  log.push(structuredClone(call))
++                  const answered = await s.callWithAnalytics(call)
++                  if (after) await after(call)
++                  return answered
++                }
++              }
+               const value = Reflect.get(s, p)
+               return typeof value === 'function' ? value.bind(s) : value
+             },
