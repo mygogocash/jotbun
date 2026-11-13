@@ -1,0 +1,69 @@
+diff --git a/apps/app/src/screens/redesign/entry/entrySave.ts b/apps/app/src/screens/redesign/entry/entrySave.ts
+index 33b01f2f9600b0dff1c632818602dd419c6b43f9..e5083b8524489e0cd49020c3712522eaca884000 100644
+--- a/apps/app/src/screens/redesign/entry/entrySave.ts
++++ b/apps/app/src/screens/redesign/entry/entrySave.ts
+@@ -3,11 +3,16 @@
+ // resend keeps the first attempt's track. `finish` is the rule that saves, so
+ // it sends the one record_saved for a save that carries a track (1D-T7, R61):
+ // after the device commit or the server's acknowledgement, never for a
+-// conflict, and never the amount, the note or a name.
++// conflict, and never the amount, the note or a name. The track's source and
++// photo flag are record_saved's (P3-T13). A caller may also name how the entry
++// was made (`source`, H9), which the create and the device entry carry; a
++// resend sends the first attempt's create, source and all. Quick add names
++// none.
+ import { useEffect, useRef, useState } from 'react';
+ 
+-import type { WalletSnapshot } from '@gogospend/contracts';
++import type { TransactionSource, WalletSnapshot } from '@gogospend/contracts';
+ import { trackRecordSaved } from '@mobile/analytics/events';
++import type { RecordSource } from '@mobile/analytics/events';
+ import { V1Error } from '@mobile/api/client';
+ import { useCopy } from '@mobile/i18n/useCopy';
+ import { playHaptic } from '@mobile/lib/hapticMoment';
+@@ -24,7 +29,8 @@ import { readCheerDay, writeCheerDay } from '../quickAddCheer';
+ import { earliestFor, localSaveProblem } from './entryHelpers';
+ import type { CreateInput } from './entryHelpers';
+ 
+-export type EntryTrack = { source: 'typed' | 'tell_bun'; categoryKey: string | null; openedAt: number };
++/** record_saved's track: how the entry was made, its category's key, when it opened, and whether it carries a photo (absent is none). */
++export type EntryTrack = { source: RecordSource; categoryKey: string | null; openedAt: number; hasPhoto?: boolean };
+ export type EntrySaveStatus = 'editing' | 'saving' | 'unconfirmed' | 'blocked' | 'saved' | 'conflict';
+ export type SavedEntry = { draft: QuickAddDraft; via: 'device' | 'online'; cheer: boolean; track: EntryTrack | null };
+ export type SaveAttempt = { settledKeypad: KeypadState | null; openDetails: boolean };
+@@ -36,7 +42,7 @@ export type EntrySave = {
+   resendBlocked: boolean;
+   saved: SavedEntry | null;
+   locked: boolean;
+-  save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack }): Promise<SaveAttempt>;
++  save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack; source?: TransactionSource }): Promise<SaveAttempt>;
+   another(): void;
+ };
+ 
+@@ -105,7 +111,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     if (track) {
+       // Offline: kept on this phone while the diary's last sync did not end synced.
+       const offline = via === 'device' && diaryView.outcome?.status !== 'synced';
+-      trackRecordSaved({ kind: fields.type, source: track.source, categoryKey: track.categoryKey, offline, secondsToSave: (Date.now() - track.openedAt) / 1000 });
++      trackRecordSaved({ kind: fields.type, source: track.source, categoryKey: track.categoryKey, offline, secondsToSave: (Date.now() - track.openedAt) / 1000, hasPhoto: track.hasPhoto });
+     }
+   }
+ 
+@@ -156,7 +162,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     }
+   }
+ 
+-  async function save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack }): Promise<SaveAttempt> {
++  async function save(input: { draft: QuickAddDraft; keypad: KeypadState; wallets: readonly WalletSnapshot[]; track?: EntryTrack; source?: TransactionSource }): Promise<SaveAttempt> {
+     const track = input.track ?? null;
+     if (status === 'saving' || status === 'saved' || status === 'blocked' || status === 'conflict' || resendBlocked) return NOTHING;
+     // An online save whose outcome is unknown is resent online as itself, never re-queued on the device.
+@@ -169,7 +175,7 @@ export function useEntrySave(options: { today: string; onSaved?: (saved: SavedEn
+     const settled = settleForSave(input.keypad);
+     const settledKeypad = keypadShownOnSave(input.keypad);
+     const fields: QuickAddDraft = { ...input.draft, amountMinor: settled.outcome.ok ? settled.outcome.minor : '' };
+-    const built = buildQuickAdd(fields, { today, tc });
++    const built = buildQuickAdd(fields, { today, tc, source: input.source });
+     const next: Errors = built.ok ? {} : { ...built.errors };
+     // The keypad itself says what is wrong with the amount.
+     if (!settled.outcome.ok) delete next.amount_minor;

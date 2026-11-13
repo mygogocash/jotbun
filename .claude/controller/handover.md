@@ -49,6 +49,23 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 19:20: the build resumed after a pause from about 09:25 to 19:05 (the usage limit); T3 resumed exactly the four live agents.**
+  - **#457 (P3-T3):** CI 9 of 9 at `2c642055`. The Sonnet second review **approved**; the Opus review is running.
+  - **#456 (P2-T26):** the Opus review also says **Needs fixes** (M1 = R123; m1 to m3, n1 to n3).
+    - **Rulings for the fix round:**
+      - **R123's shape** (Opus's, with Sonnet's area guard): while hidden, do not mount `RecordReceipt`. Draw a hidden frame (รูปใบเสร็จ ซ่อนอยู่) only when the record holds a receipt and the import area is on; otherwise draw nothing.
+      - **R124:** the undo bar speaks ฿ as บาท, through a `spoken` prop.
+      - Plus the reviews' test pins.
+    - The planner thread is unarchived and writing `briefs/P2-T26-fix.md` (message `scratch/dispatch/P2-T26-fix-planner-message.md`). The review threads are archived.
+  - **P3-T13 building (Haiku)** `mcp:launch:8b59d0efce0424fad8cca0e7ec13e71368f07bd9e659afaf169b7150474c8b4c`, worktree `p3-t13` on `p3/t13-draft-origin` at `4f1f7445`.
+    - Its READY report came at 09:08, before the pause. `check_kit`: 46 of 46, `orig/` 8 of 8. **P1 to P16 accepted.**
+    - P10 is a release flag: this is the first build whose add tray sends a `source`, so the client minimum must be 0.2.0 (owner item 7).
+    - P9: followups line 637's edge pins are not carried. **Queued: an edge-only `P3-T2-followup`** for them, to plan when a slot frees up; no later plan task edits that file.
+  - **P4-T2 planner** `mcp:launch:3239aea4d06bdd2740ba9e0b53dcfa8fe663795ee74ca3da1cfd506cd842c1da`, WT `p4-t2` on `p4/t2-catalog-db`.
+    - It builds on P3-T3's `real/` `routes.ts`, `worker-routes.ts` and `route-coverage.test.ts`, and starts after #457 merges.
+    - A new D1 binding would be an owner item; it was told to say so.
+  - **Live now:** the P3-T13 implementer (Haiku); the P3-T3 Opus review; the P3-T9, P2-T26-fix and P4-T2 planners (Opus).
+  - **Keep-awake:** caffeinate pid 29026, until about 09:05 tomorrow.
 - **13 Nov 09:25: #454 (P3-T8) MERGED as `02da8f6`; #456 (P2-T26) needs a fix round (R123).**
   - **#454:**
     - Both reviews approved `53d24947`, and CI was 9 of 9. No blocker or major.
