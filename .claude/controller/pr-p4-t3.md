@@ -30,8 +30,8 @@
   - `git diff --check`.
 - [x] CI at `6cb8d0d1`: **8 of 9**. `test:edge:workers` failed 1 of 845 cases: `sync.test.ts`'s "snapshots validate exactly the entities the API registers". That case pins the vault registry's entity list, and its comment already said phase 4 registers `slip_inbox`; it was outside the planner's gate.
 - [x] **The controller's CI fix, `1eb4e5ed` (ruling R122):** test-only. The list gains `slip_inbox`, and the comments say `trip` waits for P5-T9; the receipt gains one line. The file passes 17 with 1 todo under the heavy lock, and a mutant that unregisters `slip_inbox` fails it on an `AssertionError` (`.claude/controller/scratch/p4-t3-ci-fix/`).
-- [ ] CI at `1eb4e5ed`: the nine jobs, with the whole workers suite and `test:edge:db` (the parity Worker applies the migration).
-- [ ] Independent review (Opus), and a second review (Sonnet): privacy (bank details, the salt, the release check) and the migration.
+- [x] CI at `1eb4e5ed`: 9 of 9, with the whole workers suite (844 passed, 1 todo) and `test:edge:db` (the parity Worker applies the migration).
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `1eb4e5ed` (`.claude/controller/reviews/P4-T3.md`, `reviews/P4-T3-second.md`). Both found that R122 is right and that no other file pins the vault's entity or route lists. No open blocker or major. Their minors are test pins on code that is right today (the release check compared on whole responses, R41's order with two faults, a mapping that writes one account, a draft counted once, the salt never logged). They are carried in `followups.md`.
 - [ ] SKIPPED: nothing hosted. The route stays dark until the owner turns on `SLIP_IMPORT_ENABLED`.
 
 Closes #211 once merged (closed by hand, since the base is not the default branch).

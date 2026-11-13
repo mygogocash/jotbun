@@ -860,3 +860,26 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - Sonnet n3: after an income or a move the toast still says today's money out.
     - The undo bar's look: P2-T26's rh-undo pill against P2-T17's `toastLink` text link. The owner picks one.
   - **Phase 5:** `todayOutMinor` adds a draft's `amount_minor` as baht. The page's `summary.currency` (P5-T2) and a draft's wallet currency must agree before they are added.
+- P4-T3 (#452, merged 13 Nov as a16a44d at 1eb4e5ed, after the controller's CI fix R122; promotion #455). The reviews are `reviews/P4-T3.md` (Opus, approved: m1, m2, n1 to n3) and `reviews/P4-T3-second.md` (Sonnet, approved: m1 to m5, n1 to n3). Both found R122 right and no other file pinning the vault's entity or route lists. The probes are copied out of the review trees: `scratch/p4-t3-review/probes/review-p4t3.test.ts`, and `scratch/p4-t3-second/probes/review-probes.test.ts` and `review-timing.test.ts`. Carried:
+  - **P5-T9 (`trip`) and P5-T13 (`settings`), must carry:**
+    - each registers a vault entity but its plan Files list does not name `test/workers/sync.test.ts`. Add the entity to that file's exact pin, and put `sync.test.ts` in the focused gate.
+    - The later of the two turns the `it.todo` into the full check against `Object.keys(SYNC_ENTITY_VALIDATORS)`.
+    - R122's comment and todo name only `trip`; fix the wording to name `settings` too (Opus n3, Sonnet m5).
+  - **P4-T6 (`writeSlip`) and P4-T7 (the slip commands), the next tasks to edit `slips-vault.test.ts` or `vault/slips/*`. Test-only pins; the code is right today:**
+    - **The release check (both reviews' m1/m2):** compare whole responses with a missing path's, minus `x-request-id` and `request_id`, not only `{ status, code }` (kills O8, a `retry_after` that would reveal the route).
+    - **The mapping writes one account:** add a second account and check it stays version 1 and unmapped (O5).
+    - **R41's order with two faults:** no If-Match plus an unknown field gives 422 on `if_match`; a non-UUID id plus an unknown field gives 404; stale plus `wallet_id: 'cash'` gives 422 on `wallet_id`; stale plus an archived wallet gives 409; an unknown account plus an unknown wallet gives 404 (O2 to O4). The probes hold each as a ready case.
+    - **`open_drafts`:** count a draft whose two sides are one account once (O1).
+    - **The salt:** pin that it is never logged or sent to analytics (Sonnet m2).
+    - **Nits:**
+      - Opus n1: the inbox head is read for any entity (O7), so edit a wallet twice first.
+      - Opus n2: try `TRUE` and ` true` for the release var (O9).
+      - Sonnet n1: `accounts.ts`'s `IF_MATCH` copies `apps/api`'s regex, so share one.
+      - Sonnet n2: `route-coverage`'s `wranglerVars()` duplicates `c1-shape`'s.
+  - **P4-T6:**
+    - `ensureSlipAccount`'s `ThaiBankKey` is a compile-time type only, and the bank `GLOB` checks only the first letter, so write only `sanitizeSlipImportRead`'s output (P4-T4).
+    - Two unlisted banks (`other`) with the same last four digits would share one slip account; that needs a planner ruling.
+  - **P4-T20 (sl-wallet-map):** mapping is a plain write without `Idempotency-Key`. Treat a 409 whose `current.wallet_id` is the wallet sent as done.
+  - **P4-T5:** add `GET /v1/slips/salt`, `GET /v1/slip-accounts`, `PUT /v1/slip-accounts/:id` and `SLIP_IMPORT_ENABLED` to `apps/edge/README.md` (ruling P15).
+  - **The first task that adds another `transactions` column:** loosen `slips-vault.test.ts`'s upgrade case, which pins the columns exactly, as P3-T2's was loosened (ruling P4).
+  - **Later, if slip accounts grow:** `listSlipAccounts` scans `slip_drafts` once per account (Sonnet n3).

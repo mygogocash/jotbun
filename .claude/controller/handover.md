@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 09:05: #452 (P4-T3) MERGED as `a16a44d`; P3-T3 building; #456 (P2-T26) opened with ruling R123.**
+  - **#452:** both reviews approved `1eb4e5ed` (each confirms R122 is right, and that no other file pins the vault's entity or route lists). CI was 9 of 9 with the whole workers suite and `test:edge:db`.
+    - The probes are copied to `scratch/p4-t3-review/probes/` and `scratch/p4-t3-second/probes/`.
+    - Issue #211 closed, worktree and branch removed, promoted as **#455** (stack #379 holds 41). Followups recorded: P5-T9 and P5-T13 must add their entities to `sync.test.ts`. The review threads are archived.
+  - **P3-T3 building (Haiku)** `mcp:launch:6e7d6c62e5361a9b5a1b9e277feaecd2ca274755939ef1890c4955f0860a6d50`, worktree `p3-t3` on `p3/t3-ai-gate` at `a16a44d8`, `install-edge`, heavy lock.
+    - `check_kit`: 49 of 49, `orig/` 8 of 8. All 9 `SHA256SUMS.base` lines match the head by hand; `check_kit`'s base check reads 0 lines, a path-format quirk.
+    - **P1 to P11 accepted.**
+  - **#456 (P2-T26, issue #172)** at `52110318`: all 11 `real/` files byte-identical; 106 of 106 mutants (C1 killed by a load failure, as designed); the gate passed with `export:web`.
+    - **Ruling R123 (the controller):** in private mode the wallet record page must not draw the receipt photo. Today's `RecordReceipt` draws the slip thumbnail with no private-mode check, and a slip shows amounts and names (R114).
+    - The implementer raised it. One fix round after the reviews carries R123 with their findings.
+    - Reviews (notes `scratch/dispatch/P2-T26-review-notes.md`): Opus `mcp:launch:c781b4868e2ac95d22a4ec173701c5899eb479896bd70f591b69154d3645f24b`, Sonnet `mcp:launch:e27aba01209409441250b29e9569e1fba03f78d33256e02713bd3d6cf9fc816f`.
+  - **Live now:** the P3-T3 implementer (Haiku); reviews on #454 (P3-T8) and #456 (P2-T26); the P3-T13 and P3-T9 planners (Opus).
 - **13 Nov 08:55: #451 (P2-T17) MERGED as `9cdc1f8`; #454 (P3-T8) opened.**
   - **#451:** both reviews approved `fa09a9c0` and CI was 9 of 9. Both found the same two minors, now a must-carry first step for P2-T18 before it mounts the host:
     - today's total misses a save that syncs and leaves the outbox before a slow read lands, and Sonnet adds an acknowledged-then-deleted overcount;
