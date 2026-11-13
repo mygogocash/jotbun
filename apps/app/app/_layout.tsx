@@ -16,6 +16,7 @@ import { useReducedMotion } from '@mobile/hooks/useReducedMotion';
 import { installAppAuth } from '@mobile/auth/appAuth';
 import { AnalyticsUpkeep } from '@mobile/analytics/AnalyticsUpkeep';
 import { WalletRoot } from '@mobile/wallet/WalletRoot';
+import { PushHost } from '@mobile/slips/push/PushHost';
 
 // Sign-in: the Better Auth provider, installed once before any screen reads the session.
 installAppAuth();
@@ -37,12 +38,14 @@ function RootStack() {
   useEffect(() => { if (fontError) console.warn('Bundled fonts could not load; using the system fallback.'); }, [fontError]);
   if ((!fontsLoaded && !fontError) || !ready) return <View style={{ flex: 1, justifyContent: 'center' }}><ActivityIndicator accessibilityLabel="Loading Jotbun" /></View>;
   // The wallet root (P2-T2): Gesture Handler's root view and the wallet's one reduced-motion answer, around every screen.
+  // The push host (P4-T17) is its first child, under the lock gate, so a push tap waits there for the unlock.
   return (
     <HapticsProvider>
       <BunIntensityProvider>
         <SafeAreaProvider>
           <ThemeProvider>
             <WalletRoot>
+              <PushHost />
               <LocaleUpkeep />
               <AnalyticsUpkeep />
               <ThemedStatusBar />
