@@ -49,6 +49,10 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 20:20: #462 (source-pins) opened at `a5d93d8a`.**
+  - Both `real/` files are byte-identical. RED was exactly the three new cases failing on assertions; mutants 3 of 3, identical to the planner's. Gate: `test:edge` 214, `test:unit` 1109.
+  - One Opus review, since it is test-only: `mcp:launch:58da09d717c1a431e33a66d7695fa18c41bd36b26d8dec5d084d6d50d4ef32e0`. CI is queued, as for every PR. The implementer thread is archived.
+  - **Live now:** the P4-T2 implementer (Haiku); reviews on #461 (P3-T9) and #462; the P2-T26 fix planner (Opus).
 - **13 Nov 20:15: CI IS BLOCKED ORG-WIDE (owner's call).**
   - Every GitHub Actions run in mygogocash has been queued without a runner since about 09:30: jotbun 3, gogocash-monorepo 5, NotNotch 3, nothing in progress. GitHub's status page says Actions is operational.
   - The org's billing usage shows 2,924 Linux minutes used in November against what looks like a 3,000-minute included allowance, and November storage is now charged. So the included minutes are very likely used up, with a $0 limit.

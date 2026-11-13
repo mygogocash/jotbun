@@ -1,20 +1,22 @@
 # P3-T13 second review (money path, privacy, analytics): Claude Sonnet 5.5
 
-Commit `14da2b4e` on `p3/t13-draft-origin` (PR #460), range `origin/claude/p1a-vault-core...14da2b4e` (merge base `4f1f7445`; the integration branch has since moved to `fb6aa0bd` with #457 merged, which shares no file). I did not read any other review of this task. Read-only: every probe ran in a `git archive` copy (`.claude/controller/scratch/p3-t13-second/tree`, `node_modules` linked entry by entry from the worktree, the three workspace links re-pointed). The worktree is clean at `14da2b4e` and the main checkout was not touched.
+Commit `14da2b4e` on `p3/t13-draft-origin` (PR #460), range `origin/claude/p1a-vault-core...14da2b4e` (merge base `4f1f7445`; the integration branch has since moved to `fb6aa0bd` with #457 merged, which shares no file). Read-only: every probe ran in a `git archive` copy (`.claude/controller/scratch/p3-t13-second/tree`, `node_modules` linked entry by entry from the worktree, the three workspace links re-pointed). The worktree is clean at `14da2b4e` and the main checkout was not touched.
+
+My findings were written before I read any other review of this task. I then read the first review (`reviews/P3-T13.md`), reproduced the three things it found that I had not probed (PROBE-20 to PROBE-23, mutants MA3 to MA5), and amended this file. "Cross-check" at the end says what came from where.
 
 ## Summary
 
-The commit is right on every money, wallet, auth and privacy point the dispatch names. No path sends two reviews for one draft from a person's taps, none sends `kept` for a save that did not commit, the source on the create, the device entry, a resend and `record_saved` agree, and nothing but the allow-list's properties can reach an event. I found **no blocker and no major**.
+The commit is right on every money, wallet, auth and privacy point the dispatch names, with one exception that is small and not live: a save already in flight when the host goes away still sends its review and its `record_saved` when it lands (m1). Nothing sends two reviews for one draft from a person's taps, nothing sends `kept` for a save that did not commit, the source on the create, the device entry, a resend and `record_saved` agree, and only the allow-list's properties can reach an event. I found **no blocker and no major**.
 
-Two minors: the guards that hold P7's "once" and R119's "nothing after the host goes away" are not pinned by the committed suite. Six mutants of my own survive its 28 cases, and the receipt's two "no case can tell them apart" edits (P13) are told apart by a probe each. Three nits. **CI on #460 has not started** (nine jobs queued), so the merge still waits for it.
+Three minors: m1 above; a draft handed to a tray that is leaving is taken and never reviewed (m2, one-line fix); and nine guards that hold rules the brief states are pinned by no committed case (m3: nine mutants of my own survive the 28-case suite, and the receipt's two "no case can tell them apart" edits are told apart by a probe each). Two nits. **CI on #460 has not started** (nine jobs queued), so the merge still waits for it.
 
 | id | rank | finding |
 |---|---|---|
-| m1 | minor | R119 is unpinned: a review on unmount, and dropping `onApplier(null)` (the receipt's "equivalent" edit #2), both survive; PROBE-8 and PROBE-13 kill them |
-| m2 | minor | Four more guards unpinned: the clear in `dropUnsaved` (the receipt's "equivalent" edit #1, which is not), the not-ready guard, the conflict leg of P8, the outside-host no-op |
+| m1 | minor | R119: a save in flight when the host goes away sends `ai_draft_reviewed` and `record_saved` after it has gone (PROBE-20) |
+| m2 | minor | A draft handed to a tray that is leaving (after a close, or after a save landed) is taken by the hidden entry and never reviewed (PROBE-5, PROBE-23) |
+| m3 | minor | Nine guards unpinned, including R119's unsaved-draft half; P13's two "equivalent" edits are not (PROBE-8, 13, 14 and six more) |
 | n1 | nit | P8's lock reads the last drawn render: a draft handed over in the same batch as Save lands over the save (PROBE-7) |
 | n2 | nit | `dropUnsaved()` runs before a `fill` that can throw; a 12-digit AI amount does (PROBE-17) |
-| n3 | nit | A draft handed to a tray that is leaving is shown nowhere and reviewed never (PROBE-5) |
 
 ## CI (R100)
 
@@ -28,8 +30,8 @@ Two minors: the guards that hold P7's "once" and R119's "nothing after the host 
 - The live money path the commit touches: `QuickAddScreen.render.test.tsx` and the four routes tests (`SpendRoutes`, `AccountRoutes`, `InsightsRoutes`, `PlanningRoutes`): `Test Files 5 passed (5)`, `Tests 103 passed (103)`.
 - `npm run typecheck:app`: exit 0. (My first run failed on two errors in `src/auth/betterAuthClient.ts`: my tree lacked the `apps/app/node_modules/@better-auth` link. Linked, rerun, exit 0. Nothing in the commit's files.)
 - 13 of the planner's 48 mutants, through its own `mutants.py` pointed at my tree (H1, H2, H4, H5, H6, H12, H16, H17, H23, H27, E1, Q1, R1): **13 killed, 0 survived**, each with the implementer's counts and first failing case, each file restored sha256-equal (`logs/planner-sample-1.out`, `planner-sample-2.out`).
-- 6 mutants of my own (`tools/my_mutants.py`, `logs/my-mutants-1.out`, `my-mutants-2.out`): **all 6 survive the committed `AddTray.render.test.tsx` (28 of 28 pass)** and each is killed by one probe, on an `AssertionError` (m1, m2).
-- 19 probes (`probes/probes-part.tsx`, appended to a copy of `AddTray.render.test.tsx`): all 19 pass on the commit (`logs/probes-all.log`, plus PROBE-19 in `probes-6.log`). Observations that are not pass or fail are in `logs/probe-out.txt`.
+- 9 mutants of my own (`tools/my_mutants.py`, `logs/my-mutants-1.out` to `my-mutants-3.out`): **all 9 survive the committed `AddTray.render.test.tsx` (28 of 28 pass)**, and each is killed by one probe on an `AssertionError` (m3).
+- 23 probes (`probes/probes-part.tsx`, appended to a copy of `AddTray.render.test.tsx`): all 23 pass on the commit (`logs/probes-all-2.log`: `Tests 23 passed | 28 skipped (51)`). Observations that are not pass or fail are in `logs/probe-out.txt`.
 
 ## The dispatch's questions
 
@@ -41,15 +43,15 @@ Two minors: the guards that hold P7's "once" and R119's "nothing after the host 
   - A resend after an unknown outcome sends the same create, source and all, under the same key (`calls[1].args` deep-equals `calls[0].args`, `source: 'photo'`), and the review is sent once, still one after waiting past the 1.5 s close bound (PROBE-3).
 - **Two reviews:** none from a person's taps. A double tap on Save makes 2 saves and 2 `record_saved` (the old P2-T16 double save, not this task's) and **one** review (PROBE-6). The one way I found to two reviews around one record is n1, which a tap cannot do.
 - **Dropped, once** (`:364-374`): cleared at `:367` before it is sent. Close, escape, conflict Done and the replacing draft all go through it.
-  - Nothing is sent when the host goes away: PROBE-8 passes. That holds, but no committed case holds it (m1).
-- **The receipt's risk is real and small** (PROBE-4): an unconfirmed save the person closes is sent once, the create may have committed, and the review is `dropped` (Haiku, 0 fields) with no `record_saved`. It is wrong in one direction only (a committed record reviewed `dropped`), never `kept` for an uncommitted one, and it touches analytics only. I would leave it. If it is ever worth fixing, send no review while `status === 'unconfirmed'`.
+- **The host goes away.** For an **unsaved** draft nothing is sent (PROBE-8), but no committed case holds that (m3). A save **already in flight** is the exception (m1): the brief's and the receipt's "a host that goes away sends nothing" is accurate for the unsaved draft only.
+- **The receipt's risk is real and small** (PROBE-4): an unconfirmed save the person closes is sent once, the create may have committed, and the review is `dropped` (Haiku, 0 fields) with no `record_saved`. It is wrong in one direction only (a committed record reviewed `dropped`), never `kept` for an uncommitted one, and it touches analytics only. I would leave it. If it is ever worth fixing, send no review while `status === 'unconfirmed'`. The choice itself is unpinned (m3, MA5).
 
 **The source on the wire (P5, H9).**
 - `buildQuickAdd` puts `source` last and only when given (`quickAddModel.ts:197-200`): mutant Q1 (key always present) is killed, so the legacy Quick add's JSON and its resend key are unchanged. The Quick add suite plus the four routes pass (103 of 103).
 - The create and the device entry carry the same source: both come from the one `built` (`entrySave.ts:178`), and `toPendingEntry` spreads the input (`quickAddModel.ts:205-207`). A move carries it too (`resources.ts:232` posts `{ ...input, type: 'transfer' }`; PROBE-9 saved a typed move with `source: 'typed'`).
 - The server and the diary accept it: the vault's `createTransaction` lists `'source'` as a known field for entries and moves (`apps/edge/src/vault/domain/transactions.ts:239`, parsed at `:256`), and `assertDraft` allows it (`diaryRepository.ts:110-111, 151-155`).
 - `ownCreateMatches` compares every field of the input, `source` included, with the server's copy (`screens/v1/parts.tsx:200-204`), and the server's `toDto` returns `source` (`transactions.ts:93`), so the own-create match holds with a source (PROBE-12).
-- Quick chips call `fill(item.draft, false)` and edits go through `edit`; neither touches `origin`, so the origin stays as it was (PROBE-9: a draft switched to income keeps `photo`).
+- Quick chips call `fill(item.draft, false)` and edits go through `edit`; neither touches `origin`. PROBE-9: a draft switched to income keeps `photo`. PROBE-21: a chip over an AI draft saves `photo` and is reviewed `edited` 1. The chip half is unpinned (m3, MA3).
 
 **Analytics (P11).**
 - `record_saved` is `recording` in the allow-list (`catalog.ts:75-82`: `source` with all seven values, `has_photo`).
@@ -87,23 +89,32 @@ None.
 
 ### Minor
 
-**m1. R119's "nothing after the host goes away" is unpinned, and the receipt's second "equivalent" edit is not equivalent.**
-The code is right today. But two edits to `AddTrayHost.tsx` leave the 28-case suite green, and each breaks R119, which the brief names (P7: "no review lands under the next person's consent"):
-- **MA1**, a cleanup that reviews the draft `dropped` when the entry unmounts (`useEffect(() => () => dropUnsaved(), [dropUnsaved])` after `:374`). It survives. PROBE-8 (an unsaved AI draft, the host unmounted, 1.7 s later no `ai_draft_reviewed`) kills it: `expected [ { outcome: 'dropped', ... } ] to deeply equal []`. That is the sign-out case.
-- **MB1**, dropping `return () => onApplier(null)` (`:456`). The receipt's P13 lists it as an edit "no case can tell apart from the code". It survives, and it is observable. PROBE-13 takes `useAddTray()`'s handle, unmounts the host with the draft unsaved, then calls `applyAiDraft` through the old handle. With the cleanup nothing is sent. Without it, the gone entry's `applyAi` runs `dropUnsaved()` and sends `dropped` after the host is gone (`expected [ { outcome: 'dropped', ... } ] to deeply equal []`). That late call is what an in-flight slip read (P3-T17) or tell read (P3-T18) makes after a sign-out, so this one line is the whole of R119 for them.
+**m1. A save in flight when the host goes away still sends its review and its `record_saved` when it lands (P7, R119).**
+`finish` calls the entry's `onSaved` (`entrySave.ts:110`) whether or not the entry is still mounted, and that `onSaved` takes the pending review and sends it (`AddTrayHost.tsx:341-347`); `finish` then sends `record_saved` (`entrySave.ts:111-115`). PROBE-20: an AI draft, Save online with `createTransaction` held, `cleanup()` (the host goes away, as on a sign-out), then the create is released. Sent after the host had gone: `ai_draft_reviewed` (`kept`, 0 fields, Haiku) and `record_saved` (`photo`). The brief's P7 says such a review "would land after the session changed, under the next person's consent", and the receipt's "What changed" says "A host that goes away sends nothing". Its Risks line ("sends no review for an unsaved AI draft") is the accurate one.
+Why only minor: the review describes a save that did commit; `record_saved` has had the same exposure since 1D-T7; the events carry only allow-listed properties; the window is a sign-out between Save and the save's answer (an online create whose session was revoked fails without `finish`); and the host is mounted only by the catalogue today (`dev/catalogue/wallet/addHostSection.tsx:41`).
+*What to do:* correct the receipt's line to "an unsaved draft's review is not sent; a save in flight still sends its review and `record_saved` when it lands", and carry the question to the task that mounts the host (P2-T18) and to 1D's follow-ups: should a `finish` that runs after its screen is gone send either event? Both would be held under R119.
 
-*Fix* (test only, about 25 lines): add PROBE-8 and PROBE-13 to `AddTray.render.test.tsx` as one case ("a host that goes away sends no review, and a draft handed over late through an old handle changes nothing"), and correct P13's wording in the receipt.
+**m2. A draft handed to a tray that is leaving is taken by the hidden entry and never reviewed.**
+`applyAi` refuses only while `locked` (`:421`); `locked` is saving, unconfirmed and conflict (`entrySave.ts:92`), not a hidden tray and not `saved`. The host's `applyAiDraft` (`:217`) reaches the entry until it unmounts, up to `CLOSED_BOUND_MS` (1.5 s) when iOS's dismissal does not end. The dropped review runs only when `visible` changes (`:372-374`), so a draft taken after that has no review left to send. PROBE-5: close (Modal dismissal held), then a draft: no `ai_draft_reviewed` at all, ever. PROBE-23: the same after a save landed (`kept` is the only review). Against the plan: "closing or discarding with an AI origin unsaved reviews `dropped` once".
+Reach: no caller exists today. P3-T18's one-draft path calls `applyAiDraft` when the parse answers, which can be just after the person closed the tray. The cost is analytics only, but a lost review undercounts the draft outcomes the phase-3 proof reads.
+*Fix:* one line and one case. `applyAi` returns while `!visible` (or the host's `applyAiDraft` while `!now.current.visible`), and a case like PROBE-5 and PROBE-23 expects the late draft to be refused (nothing filled, nothing reviewed). With this guard the clear in `dropUnsaved` (MB2 below) becomes unobservable, as P13 says it is today.
 
-**m2. Four more guards are unpinned.** Each survives the committed suite and dies on one probe (protocol step 5: a test for every survivor).
+**m3. Nine guards on the review, privacy and P4/P8 paths are not pinned, and two of them are the receipt's "no case can tell" edits.**
+The code is right today: every probe passes on the commit. But each of these edits to `AddTrayHost.tsx` leaves all 28 cases green, and each dies on one probe (protocol step 5: a test for every survivor). Mutant logs: `mutant-logs/<id>.suite.log` and `<id>.probe.log`.
 
-| mutant | guard | probe and kill |
-|---|---|---|
-| MB2 | the clear in `dropUnsaved` (`:367`), the receipt's other "equivalent" edit ("after a drop the origin is always replaced, or the entry goes") | PROBE-14: an AI draft, then close with the Modal's dismissal held so the entry stays mounted, then a second draft handed over. Expected one `dropped`. Without the clear the late call re-sends the first draft's: `expected [ dropped, dropped ] to deeply equal [ dropped ]`. Two reviews of one draft, which P7 forbids. |
-| MA2 | `if (shown === null) return;` (`:424`), P4's "before the entry has started it does nothing" | PROBE-1: without it `applyAiDraft` throws `TypeError: Cannot read properties of null (reading 'draft')` while the lists load. |
-| MA16 | the conflict leg of P8 (`:421`, `locked` is saving, unconfirmed and conflict): `if (locked && status !== 'conflict') return;` | PROBE-15: with a conflict standing, an Opus draft handed over lands (`expected '฿77' to be '฿65'`). The committed case covers saving and unconfirmed only (H16, H17). |
-| MA27 | `useAddTray()` outside a host does nothing (`:160`, P4) | PROBE-16: `applyAiDraft` throws when mutated, and no case calls it outside a host. |
+| mutant | the guard | the rule | probe and kill |
+|---|---|---|---|
+| MA1 | a cleanup that reviews the draft `dropped` when the entry unmounts (added after `:374`) | P7, R119 | PROBE-8 (an unsaved AI draft, the host unmounted, 1.7 s later nothing sent): `expected [ { outcome: 'dropped', ... } ] to deeply equal []` |
+| MB1 | `return () => onApplier(null)` (`:456`) | R119; P13 lists it as "no case can tell" | PROBE-13 takes `useAddTray()`'s handle, unmounts the host with the draft unsaved, then calls `applyAiDraft` through the old handle. With the cleanup nothing is sent; without it the gone entry's `applyAi` sends `dropped` after the host is gone. A slip or tell read still running after a sign-out makes exactly that call, so this line is the whole of R119 for it. |
+| MB2 | the clear in `dropUnsaved` (`:367`) | P7 "once"; P13 lists it as "no case can tell" | PROBE-14: an AI draft, close with the Modal's dismissal held, then a second draft handed over. Expected one `dropped`; without the clear the late call re-sends the first draft's: `expected [ dropped, dropped ] to deeply equal [ dropped ]`. Two reviews of one draft. |
+| MA2 | `if (shown === null) return;` (`:424`) | P4: before the entry has started it does nothing | PROBE-1: without it `applyAiDraft` throws `TypeError: Cannot read properties of null (reading 'draft')` while the lists load. |
+| MA4 | `applier.current?.(draft, meta)` (`:217`) | P4: no entry open does nothing | PROBE-22: `applier.current!` throws with the host mounted and no tray open. |
+| MA27 | `applyAiDraft: () => undefined` outside a host (`:160`) | P4 | PROBE-16: it throws when mutated; no case calls it outside a host. |
+| MA16 | the conflict leg of P8 (`:421`): `if (locked && status !== 'conflict') return;` | P8: saving, unconfirmed and conflict | PROBE-15: with a conflict standing, an Opus draft lands (`expected '฿77' to be '฿65'`). H16 and H17 cover the other two. |
+| MA5 | `if (!visible && !locked) dropUnsaved();` (`:373`) | the receipt's risk: a locked close is `dropped` | PROBE-4 (and PROBE-11): the `dropped` the receipt describes is a choice that nothing holds. |
+| MA3 | a quick chip resets the origin: `apply: () => { fill(...); origin.current = TYPED_ORIGIN; }` (`:482`) | P5: chips leave the origin | PROBE-21: an AI draft then a chip must save `photo` and review `edited` 1; the committed chip case is typed, so it cannot tell. |
 
-*Fix* (test only): fold PROBE-1, PROBE-15 and PROBE-16 into the "handed over while a save is on its way, or while its answer is unknown" case, and PROBE-14 into the "closing" case. `probes/probes-part.tsx` has all of them ready to adapt.
+*Fix* (test only, all ready to adapt in `probes/probes-part.tsx`): PROBE-8 and PROBE-13 as one case ("a host that goes away sends no review for an unsaved draft, and a draft handed over late through an old handle changes nothing"); PROBE-1, 15, 16 and 22 into the "handed over while a save is on its way, or while its answer is unknown" case; PROBE-14 (if m2's guard is not taken), 4/11 and 21 as their own short cases. Correct P13's wording in the receipt.
 
 ### Nits
 
@@ -111,28 +122,35 @@ The code is right today. But two edits to `AddTrayHost.tsx` leave the 28-case su
 
 **n2. `dropUnsaved()` runs before a `fill` that can throw** (`:422-423` in `applyAi`, `:415-416` in `fromSheet`). An AI draft whose `amount_minor` has 12 digits passes the app's `isAiDraft` (`aiResources.ts:32` and `:45-52`, `MINOR` allows 12 digits) but not `keypadFromMinor` (`keypadExpression.ts:211`, at most 99,999,999,999 satang), so `filledKeypad` throws inside `fill` after `edit` and `setGuessed` were queued. PROBE-17 (the second draft, `amount_minor: '100000000000'`): `applyAiDraft` throws `TypeError: Expected canonical non-negative satang within the amount cap.`, the entry takes the second draft's fields but keeps the first amount (`6500`, saved as such, with the new place), the first draft is reviewed `dropped`, and the origin keeps the first draft's source with no review, so the saved record says `photo` and no review describes it. The server's `bahtToSatang` caps at the same `MINOR_MAX` (`apps/edge/src/server/ai/drafts.ts:42`), so a correct server never sends one, and the sheet path had the same throw before this task. A hardening: make `fill` compute before it queues (or catch it), and drop and replace the origin only once it has not thrown; or align `isAiDraft`'s regex with `MINOR_AMOUNT_MAX`.
 
-**n3. A draft handed to a tray that is leaving is shown nowhere and reviewed never.** PROBE-5: the tray closes (Modal dismissal held), then `applyAiDraft`. The still-mounted entry takes it and sets a pending review, which no one sends, since the effect on `visible` has run and the entry then goes. P7's "dropped once" does not cover a draft that arrives after the close. Harmless today (no caller); see the notes for P3-T17 and P3-T18.
-
 ## Notes for later tasks
 
 - **P3-T17 and P3-T18 (`applyAiDraft` is addressed to "the open entry", and answers `void`).**
-  - It does nothing, silently, when no entry is open, when its lists are still loading (P4), and while the entry is locked.
+  - It does nothing, silently, when no entry is open, when its lists are still loading (P4), and while the entry is locked. Taken into a leaving tray, a draft is lost (m2).
   - A draft meant for a tray that has closed lands in **the next tray that opens**: PROBE-19 held a handle from tray A, closed A, opened B, called the handle: B showed `฿65`, saved as `photo`, reviewed `kept`.
   - A read that outlives its tray therefore needs the entry's identity: capture `entry.key` when the read starts and apply only while it is still the open entry. And `applyAiDraft` could answer whether it took the draft, so the caller can keep the result or send its own `dropped`.
-  - Either change makes m1 and m2's cases the contract; add them first.
+  - Either change makes m3's cases the contract; add them first. P3-T18: if the person closed the tray while the parse ran, check that it is still open before calling, unless the host has m2's guard by then. The rows' close review is the list's own: the host's close reviews only the one draft in `origin` (`:372-374`), as the brief's P16 says.
 - **P3-T15:** pass `hasPhoto: true` in the host's track for a kept photo, as the receipt says. Until then a `photo` source says `has_photo: false`, as the plan has it.
+- **P2-T18 (the task that mounts `AddTrayHost` in the app) and 1D's follow-ups:** m1's question (a late `finish` after the host is gone).
 - **Release (P10, for the owner and P6C).**
   - Today `AddTrayHost` is mounted only by the catalogue section (`dev/catalogue/wallet/addHostSection.tsx:41`); the legacy Quick add sends no source. P2-T18's `WalletShell` is what first mounts it.
   - The first build that ships it sends `source` on **every** tray save, `typed` included, so (a) the server must carry P3-T2 first (`assertKnownFields` refuses an unknown field, `transactions.ts:239`), and (b) the client minimum must be at least `0.2.0` (the receipt's P10; `app.json` reads `0.3.0`). The receipt names (b) only. Put both in P2-T18's receipt.
 - **P5-T18e** edits `draftOrigin.ts` (`DraftFields.currency`): `draftOrigin.test.ts` is the place to pin it.
 
+## Cross-check with the first review (read after my findings were written)
+
+Same verdict, and no disagreement on any fact. What came from where:
+- **Found by both:** the leaving-tray draft (its m1, my m2: I first rated it a nit; after reading its after-save variant I reproduced it as PROBE-23 and agree with minor and with its one-line fix), the clear in `dropUnsaved` (its n2, my MB2), the not-ready guard, the outside-host no-op and the conflict leg of P8 (its M2, M3, M6; my MA2, MA27, MA16).
+- **Found by the first review, which I then reproduced:** m1 above (its m2, its REVIEW-1, my PROBE-20); the no-entry `?.` (its M4, my MA4), the locked close (its M5, my MA5) and the chip over an AI origin (its M8, my MA3).
+- **Mine only:** MA1 and MB1 (R119 for an unsaved draft: an unmount review, and `onApplier(null)`), PROBE-19 (a draft for a closed tray lands in the next one), PROBE-7 (n1), PROBE-17 (n2), PROBE-3, PROBE-6, PROBE-9, PROBE-10, PROBE-12 and PROBE-18 as positive checks.
+- **Its n1** ("source last" is not pinned and not needed): I agree. Key order is unobservable to every case, and both properties the brief draws from "last" hold wherever `...made` sits.
+
 ## Files
 
 Everything is under `/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t13-second/`:
 - `tree/`: the scratch tree (the probe file `AddTrayProbe.render.test.tsx` lives only there).
-- `probes/probes-part.tsx`: PROBE-1 to PROBE-19, ready to adapt.
-- `tools/my_mutants.py`: my six mutants.
-- `logs/`: `base-render.log`, `probes-*.log`, `probe-out.txt`, `planner-sample-1.out`, `planner-sample-2.out`, `my-mutants-1.out`, `my-mutants-2.out`, `typecheck-app-2.log`, `quickadd-routes.log`.
+- `probes/probes-part.tsx`: PROBE-1 to PROBE-23, ready to adapt.
+- `tools/my_mutants.py`: my nine mutants.
+- `logs/`: `base-render.log`, `probes-*.log`, `probes-all-2.log`, `probe-out.txt`, `planner-sample-1.out`, `planner-sample-2.out`, `my-mutants-1.out` to `my-mutants-3.out`, `typecheck-app-2.log`, `quickadd-routes.log`.
 - `mutant-logs/`: each mutant's suite and probe log.
 
 VERDICT: Approved
