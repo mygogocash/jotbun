@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 09:10: #457 (P3-T3, issue #187) opened at `2c642055`.**
+  - 11 of 12 `real/` files are byte-identical; the receipt adds one install line.
+  - RED was Node 5 of 17 and Workers 6 of 12, all assertions. GREEN passed, with neighbours 382. Mutants: 31 of 31 (Node 23, Workers 8), byte-identical to the planner's. `test:edge` 214 and `build:edge` passed.
+  - T3 stopped showing the implementer's runs after 08:58, but its logs in `scratch/p3-t3/` show the whole run before the 09:03 commit.
+  - Reviews (notes `scratch/dispatch/P3-T3-review-notes.md`): Opus `mcp:launch:f3ce764cded555742ce7be07b744d7db530707781629a75b4868fe987595650c`, Sonnet `mcp:launch:8179a60567a937c4b332c2063f1ad8fb3bf4ebc192696090b894c4658f7312b4`.
+  - Deploy order for the owner: this reader ships before any `config:v1` names `ai`.
+  - **Live now:** reviews on #454 (P3-T8), #456 (P2-T26) and #457 (P3-T3); the P3-T13 and P3-T9 planners (Opus).
 - **13 Nov 09:05: #452 (P4-T3) MERGED as `a16a44d`; P3-T3 building; #456 (P2-T26) opened with ruling R123.**
   - **#452:** both reviews approved `1eb4e5ed` (each confirms R122 is right, and that no other file pins the vault's entity or route lists). CI was 9 of 9 with the whole workers suite and `test:edge:db`.
     - The probes are copied to `scratch/p4-t3-review/probes/` and `scratch/p4-t3-second/probes/`.
