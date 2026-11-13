@@ -967,3 +967,30 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **E2-B, shared English (Opus):** `home.add` "Add an entry" is the catalog's `spendV1AddEntry` (เพิ่มรายการ); `home.tabWallets` "Wallet" is `Wallet` (กระเป๋าเงิน); `home.tabInsights` "Insights" is `redesignInsights` (ภาพรวม). Mark them on the contact sheets for P2-T38.
   - **P2-T37's private-mode sweep (Opus):** at this base the wallet area's Home, record and History are still today's screens, which read no private mode. That is expected until P2-T24, #456 and P2-T28 merge, so the sweep must run on that merged set.
   - **Merge order (both):** #464 first, since #465 mounts `SavedToastHost` and relies on #464's guards. CI on #465 runs again once #464 has merged; the Opus review's compat run with #464 laid over is green (`scratch/p2-t18-review/compat464`).
+- P4-T17 (#466, approved twice; not merged yet, since CI is queued org-wide). The reviews are `reviews/P4-T17.md` (Opus, approved: m1 to m3, n1 to n3) and `reviews/P4-T17-second.md` (Sonnet, approved: m1 to m4, n1 to n4). The controller added the two test pins itself as `b5458587` (Opus m1 = Sonnet m2, registrations one at a time; Sonnet m4, one notification handler) and corrected the PR body's native-config line (Opus m3); proof `scratch/p4-t17-pins/`. The Opus reviewer confirms it. The probes are in `scratch/p4-t17-review/probes/` (`reviewOrderProbe`, `reviewLockProbe` `.render.test.tsx`) and `scratch/p4-t17-second/probes/` (`PushLockProbe`, `PushRealTransportProbe` `.render.test.tsx`, `pushProbe.test.ts`). Carried:
+  - **For the owner, before D33 turns registration on (Opus m2, Sonnet m3): does quiet iOS delivery count as the person's yes to server pushes?**
+    - `permissionOf` (`pushRegistration.ts:39-42`) counts iOS provisional as granted, as the reminders read it. The reminders ask with `allowProvisional: true` (`notificationsPort.ts:53`), which iOS grants without a prompt. Android 12 and below reports granted unless notifications were switched off.
+    - So such a phone registers at the next launch with slip notices on, and `useNotificationPermission()` tells P4-T21's screens `granted`, so sl-done and sl-settings never ask. Its pushes (slips, statements, exports, the 1st-of-month recap) arrive quietly in the Notification Center.
+    - Opus's view: registration may count quiet delivery as granted (quiet beats none). The hook should report it apart (a `quiet` flag, or `undetermined` for provisional), so P4-T21 can ask.
+    - Whether `ask()` while provisional brings up iOS's prompt is open on a device.
+  - **P4-T21 (the slip screens), must carry:**
+    - m2/m3's answer, above, in how sl-done and sl-settings read the hook;
+    - a registration after the switch changes or an ask is granted must go through the host's chain (expose an `enqueue`), or a module-level chain in `pushRegistration.ts`. A call beside the host's run can overlap it (a duplicate PUT and a last-writer record);
+    - the slip-notice switch is a device setting and leaves at sign-out, so the next account starts with it on;
+    - adopt `PushLockProbe` A to E (the real `LockGate` over the host; Sonnet n1) when it next edits `PushHost.render.test.tsx`.
+  - **The sign-out owner (P6B or 1C) (Sonnet m1, Opus n3):** sign-out erases the device settings, then ends the session (`SettingsScreen.tsx:223`, then `:234`). A registration whose PUT answers between the two writes `push-device` after the erase (probe G2), leaving the token and the dead session's hash. Logout revokes the session on the server, so the window is a PUT's length. Drain the host's chain before the erase, or erase the device settings once more after `signOut()`.
+  - **P2-T36 (reminders) (both):** never call `setNotificationHandler`. While the app is open, a reminder is silent (R126), not even in the list; the controller's one-handler case pins it. Reversing R126 takes the one line in `presentation`, plus H3, H4 and the presentation case.
+  - **D33 and P6C:**
+    - put a lowercase UUID in `extra.eas.projectId`; an id in capitals is `no_project` for ever, silently (Sonnet n2);
+    - set `mode` on the explicit plugin entry for store builds, and `icon`, `color` and `defaultChannel` for Android;
+    - signing without the push capability already fails at the base;
+    - consider a count-only registration-failure event (Sonnet n3);
+    - a run on the return to the front (AppState `active`) would renew a phone kept open for days (Opus n2).
+  - **Device checks (P15) stay SKIPPED.** Also check on a device:
+    - the cold-start `router.push`, on both OSes;
+    - the order of AppState and a tap's response on a warm return;
+    - Android's foreground "list only";
+    - Android `slips_ready` with `ref: null`;
+    - whether `ask()` upgrades iOS provisional.
+  - **If notification categories or actions are ever added (Sonnet):** `take()` treats every response as a tap and ignores `actionIdentifier`, so a dismiss action would route.
+  - **Hardening, optional (Sonnet n4):** the route effect's `router.push` and `clearLastNotificationResponse()` are the host's only unguarded calls; a `try/catch` around the pair would match the file's style.

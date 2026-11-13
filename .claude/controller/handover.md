@@ -49,6 +49,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 03:51: #466 approved twice; the controller's pins pushed as `b5458587` (the Opus reviewer confirms).**
+  - **Sonnet (`reviews/P4-T17-second.md`)** found m1 (the sign-out race), m2 (the chain unpinned), m3 (quiet delivery reads as granted, the owner's question) and m4 (one handler unpinned), plus n1 to n4.
+  - **Opus (`reviews/P4-T17.md`)** found m1 (the chain unpinned), m2 (quiet delivery read as `granted` by the hook) and m3 (no native config change: `aps-environment` is already at the base; the PR body and the handover are corrected), plus n1 to n3.
+  - **The controller's commit `b5458587`:** the order case and the one-handler Node case. Proof `scratch/p4-t17-pins/`:
+    - green 22 of 22 and 14 of 14, and `typecheck:app`;
+    - R1, OM1 and the controller's X1 each killed, by the case meant for it;
+    - the planner's 48 host and 38 registration mutants still killed.
+
+    The PR body is updated, and Sonnet's probes are copied out to `scratch/p4-t17-second/probes/`. The Sonnet thread is archived. **The Opus reviewer (`mcp:launch:105418bd28cc1ad6ff9224a21fcc57402a9ebdbeaba596716c6eb25b8c4b36d9`, run 2) confirms `b5458587`.**
+  - **Owner item, new (before D33 turns registration on):** does quiet iOS delivery count as the person's yes to server pushes? See the followups' P4-T17 entry. P4-T21 carries it.
+  - **Live now:** the #466 confirmation (Opus); the 1D-T14 planner (R125 rework).
 - **14 Nov 03:19: #466 (P4-T17, closes #226) opened at `7cdb3d9f`; its two reviews started. CI is still blocked.**
   - The implementer reported DONE in about 10 minutes. The controller checked the commit: all 9 `real/` files are byte-identical.
     - RED: Node 13 of 13 and render 13 of 21, on assertions only. GREEN: 13 and 21. Mutants: 92 killed, 2 equivalent (H33, M2), every outcome equal to the planner's.
@@ -66,7 +77,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
     - RED was 13 of 13 Node cases and 13 render cases. GREEN passes, mutants 92 of 94 killed with 2 equivalent, and the dry run matched every Expected line.
     - **P1 to P17 accepted.**
     - **R126 (its P3 (a)):** SDK 58 shows a notification that arrives while the app is open unless a handler says otherwise, so today a local reminder shows in the foreground with a sound. The plan says it shows nothing, and the brief follows the plan: the host hides it. This changes today's foreground reminder. The owner may reverse it with one line in `presentation` and mutants H3 and H4. It is listed as an owner note.
-    - P3 (c): the plain `expo-notifications` plugin adds the iOS entitlement `aps-environment: development`. A store build may need `mode: production` (D33, P6C), and a local device build signed by a team without the push capability will not sign.
+    - P3 (c), corrected by the Opus review's m3: the plain `expo-notifications` plugin entry changes no native config. `@expo/prebuild-config` already applies the package's plugin with these defaults, so `aps-environment: development` is in today's prebuild too, and signing without the push capability already fails at the base. A store build may need `mode: production` on the entry (D33, P6C).
   - **Implementer (Haiku max):** `mcp:launch:55b3ad680e789f019ec74708f53552d799e67cc67955357631bd47b5c36f691e`, in worktree `p4-t17` on `p4/t17-push`, installed, `--lock`. Notes: `scratch/dispatch/P4-T17-implementer-notes.md`.
   - **Disk: 5.3 GiB free** after the install, down from 6.7.
     - Ours: 9 task and integration worktrees of 1.2 to 1.7 GB each, which stay until their PRs merge. The scratch folder is 9.1 GB, spread over old review folders whose probes followups cite.
