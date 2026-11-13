@@ -795,3 +795,37 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **1D-T13 and P6C (Q4):** the anonymous counts go out whatever the consent and the off header; the Worker needs a consent-only switch if counsel rules so.
   - **The dashboards (Q7):** if Reliability needs the vault's class name for AI, import, attachment and snapshot routes, thread `failure` through `vaultSession.call` and the steps' `ProblemException`s.
   - **Later person-level server events** (`slip_scan_finished` and others) go through the shared transport so they carry the off header (1D-T6's m4).
+- P5-T17 (#449, merged 13 Nov as 437743e at 3f5670a9; promotion #450). The reviews are `reviews/P5-T17.md` (Opus, approved: m1 to m3, n1) and `reviews/P5-T17-second.md` (Sonnet, approved: m1 to m3, n1, n2, N1 to N6). The probes are in `scratch/p5-t17-review/probes/reviewProbe.test.ts` (PA to PH) and `scratch/p5-t17-second/probes/` (`zzProbeTransport`, `zzProbeFake`, `zzDiaryProbe`). Carried:
+  - **P5-T18a (drafts with money keys), must carry:** the refusal pins cover two of the seven money keys and no transfer draft (Sonnet m1; survivors MD1 to MD3).
+    - Replace the two pairs in `diaryRepository.test.ts` (`:101-103`, `:448-450`) with loops over all seven keys: `currency`, `rate_source`, `rate`, `home_amount_minor`, `home_currency`, `trip_id`, `to_amount_minor`.
+    - Cover entry drafts, transfer drafts and choice changes (probe `zzDiaryProbe` D1 to D3).
+    - Then flip the keys it admits to positive cases in its own commit.
+    - Also N5: `readCachedRates` never ages a set out, so read `as_of` before estimating from a set that may be days old.
+  - **The next task that edits `apps/app/src/api/client.ts`:** pin that a 304 arriving after the session changed rejects `session_changed`, never `'unchanged'`. Both reviews' m2: mutants MC1 and RV1 survive. Probes PA6 and A2 hold it.
+  - **The next task that edits `fakeResources.ts`, must carry.** That is P5-T24, or the first of P5-T18b, T21 or T25 whose screen test leans on the fake.
+    - **Opus m1:** `updateTrip` merges an own `undefined` key that the wire drops (`fakeResources.ts:433`). Merge what the wire carries (`JSON.parse(JSON.stringify(changes))`), use it in the field choice too, and add probe PD's two cases. The older `updateTransaction`, `updateCategory` and `updateWallet` merges have the same shape.
+    - **Opus m3 and Sonnet m3:** pin the summary's `rates` "of a tagged record" of any type (RV2 and MF1; probe PH or C7). Also pin "deleted" before the version in `lockedTrip` (RV3 and MF4; probe PG).
+    - **Sonnet n1:** pin the call log's arguments (`updateTrip`, `setHomeCurrency`, `ratesToday`) and `fake.trips` (MF14, MF16 to MF18).
+    - **Sonnet N3 and Opus's notes:** the fake differs from the vault in five ways:
+      - it stores a create's input verbatim: no `rate`, `rate_source`, `rate_date` or `home_amount_minor`, and `home_currency` is kept;
+      - it has no `assertTripTag`;
+      - `tripSummary` throws a TypeError on a tagged record without `home_amount_minor` (probe PC);
+      - `updateTrip` applies a `currency` edit;
+      - `balance()`, `history()` and `summary()` add `amount_minor` whatever the currency.
+
+      Widen the fake in the commit where a screen test first leans on the rule, or seed tests with `goldenTripRecords()` (P5-T18a).
+  - **P5-T18c (the rates cache's next task):** read an ETag that is not an entity-tag (`"..."` or `W/"..."` in legal header characters) as null and keep the rates. The next refresh then asks without If-None-Match and heals (Opus n1, Sonnet n2; probes PB and B3).
+  - **P5-T6 (the rates route):**
+    - Compare If-None-Match with a leading `W/` stripped, and add a case (RFC 9110 section 13.1.2; Cloudflare can weaken a strong ETag under compression).
+    - Run the deployed check through the real edge (N6).
+    - After the 06:00 Cron, KV may answer the older set for about a minute, so a phone can step back until its next refresh. This is harmless for money, but a screen showing the set's date may show the older one (P5-T18c too).
+  - **P5-T9 (the trip routes):** state and pin the check order (deleted before the version, as `transactions.ts:138-142`). Also state whether "only `ends_on` moves" compares by key presence or by value; the fake reads presence (probe PE). Keep the fake in step (Sonnet N1).
+  - **P5-T13 (the home currency route):** settle and pin three answers, and keep the fake in step (Sonnet N1):
+    - an If-Match while no settings row exists: the fake answers 409 with `current: null`, while `putBudget`'s precedent is 404;
+    - the order of the same-currency and version checks: the fake answers the 409 first;
+    - an unknown currency: the vault refuses it with 422 on `currency`, while the fake accepts it (probe PF).
+  - **P5-T12 and P5-T23:** say whether a day holding only an income or an exchange appears in `days` with zeros (the fake lists days that have an expense), and pin it (Sonnet N4).
+  - **P5-T26 and P5-T18c (callers of `setHomeCurrency`):**
+    - Take the home currency from the synced settings, adopt a 409's `current`, and write no local copy before the acknowledgement.
+    - A `TIMEOUT` (outcome `network`) may still commit. Resend with the same command id, or read `commandStatus([id])`, before offering a retry. Read a `VERSION_CONFLICT` whose `current.home_currency` equals the ask as done.
+    - After a commit `pruned_through` moves, so resync before showing any home amount (Sonnet N2).

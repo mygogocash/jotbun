@@ -49,6 +49,22 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 08:05: #449 (P5-T17) MERGED as `437743e`; the head is `437743e`. P2-T17's brief is READY and its implementer is building (Haiku).**
+  - **#449:**
+    - CI was 9 of 9 at `3f5670a9`. Both reviews approved: Opus with m1 to m3 and n1; Sonnet with m1 to m3, n1, n2 and N1 to N6.
+    - Every finding is carried in followups: P5-T18a must carry Sonnet's m1; the fake's next editor carries Opus's m1 and both m3s; `client.ts`'s next editor carries m2.
+    - Issue #250 closed, worktree and branch removed, promoted as **#450** (stack #379 holds 39). The review threads are archived.
+  - **P2-T17:**
+    - The Opus planner reported READY with its kit at `scratch/p2-t17-planner/`. `check_kit.sh` at `925c02f5`: 38 of 38 sums, `orig/` 5 of 5.
+    - Nothing under `apps/app` or `packages` changed between its base `40dfaf67` and `925c02f5`, so there was no pre-flight. #449's four files are the brief's expected Step 0.3 case.
+    - **P1 to P22 accepted.**
+    - Worktree `p2-t17` on `p2/t17-saved-moment` at `437743e2`, installed. Implementer `mcp:launch:7ef9c5616774196d92cb18777604e4486910f0e4b7907e0cb651964dea74d902`.
+    - Reviews when it is done: Opus, plus Sonnet on money (today's total, P6), Undo (P7 and P8) and private mode (P10).
+    - The planner thread is archived; unarchive it for a fix round.
+  - **Steers:** the P2-T26 planner was told to reuse `toastLink` and to name any of P2-T17's five shared files it touches. The P3-T8 and P4-T3 planners were told #449 moved the head, so they re-prove if they read its files.
+  - **Disk:** free space swung from 25 to 13 to 39 GiB because of work outside this build (`~/.t3/worktrees/gogocash` holds 112 GiB and is not ours). The controller deleted 3 GiB of repo copies (`tree*`, `src`) left in scratch by closed PRs; 42 GiB free after.
+  - **Keep-awake:** a new 14-hour caffeinate (pid 70361, until about 21:30).
+  - **Live now:** the P2-T17 implementer (Haiku), and the P2-T26, P3-T8 and P4-T3 planners (Opus).
 - **13 Nov 07:30: #449 (P5-T17) opened; Opus and Sonnet reviews and CI running.** The implementer reported DONE at `3f5670a9` on `87a37080` (RED 13 of 71 on assertions; GREEN 71; 96 of 96 mutants; `test:app` 37, `test:unit` 1101, routes 17, fake-built renders 41). 9 of 10 `real/` files byte-identical, the receipt differing only in its base SHA. PR body `pr-p5-t17.md`, issue #250. Reviews (notes `scratch/dispatch/P5-T17-review-notes.md`): Opus xhigh `mcp:launch:8551bb875316cecd87cd84a0443c96d85bf1163be1c391055c9bde357108a39a`; Sonnet high `mcp:launch:3c1b8289b70553cc7099c2321a9210d6c52a92da0b916ab8e530189b34847daa`.
 - **13 Nov 07:20: P5-T17 brief READY (Opus); its implementer is building (Haiku).** Size M: `api/client.ts`, `spend/v1/resources.ts`, `fakeResources.ts`, `ratesCache.ts` (new) and tests, plus `diaryRepository.test.ts` (followups line 726's four refusal tests) and a new `fakeResources.test.ts`. RED 13 of 71 on assertions, GREEN 71, 96 of 96 mutants; a dry run of the brief on a fresh copy. `check_kit.sh` at `dffa9ee3`: 35 of 35, `orig/` 6 of 6; nothing under `apps/app` or `packages` since its base. **P1 to P15 accepted.** Worktree `p5-t17` on `p5/t17-rates-client`, installed. Implementer `mcp:launch:db385f6ca377da5b12ef34b309092595a3ca7c30781c32bcba3ed3694ec191d9`. Reviews when done: Opus and Sonnet (money path). The planner thread is archived.
 - **13 Nov 07:15: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261113b.md`, head `aea5efbd`), one per lane:
