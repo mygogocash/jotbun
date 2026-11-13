@@ -49,7 +49,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
-- **14 Nov 03:20: #465 fully approved: the confirmation of `74142ebc` approves.** Seven PRs are now fully approved and wait only on CI. Merge order once runners return:
+- **14 Nov 02:25: #465 fully approved: the confirmation of `74142ebc` approves.** Seven PRs are now fully approved and wait only on CI. Merge order once runners return:
   1. #460 P3-T13 (`14da2b4e`)
   2. #461 P3-T9 (`5cb1055e`)
   3. #462 source-pins (`d9b4dfb1`)
@@ -62,7 +62,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The #465 Opus thread is archived.
   - **After each merge:** run `promote_pr.sh`, update followups' headers (P2-T18a and P2-T18 are already written), copy the probes, and dispatch the ready briefs. That means P4-T4 after #461 and P4-T7 after #463, then plan `saved-pins` after #464 and `shell-carry` after #465.
   - **Live now:** the P4-T17 and 1D-T14 planners.
-- **14 Nov 03:05: #464 fully approved (the confirmation of `7e2ae0dc` approves); #465 approved twice, its pins pushed as `74142ebc`.**
+- **14 Nov 02:15: #464 fully approved (the confirmation of `7e2ae0dc` approves); #465 approved twice, its pins pushed as `74142ebc`.**
   - **#464 (P2-T18a)** waits only on CI. The confirmation (`reviews/P2-T18a.md`, "Confirmation of 7e2ae0dc") reran 15 mutants, each killed by the case meant for it. Its optional n2 (race A's opening part dressed as an online save) goes to `saved-pins` in followups. Both #464 review threads are archived.
   - **#465 (P2-T18):**
     - **The Sonnet second review approves** (`reviews/P2-T18-second.md`): m1 Magic Tap on Fabric iOS (a device check decides), m2 the add route's `addRequestOf` unpinned, m3 the + and icon looks, m4 Insights' 52 pt, n1 to n4.
@@ -74,7 +74,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
     - **The Opus reviewer (`mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, run 2) confirms `74142ebc`** in a new section of `reviews/P2-T18.md`. The Sonnet thread is archived.
     - The followups entry for P2-T18 is written. The controller's `shell-carry` task, to plan once #465 merges, holds the looks shared across spend layouts (Opus m1), Insights' inset (Opus n2, Sonnet m4) and the hint's words (Sonnet n1).
   - **Live now:** the P4-T17 and 1D-T14 planners; the #465 confirmation (Opus).
-- **14 Nov 02:40: #465's Opus review approves; two planners started (P4-T17, 1D-T14).**
+- **14 Nov 02:05: #465's Opus review approves; two planners started (P4-T17, 1D-T14).**
   - **#465 (P2-T18), `reviews/P2-T18.md`:** no blocker or major.
     - Test-only pins, each proved in the reviewer's scratch: m2 (the chip reads `อาหาร−฿50`, `WalletShell.render.test.tsx:336`, kills V1 and V2), n1 (a sixth `spendLayoutOrder.test.ts` case scanning `<WalletShell\b`, kills V9) and n3 (the + at `0.4` opacity while blocked, kills V4).
     - m1: Settings' diary links push a second spend layout, so each has its own shell, tray host and looks provider, and looks changed under Settings are stale below.
@@ -85,7 +85,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
     - **P4-T17, push on the phone** (critical path, depth 6): `mcp:launch:8fecf2cdbd19737baaec6aeb76665a3c7819fa03cfc3b8bfdda6607e7a94f449`, WT `p4-t17` on `p4/t17-push`. It shares no file with anything in flight; `expo-notifications` ~58.1.4 is already installed.
     - **1D-T14, the account events** (size S): `mcp:launch:be2008fe0f8556f9d69a56d0100a74eeffa078534354318b690700999ffa6726`, WT `p1-1d-t14` on `p1/1d-t14-account-events`. It carries followups line 770 (`signed_out` first).
   - **Live now:** the P4-T17 and 1D-T14 planners; the #465 Sonnet second review; the #464 confirmation (Opus).
-- **14 Nov 02:25: #464's pins pushed as `7e2ae0dc` (the Opus reviewer confirms); P4-T7's brief READY (waits on #463).**
+- **14 Nov 02:00: #464's pins pushed as `7e2ae0dc` (the Opus reviewer confirms); P4-T7's brief READY (waits on #463).**
   - **#464 (P2-T18a):** the controller's commit `7e2ae0dc` holds both reviews' pins and the comment, test-only plus the comment. Proof `scratch/p2-t18a-pins/`, all under the heavy lock:
     - the three render files 56 of 56, and `typecheck:app`;
     - the reviews' mutants O1, O2, O6, O9, OF1, R1 and R3 each killed on an assertion, by the case meant for it;
@@ -97,7 +97,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
     - Its base is the head plus #461, #462 and #463 in merge order. **P1 to P17 accepted.** Confirm follows B10 as A1 amends it; that default stands while owner Q4 is open.
     - Dispatch the Haiku implementer (`--lock`, worktree `p4-t7` on `p4/t7-slip-drafts`, `install-edge`) only after #463 merges.
   - **Live now:** the #465 reviews (Opus and Sonnet) and the #464 confirmation (Opus). No planner or builder is running.
-- **14 Nov 02:05: #464 approved twice; P4-T4's brief READY (waits on #461); #465's head is `a47a2876`.**
+- **14 Nov 01:55: #464 approved twice; P4-T4's brief READY (waits on #461); #465's head is `a47a2876`.**
   - **#464 (P2-T18a):** Opus (`reviews/P2-T18a.md`) and Sonnet (`reviews/P2-T18a-second.md`) both approve. Their findings overlap and are all test pins plus one comment:
     - Opus m1 = Sonnet m1a (R3/O6, the revision handed to `todayOutMinor`): race B's case with the diary at `'8'` (probe B1);
     - Opus m2 = Sonnet m1c (R1/O2): the closed-diary case over `locked`, `opening` and `unavailable`;
@@ -106,7 +106,7 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
     - **The controller adds them itself** (test-only plus the comment, while CI is blocked), proves them under the lock (proof `scratch/p2-t18a-pins/`), and asks the Opus reviewer to confirm. Sonnet's n3 (the editor's loading-state back, PE1) goes to P2-T22 in followups.
   - **P4-T4 planner done** (thread archived). Brief `briefs/P4-T4.md`, kit `scratch/p4-t4-planner/` (28 of 28 sums). `check_kit` says `slip-read.ts` DIFFERS at the head: expected, because its `orig/` is #461's text (`orig/` sha256 equals `5cb1055e`'s file for both base files). **P1 to P15 accepted.** Dispatch the Haiku implementer (`--lock`, worktree `p4-t4` on `p4/t4-slip-import`, `install-edge`) only after #461 merges; its Step 0 checks the merge.
   - **#465's head is `a47a2876`, not `179d03cb`:** the implementer amended its commit before pushing (one wording line in `receipts/P2-T18.md`). Both #465 reviewers were told to review `a47a2876`.
-- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb` (pushed as `a47a2876`, see 02:05).**
+- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb` (pushed as `a47a2876`, see 01:55).**
   - All 12 `real/` files are byte-identical. RED was Node 8 of 8 and render 15 of 39; GREEN passes. 87 mutants: 86 killed and 1 equivalent, identical to the planner's.
   - Gate: `typecheck:app` and `:routes`, `test:unit` 1117, kit eight 142, routes 17, neighbours 131, `export:web`.
   - Reviews: Opus `mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, Sonnet `mcp:launch:b699098f4b6f9f2e876f0fc036e922a2f25326b7da301688d934e8cf8f9d84cb`. The implementer thread is archived.
