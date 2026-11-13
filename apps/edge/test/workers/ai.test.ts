@@ -326,7 +326,7 @@ describe('slips', () => {
   it('reads a slip image into drafts and keeps nothing', async () => {
     const user = await consenting()
     const { cash } = await withCashAndFood(user)
-    model.push(json({ bank: 'K PLUS', drafts: [{ type: 'expense', amount_baht: '1,250.00', date: today, category_id: null, wallet_id: cash, merchant: 'ร้านป้าแดง', note: null, confidence: 'high', flags: [] }] }))
+    model.push(json({ kind: 'slip', bank: 'K PLUS', drafts: [{ type: 'expense', amount_baht: '1,250.00', date: today, category_id: null, wallet_id: cash, merchant: 'ร้านป้าแดง', note: null, confidence: 'high', flags: [] }] }))
     const res = await client.as(user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/png', today, locale: 'th' })
     expect(res.status).toBe(200)
     expect(await body(res)).toMatchObject({ source: 'ai', bank: 'K PLUS', drafts: [{ amount_minor: '125000', merchant: 'ร้านป้าแดง', confidence: 'medium', flags: ['category_guessed'] }] })
@@ -347,7 +347,7 @@ describe('slips', () => {
     const user = await consenting()
     const { cash } = await withCashAndFood(user)
     const revision = await revisionOf(user)
-    model.push(json({ bank: 'K PLUS', drafts: [{ type: 'expense', amount_baht: '89', date: today, category_id: null, wallet_id: cash, merchant: 'ร้านกาแฟ', note: null, confidence: 'high', flags: [] }] }))
+    model.push(json({ kind: 'slip', bank: 'K PLUS', drafts: [{ type: 'expense', amount_baht: '89', date: today, category_id: null, wallet_id: cash, merchant: 'ร้านกาแฟ', note: null, confidence: 'high', flags: [] }] }))
     expect((await client.as(user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/png', today, locale: 'th' })).status).toBe(200)
     for (const purpose of VAULT_OBJECT_PURPOSES) expect(await storedKeys(vaultPrefix(purpose, vaultIdOf(user))), purpose).toEqual([])
     expect(await vaultRows(user, 'SELECT job_id FROM import_uploads')).toEqual([])
@@ -361,10 +361,13 @@ describe('slips', () => {
   it("a slip's bank name is trimmed and cut to 60 characters, and anything else reads null", async () => {
     const user = await consenting()
     const slip = async () => body(await client.as(user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/png', today, locale: 'th' }))
-    model.push(json({ bank: `  ${'กรุงไทย '.repeat(10)}`, drafts: [] }), json({ bank: 42, drafts: [] }), json({ bank: '   ', drafts: [] }))
+    // Complete reads (P3-T8): a kind and a draft with an amount, today's date and a receiver, so Haiku's read is the answer.
+    const read = (bank: unknown) =>
+      json({ kind: 'slip', bank, drafts: [{ type: 'expense', amount_baht: '89', date: today, category_id: null, wallet_id: null, merchant: 'ร้านกาแฟ', note: null, confidence: 'high', flags: [] }] })
+    model.push(read(`  ${'กรุงไทย '.repeat(10)}`), read(42), read('   '))
     const cut = `${'กรุงไทย '.repeat(7)}กรุง`
     expect(cut).toHaveLength(60)
-    expect(await slip()).toMatchObject({ source: 'ai', bank: cut, drafts: [] })
+    expect(await slip()).toMatchObject({ source: 'ai', bank: cut, kind: 'slip', escalated: false })
     expect(await slip()).toMatchObject({ source: 'ai', bank: null })
     expect(await slip()).toMatchObject({ source: 'ai', bank: null })
   })

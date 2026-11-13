@@ -82,7 +82,7 @@ test('scanning a slip without AI help asks to turn it on first and picks nothing
 
 test('a scanned slip becomes a draft, with the bank named', async () => {
   const draft: AiDraft = { type: 'expense', amount_minor: '125000', occurred_on: '2026-10-24', category_id: food.id, wallet_id: cash.id, merchant: 'ร้านป้าแดง', note: null, confidence: 'high', flags: [] };
-  const ai = fakeAiResources({ slip: vi.fn(async () => ({ drafts: [draft], bank: 'K PLUS', source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })) }, { companion: true, notice_version: 1 });
+  const ai = fakeAiResources({ slip: vi.fn(async () => ({ drafts: [draft], bank: 'K PLUS', source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false, kind: 'slip' as const, declined: false, tokens: { input: 1_200, output: 150 } })) }, { companion: true, notice_version: 1 });
   const pickSlip = vi.fn(async () => ({ kind: 'picked' as const, base64: 'aGVsbG8=', mediaType: 'image/jpeg' as const }));
   mount(ai, vi.fn(), pickSlip);
   await waitFor(() => expect(ai.resources.preferences).toHaveBeenCalled());

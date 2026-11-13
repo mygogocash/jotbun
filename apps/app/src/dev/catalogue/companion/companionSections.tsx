@@ -32,7 +32,7 @@ export function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrid
     preferences: async () => current,
     setPreferences: async (update) => (current = { ...current, ...update }),
     parse: async () => ({ drafts: [], source: 'rules', model: 'rules', escalated: false }),
-    slip: async () => ({ drafts: [], bank: null, source: 'ai', model: 'claude-haiku-5-5', escalated: false }),
+    slip: async () => ({ drafts: [], bank: null, source: 'ai', model: 'claude-opus-5-5', escalated: true, kind: 'unreadable', declined: false, tokens: { input: 0, output: 0 } }),
     // Worded as the edge words them (fact-text.ts): in Thai for Thai, English otherwise.
     note: async (date, locale) => ({
       date,
