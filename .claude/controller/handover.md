@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 05:16: 1D-T14 READY (R125 in) and building (Haiku) on a node_modules link farm; CI still blocked (05:14: all eight PRs 9 of 9 queued).**
+  - **1D-T14's planner reported READY at 03:08.** The controller saw it only at 05:15: its sums were rewritten before the watcher's `newer:` baseline, so read a reworking planner's thread, not only its sums.
+    - The kit: 41 of 41 sums, `orig/` 6 of 6 at the head. Size M.
+    - Files: `credentialProvider.ts` and its test, `SettingsParts.tsx`, `SettingsScreen.tsx`, `PrivacyParts.tsx` and `PrivacyScreen.tsx` (all shared, none in flight), the new `signOutEvents.render.test.tsx`, and the receipt.
+    - R125 as `signOut({ event: false })`. RED 9 of 47 Node and 3 of 3 render; GREEN; mutants 12 of 12; a gate of 11 render files (158 tests).
+    - **P1 to P12 accepted.**
+  - **Disk: 3.7 GiB free** (it swings with another project's work), so the new worktree `p1-1d-t14` got no install.
+    - `scratch/dispatch/linkfarm-worktree.sh` farms `node_modules` and `apps/app/node_modules`: real folders of symlinks into **`p4-t17`'s fresh install** (same lockfile), with workspace links pointing at the new worktree. `.package-lock.json` is linked so the brief's Step 1.6 check passes.
+    - The base `credentialProvider.test.ts` passes 38 of 38 in it.
+    - The integration worktree's own install is from 25 Oct and is stale: never farm from it.
+    - **Keep `p4-t17` until 1D-T14 has merged**, or re-farm 1D-T14 from another fresh install before removing it.
+  - **Implementer (Haiku max):** `mcp:launch:76e1647e5054323f73bb0ca4088c99e35b17f028bb5e0dc21580c3ff75c5cf41`, `--lock`. Its notes forbid any `npm ci` or `npm install`. The planner thread is archived.
+  - **Live now:** the 1D-T14 implementer.
 - **14 Nov 04:00: #466 fully approved: the confirmation of `b5458587` approves.** Eight PRs are now fully approved and wait only on CI. Merge order once runners return:
   1. #460 P3-T13 (`14da2b4e`)
   2. #461 P3-T9 (`5cb1055e`)
