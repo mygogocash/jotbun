@@ -49,6 +49,25 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 05:54: #467 approved twice; the controller's pins pushed as `e3c2ae74` (the Opus reviewer confirms). Disk 2.7 GiB free.**
+  - **Sonnet (`reviews/1D-T14-second.md`)** found:
+    - m1 (MX2): the event's place before `await reservation`;
+    - m2 (MX1): the guard admitting `authenticating` and `bootstrap_pending`;
+    - m3: the stand-in is the only cover for four paths;
+    - n1 (a comment) and n2 (the option defaults to sending).
+  - **Opus (`reviews/1D-T14.md`)** found:
+    - m1: after an accepted deletion, Back out of Privacy and a Settings Sign out still send `signed_out`. Carried to a 1D-T13 follow-up or 1D-T15; deletion is not served yet;
+    - m2: the render file lacks M5 and M6;
+    - m3: the reservation ordering and a second tap;
+    - n1: a fresh sign-in and a restore.
+  - **The controller's commit `e3c2ae74`:** five Node cases (PN2, PN4/PC, PN7, PN8, PN9) and two render cases (PR1, PR2), plus the receipt's acceptance and pins bullets. Sonnet's n1 comment is held, so the source stays equal to the kit's `real/`. Proof `scratch/1d-t14-pins/`, farmed from `p4-t17`:
+    - green 52 of 52 and 5 of 5, and `typecheck:app`;
+    - the reviews' 7 mutants each killed, by the case meant for it;
+    - the planner's 12 still killed.
+
+    The PR body and followups are updated. The Sonnet thread is archived. **The Opus reviewer (`mcp:launch:5fec0d47ad23d12c6ef69285d0000af3ca4f8e10e42ff20e6b163a4bd7158a3e`, run 2) confirms `e3c2ae74`.**
+  - **Disk: 2.7 GiB free**, falling through the night with no new installs of ours. Another project is using it. If it drops under about 1.5 GiB, free space; the stale 9.8 GB `controller-stale-20261108-1710` is the candidate, once the probes the old followups cite are checked against it.
+  - **Live now:** the #467 confirmation (Opus).
 - **14 Nov 05:26: #467 (1D-T14, closes #145) opened at `948391f7`; its two reviews started.**
   - The implementer reported DONE in about 8 minutes. The controller checked the commit: all 8 `real/` files are byte-identical, the planner's receipt included.
     - RED: Node 9 of 47 and render 3 of 3, on assertions only. GREEN: 47 and 3. Mutants: 12 of 12, equal to the planner's.
