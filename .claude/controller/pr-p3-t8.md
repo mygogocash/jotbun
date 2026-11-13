@@ -34,8 +34,11 @@
   - `test:edge` (20 files, 206), `test:app` 37 and `test:unit` 1102;
   - `build:edge`;
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, with the whole workers suite.
-- [ ] Independent review (Opus), and a second review (Sonnet): refunds and billing (P11), what each model is sent (P14), logging (P12) and the escalation rules (D25).
+- [x] CI at `53d24947`: 9 of 9, with the whole workers suite.
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `53d24947` (`.claude/controller/reviews/P3-T8.md`, `reviews/P3-T8-second.md`), with no blocker or major. P3-T9, which is being planned now on this task's files, must carry two items:
+  - a model date that is not a calendar date throws in `sanitizeDrafts`, so the read answers 503 with the use spent instead of going to Opus (an older bug in `drafts.ts`; the fix is a wrapper in `readOnce` and a NaN guard);
+  - the refund after an unusable Haiku answer and an Opus outage is untested.
+  Seven more guards are test gaps on code that is right today. All are in `followups.md`.
 - [ ] SKIPPED: a live read against Anthropic (no keys locally); the hosted check of a dropped request is P6C's.
 
 Closes #192 once merged (closed by hand, since the base is not the default branch).

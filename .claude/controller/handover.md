@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 09:25: #454 (P3-T8) MERGED as `02da8f6`; #456 (P2-T26) needs a fix round (R123).**
+  - **#454:**
+    - Both reviews approved `53d24947`, and CI was 9 of 9. No blocker or major.
+    - Sonnet m1 is an older, real defect: an impossible model date throws in `drafts.ts` `isRealDate`, so the slip read answers 503 with the use spent instead of re-reading with Opus. Opus m1 (an unusable answer plus an Opus outage refund) is untested.
+    - Both are now a must-carry for **P3-T9** (steered), along with R116's slip row and one shared `choices`. The other pins go to P3-T9 or P4-T4.
+    - The probes are copied to `scratch/p3-t8-review/probes/` and `scratch/p3-t8-second/probes/`.
+    - Issue #192 closed, worktree and branch removed, promoted as **#458** (stack #379 holds 42). The review threads are archived.
+  - **#456 (P2-T26):**
+    - CI 9 of 9 at `52110318`.
+    - The Sonnet second review says **Needs fixes**: M1 is R123. The page draws, downloads and opens the receipt photo in private mode.
+    - Its prototype, `scratch/p2-t26-second/probes/r123-prototype.diff`, is a local `HiddenReceipt` frame on the wallet page only. It mounts no `RecordReceipt` while hidden, so nothing is fetched, and it shows the same frame whether or not a receipt exists. With it, the three probe cases and all 25 committed cases pass (28 of 28).
+    - Also m1: four unpinned behaviours (refused delete notices, a failed draft Remove, AX5 draft stacking). And m2: the iOS dismissal bound for the tray-to-edit hand-off, the existing device item.
+    - Waiting for the Opus review, then one fix round (planner thread `mcp:launch:59db110da3a526a2c55ac8203b9e2fcfe75e18a89a5a581c8bd83205d45fd67b`, archived; unarchive it). The probes are copied to `scratch/p2-t26-review/probes/` and `scratch/p2-t26-second/probes/`.
 - **13 Nov 09:10: #457 (P3-T3, issue #187) opened at `2c642055`.**
   - 11 of 12 `real/` files are byte-identical; the receipt adds one install line.
   - RED was Node 5 of 17 and Workers 6 of 12, all assertions. GREEN passed, with neighbours 382. Mutants: 31 of 31 (Node 23, Workers 8), byte-identical to the planner's. `test:edge` 214 and `build:edge` passed.

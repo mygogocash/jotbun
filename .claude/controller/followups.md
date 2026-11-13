@@ -883,3 +883,29 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P4-T5:** add `GET /v1/slips/salt`, `GET /v1/slip-accounts`, `PUT /v1/slip-accounts/:id` and `SLIP_IMPORT_ENABLED` to `apps/edge/README.md` (ruling P15).
   - **The first task that adds another `transactions` column:** loosen `slips-vault.test.ts`'s upgrade case, which pins the columns exactly, as P3-T2's was loosened (ruling P4).
   - **Later, if slip accounts grow:** `listSlipAccounts` scans `slip_drafts` once per account (Sonnet n3).
+- P3-T8 (#454, merged 13 Nov as 02da8f6 at 53d24947; promotion #458). The reviews are `reviews/P3-T8.md` (Opus, approved: m1 to m3, n1 to n3) and `reviews/P3-T8-second.md` (Sonnet, approved: m1, m2, n1 to n3). The probes are copied out of the review trees: `scratch/p3-t8-review/probes/review-probes.test.ts`, and `scratch/p3-t8-second/probes/probe-t8-second.test.ts` and `probe-fuzz.test.ts`, with the fuzz result in `scratch/p3-t8-second/fuzz-result.json`. Carried:
+  - **P3-T9 (planning now on P3-T8's `real/`), must carry:**
+    - **Sonnet m1, a real defect, older than this task:** a model date that is not a calendar date throws.
+      - Which dates: `2026-10-32`, `2026-13-05`, `2026-00-10`, `0000-00-00` and `9999-99-99`. `isRealDate` (`server/ai/drafts.ts:30`) calls `toISOString()` and throws `RangeError`.
+      - What happens: `readOnce` (`slip-read.ts:158`) calls `sanitizeDrafts` outside any try, so the read answers 503 `AI_PAUSED` with the use spent, and D25's "implausible date" never reaches Opus.
+      - The fix: wrap `sanitizeDrafts` in `readOnce` so a throw is `{ kind: 'unusable' }` and Opus re-reads, and give `isRealDate` a `Number.isNaN(date.getTime())` guard. `parse` shares it, and would then keep the model's draft with `date_guessed`.
+      - The cases: a Haiku date of `2026-10-32` and one of `0000-00-00` are re-read by Opus.
+    - **Opus m1 / Sonnet MO2, money path:** an unusable or draftless Haiku answer followed by an Opus outage gives the use back, and today only the decline row is pinned. Add rows for a non-JSON answer, a draftless answer and an `unreadable` answer, each with `apiFailure(529)`: 503, two calls, `remaining.slip` 10.
+    - **R116's slip row (Sonnet note 1, probe PC2):** Haiku declines and Opus is never started, so `shouldRefund` is true today. Add it to R116's pin (PR4), and revisit the receipt's "unchanged on purpose" (`receipts/P3-T8.md:36`).
+    - **`choices` lives twice** (`service.ts:318-323`, `slip-read.ts:164-169`). P3-T9 edits `service.ts`, so move it to one module with one pin, holding the archived filters (Opus m3, Sonnet MB1 and MB2; probe PD).
+  - **P3-T9, or P4-T4 if P3-T9 does not touch `slip-read.ts` (test pins; the code is right today):**
+    - Opus m2 / Sonnet MC: an Opus answer with no draft does not replace Haiku's draft or its bank (probe PA / PM).
+    - Sonnet MJ: a whole answer of `null`, `[]` or `"hello"` goes to Opus (probe PL).
+    - Opus n1 / Sonnet MO3: the image's media type reaches both calls; a JPEG is a phone's camera photo (probe PC / PQ).
+    - Opus n2 / Sonnet MA: `tokens` count this read's calls only (`first`; probe PE / PB).
+    - Sonnet n1: `tokens` trusts the API's usage, and a usage without `input_tokens` gives NaN (probe PJ).
+  - **Housekeeping (next receipt or `service.ts` touch):**
+    - Sonnet n2: `service.ts:46-51`'s "every call is Haiku 5.5's" should name parse, the note and Ask Bun.
+    - Opus n3 / Sonnet n3: the receipt's risk note names one of two refund-after-billing paths. The second is an unusable Haiku answer followed by an Opus call that times out after it was sent.
+  - **P4-T4 (import mode) and P3-T22:**
+    - `date_guessed` also fires for a real date older than `sanitizeDrafts`' 90-day window, so an old genuine slip is read twice for nothing (probe PK). P4-T4's backfill needs a wider window or no date trigger for old dates.
+    - P3-T22 counts the escalations whose result still carries `date_guessed`, Haiku's latency against the 20 s cap, the escalation rate, and that a photo that is not a slip costs two calls.
+    - P4's per-slip deadline must leave Opus at least 2 s after Haiku's 20 s cap.
+  - **P3-T10 (logs):** a model failure inside a read that is then shown leaves no `ai_fallback` line now (an Opus failure or refusal, or a Haiku refusal that Opus then reads). Only the trace keeps it, so `$ai_generation` is where an Opus 429 or a refusal rate shows. A floor-skipped Opus call is recorded `sent: false, escalated: true, latencyMs: 0`; do not emit it as a model call. `RecordedCall.model` is the response's model.
+  - **P3-T17:** decide what the tray shows from `kind` and `drafts`, not `declined`: `declined: true` can come with Opus's drafts. `kind` is the model's word about the image, so do not read it as a check on what the image is.
+  - **P6C and P3-T22:** watch the `rejected` rate on `/v1/ai/slip` after an escalation. A systematic 400 on Opus (the fallback beta) would spend a use on every escalated read.
