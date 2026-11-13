@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 19:25: #457 (P3-T3) MERGED as `ab350e4`; the source-pins follow-up is planning.**
+  - **#457:** both reviews approved `2c642055` with no blocker, major or minor (nits and notes only), and CI was 9 of 9.
+    - The probes are in `scratch/p3-t3-review/probes/` and `scratch/p3-t3-second/probes/`.
+    - Issue #187 closed, worktree and branch removed, promoted as **#459** (stack #379 holds 43). Followups recorded; the review threads are archived.
+    - P3-T3's code files are at the head byte for byte, so the P4-T2 planner was told to prove on the head.
+  - **source-pins planner** `mcp:launch:9090027814b3f09dbb7b3988d54156e6d306d36ac495151d3ceec372de269855` (WT `source-pins` on `fix/source-pins`): followups line 637's edge-only pins, test-only and size S.
+  - **Live now:** the P3-T13 implementer (Haiku); the P3-T9, P2-T26-fix, P4-T2 and source-pins planners (Opus). **No open task PR except #456**, which is waiting for its fix round.
 - **13 Nov 19:20: the build resumed after a pause from about 09:25 to 19:05 (the usage limit); T3 resumed exactly the four live agents.**
   - **#457 (P3-T3):** CI 9 of 9 at `2c642055`. The Sonnet second review **approved**; the Opus review is running.
   - **#456 (P2-T26):** the Opus review also says **Needs fixes** (M1 = R123; m1 to m3, n1 to n3).

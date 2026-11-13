@@ -909,3 +909,24 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P3-T10 (logs):** a model failure inside a read that is then shown leaves no `ai_fallback` line now (an Opus failure or refusal, or a Haiku refusal that Opus then reads). Only the trace keeps it, so `$ai_generation` is where an Opus 429 or a refusal rate shows. A floor-skipped Opus call is recorded `sent: false, escalated: true, latencyMs: 0`; do not emit it as a model call. `RecordedCall.model` is the response's model.
   - **P3-T17:** decide what the tray shows from `kind` and `drafts`, not `declined`: `declined: true` can come with Opus's drafts. `kind` is the model's word about the image, so do not read it as a check on what the image is.
   - **P6C and P3-T22:** watch the `rejected` rate on `/v1/ai/slip` after an escalation. A systematic 400 on Opus (the fallback beta) would spend a use on every escalated read.
+- P3-T3 (#457, merged 13 Nov as ab350e4 at 2c642055; promotion #459). The reviews are `reviews/P3-T3.md` (Opus, approved: n1) and `reviews/P3-T3-second.md` (Sonnet, approved: n1 to n5), with no blocker, major or minor. Both found that the 503 before the token reveals only the service's state. The probes are `scratch/p3-t3-review/probes/zz-review-probe.test.ts` and `scratch/p3-t3-second/probes/zz-second-probe.test.ts`. Carried:
+  - **P4-T6 (the slips route):**
+    - add `'slips.read'` to `MODEL_ROUTE_WORKERS` and to the coverage case's first list;
+    - carry `gates: ['ai', 'imports']`, with `ai` first so `AI_PAUSED` answers when both are paused, and pin whichever code P4's plan wants;
+    - keep the release check (404) before the gates.
+    - `MODEL_ROUTE_WORKERS` is kept by hand: a model route in neither list passes the coverage case (Sonnet n2).
+  - **The next task that edits `ai-gate.test.ts` (test-only pins):**
+    - a model route under a fail-closed config answers `AI_PAUSED` with 30 (Opus n1, probe B's second case);
+    - a person can switch Bun off by name while `ai` is paused or the config is unreadable (Sonnet n1).
+  - **P3-T24 (the notice bump):** `ai-gate.test.ts:40` and `:77` hard-code `notice_version: 1`, as do `ai.test.ts`, `ai-uses.test.ts` and `ai-routing.test.ts`.
+  - **App tasks that build Tell Bun, the slip read, the attach step and Ask Bun in the wallet look (P3-T14's followers, P3-T17, T20, T21, P6B-T15):**
+    - treat `companion && !available` as "Bun is resting", not as missing consent, as `WalletAiSettingsScreen` does; today the old sheets open the consent sheet for someone who already agreed.
+    - During a pause `BunNote` calls the note route for everyone and drops the failure, so the Home note is absent for all.
+  - **P6C and the runbook:**
+    - deploy this reader before any `config:v1` names `ai`, rolled out everywhere: with gradual deployments, wait for 100% (Sonnet n3, Opus note 2);
+    - put the deploy order beside `apps/edge/README.md:98`;
+    - a scope name outside `EDGE_GATE_SCOPES` (`"AI"`, `"ai "`) fails the whole config closed, so validate scope names in `kv-seed` (P6C-T6);
+    - a KV change can take 60 s or more to reach other locations.
+  - **Owner, Q5:** today the preferences PUT saves while `writes` is paused and while the config fails closed. If the owner gates the preferences, say whether `writes` covers the PUT.
+  - **A transport follow-up (`followups.md` line 303, not P3-T3's):** `transportFromEnv`'s `ANTHROPIC_BASE_URL` mapping has no pin (mutant O12 survives). Without it, model calls would skip AI Gateway (§6.7).
+  - **If a pause is ever used to shed load** (Sonnet n4): the body is read before the gate answers.
