@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 03:20: #465 fully approved: the confirmation of `74142ebc` approves.** Seven PRs are now fully approved and wait only on CI. Merge order once runners return:
+  1. #460 P3-T13 (`14da2b4e`)
+  2. #461 P3-T9 (`5cb1055e`)
+  3. #462 source-pins (`d9b4dfb1`)
+  4. #463 P4-T2 (`19ef67fb`)
+  5. #456 P2-T26 (`e4313772`)
+  6. #464 P2-T18a (`7e2ae0dc`)
+  7. #465 P2-T18 (`74142ebc`; CI runs again once #464 has merged)
+
+  - The confirmation (`reviews/P2-T18.md`, "Confirmation of 74142ebc") reran 20 mutants and a compat run with #464's files laid over (34 of 34, 6 of 6). It confirms Sonnet's m1 from the installed source: on iOS no Magic Tap reaches JS (Fabric only), so the + is the working path. That device check is first on P2-T38's list.
+  - The #465 Opus thread is archived.
+  - **After each merge:** run `promote_pr.sh`, update followups' headers (P2-T18a and P2-T18 are already written), copy the probes, and dispatch the ready briefs. That means P4-T4 after #461 and P4-T7 after #463, then plan `saved-pins` after #464 and `shell-carry` after #465.
+  - **Live now:** the P4-T17 and 1D-T14 planners.
 - **14 Nov 03:05: #464 fully approved (the confirmation of `7e2ae0dc` approves); #465 approved twice, its pins pushed as `74142ebc`.**
   - **#464 (P2-T18a)** waits only on CI. The confirmation (`reviews/P2-T18a.md`, "Confirmation of 7e2ae0dc") reran 15 mutants, each killed by the case meant for it. Its optional n2 (race A's opening part dressed as an online save) goes to `saved-pins` in followups. Both #464 review threads are archived.
   - **#465 (P2-T18):**

@@ -47,7 +47,7 @@
   Proof: `.claude/controller/scratch/p2-t18-pins/`.
 - [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide. It runs again once #464 has merged.
 - [x] Independent review (Opus), and a second review (Sonnet): the single host and the copy route (P13, P14), private mode under the shell (P16), the layout order (P5, P6) and Magic Tap. Both approve.
-- [ ] The Opus reviewer confirms `74142ebc`.
+- [x] The Opus reviewer confirms `74142ebc`: approved, after 20 mutants rerun (each killed) and a compat run with #464's files laid over (34 of 34, 6 of 6).
 - [ ] SKIPPED: device checks (the refused present on iOS, the + and Magic Tap under VoiceOver, the bar at the largest text size).
 
 Closes #164 once merged, after #464 (closed by hand, since the base is not the default branch).
