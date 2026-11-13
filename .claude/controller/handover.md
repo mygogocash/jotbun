@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 05:26: #467 (1D-T14, closes #145) opened at `948391f7`; its two reviews started.**
+  - The implementer reported DONE in about 8 minutes. The controller checked the commit: all 8 `real/` files are byte-identical, the planner's receipt included.
+    - RED: Node 9 of 47 and render 3 of 3, on assertions only. GREEN: 47 and 3. Mutants: 12 of 12, equal to the planner's.
+    - Gate: 11 render files with 158 tests, `test:app` 37 and `test:unit` 1118.
+    - Nothing was installed (the link farm).
+    - The receipt does not record the controller's acceptance, since the brief pins its checksum. The PR body records it.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:5fec0d47ad23d12c6ef69285d0000af3ca4f8e10e42ff20e6b163a4bd7158a3e`, writing `reviews/1D-T14.md`;
+    - Sonnet: `mcp:launch:ac04b64617bbc40052153f3039cd2f5c646b71e953eedae9b1b4d0f4d83bbec1`, writing `reviews/1D-T14-second.md`.
+
+    Notes: `scratch/dispatch/1D-T14-review-notes.md`. Their scratch trees must farm from `p4-t17` too. The implementer thread is archived.
+  - **Live now:** the #467 reviews (Opus and Sonnet).
 - **14 Nov 05:16: 1D-T14 READY (R125 in) and building (Haiku) on a node_modules link farm; CI still blocked (05:14: all eight PRs 9 of 9 queued).**
   - **1D-T14's planner reported READY at 03:08.** The controller saw it only at 05:15: its sums were rewritten before the watcher's `newer:` baseline, so read a reworking planner's thread, not only its sums.
     - The kit: 41 of 41 sums, `orig/` 6 of 6 at the head. Size M.
