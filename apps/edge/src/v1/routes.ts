@@ -29,6 +29,12 @@ export type VaultRoute = {
   starts?: true
   /** The live socket (1D-T10): UserVault#fetch answers it as a WebSocket, so the route has neither `vault` nor `worker`. */
   live?: true
+  /**
+   * The release var the route waits for (P4-T3, S13). Until it is `1` or `true`
+   * the route answers 404 right after matching, before its body, gates and token,
+   * as if it did not exist.
+   */
+  release?: 'SLIP_IMPORT_ENABLED'
 }
 
 /** The default: 201 for POST, 200 otherwise (defaultStatus in the PostgreSQL route table). */
@@ -123,6 +129,11 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'POST', path: '/v1/ai/slip', access: 'current_policy', worker: 'ai.slip', status: 200 },
   { method: 'GET', path: '/v1/ai/note', access: 'bound_session', worker: 'ai.note' },
   { method: 'POST', path: '/v1/ai/ask', access: 'current_policy', worker: 'ai.ask', status: 200 },
+  // Slip import (P4-T3, S13): the salt answers before slip import opens (a single read's slip ref needs it); the
+  // slip accounts are 404 until SLIP_IMPORT_ENABLED is on. Mapping an account is a plain write (S1).
+  { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
+  { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
+  { method: 'PUT', path: '/v1/slip-accounts/:id', access: 'current_policy', vault: 'slipAccounts.update', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -213,11 +224,12 @@ export const VAULT_RETIRED_ROUTES: readonly string[] = [
 ]
 
 /**
- * Routes the PostgreSQL edge never had (plan 1D): served here, absent from the
+ * Routes the PostgreSQL edge never had (plans 1D and P4): served here, absent from the
  * NestJS controllers and never shadowed by one of their routes
- * (route-coverage.test.ts): the live socket (1D-T10) and the analytics answer (1D-T11).
+ * (route-coverage.test.ts): the live socket (1D-T10), the analytics answer (1D-T11),
+ * and the slip salt and slip accounts (P4-T3).
  */
-export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics']
+export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id']
 
 /**
  * The PostgreSQL edge's own routes, which NestJS never had: the AI companion

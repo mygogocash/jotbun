@@ -21,6 +21,8 @@ export type V1Env = {
   MIN_CLIENT_VERSION_ANDROID?: string
   /** Uploads stay unexposed (404) unless this is `1` or `true`. */
   IMPORT_UPLOADS_ENABLED?: string
+  /** Slip import's routes that name it as their `release` answer 404 unless this is `1` or `true` (P4-T3, S13); the salt answers without it. */
+  SLIP_IMPORT_ENABLED?: string
   /** The public cashback catalogue stays 404 unless this is `1` or `true`. */
   GOGOCASH_BRIDGE_ENABLED?: string
   /** GoGoCash's public brand catalogue. Without it, the built-in brands are served. */
