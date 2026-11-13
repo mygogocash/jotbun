@@ -1,0 +1,5 @@
+X1 KILLED: closed is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+X2 KILLED: leave is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+X3 KILLED: show is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+X7 KILLED: the bound armed on iOS only [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+4 killed, 0 survived, 0 not as expected

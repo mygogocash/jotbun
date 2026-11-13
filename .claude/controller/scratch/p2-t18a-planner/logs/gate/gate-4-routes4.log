@@ -1,0 +1,33 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 0: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 9ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 1: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 2ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > 2: the screen only under the planning area (on since E2 checkpoint 2), with the shared resources 1ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area wallets.tsx shows the Bun Wallet list with the shared resources, ?reorder=1 opens its reorder tray, and the legacy build still goes back to Home 1ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area the new-wallet and edit routes show the Bun Wallet screens with the shared resources, ?setup=1 and the list return there, and otherwise they go to the wallets list 2ms
+ ✓ src/screens/redesign/planning/PlanningRoutes.render.test.tsx > in the wallet area categories.tsx shows the Bun Wallet categories with the shared resources, and the legacy build still goes back to Home 1ms
+(node:50226) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > the first run and sign-in: redesigned under the account area (on since E2 checkpoint 4), today's screens with it off 21ms
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > settings and privacy: only under the account area (on by default), and only signed in 3ms
+ ✓ src/screens/redesign/account/AccountRoutes.render.test.tsx > /settings/ai: Bun and AI settings only with the wallet and bunai areas, else Settings 2ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > History: the legacy flag wins, then the redesign under the flag, else the current list 9ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > a record: only under the flag, with an id; otherwise back to the list 2ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted: only under the flag; otherwise back to the list 1ms
+ ✓ src/screens/redesign/SpendRoutes.render.test.tsx > Recently deleted under the wallet area: the wallet screen on the shared resources; switched off, the old screen; legacy or -core, back to the list 2ms
+ ✓ src/screens/redesign/insights/InsightsRoutes.render.test.tsx > 0: the screen only under the insights area (on since E2 checkpoint 3) 8ms
+ ✓ src/screens/redesign/insights/InsightsRoutes.render.test.tsx > 1: the screen only under the insights area (on since E2 checkpoint 3) 1ms
+ ✓ src/screens/redesign/insights/InsightsRoutes.render.test.tsx > spend insights: when wallet redesign is enabled, shows wallet insights screen 1ms
+ ✓ src/screens/redesign/insights/InsightsRoutes.render.test.tsx > a recap: only under the area, for a real month; otherwise back to Insights or Home 1ms
+
+ Test Files  4 passed (4)
+      Tests  17 passed (17)
+   Start at  00:44:14
+   Duration  783ms (transform 189ms, setup 138ms, import 530ms, tests 69ms, environment 307ms)
+

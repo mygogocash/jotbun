@@ -1,0 +1,138 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:21476) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag off: exactly the current layout, with no tab bar 18ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > approved: the redesigned layout is the default 15ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: Home and History tabs under the screen, with the add button in the centre 10ms
+ × src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back 6ms
+   → Unable to find an accessible element with the role "tab" and name "History"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"device-diary"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"wallet-shell"[39m
+          [33mstyle[39m=[32m"background-color: rgba(244, 243, 249, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-text-146c3p1"[39m
+              [33mdir[39m=[32m"auto"[39m
+            [36m>[39m
+              [0mcurrent screen[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/add 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003/edit 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the legacy flag still wins: no diary provider and no tab bar 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag undefined) 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag core) 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks en, in light and dark, with 44 pt targets 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks th, in light and dark, with 44 pt targets 11ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks vi, in light and dark, with 44 pt targets 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > which tab a path belongs to 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the Home route: the new Home under the flag, the legacy flag first, else the current Home 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > planning on: no tab of its own; the bar hides on budget, wallets and categories 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders 9ms
+(node:21475) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > a never-asked question takes the screens' place only in the analytics area 22ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes 17ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > /spend/add?type=income in the wallet area opens the income tray over Home 25ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > in the wallet area, a never-asked consent question renders in place of the wallet shell 8ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray 160ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out 57ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed 49ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5) 40ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray 16ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96 7ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time 25ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress) 2043ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform 1728ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back
+TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "History"
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"css-view-g5y9jx"[39m
+      [33mdata-testid[39m=[32m"device-diary"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"css-view-g5y9jx"[39m
+        [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"css-view-g5y9jx"[39m
+          [33mdata-testid[39m=[32m"wallet-shell"[39m
+          [33mstyle[39m=[32m"background-color: rgba(244, 243, 249, 1.00); flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"css-view-g5y9jx"[39m
+            [33mstyle[39m=[32m"flex-grow: 1; flex-shrink: 1; flex-basis: 0%;"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"css-text-146c3p1"[39m
+              [33mdir[39m=[32m"auto"[39m
+            [36m>[39m
+              [0mcurrent screen[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/screens/redesign/SpendLayout.render.test.tsx:167:17
+    165|   nav.pathname = '/spend/all';
+    166|   mount(<SpendLayout />);
+    167|   expect(screen.getByRole('tab', { name: 'History' }).getAttribute('ar…
+       |                 ^
+    168|   fireEvent.click(screen.getByRole('tab', { name: 'Home' }));
+    169|   expect(nav.router.navigate).toHaveBeenCalledWith('/spend');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 29 passed (30)
+   Start at  00:17:04
+   Duration  5.75s (transform 1.94s, setup 139ms, import 2.62s, tests 4.30s, environment 279ms)
+

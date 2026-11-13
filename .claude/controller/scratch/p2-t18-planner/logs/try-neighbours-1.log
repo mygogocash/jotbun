@@ -1,0 +1,29 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-crypto/build/Crypto.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/Expo.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/Expo.fx.web.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/winter/index.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/winter/runtime.js" points to missing source files
+ ❯ src/screens/redesign/SpendLayout.render.test.tsx (0 test)
+ ❯ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendLayout.render.test.tsx [ src/screens/redesign/SpendLayout.render.test.tsx ]
+ FAIL  src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx [ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx ]
+Error: Cannot find module '/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/async-require/hmr' imported from /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo/build/async-require/setupHMR.js
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  92 passed (92)
+   Start at  00:10:22
+   Duration  8.26s (transform 5.80s, setup 212ms, import 6.72s, tests 6.16s, environment 474ms)
+

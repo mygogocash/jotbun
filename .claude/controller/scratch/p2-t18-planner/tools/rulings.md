@@ -1,0 +1,139 @@
+- **P1. Ready.** Starts after P2-T12 (`CardFramesProvider`, #395), P2-T16 (`AddTrayHost`, its bound and `SavedContext`, #439 as `f11e122`) and P2-T17 (`SavedToastHost`, `useSavedToast`, `noticeOf`, #451 as `9cdc1f8`), all in the head. The plan's two conditional consumers: 1D-T8 has merged (#372), so this task writes the consent swap and its two cases (R82, followups line 239); 1C-T9 has not, so no `TermsGate` is in the file, the order test checks the gate only when the file holds one (the plan's wording), and 1C-T9 writes the gate into this branch (W34: "whichever lands second"). No package, lockfile change, Cloudflare resource, account setting or owner decision is needed; the copy follows owner Q3's default (P15).
+- **P2. The split (the controller's question).** P2-T18 is planned as two briefs, each proved alone on the head:
+  - **P2-T18a** (`briefs/P2-T18a.md`, kit `scratch/p2-t18a-planner/`): the followups' first steps, all in merged files. P2-T17's reviews' m1 (today's total: races A and B, and the closed diary) and m2 (PV1, the iOS announcement in private mode); P2-T21's confirming review's m2 (the new-wallet flow's `leave()` once only), m1 (`nativeID` on the card's place), n1 (step 2's back after a refusal), n2 (the editor's ref under StrictMode) and its receipt corrections, m3 among the risks. 10 files, 20 mutants.
+  - **P2-T18** (this brief): the plan's shell, with P2-T16's must-carries (P14).
+  - They share no file, so both can be built at once. P2-T18a merges first: line 838 asks for its guards before the shell mounts `SavedToastHost`, and line 700 for the once-only back before (or with) the bar hidden on `/spend/wallet/*`. Neither brief checks the other; the controller keeps the order.
+- **P3. The proof's base** is `8ac7b4c3` (code `ab350e48`, #457's merge, plus controller state). The head when the kit was finished, `90006f03`, has the same `apps/`, `packages/` and docs (`git diff --stat` is empty; `PL/HEAD.txt`). #460 (P3-T13, approved, waiting on CI) changes `AddTrayHost.tsx`, which this task reads but does not edit. So the planner also laid #460's ten `real/` files (`compat/files.txt`) over a second tree (`compat-tree/`, the shell's final files on the head's `apps` and `packages`). There, the typecheck, the two Node files, the five render files of Step 6.6 (131 of 131) and the bound's four mutants X1 to X3 and X7 (each killed, `logs/compat-*`) all pass. The brief works before or after #460 merges.
+- **P4. The names and files beyond the plan's list.**
+  - (a) **`home/shellRoutes.ts`**: `walletTab` (the plan's) lives in a pure module, so the plan's `walletTab` cases run under Node with the pure-module rule (Global Constraints). Beside it are `walletTabInset(visible, large)` (the inset's rule, P10), `WALLET_TAB_INSET` (84) and `WALLET_TAB_INSET_LARGE` (96), `WALLET_TAB_ROUTES` (the two tabs' routes) and `addRequestOf(params)` (what `/spend/add`'s link asks the tray, P13). `useWalletTabInset` (the plan's) is in `WalletTabBar.tsx`, since it reads the router and the text size; `WalletShell.tsx` exports only `WalletShell`.
+  - (b) **`home/shellRoutes.test.ts`**, a third test file, for (a)'s pure rules.
+  - (c) **`ADD_BUTTON_SIZE`** (60) is exported beside `AddButton`.
+  - (d) **Two shared test files beyond the plan's `SpendLayout.render.test.tsx`.** The layout now loads the shell, which reaches Quick add's command keys (`screens/v1/parts.tsx` imports `expo-crypto`, whose real module cannot load under vitest: `Cannot find module .../expo/build/async-require/hmr`, checked). So every suite that imports the layout mocks `expo-crypto`, as about twenty suites already do. `HistoryReturn` and `QuickAddScreen` already did. `AnalyticsConsentScreen.render.test.tsx` gains the mock; without it the file fails to load. In `SpendLayout.render.test.tsx`, beside the mock:
+    - its `HomeScreen` stand-in keeps the real `syncPlan` (the shell reads it, P7);
+    - `QuickAddScreen` gets a stand-in (P13's cases see it);
+    - the Slot, the route's params and the shared resources become settable by a case (`nav.slot`, `nav.params`, `shared.resources`), each reset before every case, so the old cases see what they saw.
+- **P5. The layout (R58, R82, W34).** The wallet branch is one statement, after the sign-in redirect, the legacy build and `ask`, and before the core branch: `if (isRedesignEnabled('wallet')) return <DeviceDiaryProvider><CompanionBoundary>{ask ? <AnalyticsConsentScreen /> : <WalletShell><HistoryKeepProvider><Slot /></HistoryKeepProvider></WalletShell>}</CompanionBoundary></DeviceDiaryProvider>;`.
+  - **One condition** (followups line 239): the layout's own `ask`, the plan's `askConsent`.
+  - **The question takes the whole shell's place**, inside `CompanionBoundary`, so no bar, + or tray is drawn while it shows. A tray opened in the glimpse of Home before the question closes unsaved (W34's stated departure).
+  - **The order test** finds the branch as the text from its condition to the first `;`. JSX holds no semicolon, so it stays one statement. The test checks the four providers open in order, close in reverse, and sit between the legacy check and the core branch.
+- **P6. `all` now includes the wallet area.** The wallet branch comes first (the plan's), so with `EXPO_PUBLIC_REDESIGN=all` the spend layout is the wallet shell. SpendRoutes' `all` case already expects the wallet's screens. `SpendLayout`'s case "flag on: History is selected on /spend/all and Home navigates back" tests the kit's bar, written when `all` meant the kit. It now names `all,-wallet`, with a comment, and its assertions are unchanged. No other test of the layout uses `all`.
+- **P7. The shell (the plan's nesting).**
+  - **The nesting, outside in:**
+    - `SpendV1Provider` with `getSharedV1Resources()` (the singleton every route wraps; the routes keep their own provider, harmless under it);
+    - `WalletLooksProvider`;
+    - `CardFramesProvider`;
+    - `SavedToastHost`;
+    - `ShellTray`, which reads `useSavedToast()` and the diary;
+    - `AddTrayHost onSaved blocked`;
+    - `ShellFrame`: the root `View` (`testID="wallet-shell"`, `onMagicTap={openAdd}`) holding the screen, the + and the bar.
+  - **`blocked`** is the plan's `syncPlan(useDiaryView(), false, tc).upgrade`, Home's own rule (C5): a `paused_upgrade` draft or an `upgrade_required` outcome. The + is then disabled, and the host opens nothing whoever asks: a screen, Magic Tap or the add route.
+  - **`onSaved`** shows `noticeOf(saved, context.lookups, context.offline, tc)`. `tc` is the fourth argument P2-T17 added (its P5), so a built-in category is named in Thai.
+  - **The mounting rules** (followups line 838):
+    - inside `WalletRoot`'s `PrivateModeProvider` (`app/_layout.tsx`, unchanged), since outside it `usePrivateMode()` answers not hidden;
+    - the toast's host at the window's origin: the providers above it draw no `View` (`DeviceDiaryProvider`, `CompanionBoundary` and the five providers are contexts), so its box is the stack screen's, the whole window, where `measureInWindow` aims the chip;
+    - around `AddTrayHost` and inside `CardFramesProvider`.
+  - **One host for the app's life** (followups line 777): the shell is mounted once, in the spend layout, which stays mounted under Settings and every other stack screen. A Node case scans `app/` and `src/` (not tests, test helpers or the catalogue, whose sections may mount their own) and finds `<AddTrayHost` only in `WalletShell.tsx`.
+- **P8. Lifetimes** (followups lines 359, 379 and 414).
+  - **The looks provider lives as long as the spend layout.** A look change that could not be stored shows until the spend layout unmounts: a sign-out, the app closing, or leaving `/spend` for a route that replaces it.
+  - **`frameOf` answers while a `CardStack` is mounted under the shell** (Home, P2-T24), and the chip flies only then: a case registers a card's view as a screen inside the shell, and the chip drops into it. Outside the provider `frameOf` is null and nothing flies, so the case kills mutant S9.
+  - **The route's own `SpendV1Provider`** inside the shell's is harmless (followups line 414): both are the same singleton.
+- **P9. The bar** (bw-home, dk-home, W13, ax-voiceover, ax-large-home rule 8).
+  - **The row and its items.** A `tablist` row under the screen, never over it (as `SpendTabShell`'s is), on `ground` with a `hairline` top border. Its bottom padding is the phone's own inset (at least 6 pt).
+  - **Tabs and the link.** กระเป๋า (`/spend`) and สรุป (`/spend/insights`) are tabs, each selected on its route. ฉัน is a link that pushes `/settings` and is never selected (no selected state at all). The board's cashback item is P6B's (D42).
+  - **Places.** Each item says its place in `aria-valuetext` (`home.tabPlace`: 1 จาก 3, 2 จาก 3, 3 จาก 3), which iOS reads as the item's value. Its name stays the label, so a case finds each by role and name.
+  - **Sizes.** Each item is at least 44 pt tall and bw-home's 56 pt wide.
+  - **Labels and colours.** Labels are Anuphan 11 pt (bw-home's size, set over the `caption` role). The selected item is in `ink`, 700; the others are in `quietOnGround`, the palette's quiet text on the ground, held at 4.5:1 by `WALLET_TEXT_PAIRS`.
+  - **Text sizes.** The labels stop at iOS's largest standard size (`maxFontSizeMultiplier={LARGEST_STANDARD_SCALE}`, as the kit's `TabBar` and Apple's own bars do), and a long press shows each item's name large (the large content viewer). At the largest text sizes (`useLargeText`, a font scale of 1.5 and up, as `CardStack` and `Tray` decide) the labels hide, the icons grow to 30 pt and the items to the AX board's 52 by 64 pt. The native-only props are held by a source check.
+  - **Presses.** The selected tab does nothing when pressed again; the other navigates (`router.navigate`).
+- **P10. The inset.** The bar is a row of the layout, so a screen needs no room for the bar itself. `useWalletTabInset()` is what a screen keeps clear of the +, which floats 16 pt above the bar.
+  - **The numbers:** 84 at the standard sizes (bw-home's 84 pt bar, which is also 16 + the 60 pt button + 8), 96 at the largest (ax-large-home: "A 96 pt bottom inset keeps + off the last row"), and 0 where the bar is hidden.
+  - **Fixed numbers.** They are the plan's, and do not follow the phone's bottom inset, which the bar itself absorbs.
+  - **Who reads it.** P2-T24 (Home) and the screens under the bar. P20 names Insights.
+- **P11. The +** (bw-home, dk-home, ax-voiceover).
+  - **Its look:** 60 pt, `primary`, with a 26 pt + in `onPrimary` (bw-home's 2.6 stroke). It sits absolutely at the screen area's bottom right (right 18, bottom 16, so 16 pt above the bar). It has bw-home's lift by day (`0 12px 26px rgba(17, 16, 20, 0.3)`) and none at night (dk-home), and is dimmed to 0.4 while disabled.
+  - **What it says:** named จดรายการ (`home.add`), with the hint แตะสองครั้งเพื่อจดรายจ่ายใหม่ (`home.addHint`). react-native-web drops `accessibilityHint`, so a source check holds it.
+  - **Where and when:** shown where the bar is; disabled while blocked (P7).
+  - **At AX5** it stays the plan's 60 pt; the AX board draws 64 (P20).
+- **P12. Magic Tap** (ax-voiceover). `onMagicTap={openAdd}` is on the root `View`, the same `openAdd` as the +'s, so it works on every screen inside the shell. A screen that wants Magic Tap for its own main action sets its own `onMagicTap`, which iOS asks first. react-native-web drops `onMagicTap`, so the plan's case does two things:
+  - it reads the source: one `onMagicTap=`, on `<View testID="wallet-shell"`, the same `openAdd` as the + ;
+  - and, for "a probe calling openAdd", it calls the root `View`'s own prop. React keeps that prop in the `View`'s fiber, which the case reaches from the root element's `__reactFiber$` key (test-only). It does so on Insights, and the spending tray opens.
+  - Mutants S13 to S15 die on it.
+- **P13. The add route, and copies (the controller's privacy note).**
+  - **In the wallet area** `/spend/add` (`app/spend/add.tsx`) draws nothing. Once, in an effect, it opens the shell's tray with `addRequestOf(params)`: a type (`expense`, `income` or `transfer`), `walletId` and `copyOf`, each only when named, and nothing else. Then it calls `router.replace('/spend')` (the plan's).
+  - **When.** Only when the layout mounts the shell, on the layout's own two conditions (`isRedesignEnabled('wallet') && !isLegacySpendEnabled()`). In the legacy build the layout draws no shell, so `useAddTray()`'s fallback would push `/spend/add` again, a loop.
+  - **Once.** A ref keeps the effect to one run. It must survive React's development double run, and the tray's value changes as the tray opens; mutant D6 shows the second run.
+  - **Elsewhere, today's Quick add.** Outside the wallet area, and in the legacy build, the route is today's Quick add.
+  - **The controller's privacy note** (#456's confirming review): outside a host, a record's copy pushes `/spend/add?copyOf=...` (`AddTrayHost.tsx:127-128`), and today's Quick add reads no private mode. This brief does both of the note's options:
+    - **(a) the host is on every route a record can be copied from.** Every `/spend/*` route, the record screen included (`app/spend/record/[id].tsx`, P2-T26), renders inside the layout's wallet branch, inside the shell. So the record screen's `useAddTray()` is the shell's host, and its copy opens the wallet's tray under the wallet's private-mode rules: the copied amount is a fill, masked until a key is pressed (R106). The new case "a record copied from a screen in the shell opens in the wallet's tray ..." pins it in private mode.
+    - **(b) the guard:** in the wallet area `/spend/add` never draws Quick add. So a copy from anywhere without a host (the fallback's push) lands in the shell's tray too. Pinned by "a record's copy linked to /spend/add in the wallet area opens in the shell's tray, never today's Quick add", and mutants D2 and D7.
+    - Outside the wallet area the copy is today's Quick add, in today's look, where private mode is not offered. In the legacy build the record route redirects to the list, so no copy starts there.
+    - Inside the tray the copy follows P2-T16's rules: what the person typed shows on confirm (R106, R117). The owner's E2-B question on those fields (followups, #439's confirming review m1) stands.
+- **P14. P2-T16's must-carries** (followups line 777; its confirming review's m2).
+  - **One host:** P7.
+  - **PROBE-C1 and PROBE-C3** are two cases of the shell's suite:
+    - the shell is redrawn by sync progress every 400 ms while a tray waits on iOS for a dismissal UIKit never ends, and the tray is still freed at the bound (kills X1 to X3: `closed`, `leave` and `show` without `useCallback`);
+    - an open and a close in one batch never show a Modal, and the bound frees the host on the web (kills X7: the bound armed on iOS only).
+  - **Why in the shell's suite.** They are in `WalletShell.render.test.tsx`, not `AddTray.render.test.tsx`: the shell is the parent the review worried about ("the toast host, sync progress"), and `AddTray.render.test.tsx` is #460's file, which this task leaves alone.
+  - **The refused present** (UIKit refusing a present while a dismissal is in flight) is a device check, SKIPPED here: the controller's, before the wallet area is approved (P2-T38). The + and Magic Tap reach the host only in the wallet area, which is off until then. P2-T26's second review's m2 (the tray-to-edit hand-off has no bound if iOS never reports the dismissal) is the same device item.
+- **P15. Copy.** `home/copy.ts` gains the plan's six lines, with the Thai as the plan writes it. The English lines are drafts (owner Q3): `Wallet` (singular, since `wallets.title` has `Wallets` with other Thai, and E2 marks shared English), `Insights` (`insights.title`'s pair), `Me`, `{n} of 3`, `Add an entry` and `Double-tap to add new spending`. `draftText.test.ts` holds the table to its rules, and passes (Step 6.3).
+- **P16. Private mode (R114).** The shell draws no amount and quotes nothing of its own: the bar and the + have neither. The eye is Home's (P2-T24). What the shell mounts follows private mode because it is mounted under `WalletRoot`'s provider. Two cases pin that:
+  - a save in private mode shows the toast masked (`฿••••`, said as ซ่อนยอดเงินอยู่), with no digit in its text or label;
+  - a copy in private mode opens the wallet's tray with the copied amount masked, and draws neither its amount nor its typed place (P13).
+- **P17. The cases beyond the plan's**, each for a sentence of the plan or a guard a mutant needs:
+  - **Node:**
+    - the inset's three numbers (P10);
+    - the add route's request (P13);
+    - the branch after the sign-in redirect and the legacy build and before the core branch (L5, L6);
+    - the shell's nesting by source (S10 to S12: the looks provider and the shared resources, which the test harness's own providers would otherwise mask);
+    - one host for the app's life (P7).
+  - **The shell's suite:**
+    - a save kept on the phone says rh-offline's words (S7);
+    - the chip drops into a card on the screen (P8, S9);
+    - private mode (P16);
+    - one tray at a time through the shell's host (S19);
+    - the copy (P13);
+    - P14's two;
+    - and, inside the plan's bar case: the routes, the link, the selected tab, the hidden bar and inset elsewhere, the bar's padding and tablist role, the +'s place, and the native-only props.
+  - **The layout's suite:** the plan's two, the copy's link (P13) and the consent case (R82). The wallet case also covers `core,wallet`, `all`, `wallet,-wallet`, the legacy build and the sign-in redirect. The income case also shows today's Quick add outside the wallet area and in the legacy build (D1, D2).
+- **P18. 87 mutants: 86 killed, 1 equivalent.** Every failing case of each kill is an `AssertionError` (`first_errors.py`).
+  - **The plan's:** R1 (the bar on `/spend/all`), S1 (`blocked` from the outcome's status only), L1 (the shell above the diary), L2 (the terms gate in the `screens` element only), L3 and L3b (the question in the `screens` element only) and L4 and L4b ("render the consent question inside `WalletShell`", the plan's seventh, followups line 239: the order test's and the layout's consent cases both fail).
+  - **P2-T16's confirming review's:** X1 to X3 and X7, which change `AddTrayHost.tsx` and restore it.
+  - **The equivalent one, S5:** `onSaved` calling `show` twice in one save. React draws the two state changes of one save in one render, so one toast mounts and reads once, as with one call. S5b shows a notice shown again 50 ms later, which the toast-once case kills by waiting 200 ms before it counts the reads (ordered by when the timers fall due).
+  - **Batches.** The planner ran them in three foreground batches, as Step 5 does.
+- **P19. The gate (R100).** Run: `typecheck:app` and `typecheck:routes` (two routes change); the focused files RED to GREEN; `test:app`; `test:unit` (the Hermes guards); the four routes tests and the eight kit render files (the controller's rules); every suite that imports the spend layout or the add route; `export:web` (routes change); `git diff --check`. Not run: the full render suite, the iOS export, the database suites and `test:ops` (CI's, R100).
+- **P20. For E2-B and E2-D, and notes for later tasks** (the receipt carries them):
+  - **The differences from the boards:**
+    - the bar's inactive items are `quietOnGround` (`#4A4756` by day), a shade darker than bw-home's `#6B6878`;
+    - the bar is solid `ground`, where the board draws it at 94%, since nothing scrolls under a row;
+    - no cashback item (D42);
+    - the + stays 60 pt at AX5 (the AX board's 64);
+    - the labels' bold is 700 for the selected item, as bw-home draws it.
+  - **For screens under the bar:**
+    - **P2-T24 (Home):** pad the scroll content's bottom by `useWalletTabInset()` and not the phone's inset (the bar takes it), and mount the `CardStack` so the chip has a card to drop into.
+    - **Insights (P2-T31's `WalletInsightsScreen`, merged):** it pads `insets.bottom + 24`. Under the shell, the bar below already takes the phone's inset, and the + covers the last 18 pt or so. Switch it to `useWalletTabInset()` in a small follow-up or P2-T37's sweep. Not here: it is P2-T31's file, and its catalogue sections render it outside a router path.
+  - **For 1C-T9:** write `<TermsGate ...>` between `<DeviceDiaryProvider>` and `<CompanionBoundary>` in the wallet branch too. The order test then checks it.
+  - **For P2-T35:** the shell's bar hides on `/spend/setup`.
+  - **Device checks (SKIPPED):**
+    - the refused present (P14);
+    - VoiceOver saying each item's place once (if iOS also counts a tablist's items, drop the `aria-valuetext`);
+    - Magic Tap on a phone;
+    - the large content viewer;
+    - the bar and the + at AX5;
+    - the toast and the chip over Home (P2-T24).
+- **P21. The followups that name this task** (`grep -n P2-T18 followups.md`: lines 239, 359, 379, 414, 698 to 701, 777 and 838; and P2-T26's note):
+  - **Carried here:**
+    - 239 (P5, P18's L4);
+    - 359 (P8);
+    - 379 and 414 (P7, P8);
+    - 698 (the looks provider is mounted, P7);
+    - 777 (P14: one host, the two pins and the device item);
+    - 838's mounting rules (P7);
+    - P2-T26's note (P14's device item);
+    - the controller's privacy note on copies (P13).
+  - **Carried by P2-T18a** (P2):
+    - 699 to 701 (P2-T21's m2, and its m1, n1 and n2 with it, since P2-T18a edits `src/wallet/wallets`);
+    - 838's m1 and m2.
+- **P22. Clear of the work in flight; merge order.**
+  - **No file shared.** The approved PRs waiting on CI (#460, #461, #462, #463, and #456 after its fix round, head `e4313772`) touch none of this task's 12 files. #456's `SpendRoutes.render.test.tsx`, `wallet/records/*` and `app/spend/record/[id].tsx` are read here only through the routes test (Step 6.4).
+  - **#460** changes `AddTrayHost.tsx`. P3 proves this task on its version too.
+  - **Merge order:** P2-T18a before this task (P2). Otherwise either order works.

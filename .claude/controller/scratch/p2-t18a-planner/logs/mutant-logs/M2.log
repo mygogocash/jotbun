@@ -1,0 +1,56 @@
+(node:72109) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app/src/wallet/saved/savedMoment.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:72109) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/packages/contracts/package.json.
+✔ a save names itself as confirm does, and a transfer drops into where the money went (0.712291ms)
+✔ a draft never sent is removed by Undo (0.127ms)
+✔ a draft being sent or checked offers no Undo (0.077625ms)
+✔ a record the server holds is deleted at version 1 (0.061541ms)
+✔ today's money out adds waiting drafts once (0.077917ms)
+✔ today's money out counts a draft sent or acknowledged while the read does not list it, never a refused one, another day's or other kinds (0.072667ms)
+✖ today's money out leaves out a command Jotbun acknowledged at or before the read's revision: the read saw it deleted (0.568125ms)
+✔ the toast follows bw-saved, and hides the amount in private mode (0.307709ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.375084
+
+✖ failing tests:
+
+test at src/wallet/saved/savedMoment.test.ts:105:1
+✖ today's money out leaves out a command Jotbun acknowledged at or before the read's revision: the read saw it deleted (0.568125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   '13200',
+      '8200',
+  -   '8200',
+      '13200',
+      '13200',
+      '13200',
+      '13200'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app/src/wallet/saved/savedMoment.test.ts:115:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '13200', '8200', '13200', '13200', '13200', '13200' ],
+    expected: [ '8200', '8200', '13200', '13200', '13200', '13200' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

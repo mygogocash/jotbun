@@ -1,0 +1,23 @@
+(node:44482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app/src/wallet/saved/savedMoment.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44482) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/packages/contracts/src/index.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/packages/contracts/package.json.
+✔ a save names itself as confirm does, and a transfer drops into where the money went (0.606375ms)
+✔ a draft never sent is removed by Undo (0.10225ms)
+✔ a draft being sent or checked offers no Undo (0.075334ms)
+✔ a record the server holds is deleted at version 1 (0.05725ms)
+✔ today's money out adds waiting drafts once (0.066333ms)
+✔ today's money out counts a draft sent or acknowledged while the read does not list it, never a refused one, another day's or other kinds (0.065125ms)
+✔ today's money out leaves out a command Jotbun acknowledged at or before the read's revision: the read saw it deleted (0.075375ms)
+✔ the toast follows bw-saved, and hides the amount in private mode (0.248083ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123.870292

@@ -1,0 +1,11 @@
+OK  real    apps/app/src/wallet/saved/savedMoment.ts d17191fdf488
+OK  real    apps/app/src/wallet/saved/savedMoment.test.ts 31bb49d05445
+OK  real    apps/app/src/wallet/saved/SavedToastHost.tsx fee627969881
+OK  real    apps/app/src/wallet/saved/SavedMoment.render.test.tsx 323a89168063
+OK  real    apps/app/src/wallet/wallets/NewWalletFlow.tsx 757ada21d526
+OK  real    apps/app/src/wallet/wallets/NewWallet.render.test.tsx 4f703bfcdc29
+OK  real    apps/app/src/wallet/wallets/WalletEditScreen.tsx 1b5274da0ddf
+OK  real    apps/app/src/wallet/wallets/WalletEdit.render.test.tsx fc165699b519
+OK  real    docs/implementation/receipts/P2-T21-fix.md 4a15f2580add
+OK  real    docs/implementation/receipts/P2-T21.md d6c38ba31529
+green: 10 files, 0 not as expected

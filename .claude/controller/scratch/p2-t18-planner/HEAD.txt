@@ -1,0 +1,2 @@
+8ac7b4c36ac3c34494ac3f1afa5c2909e27ca3ac (proof tree: git archive of origin/claude/p1a-vault-core at 13 Nov 20:22; code ab350e48, #457's merge)
+90006f03696188a42c889019bfc4237483ba3c09 (the head when the kit was finished, 14 Nov 00:50: controller state only since 8ac7b4c3; git diff --stat 8ac7b4c3 90006f03 -- apps packages docs/superpowers docs/implementation is empty)

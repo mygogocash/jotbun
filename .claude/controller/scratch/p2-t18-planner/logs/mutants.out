@@ -1,0 +1,88 @@
+R1 KILLED: the bar shows on /spend/all (the plan's mutant) [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R2 KILLED: a trailing slash hides the bar [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R3 KILLED: Insights selects the wallets tab [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R4 KILLED: the bar shows everywhere [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R5 KILLED: Insights is a History route [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R6 KILLED: a hidden bar keeps an inset [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R7 KILLED: the largest sizes keep the standard inset [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R8 KILLED: the standard inset is 83 [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R9 KILLED: the largest inset is 84 [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R10 KILLED: any type in the link passes [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R11 KILLED: an empty wallet or copy passes [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R12 KILLED: the link's wallet is dropped [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R13 KILLED: the link's copy is dropped [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+B1 KILLED: ฉัน is a tab [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+B2 KILLED: ฉัน says it is not selected [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B3 KILLED: the wrong tab is selected [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B4 KILLED: each place is one more [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B5 KILLED: no item says its place [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B6 KILLED: ฉัน says it is second [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B7 KILLED: items are 40 pt tall [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B8 KILLED: items are 44 pt wide [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B9 KILLED: the largest sizes keep the standard items [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B10 KILLED: the largest sizes keep the labels [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B11 KILLED: the largest sizes keep 24 pt icons [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B12 KILLED: the selected label is quiet and the others ink [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B13 KILLED: a selected tab navigates again [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B14 KILLED: ฉัน navigates in place of opening Settings over the shell [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B15 KILLED: the inset ignores the text size [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B16 KILLED: the inset ignores where the bar is [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B17 KILLED: the bar is no tablist [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B18 KILLED: the bar ignores the phone's bottom inset [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B19 KILLED: the labels grow past iOS's largest standard size [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B20 KILLED: no large content viewer [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A1 KILLED: the + is never disabled [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A2 KILLED: the + is 56 pt [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A3 KILLED: the + is a card [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A4 KILLED: the + is named by its hint [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 8 failed | 3 passed (11); 8 AssertionError; restored sha256 equal
+A5 KILLED: the + has no hint [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A6 KILLED: the + sits at the left [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A7 KILLED: the + sits on the bar [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+A8 KILLED: the + is in the flow [AddButton.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S1 KILLED: blocked reads only the outcome's status (the plan's mutant) [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S2 KILLED: never blocked [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S3 KILLED: the host is never told it is blocked [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S4 KILLED: the + is enabled while blocked [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S5 SURVIVED (equivalent): a save shows two notices at once (equivalent: React draws the two state changes of one save in one render, so one toast reads once) [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 11 passed (11); no failing case; restored sha256 equal
+S5b KILLED: a save shows its notice again once the first has drawn [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S6 KILLED: a save shows nothing [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 3 failed | 8 passed (11); 3 AssertionError; restored sha256 equal
+S7 KILLED: a save kept on the phone is said as saved online [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S8 KILLED: no toast's host [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 3 failed | 8 passed (11); 3 AssertionError; restored sha256 equal
+S9 KILLED: no card frames [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S10 KILLED: no looks kept by the shell [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+S11 KILLED: the shell's screens on another route's resources [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+S12 KILLED: the looks below the toast's host [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+S13 KILLED: Magic Tap on the screen's View, not the root [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+S14 KILLED: Magic Tap opens income [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S15 KILLED: no Magic Tap [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+S16 KILLED: the + where the bar is hidden [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S17 KILLED: the bar on every screen [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+S18 KILLED: the + opens income [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 6 failed | 5 passed (11); 6 AssertionError; restored sha256 equal
+S19 KILLED: the screens outside the add tray's host [WalletShell.tsx / WalletShell.render.test.tsx] -> Tests 10 failed | 1 passed (11); 10 AssertionError; restored sha256 equal
+K1 KILLED: the place's Thai line drops จาก [copy.ts / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+K2 KILLED: the +'s Thai name is English [copy.ts / WalletShell.render.test.tsx] -> Tests 8 failed | 3 passed (11); 8 AssertionError; restored sha256 equal
+L1 KILLED: the shell above the diary (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L2 KILLED: the terms gate in the screens element only (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L3 KILLED: the question in the screens element only (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L3b KILLED: the question in the screens element only, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L4 KILLED: the question inside the shell (the plan's mutant): the order's consent case [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L4b KILLED: the question inside the shell (the plan's mutant): the layout's consent case [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L5 KILLED: the wallet branch after the core branch [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L5b KILLED: the wallet branch after the core branch, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 4 failed | 18 passed (22); 4 AssertionError; restored sha256 equal
+L6 KILLED: the wallet branch before the legacy build [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L6b KILLED: the wallet branch before the legacy build, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L7 KILLED: History's keep around the shell [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L8 KILLED: no History keep in the wallet area [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L9 KILLED: the wallet branch asks on a condition of its own [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+D1 KILLED: the wallet area ignores the legacy build [add.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+D2 KILLED: the wallet area keeps Quick add [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D3 KILLED: the link's type is lost [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D4 KILLED: the route stays in place of Home [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D5 KILLED: Home is pushed over the route [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D6 KILLED: the route opens the tray again at each redraw [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D7 KILLED: the link's copy is dropped by the route [add.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+X1 KILLED: closed is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+X2 KILLED: leave is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+X3 KILLED: show is not a useCallback [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+X7 KILLED: the bound armed on iOS only [AddTrayHost.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+86 killed, 1 survived (1 equivalent), 0 not as expected

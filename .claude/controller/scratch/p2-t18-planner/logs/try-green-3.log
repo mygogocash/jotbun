@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:37056) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag off: exactly the current layout, with no tab bar 18ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > approved: the redesigned layout is the default 15ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: Home and History tabs under the screen, with the add button in the centre 10ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back 5ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/add 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003/edit 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the legacy flag still wins: no diary provider and no tab bar 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag undefined) 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag core) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks en, in light and dark, with 44 pt targets 11ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks th, in light and dark, with 44 pt targets 13ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks vi, in light and dark, with 44 pt targets 8ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > which tab a path belongs to 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the Home route: the new Home under the flag, the legacy flag first, else the current Home 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > planning on: no tab of its own; the bar hides on budget, wallets and categories 7ms
+(node:37057) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > a never-asked question takes the screens' place only in the analytics area 23ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes 17ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > /spend/add?type=income in the wallet area opens the income tray over Home 28ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > in the wallet area, a never-asked consent question renders in place of the wallet shell 8ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray 162ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out 103ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save's chip drops into its wallet's card on the screen: the card frames are the shell's 262ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed 56ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5) 39ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray 16ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96 7ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time 24ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress) 2041ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform 1731ms
+
+ Test Files  2 passed (2)
+      Tests  31 passed (31)
+   Start at  00:19:51
+   Duration  5.98s (transform 1.79s, setup 140ms, import 2.41s, tests 4.62s, environment 290ms)
+

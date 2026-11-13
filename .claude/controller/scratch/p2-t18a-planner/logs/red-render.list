@@ -1,0 +1,6 @@
+ × src/wallet/saved/SavedMoment.render.test.tsx > a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A)
+ × src/wallet/saved/SavedMoment.render.test.tsx > a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว
+ × src/wallet/saved/SavedMoment.render.test.tsx > an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B)
+ × src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown
+ × src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests
+ × src/wallet/wallets/WalletEdit.render.test.tsx > under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2)

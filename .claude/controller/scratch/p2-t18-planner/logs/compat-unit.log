@@ -1,0 +1,24 @@
+(node:25277) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/compat-tree/apps/app/src/wallet/home/shellRoutes.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/compat-tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the bar shows on /spend and /spend/insights only, selecting their tab (0.499459ms)
+✔ a screen keeps 84 pt clear of the + under the bar, 96 pt at the largest text sizes, and nothing where the bar is hidden (0.057ms)
+✔ /spend/add's link asks for a known type, a wallet and a record to copy, each only when named (0.091291ms)
+(node:25278) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/compat-tree/apps/app/src/wallet/home/spendLayoutOrder.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/compat-tree/apps/app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ the wallet branch nests the diary, the companion, the shell, History's keep and the slot in that order (0.54775ms)
+✔ the wallet branch comes after the sign-in redirect and the legacy build, and before the core branch (0.082209ms)
+✔ the consent question takes the shell's place inside CompanionBoundary (0.068792ms)
+✔ the shell nests the shared resources, the looks, the card frames, the toast's host and the add tray's host around its root, in that order (0.085125ms)
+✔ the app mounts one add tray host for its life: the wallet shell's (16.399041ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.590375

@@ -49,6 +49,19 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 01:25: P2-T18 was split in two, P2-T18a and P2-T18, and both are building (Haiku). P2-T18a merges first.**
+  - **P2-T18a, shell guards (size M):**
+    - kit `scratch/p2-t18a-planner/`, `check_kit` 51 of 51, `orig/` 10 of 10;
+    - it carries followups line 838 (P2-T17's today's-total races A and B, the closed diary, PV1) and lines 699 to 701 (P2-T21's flow left once, `nativeID`, n1, n2, receipts);
+    - **P1 to P16 accepted.** Worktree `p2-t18a` on `p2/t18a-shell-guards`. Implementer `mcp:launch:81da4972f6d0674793e85b15d578cd28da6b58e694a92397ab55aee1396f0e72`.
+  - **P2-T18, the shell (size L):**
+    - kit `scratch/p2-t18-planner/`, `check_kit` 50 of 50, `orig/` 5 of 5;
+    - **P13 closes the copy leak:** every `/spend/*` route sits inside the shell's host, and `/spend/add` opens the tray;
+    - **P6:** `EXPO_PUBLIC_REDESIGN=all` now draws the shell;
+    - **P1 to P22 accepted.** Worktree `p2-t18` on `p2/t18-wallet-shell`. Implementer `mcp:launch:8387bf605027dd45756415e1a30d4bd244fb3daedbe5c6ca80c89228fe0dd4c8`.
+    - Follow-up: Insights needs `useWalletTabInset()`, since the + covers about 18 pt of its last row (P2-T31's file).
+  - The planner thread is archived.
+  - **Live now:** the P2-T18a and P2-T18 implementers (Haiku); the P4-T4 and P4-T7 planners (Opus).
 - **14 Nov 01:10: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114a.md`, head `fda09f7b`):
   - **P4-T4, the slip reader's import mode (AI lane):** `mcp:launch:0bed034027fc9e2fddaae20829e12d424ab4102e9bb0b81f3662572ab28773a7`, WT `p4-t4` on `p4/t4-slip-import`. It builds on P3-T9's `real/` `slip-read.ts` (#461), and carries followups lines 896 and 905.
   - **P4-T7, slip drafts (routes lane):** `mcp:launch:7e8b41d4cbac185778098afd8c665ba0045db64d5cd32b93d408b3e4baa6f56b`, WT `p4-t7` on `p4/t7-slip-drafts`. It builds on P4-T2's `real/` `v1/routes.ts`, `protocol.ts` and `route-coverage.test.ts` (#463), and carries lines 868 and 880 plus source-pins' H9 pin.

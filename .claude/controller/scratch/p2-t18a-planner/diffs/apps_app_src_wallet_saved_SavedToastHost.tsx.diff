@@ -1,0 +1,57 @@
+diff --git a/apps/app/src/wallet/saved/SavedToastHost.tsx b/apps/app/src/wallet/saved/SavedToastHost.tsx
+index 558b333aa6b410df8e7184b24f2199c713b22701..b219ef2ba7cae2a9c33705b910cfe521ad73fb53 100644
+--- a/apps/app/src/wallet/saved/SavedToastHost.tsx
++++ b/apps/app/src/wallet/saved/SavedToastHost.tsx
+@@ -10,10 +10,12 @@
+ //   did not end synced, the toast says rh-offline's words at once and reads
+ //   nothing. Otherwise it reads one page of today's expenses and appears when
+ //   the read lands or after TOTAL_WAIT_MS, whichever comes first: บันทึกแล้ว
+-//   while the total is unknown (still reading, a failed read, or a day with
+-//   more expenses than one page holds), then today's money out (todayOutMinor,
+-//   with the outbox as it was when the read landed, so a shown figure never
+-//   moves).
++//   while the total is unknown (still reading, a failed read, a day with more
++//   expenses than one page holds, or a diary that moved while the read was on
++//   its way: it applied a revision the read did not see, or the diary open
++//   when the toast began has closed), then today's money out (todayOutMinor,
++//   with the outbox as it was when the read landed and the read's revision, so
++//   a shown figure never moves). P2-T18a, from the P2-T17 reviews' m1.
+ // - Private mode masks the amount and says it is hidden; the toast quotes
+ //   nothing the person typed (R65, R114).
+ // - The check is neutral (§5.3): an onToast circle with a toast-coloured tick.
+@@ -121,11 +123,12 @@ function Toast({ id, notice, onGone }: { id: number; notice: SavedNotice; onGone
+   const view = useDiaryView();
+   const keys = useCommandKeys();
+ 
+-  // The diary as the last commit left it, for the read that lands later.
++  // The diary as the last commit left it, for the read that lands later; and whether it was open when the toast began.
+   const latest = useRef(view);
+   useEffect(() => {
+     latest.current = view;
+   });
++  const openAtStart = useRef(view.phase === 'ready');
+ 
+   const [appeared, setAppeared] = useState(notice.offline);
+   const [total, setTotal] = useState<Minor | null>(null);
+@@ -137,14 +140,19 @@ function Toast({ id, notice, onGone }: { id: number; notice: SavedNotice; onGone
+     resources.history({ from: today, through: today, type: 'expense', sort: 'date_desc' }, undefined, HISTORY_MAX_LIMIT).then(
+       (page) => {
+         if (!live) return;
++        const now = latest.current;
++        // The outbox and the read are one moment only while the diary has applied nothing past the read's revision,
++        // and a diary open when the toast began is open still; otherwise a draft could be in neither, or its
++        // money unknown.
++        const moved = now.phase === 'ready' ? BigInt(now.appliedRevision) > BigInt(page.as_of_revision) : openAtStart.current;
+         // A day with more expenses than one page could leave a counted draft's record unlisted.
+-        if (page.next_cursor === null) {
+-          const now = latest.current;
++        if (page.next_cursor === null && !moved) {
+           setTotal(todayOutMinor({
+             summaryExpenseMinor: page.summary.expense_minor,
+             confirmedIds: new Set(page.items.map((item) => item.id)),
+             outbox: now.phase === 'ready' ? now.outbox : [],
+             today,
++            readRevision: page.as_of_revision,
+           }));
+         }
+         setAppeared(true);

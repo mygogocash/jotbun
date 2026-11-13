@@ -1,0 +1,85 @@
+# P2-T21-fix: step 2's back once a create's answer is unknown, leaving the edit screen once, the card's own place, the refused archive's ฿0, and the reviews' pins
+
+- **Status:** built and verified locally on `p2/t21-wallet-edit` (`.claude/worktrees/p2-t21`), one commit on PR #429's reviewed head `2411001e`. Not pushed. This is the fix round on PR #429 after two reviews:
+  - the first (`.claude/controller/reviews/P2-T21.md`) said Needs fixes: one major (M1), three minors (m1 to m3) and two nits (n1, n2);
+  - the second (`P2-T21-second.md`, money, the wallet and privacy) approved. Its m1 is the first's m1, and its probe W4 (two presses on an unchanged บันทึก) is held here too. Its m2 is the first's m2, and its n3 is the first's n1.
+
+  The controller ruled R115, and the planner's brief is `.claude/controller/briefs/P2-T21-fix.md`. Under R87 this receipt is its own file; `P2-T21.md` is corrected and points here.
+- **Base:** `2411001e`, with no merge: the controller merges the integration branch up.
+- **Files:** modified `apps/app/src/wallet/wallets/NewWalletFlow.tsx` (406 lines before, 419 after), `WalletEditScreen.tsx` (394, 421), `NewWallet.render.test.tsx` (538, 646; 12 cases before, 16 after), `WalletEdit.render.test.tsx` (486, 650; 9 cases before, 15 after) and `docs/implementation/receipts/P2-T21.md` (a line pointing here, and the lines R115 makes untrue); created this receipt. No shared file, route, copy line, package or lockfile changes.
+- **M1, step 2's back (R115.1):**
+  - Step 2's back is held only while a create is out (`sending.phase === 'saving'`).
+  - Once the create's answer is unknown, and after a blocked resend (`session_changed` or `upgrade_required`), back calls `leave()`, as step 1's back does: back to where the flow came from, or `replace` with its destination when there is nothing to go back to. It never goes to the kinds then, since a new kind would change the look under the pending command.
+  - Nothing is kept: a look is kept only after `done`. The list reads again on return, because it mounts again, so it shows the wallet if the create committed.
+  - The case: while the create is out, back is held and a press changes nothing, then the create lands; with the answer lost, back leaves once and no look is kept; and the review's PR2, a blocked resend with every other control held, where back leaves to `/spend/wallets`.
+- **m1, leaving the edit screen once (R115.2):**
+  - The edit form leaves through one `leave()`: it navigates only while a ref says the person is still here, and sets the ref. The header's back, a save or an archive that lands (`done`), and an unchanged บันทึก all go through it. The ref is also set when the screen unmounts, by the system back or by the `Slot` on back.
+  - So a save that lands after back, or after the screen went away, takes no one further, and two presses on an unchanged บันทึก before React draws again go back once.
+  - The header's back stays enabled while a save is out, as today's form's does. R115 allowed holding it instead; leaving once also covers the system back, which a held button cannot.
+  - The case has four parts: back while a save is out goes back once, and the save that lands goes nowhere; the review's PR1 (the `Slot` unmounts the screen, then the save lands: back once in all); a screen gone away while its save was out (no navigation); and an archive that lands after back (no `dismissTo`). The nothing-changed case now presses บันทึก twice before React draws again, and goes back once.
+- **m2, the reviews' survivors (R115.3).** The code these pin was already right, so no code changed for m2:
+  - PR4, the money path (Y7): delete on the stored ฿30,000 opening balance shows ฿0 and says ยอดเริ่มต้น 0 บาท, the card reads ติดลบ 5,140 บาท, and the update sent is `{ opening_minor: '0', correction_reason: 'entry_error' }`.
+  - PR7 (Y4): two presses on the edit's Try again resend once, and the save that lands goes back once.
+  - PR8 (Y2, Y3): while a create's answer is unknown, all ten faces and materials are held and a press changes nothing. The look kept after Try again is the one `wallet_added` reported: bank, silk, smile.
+  - Y6: while a save's answer is unknown, archive is held. A press sends no archive, and the update keeps its Try again.
+  - Y8: one wallet id per flow. With no account open, no new id is asked for while keys are pressed and the name typed, and the card keeps its look. The wallet created is the one whose derived look the card drew.
+  - Y9: the next save clears "This wallet changed on another device.", so the notice never sits beside that save's own words (here, a lost answer).
+- **m3, the tracking start (R115.4):**
+  - เริ่มจด stays text. A wallet made in the flow starts today, so earlier dates cannot be logged to it: the server refuses them with `DATE_BEFORE_TRACKING_START`.
+  - Nothing in the wallet area can move the date, because today's Wallets screen and its date chip cannot be reached while the `wallet` area is on. `P2-T21.md`'s E2-B note said today's screen keeps the chip; it is corrected.
+  - The owner decides at E2-B: a date tray under today's `validateTrackingStart` rules, or text with this consequence. The controller records it.
+- **n1, the card's own place (R115.5):**
+  - The ceremony's card enters inside a view of its own (`new-wallet-card-place`). Reanimated animates an entering view's `originY` to its `targetOriginY`, which is in the parent's coordinates. So `walletAddedEntering`'s `originY: -200` is 200 pt above the card's place only when the card's parent starts where the card does.
+  - Before, the card was a child of the scroll content and fell about `insets.top + 268` pt (about 327 pt with a 59 pt inset), with about 70 pt of overshoot.
+  - It now falls 200 pt on the web, and on a phone since P2-T18a. The bouncy spring (damping 14, stiffness 260, mass 1, a damping ratio of about 0.43) overshoots by about 22% of that, about 44 pt, as `P2-T21.md`'s note said.
+  - Corrected by P2-T18a (P2-T21's confirming review, m1): a test id alone does not keep the place on a phone. In React Native 0.88's `ViewShadowNode` a `testID` makes a view but not a stacking context, and Fabric hoists such a view's children into the nearest ancestor that forms one, so the card still fell about `insets.top + 268` pt. P2-T18a gives the place a `nativeID`, which forms a stacking context, so on a phone too the place stays the card's parent.
+  - The case: the card's parent is the place, and the place holds only the card.
+- **n2, the refused archive's ฿0 (R115.6):**
+  - The refused archive's line (`ArchiveRefused`) masks its ฿0 in private mode as the line below does: ฿•••• on screen, and ซ่อนยอดเงินอยู่ in its spoken words. Out of private mode it says the amount in words (0 บาท), as `ArchiveLater` does.
+  - The case runs in Thai and English, with private mode off and on (the review's PR5). It checks the line's text and its words, and that in private mode no digit is left on the archive's two lines.
+- **RED to GREEN:**
+  - RED is `2411001e`'s code with the round's two suites. No stub is needed: the new cases use nothing the code does not already export.
+    - `npm run typecheck:app`: exit 0.
+    - The two suites: `Tests 5 failed | 26 passed (31)`. Each failure is an `AssertionError`, with no load or lookup error.
+    - NewWallet fails two cases: step 2's back (`expected 'true' to be null`) and the card's place (`new-wallet-card-place: expected null not to be null`).
+    - WalletEdit fails three: nothing changed (`expected [ [], 2 ] to deeply equal [ [], 1 ]`), leaving once (`expected [ [ [ …(3) ] ], 2 ] to deeply equal [ [ [ …(3) ] ], 1 ]`) and the refused archive (`th: expected [ …(2) ] to deeply equal [ …(2) ]`).
+    - The 26 that pass are the first round's 20 unchanged cases and the six new pins of what was already right (PR8, Y8, PR4, PR7, Y6, Y9).
+  - GREEN:
+    - `typecheck:app` and `typecheck:routes`: exit 0.
+    - The two suites: `Tests 31 passed (31)` (16 + 15), with no `stderr |` block.
+    - `draftText.test.ts`: 4 of 4.
+    - The eight kit render files: 141 of 141. The four routes tests: 13 of 13. The first round's other render files and neighbours: 112 of 112. Each is the same as at `2411001e`.
+    - The catalogue's wallet sections (`-t "bw-"`, both suites): 62 passed. The registry rule: 1 passed.
+- **Mutation check:** 134 mutants: 134 killed, 0 survived. Each file was restored, with its SHA-256 checked.
+  - The first round's 109. N21, E10, E11 and E12 are re-pointed at the lines this round changes.
+  - The first review's Y1 to Y9 (Y1 re-pointed at step 2's new back).
+  - This round's N33 to N37 (step 2's back, the card's place) and E32 to E42 (leaving once, the refused archive's ฿0).
+  - Every kill is on an assertion except the first round's R5 and R9, which fail on the screen's own `useSpendV1 needs a SpendV1Provider.`, as before.
+- **Gate (R100, with R115's files, each named):**
+  - `npm run typecheck:app`: exit 0.
+  - `npm run typecheck:routes -w gogospend-app`: exit 0.
+  - `npm run test:app`: exit 0, `ℹ fail 0`.
+  - `npm run test:unit`: exit 0, `ℹ fail 0`.
+  - `draftText.test.ts`: 4 of 4.
+  - The round's two suites: 31 of 31.
+  - The eight kit render files that import the wallet catalogue index (CardStack, WalletLooks, PrivateMode, walletHarness, Tray, Lock, AmountStep, WalletsList): 141 of 141.
+  - The four routes tests (SpendRoutes, AccountRoutes, InsightsRoutes, PlanningRoutes): 13 of 13.
+  - The first round's other render files and neighbours (walletCommands, useWalletMotion, WalletsScreen, WalletCard): 112 of 112.
+  - `npm run export:web -w gogospend-app -- --max-workers 2`: exit 0, with a `Web Bundled` line (the first round's gate; no route changes here). `dist/` is git-ignored.
+  - `git diff --check`: clean before the commit, and against `origin/claude/p1a-vault-core...HEAD` after it.
+- **Deviations:** none from the brief's rulings.
+- **SKIPPED and CI:**
+  - In CI on the PR (R100): the full render suite, whose per-section jobs run the five `bw-wallet-*` sections; the iOS export; the database, edge and image jobs; and `test:ops`.
+  - Not needed: the API and edge suites, since nothing outside `apps/app` and the receipts changes.
+  - SKIPPED until a device: the drop on the simulator (200 pt, about 44 pt of overshoot) and under Reduce Motion; back on step 2 with a lost answer on a development build, which leaves to the list, where the wallet shows if it committed; the system back during an edit's save; and VoiceOver on the refused archive's line in private mode.
+- **Risks:**
+  - The tracking start (m3): a wallet made here starts today, so earlier dates cannot be logged to it, and nothing in the wallet area can change that until the owner decides.
+  - A save that lands after the person left is not shown to them. A refusal or an unknown answer then goes unseen, and the screen they return to shows what Jotbun holds.
+  - With a create's answer unknown, back leaves the flow, and whether the wallet was made shows only in the list on return. A person who starts a new wallet instead makes a second one, with a new id.
+  - Leaving then also loses the chosen look for good if the create had in fact committed: the look carries the kind, which nothing else holds, so the wallet shows as a plain wallet, and its `wallet_added` is never sent. Try again keeps both. The owner decides at E2-B (P2-T21's confirming review, m3; added by P2-T18a).
+- **Notes for later tasks:**
+  - **P2-T18:** once `walletTab` hides the bar on `/spend/wallet/*`, step 2's back is the flow's way out while a create's answer is unknown. Keep it there.
+  - **P2-T22:** the edit screen leaves once (`leave()`), so a detail that pushes the edit route gets one pop per back or save. Where an archive lands is still P2-T22's to decide (the first review's note).
+  - **P2-T37:** the refused archive's ฿0 is masked now (`wallet-archive-refused`).
+  - **E2-B (the owner):** the tracking start (m3); a credit card's opening balance (both reviews); "Match my real balance" asks for an opening balance, not the balance; archiving with no confirmation; and the drop on the simulator.
+  - **Not in R115,** left as the second review recorded them: its n1 (a reason chosen once is reused after a refusal), n2 (a tracking start after the phone's date blocks every save) and n4 (choosing a kind again resets the face and the material).

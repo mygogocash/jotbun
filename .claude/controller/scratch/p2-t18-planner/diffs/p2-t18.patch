@@ -1,0 +1,1365 @@
+diff --git a/apps/app/src/wallet/home/shellRoutes.ts b/apps/app/src/wallet/home/shellRoutes.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..a742fea154e3dcae4b9575525dbd9fb8d9f50ad9
+--- /dev/null
++++ b/apps/app/src/wallet/home/shellRoutes.ts
+@@ -0,0 +1,57 @@
++// Where the wallet shell's bar shows, and what /spend/add asks the add tray
++// (P2-T18; bw-home, W13, ax-large-home rule 8). Pure: a Node test reads it.
++//
++// - The bar (with the floating +) shows on Home (/spend) and Insights
++//   (/spend/insights) only. Every other spend screen (a wallet, a record,
++//   History, setup, budget, the add route) has the whole height and its own
++//   way back. ฉัน opens Settings, outside the shell, so it is never selected.
++// - The bar is a row of the layout under the screen, never over it. A screen
++//   keeps its last row clear of the +, which floats 16 pt above the bar: the
++//   inset is bw-home's 84 pt at the standard sizes (16 + the + button's 60 + 8)
++//   and ax-large-home's 96 pt at the largest, and 0 where the bar is hidden.
++// - /spend/add in the wallet area opens the add tray with what its link names:
++//   the type (spending, income or a move), the wallet and a record to copy.
++//   Anything else in the link is left out.
++import type { AddType } from '../add/addFlow.ts';
++
++export type WalletTabKey = 'wallets' | 'insights';
++export type WalletTab = { visible: boolean; active: WalletTabKey | null };
++
++/** The tabs' routes. */
++export const WALLET_TAB_ROUTES: Readonly<Record<WalletTabKey, '/spend' | '/spend/insights'>> = { wallets: '/spend', insights: '/spend/insights' };
++
++/** A screen's bottom inset under the bar at the standard text sizes (bw-home's 84 pt bar), and at the largest (ax-large-home). */
++export const WALLET_TAB_INSET = 84;
++export const WALLET_TAB_INSET_LARGE = 96;
++
++const ADD_TYPES: readonly AddType[] = ['expense', 'income', 'transfer'];
++
++/** Whether the bar shows on `pathname`, and which tab it selects. */
++export function walletTab(pathname: string): WalletTab {
++  const path = `/${pathname.split('/').filter((part) => part !== '').join('/')}`;
++  if (path === WALLET_TAB_ROUTES.wallets) return { visible: true, active: 'wallets' };
++  if (path === WALLET_TAB_ROUTES.insights) return { visible: true, active: 'insights' };
++  return { visible: false, active: null };
++}
++
++/** The inset a screen keeps under the bar: none where the bar is hidden. */
++export function walletTabInset(visible: boolean, large: boolean): number {
++  if (!visible) return 0;
++  return large ? WALLET_TAB_INSET_LARGE : WALLET_TAB_INSET;
++}
++
++/** What /spend/add's link asks the add tray: a known type, a wallet and a record to copy, each only when named. */
++export function addRequestOf(params: Readonly<Record<string, unknown>>): { type?: AddType; walletId?: string; copyOf?: string } {
++  const named = (key: string) => {
++    const value = params[key];
++    return typeof value === 'string' && value !== '' ? value : undefined;
++  };
++  const type = ADD_TYPES.find((each) => each === params.type);
++  const walletId = named('walletId');
++  const copyOf = named('copyOf');
++  return {
++    ...(type === undefined ? {} : { type }),
++    ...(walletId === undefined ? {} : { walletId }),
++    ...(copyOf === undefined ? {} : { copyOf }),
++  };
++}
+diff --git a/apps/app/src/wallet/home/shellRoutes.test.ts b/apps/app/src/wallet/home/shellRoutes.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..368f0ed6dda019e27ccfb924bf6ada9d66de59f7
+--- /dev/null
++++ b/apps/app/src/wallet/home/shellRoutes.test.ts
+@@ -0,0 +1,35 @@
++// Where the wallet shell's bar shows, the inset a screen keeps under it, and
++// what /spend/add's link asks the add tray (P2-T18; shellRoutes.ts).
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++
++import { addRequestOf, WALLET_TAB_INSET, WALLET_TAB_INSET_LARGE, walletTab, walletTabInset } from './shellRoutes.ts';
++
++test('the bar shows on /spend and /spend/insights only, selecting their tab', () => {
++  assert.deepEqual(walletTab('/spend'), { visible: true, active: 'wallets' });
++  assert.deepEqual(walletTab('/spend/'), { visible: true, active: 'wallets' });
++  assert.deepEqual(walletTab('/spend/insights'), { visible: true, active: 'insights' });
++  assert.deepEqual(walletTab('/spend/insights/'), { visible: true, active: 'insights' });
++  for (const hidden of ['/spend/all', '/spend/wallet/x', '/spend/wallets', '/spend/record/x', '/spend/setup', '/spend/budget', '/spend/add', '/spend/insights/x', '/spend/recap/2026-10', '/settings', '/']) {
++    assert.deepEqual(walletTab(hidden), { visible: false, active: null }, hidden);
++  }
++});
++
++test('a screen keeps 84 pt clear of the + under the bar, 96 pt at the largest text sizes, and nothing where the bar is hidden', () => {
++  assert.equal(WALLET_TAB_INSET, 84);
++  assert.equal(WALLET_TAB_INSET_LARGE, 96);
++  assert.equal(walletTabInset(true, false), 84);
++  assert.equal(walletTabInset(true, true), 96);
++  assert.equal(walletTabInset(false, false), 0);
++  assert.equal(walletTabInset(false, true), 0);
++});
++
++test("/spend/add's link asks for a known type, a wallet and a record to copy, each only when named", () => {
++  assert.deepEqual(addRequestOf({}), {});
++  for (const type of ['expense', 'income', 'transfer']) assert.deepEqual(addRequestOf({ type }), { type });
++  assert.deepEqual(addRequestOf({ type: 'refund' }), {});
++  assert.deepEqual(addRequestOf({ type: ['income'] }), {});
++  assert.deepEqual(addRequestOf({ walletId: 'w1', copyOf: 'r1', amount: '5000' }), { walletId: 'w1', copyOf: 'r1' });
++  assert.deepEqual(addRequestOf({ type: 'transfer', walletId: 'w1' }), { type: 'transfer', walletId: 'w1' });
++  assert.deepEqual(addRequestOf({ walletId: '', copyOf: ['r1', 'r2'] }), {});
++});
+diff --git a/apps/app/src/wallet/home/spendLayoutOrder.test.ts b/apps/app/src/wallet/home/spendLayoutOrder.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f545e3eebe71b59fde6d9337e0b19992db1c9b01
+--- /dev/null
++++ b/apps/app/src/wallet/home/spendLayoutOrder.test.ts
+@@ -0,0 +1,98 @@
++// The spend layout's order (P2-T18; R58, R82, W34). app/spend/_layout.tsx's
++// wallet branch nests the device diary, Bun's AI help, the wallet shell,
++// History's keep and the screen, in that order. It comes after the sign-in
++// redirect and the legacy build, and before the core branch. When the file
++// holds 1C's terms gate, the gate sits between the diary and
++// CompanionBoundary in this branch too; when it holds 1D-T8's consent
++// question, the question takes the whole shell's place inside
++// CompanionBoundary, on the layout's own condition. So a clean parallel merge
++// cannot drop either from this branch. The app mounts one add tray host: the
++// shell's (the catalogue's sections may mount their own).
++import assert from 'node:assert/strict';
++import { readdirSync, readFileSync, statSync } from 'node:fs';
++import { dirname, join, relative, sep } from 'node:path';
++import { test } from 'node:test';
++import { fileURLToPath } from 'node:url';
++
++const appRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
++const layout = () => readFileSync(join(appRoot, 'app', 'spend', '_layout.tsx'), 'utf8');
++const WALLET_BRANCH = "if (isRedesignEnabled('wallet'))";
++
++/** The wallet branch: from its condition to the end of its one statement (its JSX holds no semicolon). */
++function walletBranch(source: string): string {
++  const start = source.indexOf(WALLET_BRANCH);
++  assert.ok(start >= 0, 'the layout has a wallet branch');
++  const end = source.indexOf(';', start);
++  assert.ok(end > start, 'the wallet branch ends');
++  return source.slice(start, end);
++}
++
++/** Every marker is in `text`, each first found after the one before. */
++function inOrder(text: string, markers: readonly string[]): void {
++  const at = markers.map((marker) => text.indexOf(marker));
++  assert.deepEqual(markers.filter((_, index) => at[index] < 0), [], 'every marker is there');
++  for (let index = 1; index < markers.length; index += 1) {
++    assert.ok(at[index - 1] < at[index], `${markers[index - 1]} comes before ${markers[index]}`);
++  }
++}
++
++test('the wallet branch nests the diary, the companion, the shell, History\'s keep and the slot in that order', () => {
++  const source = layout();
++  const branch = walletBranch(source);
++  inOrder(branch, ['<DeviceDiaryProvider>', '<CompanionBoundary>', '<WalletShell>', '<HistoryKeepProvider>', '<Slot />']);
++  inOrder(branch, ['<Slot />', '</HistoryKeepProvider>', '</WalletShell>', '</CompanionBoundary>', '</DeviceDiaryProvider>']);
++  if (source.includes('<TermsGate')) inOrder(branch, ['<DeviceDiaryProvider>', '<TermsGate', '<CompanionBoundary>']);
++  if (source.includes('<AnalyticsConsentScreen')) inOrder(branch, ['<CompanionBoundary>', '<AnalyticsConsentScreen', '<WalletShell>']);
++});
++
++test('the wallet branch comes after the sign-in redirect and the legacy build, and before the core branch', () => {
++  const source = layout();
++  inOrder(source, ['<Redirect href="/login" />', 'if (isLegacySpendEnabled())', WALLET_BRANCH, "isRedesignEnabled('core')"]);
++});
++
++test("the consent question takes the shell's place inside CompanionBoundary", () => {
++  const branch = walletBranch(layout());
++  const question = branch.indexOf('<AnalyticsConsentScreen');
++  assert.ok(question > branch.indexOf('<CompanionBoundary>'), 'after CompanionBoundary opens');
++  assert.ok(question < branch.indexOf('</CompanionBoundary>'), 'before CompanionBoundary closes');
++  assert.ok(question < branch.indexOf('<WalletShell>') || question > branch.indexOf('</WalletShell>'), 'never inside the shell');
++  // On the layout's own condition, which the core branch reads too (one condition, 1D-T8's `ask`).
++  assert.ok(branch.includes('{ask ? <AnalyticsConsentScreen /> : <WalletShell>'), 'ask chooses between the question and the shell');
++});
++
++test("the shell nests the shared resources, the looks, the card frames, the toast's host and the add tray's host around its root, in that order", () => {
++  const shell = readFileSync(join(appRoot, 'src', 'wallet', 'home', 'WalletShell.tsx'), 'utf8');
++  inOrder(shell, [
++    '<SpendV1Provider resources={getSharedV1Resources()}>',
++    '<WalletLooksProvider>',
++    '<CardFramesProvider>',
++    '<SavedToastHost>',
++    '<ShellTray>',
++    '</SavedToastHost>',
++    '</CardFramesProvider>',
++    '</WalletLooksProvider>',
++    '</SpendV1Provider>',
++    'const toast = useSavedToast();',
++    '<AddTrayHost onSaved={onSaved} blocked={blocked}>',
++    '<ShellFrame blocked={blocked}>',
++    '</AddTrayHost>',
++    '<View testID="wallet-shell"',
++  ]);
++});
++
++/** Every source file under apps/app's app/ and src/, but tests, test helpers and the development catalogue. */
++function appSources(dir: string): string[] {
++  return readdirSync(dir).flatMap((name) => {
++    const path = join(dir, name);
++    if (statSync(path).isDirectory()) return name === 'node_modules' ? [] : appSources(path);
++    return /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) ? [path] : [];
++  });
++}
++
++test('the app mounts one add tray host for its life: the wallet shell\'s', () => {
++  const mounts = [...appSources(join(appRoot, 'app')), ...appSources(join(appRoot, 'src'))]
++    .map((path) => relative(appRoot, path).split(sep).join('/'))
++    .filter((path) => !path.startsWith('src/dev/catalogue/') && !path.includes('/testing/'))
++    .flatMap((path) => readFileSync(join(appRoot, path), 'utf8').match(/<AddTrayHost\b/g)?.map(() => path) ?? []);
++  assert.deepEqual(mounts, ['src/wallet/home/WalletShell.tsx']);
++});
+diff --git a/apps/app/src/wallet/home/WalletTabBar.tsx b/apps/app/src/wallet/home/WalletTabBar.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c8a79fc5a06fce2e458018432692288dc56c9e2
+--- /dev/null
++++ b/apps/app/src/wallet/home/WalletTabBar.tsx
+@@ -0,0 +1,122 @@
++// The wallet shell's bar (P2-T18; bw-home, dk-home, W13, ax-voiceover,
++// ax-large-home rule 8): กระเป๋า (/spend) and สรุป (/spend/insights) are
++// tabs, and ฉัน is a link to Settings, which sits outside the shell, so it is
++// never selected. Each item says its place (1 จาก 3, 2 จาก 3, 3 จาก 3) and is
++// at least 44 pt in its own box. The labels stop at iOS's largest standard
++// size, as Apple's own bars do; at the largest text sizes they hide, the icons
++// grow to 30 pt and each item keeps its name, which a long press shows large
++// (iOS's large content viewer). The bar is a row of the layout under the
++// screen (shellRoutes.ts); useWalletTabInset is what a screen keeps clear.
++import { usePathname, useRouter } from 'expo-router';
++import { Pressable, View } from 'react-native';
++import { useSafeAreaInsets } from 'react-native-safe-area-context';
++import Svg, { Circle, Path, Rect } from 'react-native-svg';
++
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { DECORATIVE } from '@mobile/ui/a11y';
++import { useLargeText } from '@mobile/ui/largeText';
++import { LARGEST_STANDARD_SCALE } from '@mobile/ui/largeTextScale';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { WalletText } from '../WalletText';
++import { COPY } from './copy';
++import { WALLET_TAB_ROUTES, walletTab, walletTabInset } from './shellRoutes';
++import type { WalletTabKey } from './shellRoutes';
++
++type ItemKey = WalletTabKey | 'me';
++
++/** The bar's items in order: each one's name and its place. */
++const ITEMS: readonly { key: ItemKey; name: string; place: number }[] = [
++  { key: 'wallets', name: 'home.tabWallets', place: 1 },
++  { key: 'insights', name: 'home.tabInsights', place: 2 },
++  { key: 'me', name: 'home.tabMe', place: 3 },
++];
++
++/** A screen's bottom inset: what keeps its last row clear of the +, or 0 where the bar is hidden. */
++export function useWalletTabInset(): number {
++  const pathname = usePathname();
++  const large = useLargeText();
++  return walletTabInset(walletTab(pathname).visible, large);
++}
++
++/** bw-home's line drawings, in the colour of the item; decorative, since each item says its name. */
++function TabIcon({ item, color, ground, size }: { item: ItemKey; color: string; ground: string; size: number }) {
++  return (
++    <Svg width={size} height={size} viewBox="0 0 24 24">
++      {item === 'wallets' ? (
++        <>
++          <Rect x={3} y={6} width={18} height={13} rx={3} fill={color} />
++          <Path d="M3 10h18" stroke={ground} strokeWidth={2} />
++        </>
++      ) : item === 'insights' ? (
++        <Path d="M5 20V11M12 20V5M19 20v-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
++      ) : (
++        <>
++          <Circle cx={12} cy={8} r={4} fill="none" stroke={color} strokeWidth={2} />
++          <Path d="M4 21c1-4 4-6 8-6s7 2 8 6" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
++        </>
++      )}
++    </Svg>
++  );
++}
++
++export function WalletTabBar() {
++  const pathname = usePathname();
++  const router = useRouter();
++  const colors = useWalletColors();
++  const insets = useSafeAreaInsets();
++  const large = useLargeText();
++  const t = useDraftCopy(COPY);
++  const { active } = walletTab(pathname);
++  const go = (item: ItemKey) => {
++    if (item === 'me') router.push('/settings');
++    else if (item !== active) router.navigate(WALLET_TAB_ROUTES[item]);
++  };
++  return (
++    <View
++      testID="wallet-tab-bar"
++      role="tablist"
++      accessibilityRole="tablist"
++      style={{
++        flexDirection: 'row',
++        justifyContent: 'space-around',
++        alignItems: 'center',
++        paddingTop: 6,
++        paddingBottom: Math.max(insets.bottom, 6),
++        borderTopWidth: 1,
++        borderTopColor: colors.hairline,
++        backgroundColor: colors.ground,
++      }}
++    >
++      {ITEMS.map((item) => {
++        const tab = item.key !== 'me';
++        const selected = tab && item.key === active;
++        const name = t(item.name);
++        const color = selected ? colors.ink : colors.quietOnGround;
++        return (
++          <Pressable
++            key={item.key}
++            testID={`wallet-tab-${item.key}`}
++            role={tab ? 'tab' : 'link'}
++            accessibilityRole={tab ? 'tab' : 'link'}
++            accessibilityLabel={name}
++            aria-valuetext={t('home.tabPlace', { n: item.place })}
++            {...(tab ? { accessibilityState: { selected }, 'aria-selected': selected } : {})}
++            accessibilityShowsLargeContentViewer
++            accessibilityLargeContentTitle={name}
++            onPress={() => go(item.key)}
++            style={{ minHeight: large ? 52 : 44, minWidth: large ? 64 : 56, alignItems: 'center', justifyContent: 'center', gap: 2 }}
++          >
++            <View {...DECORATIVE}>
++              <TabIcon item={item.key} color={color} ground={colors.ground} size={large ? 30 : 24} />
++            </View>
++            {large ? null : (
++              <WalletText role="caption" tone={selected ? 'ink' : 'quietOnGround'} maxFontSizeMultiplier={LARGEST_STANDARD_SCALE} style={{ fontSize: 11, fontWeight: selected ? '700' : '400' }}>
++                {name}
++              </WalletText>
++            )}
++          </Pressable>
++        );
++      })}
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/home/AddButton.tsx b/apps/app/src/wallet/home/AddButton.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..d46a8824fabe3c9ed53b5eedcf69a6ba2c3e54f0
+--- /dev/null
++++ b/apps/app/src/wallet/home/AddButton.tsx
+@@ -0,0 +1,53 @@
++// The floating + (P2-T18; bw-home, dk-home, ax-voiceover): 60 pt, `primary`
++// with a + in `onPrimary`, at the bottom right of the screen, 16 pt above the
++// bar, with bw-home's lift by day and none at night. It is named จดรายการ with
++// the hint แตะสองครั้งเพื่อจดรายจ่ายใหม่, and is disabled while saving is
++// blocked (C5). The shell draws it where it draws the bar.
++import { Pressable, View } from 'react-native';
++import Svg, { Path } from 'react-native-svg';
++
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { DECORATIVE } from '@mobile/ui/a11y';
++import { useDraftCopy } from '../copy/useDraftCopy';
++import { COPY } from './copy';
++
++/** The +'s diameter (bw-home). */
++export const ADD_BUTTON_SIZE = 60;
++/** bw-home's lift; dk-home draws none. */
++const ADD_SHADOW = '0 12px 26px rgba(17, 16, 20, 0.3)';
++
++export function AddButton({ onPress, disabled }: { onPress(): void; disabled: boolean }) {
++  const colors = useWalletColors();
++  const t = useDraftCopy(COPY);
++  return (
++    <Pressable
++      testID="wallet-add"
++      accessibilityRole="button"
++      accessibilityLabel={t('home.add')}
++      accessibilityHint={t('home.addHint')}
++      accessibilityState={{ disabled }}
++      aria-disabled={disabled}
++      disabled={disabled}
++      onPress={onPress}
++      style={{
++        position: 'absolute',
++        right: 18,
++        bottom: 16,
++        width: ADD_BUTTON_SIZE,
++        height: ADD_BUTTON_SIZE,
++        borderRadius: ADD_BUTTON_SIZE / 2,
++        backgroundColor: colors.primary,
++        alignItems: 'center',
++        justifyContent: 'center',
++        boxShadow: colors.isDark ? undefined : ADD_SHADOW,
++        opacity: disabled ? 0.4 : 1,
++      }}
++    >
++      <View {...DECORATIVE}>
++        <Svg width={26} height={26} viewBox="0 0 24 24">
++          <Path d="M12 5v14M5 12h14" fill="none" stroke={colors.onPrimary} strokeWidth={2.6} strokeLinecap="round" />
++        </Svg>
++      </View>
++    </Pressable>
++  );
++}
+diff --git a/apps/app/src/wallet/home/WalletShell.tsx b/apps/app/src/wallet/home/WalletShell.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..effe967a5e61d3ed2dd67e50275bae681c3d4c0f
+--- /dev/null
++++ b/apps/app/src/wallet/home/WalletShell.tsx
+@@ -0,0 +1,85 @@
++// The Bun Wallet shell (P2-T18; R58, W13, W31, C5, ax-voiceover). The spend
++// layout mounts it once, inside the device diary and Bun's AI help, around
++// History's keep and the screen (app/spend/_layout.tsx), so what it holds
++// lasts as long as the spend area stays mounted:
++//
++// - The v1 resources (the shared singleton every route wraps), the looks kept
++//   on the phone (one provider: a change that could not be stored shows until
++//   the spend area unmounts), the card frames (where the saved chip lands), the
++//   saved toast's host and the one add tray host, in that order. The toast's
++//   host lays its box over the whole window, under WalletRoot's private mode,
++//   so the toast and the chip mask amounts and land where measureInWindow
++//   says.
++// - A save from the tray shows its notice once, in the app's words.
++// - Saving is blocked (C5) while a draft waits for an update or the last sync
++//   was refused for an update (Home's syncPlan): the + is disabled, and the
++//   host opens nothing, whoever asks.
++// - The root holds the screen, the + and the bar where the bar shows
++//   (shellRoutes.ts); Magic Tap (a two-finger double tap) opens the add tray
++//   on any tab (ax-voiceover). react-native-web drops onMagicTap, so the tests
++//   read it here.
++import { usePathname } from 'expo-router';
++import { useCallback } from 'react';
++import type { ReactNode } from 'react';
++import { View } from 'react-native';
++
++import { getSharedV1Resources } from '@mobile/api/sharedV1';
++import { useCopy } from '@mobile/i18n/useCopy';
++import type { SavedEntry } from '@mobile/screens/redesign/entry/entrySave';
++import { syncPlan } from '@mobile/screens/redesign/HomeScreen';
++import { useDiaryView } from '@mobile/spend/v1/SpendDiaryContext';
++import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
++import { useWalletColors } from '@mobile/theme/ThemeProvider';
++import { AddTrayHost, useAddTray } from '../add/AddTrayHost';
++import type { SavedContext } from '../add/AddTrayHost';
++import { CardFramesProvider } from '../card/cardFrames';
++import { WalletLooksProvider } from '../looks/WalletLooksProvider';
++import { noticeOf } from '../saved/savedMoment';
++import { SavedToastHost, useSavedToast } from '../saved/SavedToastHost';
++import { AddButton } from './AddButton';
++import { walletTab } from './shellRoutes';
++import { WalletTabBar } from './WalletTabBar';
++
++export function WalletShell({ children }: { children: ReactNode }) {
++  return (
++    <SpendV1Provider resources={getSharedV1Resources()}>
++      <WalletLooksProvider>
++        <CardFramesProvider>
++          <SavedToastHost>
++            <ShellTray>{children}</ShellTray>
++          </SavedToastHost>
++        </CardFramesProvider>
++      </WalletLooksProvider>
++    </SpendV1Provider>
++  );
++}
++
++/** Below the toast's host: the add tray host, whose saves show the toast, blocked while an update is needed (C5). */
++function ShellTray({ children }: { children: ReactNode }) {
++  const toast = useSavedToast();
++  const tc = useCopy();
++  const blocked = syncPlan(useDiaryView(), false, tc).upgrade;
++  const onSaved = useCallback((saved: SavedEntry, context: SavedContext) => toast.show(noticeOf(saved, context.lookups, context.offline, tc)), [toast, tc]);
++  return (
++    <AddTrayHost onSaved={onSaved} blocked={blocked}>
++      <ShellFrame blocked={blocked}>{children}</ShellFrame>
++    </AddTrayHost>
++  );
++}
++
++/** The root: the screen, with the + and the bar where the bar shows, and Magic Tap on every screen. */
++function ShellFrame({ blocked, children }: { blocked: boolean; children: ReactNode }) {
++  const tray = useAddTray();
++  const colors = useWalletColors();
++  const { visible } = walletTab(usePathname());
++  const openAdd = () => tray.open();
++  return (
++    <View testID="wallet-shell" onMagicTap={openAdd} style={{ flex: 1, backgroundColor: colors.ground }}>
++      <View style={{ flex: 1 }}>
++        {children}
++        {visible ? <AddButton onPress={openAdd} disabled={blocked} /> : null}
++      </View>
++      {visible ? <WalletTabBar /> : null}
++    </View>
++  );
++}
+diff --git a/apps/app/src/wallet/home/WalletShell.render.test.tsx b/apps/app/src/wallet/home/WalletShell.render.test.tsx
+new file mode 100644
+index 0000000000000000000000000000000000000000..385712d82c2824f01808cb976f889d7bdacec1c4
+--- /dev/null
++++ b/apps/app/src/wallet/home/WalletShell.render.test.tsx
+@@ -0,0 +1,496 @@
++// The Bun Wallet shell (P2-T18; R58, W13, W31, C5, ax-voiceover,
++// ax-large-home rule 8): the bar, the +, Magic Tap, the saved toast and the
++// one add tray host. Each case mounts the real shell through mountWallet on
++// the fakes, in Thai and by day unless it says otherwise, around a screen and
++// a probe that keeps the latest useAddTray() and useWalletTabInset(). The
++// shell's resources are the shared singleton every route wraps, which this
++// file swaps for the case's fakes; the route's path is the case's.
++//
++// The traps, as the add tray's own suite meets them (AddTray.render.test.tsx):
++// the tray's card and each step's content stay unseen until their entering
++// animation starts, which happy-dom never does, so startAnimations() fires it
++// after every opening and step; the Modal says it has gone at once unless a
++// case holds its dismissals back, as UIKit may (the bound's cases); iOS is
++// set after the mount (before it, ThemeProvider reads the native store), with
++// a no-op for the focus call react-native-web lacks. react-native-web drops
++// onMagicTap, so the Magic Tap case reads the source, and calls the root's
++// prop from the View's own props, which React keeps on the root's element.
++import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
++import { readFileSync } from 'node:fs';
++import { dirname, join } from 'node:path';
++import { fileURLToPath } from 'node:url';
++import type { ReactNode } from 'react';
++import { AccessibilityInfo, Platform, Text, View } from 'react-native';
++import type { ModalProps } from 'react-native';
++import { afterEach, beforeEach, expect, test, vi } from 'vitest';
++
++// The real safe-area package loads React Native itself, which vitest cannot run.
++vi.mock('react-native-safe-area-context', () => import('../../dev/catalogue/safeAreaTestStub'));
++// The router, with the route's path the case sets, and the device's id maker (Quick add's keys).
++const nav = vi.hoisted(() => ({ pathname: '/spend' }));
++vi.mock('expo-router', async () => ({ ...(await import('../../dev/catalogue/routerTestStub')), usePathname: () => nav.pathname }));
++vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
++vi.mock('@mobile/lib/hapticMoment', () => ({ playHaptic: vi.fn() }));
++// The shared v1 resources every route wraps: the case's fakes.
++const shared = vi.hoisted(() => ({ resources: null as unknown }));
++vi.mock('@mobile/api/sharedV1', () => ({ getSharedV1Resources: () => shared.resources }));
++
++// The Modal, which says it has gone at once unless a case holds its dismissals back (`hold`): a held one keeps the
++// Modal's own onDismiss (the tray's), as UIKit does with a dismissal it never ends.
++const dismissals = vi.hoisted(() => ({ hold: false, held: [] as (() => void)[] }));
++vi.mock('react-native', async (importOriginal) => {
++  const actual = await importOriginal<typeof import('react-native')>();
++  const { createElement, forwardRef } = await import('react');
++  const Modal = forwardRef<unknown, ModalProps>(({ onDismiss, ...props }, ref) => createElement(actual.Modal as never, {
++    ...props,
++    ref,
++    onDismiss: onDismiss && (() => {
++      if (dismissals.hold) dismissals.held.push(onDismiss);
++      else onDismiss();
++    }),
++  }));
++  return { ...actual, Modal };
++});
++
++import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
++
++import { COMMON_RULES } from '@mobile/analytics/catalog';
++import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
++import type { Recorded } from '@mobile/analytics/testing/recordAnalytics';
++import { router } from '@mobile/dev/catalogue/routerTestStub';
++import { command, pending } from '@mobile/spend/v1/redesign/testing/fixtures';
++import { createFakeDiary } from '@mobile/spend/v1/testing/fakeDiary';
++import { BUILTINS, createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
++import { todayInBangkok } from '@mobile/spend/v1/viewModels';
++import type { SyncOutcome } from '@mobile/sync/types';
++import { walletDark, walletLight } from '@mobile/theme/walletPalette';
++import { useAddTray } from '../add/AddTrayHost';
++import type { AddTray } from '../add/AddTrayHost';
++import { useRegisterCardFrame } from '../card/cardFrames';
++import { PRIVATE_MODE_NAME } from '../privacy/PrivateModeProvider';
++import { AX5, mountWallet } from '../testing/walletHarness';
++import type { MountWalletOptions } from '../testing/walletHarness';
++import { useWalletTabInset } from './WalletTabBar';
++import { WalletShell } from './WalletShell';
++
++const os = Platform.OS;
++beforeEach(() => {
++  nav.pathname = '/spend';
++});
++afterEach(() => {
++  cleanup();
++  Object.defineProperty(Platform, 'OS', { value: os, configurable: true, writable: true });
++  vi.restoreAllMocks();
++  vi.clearAllMocks();
++  probe.tray = null;
++  probe.inset = null;
++  shared.resources = null;
++  Object.assign(dismissals, { hold: false, held: [] });
++  delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
++});
++
++/** Lets the stores, the lists and the phone's answer arrive. */
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++/** Lets time pass, such as a tray's exit (220 ms). */
++const wait = (ms: number) => act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); });
++
++/** Starts the entering animations, as a browser does a frame after they mount (see the note at the top). */
++function startAnimations() {
++  act(() => {
++    for (const node of document.querySelectorAll<HTMLElement>('[style*="visibility: hidden"]')) node.dispatchEvent(new Event('animationstart'));
++  });
++}
++
++/** The one element with this role and name. */
++function named(role: string, name: string): HTMLElement {
++  const elements = screen.queryAllByRole(role, { name });
++  expect(elements, `one ${role} named ${name}`).toHaveLength(1);
++  return elements[0] as HTMLElement;
++}
++
++/** The one element with this test id. */
++function found(testID: string): HTMLElement {
++  const elements = screen.queryAllByTestId(testID);
++  expect(elements, testID).toHaveLength(1);
++  return elements[0] as HTMLElement;
++}
++
++/** A tap, then the next step's content shows. */
++function tap(element: HTMLElement) {
++  fireEvent.click(element);
++  startAnimations();
++}
++const press = (...names: string[]) => { for (const name of names) tap(named('button', name)); };
++const source = (file: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), file), 'utf8');
++/** iOS for what follows, with a no-op for the focus call react-native-web has not; or the web. */
++function onIos(ios: boolean) {
++  Object.defineProperty(Platform, 'OS', { value: ios ? 'ios' : os, configurable: true, writable: true });
++  if (ios) Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', { value: () => undefined, configurable: true, writable: true });
++  else delete (AccessibilityInfo as { sendAccessibilityEvent?: unknown }).sendAccessibilityEvent;
++}
++const rgb = (hex: string) => expect.stringMatching(new RegExp(`^rgba?\\(${[1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(', ')}(, 1(\\.0+)?)?\\)$`));
++
++/** Each record_started sent, without the properties every event carries. */
++const starts = (sent: readonly Recorded[]) => sent
++  .filter((event) => event.name === 'record_started')
++  .map(({ properties }) => Object.fromEntries(Object.entries(properties).filter(([key]) => key !== 'origin' && !(key in COMMON_RULES))));
++
++const LOCALES = ['th', 'en'] as const;
++const MODES = ['light', 'dark'] as const;
++const WORDS = {
++  th: { wallets: 'กระเป๋า', insights: 'สรุป', me: 'ฉัน', places: ['1 จาก 3', '2 จาก 3', '3 จาก 3'], add: 'จดรายการ', spending: 'จดรายจ่าย', income: 'จดรายรับ' },
++  en: { wallets: 'Wallet', insights: 'Insights', me: 'Me', places: ['1 of 3', '2 of 3', '3 of 3'], add: 'Add an entry', spending: 'Add spending', income: 'Add income' },
++} as const;
++const TODAY = todayInBangkok(new Date());
++
++const wallet = (n: number, name: string, opening: string): WalletSnapshot => ({
++  id: `0000000a-0000-4000-8000-00000000000${n}`, name, currency: 'THB', opening_minor: opening, tracking_start: '2026-01-01', archived: false, version: 1,
++});
++const MAIN = wallet(1, 'บัญชีหลัก', '2486000');
++const CASH = wallet(2, 'เงินสด', '124000');
++const WALLETS = [MAIN, CASH];
++const SYNCED = { status: 'synced', progress: { sent: 0, total: 0 }, nextAttemptAt: null, uncertain: 0, needsReview: 0 } as SyncOutcome;
++const resources = () => createFakeResources({ wallets: WALLETS, categories: BUILTINS });
++/** A phone's diary: open, its lists synced, its last sync done. */
++const readyDiary = (view: Parameters<typeof createFakeDiary>[0] = {}) => createFakeDiary({ wallets: WALLETS, categories: BUILTINS, outcome: SYNCED, ...view });
++
++/** The latest useAddTray() and useWalletTabInset() inside the shell. */
++const probe = { tray: null as AddTray | null, inset: null as number | null };
++function tray(): AddTray {
++  expect(probe.tray, 'useAddTray()').not.toBeNull();
++  return probe.tray as AddTray;
++}
++function Probe() {
++  probe.tray = useAddTray();
++  probe.inset = useWalletTabInset();
++  return null;
++}
++/** The shell around a screen and the probe, as the layout mounts it around the Slot. */
++function Shell({ children }: { children?: ReactNode }) {
++  return (
++    <WalletShell>
++      <Probe />
++      {children ?? <Text>wallet home screen</Text>}
++    </WalletShell>
++  );
++}
++
++/** Mounts the shell on fresh fakes (or the case's), the shell's resources the same as the route's. */
++async function mount(options: MountWalletOptions & { children?: ReactNode } = {}) {
++  const { children, ...rest } = options;
++  const fake = rest.resources ?? resources().resources;
++  shared.resources = fake;
++  const view = mountWallet(<Shell>{children}</Shell>, { diary: readyDiary().diary, ...rest, resources: fake });
++  await settle();
++  return view;
++}
++
++async function pressAdd(name = 'จดรายการ') {
++  tap(named('button', name));
++  await settle();
++  startAnimations();
++}
++
++/** The bar's items, in order: role, name, place and whether it is selected. */
++function items() {
++  const bar = found('wallet-tab-bar');
++  return [...bar.querySelectorAll('[role="tab"], [role="link"]')].map((item) => [
++    item.getAttribute('role'),
++    item.getAttribute('aria-label'),
++    item.getAttribute('aria-valuetext'),
++    item.getAttribute('aria-selected'),
++  ]);
++}
++
++/** The root's onMagicTap: react-native-web draws no such prop, so it is read from the root View's own props. */
++function magicTapOfRoot(): unknown {
++  const root = found('wallet-shell');
++  const key = Object.keys(root).find((name) => name.startsWith('__reactFiber$'));
++  expect(key, "the root's React fiber").toBeDefined();
++  type Fiber = { type: unknown; memoizedProps: Record<string, unknown> | null; return: Fiber | null };
++  for (let fiber: Fiber | null = (root as unknown as Record<string, Fiber | undefined>)[key as string] ?? null; fiber !== null; fiber = fiber.return) {
++    if (typeof fiber.type !== 'string' && fiber.memoizedProps?.testID === 'wallet-shell') return fiber.memoizedProps.onMagicTap;
++  }
++  return undefined;
++}
++
++test('the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    for (const locale of LOCALES) {
++      for (const mode of MODES) {
++        const at = `${locale} ${mode}`;
++        const words = WORDS[locale];
++        const colors = mode === 'light' ? walletLight : walletDark;
++        await mount({ locale, mode });
++        // Two tabs, กระเป๋า selected on Home, and a link that is never selected; each says its place (ax-voiceover).
++        expect(items(), at).toEqual([
++          ['tab', words.wallets, words.places[0], 'true'],
++          ['tab', words.insights, words.places[1], 'false'],
++          ['link', words.me, words.places[2], null],
++        ]);
++        for (const name of [words.wallets, words.insights, words.me]) {
++          const item = within(found('wallet-tab-bar')).queryAllByLabelText(name)[0] as HTMLElement | undefined;
++          expect(item?.style.minHeight, `${at} ${name}`).toBe('44px');
++          expect(item?.style.minWidth, `${at} ${name}`).toBe('56px');
++        }
++        // The selected item in ink, the others quiet on the ground; the labels stop at iOS's largest standard size.
++        const labels = within(found('wallet-tab-bar')).queryAllByText(new RegExp(`^(${words.wallets}|${words.insights}|${words.me})$`));
++        expect(labels.map((label) => label.style.color), at).toEqual([rgb(colors.ink), rgb(colors.quietOnGround), rgb(colors.quietOnGround)]);
++        // A tablist row under the screen, above the phone's own bottom inset (34 pt here).
++        expect([found('wallet-tab-bar').getAttribute('role'), found('wallet-tab-bar').style.paddingBottom], at).toEqual(['tablist', '34px']);
++        // The + : 60 pt, primary, named จดรายการ, at the bottom right of the screen and above the bar.
++        const add = named('button', words.add);
++        expect([add.style.width, add.style.height, add.style.backgroundColor], at).toEqual(['60px', '60px', rgb(colors.primary)]);
++        expect([add.style.position, add.style.right, add.style.bottom], at).toEqual(['absolute', '18px', '16px']);
++        expect(add.getAttribute('aria-disabled'), at).toBeNull();
++        expect(found('wallet-shell').contains(found('wallet-tab-bar')), at).toBe(true);
++        expect(add.compareDocumentPosition(found('wallet-tab-bar')) & Node.DOCUMENT_POSITION_FOLLOWING, at).toBeTruthy();
++        // The + opens the add tray: spending, once.
++        await pressAdd(words.add);
++        named('dialog', words.spending);
++        expect(tray().isOpen, at).toBe(true);
++        cleanup();
++      }
++    }
++    expect(starts(recorded.sent)).toEqual(Array(4).fill({ kind: 'expense', source: 'typed' }));
++  } finally {
++    recorded.restore();
++  }
++  // What react-native-web drops, read from the source: the labels stop at iOS's largest standard size, a long press
++  // shows each item's name large, and the + says what a double tap does.
++  const bar = source('WalletTabBar.tsx');
++  expect(bar).toMatch(/maxFontSizeMultiplier=\{LARGEST_STANDARD_SCALE\}/);
++  expect(bar).toMatch(/accessibilityShowsLargeContentViewer\n\s+accessibilityLargeContentTitle=\{name\}/);
++  expect(source('AddButton.tsx')).toMatch(/accessibilityHint=\{t\('home\.addHint'\)\}/);
++  // The tabs go to their routes; the selected one stays; ฉัน opens Settings, outside the shell.
++  await mount();
++  fireEvent.click(named('tab', 'สรุป'));
++  expect(router.navigate).toHaveBeenLastCalledWith('/spend/insights');
++  fireEvent.click(named('tab', 'กระเป๋า'));
++  expect(router.navigate).toHaveBeenCalledTimes(1);
++  fireEvent.click(named('link', 'ฉัน'));
++  expect(router.push).toHaveBeenCalledWith('/settings');
++  cleanup();
++  // On Insights, สรุป is selected and กระเป๋า goes back to Home.
++  nav.pathname = '/spend/insights';
++  await mount();
++  expect(items().map(([, name, , selected]) => [name, selected])).toEqual([['กระเป๋า', 'false'], ['สรุป', 'true'], ['ฉัน', null]]);
++  fireEvent.click(named('tab', 'กระเป๋า'));
++  expect(router.navigate).toHaveBeenLastCalledWith('/spend');
++  cleanup();
++  // Elsewhere neither the bar nor the + is drawn, and the screen keeps no inset for them.
++  for (const pathname of ['/spend/wallet/0000000a-0000-4000-8000-000000000001', '/spend/all', '/spend/record/r1']) {
++    nav.pathname = pathname;
++    await mount();
++    expect(screen.queryAllByTestId('wallet-tab-bar'), pathname).toHaveLength(0);
++    expect(screen.queryAllByRole('button', { name: 'จดรายการ' }), pathname).toHaveLength(0);
++    expect(within(found('wallet-shell')).queryAllByText('wallet home screen'), pathname).toHaveLength(1);
++    expect(probe.inset, pathname).toBe(0);
++    cleanup();
++  }
++});
++
++test('a save shows the toast once, with today\'s money out', async () => {
++  const fake = resources();
++  await mount({ resources: fake.resources, diary: null });
++  await pressAdd();
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await waitFor(() => expect(screen.queryAllByTestId('saved-toast')).toHaveLength(1));
++  expect(found('saved-line').textContent).toBe('บันทึกแล้ว · วันนี้ ฿50');
++  // One notice: a moment later the toast has still read today's spending once.
++  await wait(200);
++  expect(screen.queryAllByTestId('saved-toast')).toHaveLength(1);
++  const reads = fake.callsOf('history').filter(({ args }) => {
++    const [range] = args as [{ from?: string; through?: string; type?: string }];
++    return range.from === TODAY && range.through === TODAY && range.type === 'expense';
++  });
++  expect(reads).toHaveLength(1);
++  expect(tray().isOpen).toBe(false);
++  cleanup();
++  // A save kept on a phone whose last sync did not end synced says so (rh-offline), and reads nothing.
++  const kept = resources();
++  await mount({ resources: kept.resources, diary: readyDiary({ outcome: null }).diary });
++  await pressAdd();
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await waitFor(() => expect(screen.queryAllByTestId('saved-toast')).toHaveLength(1));
++  expect(found('saved-line').textContent).toBe('เก็บไว้ในเครื่องแล้ว · จะบันทึกเมื่อออนไลน์');
++});
++
++/** A view registered under a wallet's id, as a card's is on Home. */
++function CardPlace({ walletId }: { walletId: string }) {
++  return <View testID="main-card" ref={useRegisterCardFrame(walletId)} collapsable={false} />;
++}
++
++test("a save's chip drops into its wallet's card on the screen: the card frames are the shell's", async () => {
++  await mount({ diary: null, children: <CardPlace walletId={MAIN.id} /> });
++  await pressAdd();
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await waitFor(() => expect(screen.queryAllByTestId('save-flight')).toHaveLength(1));
++  expect(found('save-flight').textContent).toContain('−฿50');
++});
++
++test("in private mode the shell's toast masks today's money out and quotes nothing typed", async () => {
++  const fake = resources();
++  await mount({ resources: fake.resources, diary: null, device: { [PRIVATE_MODE_NAME]: '1' } });
++  await pressAdd();
++  press('5', '0');
++  tap(named('button', 'ถัดไป'));
++  tap(named('button', 'บันทึก'));
++  await waitFor(() => expect(screen.queryAllByTestId('saved-toast')).toHaveLength(1));
++  const toast = found('saved-toast');
++  expect(found('saved-line').textContent).toBe('บันทึกแล้ว · วันนี้ ฿••••');
++  expect(found('saved-line').getAttribute('aria-label')).toBe('บันทึกแล้ว · วันนี้ ซ่อนยอดเงินอยู่');
++  expect(`${toast.textContent} ${found('saved-line').getAttribute('aria-label')}`).not.toMatch(/[0-9]/);
++});
++
++test('a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5)', async () => {
++  const recorded = await recordAnalytics();
++  try {
++    const paused = command(pending({ amount_minor: '5000', occurred_on: TODAY }), 'paused_upgrade');
++    const cases: readonly (readonly [string, Parameters<typeof createFakeDiary>[0]])[] = [
++      ['a paused draft', { outbox: [paused] }],
++      ['update required', { outcome: { ...SYNCED, status: 'upgrade_required' } as SyncOutcome }],
++    ];
++    for (const [label, view] of cases) {
++      const diary = readyDiary(view);
++      await mount({ diary: diary.diary });
++      const add = named('button', 'จดรายการ');
++      expect(add.getAttribute('aria-disabled'), label).toBe('true');
++      fireEvent.click(add);
++      const magicTap = magicTapOfRoot();
++      expect(typeof magicTap, label).toBe('function');
++      act(() => { (magicTap as () => void)(); });
++      act(() => { tray().open({ type: 'income' }); });
++      await settle();
++      startAnimations();
++      expect(screen.queryAllByRole('dialog'), label).toHaveLength(0);
++      expect([tray().blocked, tray().isOpen], label).toEqual([true, false]);
++      // Once the update is no longer needed, the + opens the tray.
++      act(() => { diary.set({ outbox: [], outcome: SYNCED }); });
++      expect(named('button', 'จดรายการ').getAttribute('aria-disabled'), label).toBeNull();
++      await pressAdd();
++      named('dialog', 'จดรายจ่าย');
++      cleanup();
++    }
++    expect(starts(recorded.sent)).toEqual(Array(2).fill({ kind: 'expense', source: 'typed' }));
++  } finally {
++    recorded.restore();
++  }
++});
++
++test('Magic Tap opens the add tray', async () => {
++  // react-native-web draws no onMagicTap, so the source says it is on the shell's root, the same openAdd as the +'s.
++  const shell = source('WalletShell.tsx');
++  expect(shell.match(/onMagicTap=/g) ?? []).toHaveLength(1);
++  expect(shell).toMatch(/<View testID="wallet-shell" onMagicTap=\{openAdd\}/);
++  expect(shell).toMatch(/<AddButton onPress=\{openAdd\}/);
++  // And the root's own prop, called on a tab, opens the spending tray.
++  nav.pathname = '/spend/insights';
++  await mount();
++  const magicTap = magicTapOfRoot();
++  expect(typeof magicTap).toBe('function');
++  act(() => { (magicTap as () => void)(); });
++  await settle();
++  startAnimations();
++  named('dialog', 'จดรายจ่าย');
++});
++
++test('at AX5 the labels hide, the items keep their names and the inset is 96', async () => {
++  await mount({ fontScale: AX5 });
++  expect(items().map(([role, name]) => [role, name])).toEqual([['tab', 'กระเป๋า'], ['tab', 'สรุป'], ['link', 'ฉัน']]);
++  const bar = found('wallet-tab-bar');
++  expect(within(bar).queryAllByText(/^(กระเป๋า|สรุป|ฉัน)$/)).toHaveLength(0);
++  expect([...bar.querySelectorAll('svg')].map((icon) => [icon.getAttribute('width'), icon.getAttribute('height')])).toEqual(Array(3).fill(['30', '30']));
++  for (const name of ['กระเป๋า', 'สรุป', 'ฉัน']) {
++    const item = within(bar).queryAllByLabelText(name)[0] as HTMLElement | undefined;
++    expect([item?.style.minHeight, item?.style.minWidth], name).toEqual(['52px', '64px']);
++  }
++  expect(probe.inset).toBe(96);
++  cleanup();
++  // At the standard sizes the labels show, the icons are 24 pt and the inset is the bar's 84.
++  await mount();
++  expect(within(found('wallet-tab-bar')).queryAllByText(/^(กระเป๋า|สรุป|ฉัน)$/)).toHaveLength(3);
++  expect([...found('wallet-tab-bar').querySelectorAll('svg')].map((icon) => icon.getAttribute('width'))).toEqual(['24', '24', '24']);
++  expect(probe.inset).toBe(84);
++});
++
++test("the shell's screens reach its one add tray host, and one tray shows at a time", async () => {
++  const recorded = await recordAnalytics();
++  try {
++    await mount();
++    // A screen inside the shell opens the shell's tray, never today's Quick add.
++    act(() => { tray().open({ type: 'income' }); });
++    await settle();
++    startAnimations();
++    named('dialog', 'จดรายรับ');
++    expect(router.push).not.toHaveBeenCalled();
++    // The + while it is open changes nothing: one tray, one start.
++    fireEvent.click(named('button', 'จดรายการ'));
++    await settle();
++    expect(screen.queryAllByRole('dialog')).toHaveLength(1);
++    expect(starts(recorded.sent)).toEqual([{ kind: 'income', source: 'typed' }]);
++  } finally {
++    recorded.restore();
++  }
++});
++
++test("a record copied from a screen in the shell opens in the wallet's tray, never today's Quick add; in private mode the copied amount is masked", async () => {
++  // The record the person copies (its screen's ทำซ้ำวันนี้, P2-T26: useAddTray().open({ copyOf })), with a place they typed.
++  const copied = {
++    id: '0000000b-0000-4000-8000-000000000009', type: 'expense', amount_minor: '18200', occurred_on: '2026-11-01', wallet_id: MAIN.id,
++    category_id: BUILTINS[0].id, note: null, merchant: 'ข้าวมันไก่', deleted_at: null, version: 1,
++  } as TransactionDto;
++  const fake = createFakeResources({ wallets: WALLETS, categories: BUILTINS, records: [copied] });
++  await mount({ resources: fake.resources, device: { [PRIVATE_MODE_NAME]: '1' } });
++  act(() => { tray().open({ copyOf: copied.id }); });
++  await settle();
++  startAnimations();
++  // The shell's own tray, so the wallet's private mode applies: no push to today's Quick add, which reads none.
++  named('dialog', 'จดรายจ่าย');
++  expect(router.push).not.toHaveBeenCalled();
++  // The copied amount is a fill, masked until a key is pressed (R106), and the amount step draws nothing it copied.
++  expect([found('add-amount').textContent, found('add-amount').getAttribute('aria-label')]).toEqual(['฿••••', 'ซ่อนยอดเงินอยู่']);
++  expect([screen.queryAllByText(/182/), screen.queryAllByText(/ข้าวมันไก่/)].map((matches) => matches.length)).toEqual([0, 0]);
++});
++
++test('a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress)', async () => {
++  const diary = readyDiary();
++  await mount({ diary: diary.diary });
++  await pressAdd();
++  dismissals.hold = true;
++  onIos(true);
++  fireEvent.click(named('button', 'ปิด'));
++  const later = vi.fn();
++  act(() => { tray().whenClosed(later); });
++  expect(later).not.toHaveBeenCalled();
++  // The shell draws again every 400 ms while the tray leaves, as sync progress redraws it.
++  for (let sent = 1; sent <= 5; sent += 1) {
++    await wait(400);
++    act(() => { diary.set({ progress: { sent, total: 9 } }); });
++  }
++  onIos(false);
++  expect(later).toHaveBeenCalledTimes(1);
++}, 20_000);
++
++test('an open and a close in one batch never show a tray, and the bound frees the host on every platform', async () => {
++  await mount();
++  act(() => {
++    tray().open();
++    tray().close();
++  });
++  await wait(300);
++  const early = vi.fn();
++  act(() => { tray().whenClosed(early); });
++  expect(early).not.toHaveBeenCalled();
++  await wait(1400);
++  expect(early).toHaveBeenCalledTimes(1);
++  await pressAdd();
++  named('dialog', 'จดรายจ่าย');
++}, 20_000);
+diff --git a/apps/app/src/wallet/home/copy.ts b/apps/app/src/wallet/home/copy.ts
+index db863dcc145da0333a6ad1e37f8a363864ffc9bb..0fe048112246329c7ea462713a2c3e90ea925065 100644
+--- a/apps/app/src/wallet/home/copy.ts
++++ b/apps/app/src/wallet/home/copy.ts
+@@ -4,9 +4,11 @@ import type { DraftTable } from '../copy/draftText.ts';
+  * The Bun Wallet Home's lines. P2-T23 adds the budget card's words: the
+  * per-day hint and how far over (bw-home), the two words private mode says in
+  * their place (bw-private, §5.1's voice table), and what the card says to a
+- * screen reader (ax-voiceover). P2-T24 adds the screen's own lines. Data only:
+- * read through `useDraftCopy` with COMMON_COPY. Default pending owner Q3:
+- * built as written; the English lines are drafts for E2-B.
++ * screen reader (ax-voiceover). P2-T18 adds the shell's: the bar's three
++ * names, the place each says (ax-voiceover), and the + button's name and hint.
++ * P2-T24 adds the screen's own lines. Data only: read through `useDraftCopy`
++ * with COMMON_COPY. Default pending owner Q3: built as written; the English
++ * lines are drafts for E2-B.
+  */
+ export const COPY = {
+   'home.perDay': { th: 'เหลือวันละ {amount}', en: '{amount} a day left' },
+@@ -15,4 +17,10 @@ export const COPY = {
+   'home.overWord': { th: 'เกินงบ', en: 'Over budget' },
+   'home.spokenSpent': { th: 'ใช้ไปเดือนนี้ {amount}', en: 'Spent this month {amount}' },
+   'home.spokenBudget': { th: 'ใช้ไปเดือนนี้ {spent} จากงบ {limit}', en: 'Spent this month {spent} of {limit}' },
++  'home.tabWallets': { th: 'กระเป๋า', en: 'Wallet' },
++  'home.tabInsights': { th: 'สรุป', en: 'Insights' },
++  'home.tabMe': { th: 'ฉัน', en: 'Me' },
++  'home.tabPlace': { th: '{n} จาก 3', en: '{n} of 3' },
++  'home.add': { th: 'จดรายการ', en: 'Add an entry' },
++  'home.addHint': { th: 'แตะสองครั้งเพื่อจดรายจ่ายใหม่', en: 'Double-tap to add new spending' },
+ } as const satisfies DraftTable;
+diff --git a/apps/app/app/spend/_layout.tsx b/apps/app/app/spend/_layout.tsx
+index 09a5f15ae6b1c22ef784e4d264e9cfc08b786798..0ed16b406f8cc36c3db39f0c3866d506556e6cf4 100644
+--- a/apps/app/app/spend/_layout.tsx
++++ b/apps/app/app/spend/_layout.tsx
+@@ -7,6 +7,7 @@ import { SpendTabShell } from '@mobile/screens/redesign/SpendTabShell';
+ import { AnalyticsConsentScreen } from '@mobile/screens/redesign/account/AnalyticsConsentScreen';
+ import { DeviceDiaryProvider } from '@mobile/spend/v1/DeviceDiaryProvider';
+ import { CompanionBoundary } from '@mobile/spend/v1/ai/CompanionBoundary';
++import { WalletShell } from '@mobile/wallet/home/WalletShell';
+ 
+ export default function SpendLayout() {
+   const { isAuthed, ready } = useAuthGuardSession();
+@@ -17,6 +18,10 @@ export default function SpendLayout() {
+   // D34 (1D-T8): an account never asked answers the analytics question in place of the screens, as
+   // CompanionBoundary's only child, while the `analytics` area is on. Loading never blocks the screens.
+   const ask = isRedesignEnabled('analytics') && status === 'unanswered';
++  // The Bun Wallet (P2-T18, R58, R82), first: the diary, Bun's AI help, then the wallet shell (the bar, the + and the
++  // trays) around History's keep and the screen. The question takes the whole shell's place, so no bar, + or tray is
++  // drawn while it shows. src/wallet/home/spendLayoutOrder.test.ts reads this order.
++  if (isRedesignEnabled('wallet')) return <DeviceDiaryProvider><CompanionBoundary>{ask ? <AnalyticsConsentScreen /> : <WalletShell><HistoryKeepProvider><Slot /></HistoryKeepProvider></WalletShell>}</CompanionBoundary></DeviceDiaryProvider>;
+   const screens = <DeviceDiaryProvider><CompanionBoundary>{ask ? <AnalyticsConsentScreen /> : <Slot />}</CompanionBoundary></DeviceDiaryProvider>;
+   // The redesign (R3) draws its tab bar under the screens, and keeps History's view while a record or Recently
+   // deleted is open (the Slot unmounts History then); with the flag off this is the layout as it was.
+diff --git a/apps/app/app/spend/add.tsx b/apps/app/app/spend/add.tsx
+index 9dfc0f1bf633ac4c3f95c0a073184a1f3d525cf4..1b10c46cbf1d95ee1797d122f98c40a859bc89a0 100644
+--- a/apps/app/app/spend/add.tsx
++++ b/apps/app/app/spend/add.tsx
+@@ -1,12 +1,35 @@
++import { useLocalSearchParams, useRouter } from 'expo-router';
++import { useEffect, useRef } from 'react';
++
+ import { getSharedV1Resources } from '@mobile/api/sharedV1';
+-import { isRedesignEnabled } from '@mobile/config/featureFlags';
++import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { QuickAddScreen } from '@mobile/screens/redesign/QuickAddScreen';
+ import { AddTransactionScreen } from '@mobile/screens/v1/AddTransactionScreen';
+ import { SpendV1Provider } from '@mobile/spend/v1/SpendV1Context';
++import { useAddTray } from '@mobile/wallet/add/AddTrayHost';
++import { addRequestOf } from '@mobile/wallet/home/shellRoutes';
+ 
+ // The redesigned Quick add is the default since its screenshots were approved
+-// (E2 checkpoint 1); `-core` in the redesign flag brings back the v1 form.
++// (E2 checkpoint 1); `-core` in the redesign flag brings back the v1 form. In
++// the wallet area (P2-T18), where the spend layout mounts the wallet shell, a
++// link to /spend/add opens the add tray over Home instead.
+ export default function SpendAddRoute() {
++  if (isRedesignEnabled('wallet') && !isLegacySpendEnabled()) return <WalletAdd />;
+   const redesign = isRedesignEnabled('core');
+   return <SpendV1Provider resources={getSharedV1Resources()}>{redesign ? <QuickAddScreen /> : <AddTransactionScreen />}</SpendV1Provider>;
+ }
++
++/** Opens the shell's add tray with what the link names, then goes to Home under it; once. */
++function WalletAdd() {
++  const tray = useAddTray();
++  const router = useRouter();
++  const params = useLocalSearchParams();
++  const started = useRef(false);
++  useEffect(() => {
++    if (started.current) return;
++    started.current = true;
++    tray.open(addRequestOf(params));
++    router.replace('/spend');
++  }, [tray, router, params]);
++  return null;
++}
+diff --git a/apps/app/src/screens/redesign/SpendLayout.render.test.tsx b/apps/app/src/screens/redesign/SpendLayout.render.test.tsx
+index cdbb361eb9181189661501ce75cee10ba48c5d59..c0f352c17ca66ec10adb2a0f9b804c86fe2b1ba8 100644
+--- a/apps/app/src/screens/redesign/SpendLayout.render.test.tsx
++++ b/apps/app/src/screens/redesign/SpendLayout.render.test.tsx
+@@ -2,9 +2,11 @@
+ // TabBar under the screens only while the redesign flag is on, hides it on
+ // Add and on a record, and leaves the current layout (and its auth redirect)
+ // exactly as it was when the flag is off. app/spend/index.tsx picks the new
+-// Home only under the flag, with the legacy flag still checked first.
++// Home only under the flag, with the legacy flag still checked first. In the
++// wallet area (P2-T18) the layout mounts the wallet shell in place of the
++// kit's, its bar and + included, and /spend/add opens the shell's add tray.
+ import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+-import type { ReactElement } from 'react';
++import type { ComponentType, ReactElement } from 'react';
+ import { IntlProvider } from 'react-intl';
+ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+ 
+@@ -12,28 +14,39 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+ // asset registry, which only Metro provides. The tab icons draw no images, so
+ // that one resolver is stubbed and the real SVG elements still render.
+ 
++import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
++
+ import { getAnalytics, setAnalytics } from '@mobile/analytics/bus';
+ import { fakeConsent } from '@mobile/analytics/testing/fakeConsent';
+ import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
+ import type { Locale } from '@mobile/i18n/locales';
+ import { translateCopy } from '@mobile/i18n/messages';
+ import { bunDark, bunLight } from '@mobile/theme/bunPalette';
++import { BUILTINS, createFakeResources } from '@mobile/spend/v1/testing/fakeResources';
+ import { ThemePreferenceOverride, ThemeProvider } from '@mobile/theme/ThemeProvider';
+ import SpendLayout from '../../../app/spend/_layout';
++import SpendAddRoute from '../../../app/spend/add';
+ import SpendHomeRoute from '../../../app/spend/index';
+ import { spendTab } from './SpendTabShell';
+ 
+-const nav = vi.hoisted(() => ({ pathname: '/spend', router: { push: vi.fn(), navigate: vi.fn(), replace: vi.fn(), back: vi.fn() } }));
++const nav = vi.hoisted(() => ({
++  pathname: '/spend',
++  params: {} as Record<string, string>,
++  // The route the Slot draws; the stand-in screen unless a case names one.
++  slot: null as ComponentType | null,
++  router: { push: vi.fn(), navigate: vi.fn(), replace: vi.fn(), back: vi.fn() },
++}));
+ const auth = vi.hoisted(() => ({ isAuthed: true, ready: true }));
+ 
+ vi.mock('expo-router', async () => {
+   const { createElement } = await import('react');
+   const { Text } = await import('react-native');
+   return {
+-    Slot: () => createElement(Text, null, 'current screen'),
++    Slot: () => (nav.slot === null ? createElement(Text, null, 'current screen') : createElement(nav.slot)),
+     Redirect: ({ href }: { href: string }) => createElement(Text, null, `redirect to ${href}`),
+     usePathname: () => nav.pathname,
+     useRouter: () => nav.router,
++    useLocalSearchParams: () => nav.params,
+   };
+ });
+ vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }) }));
+@@ -43,8 +56,12 @@ vi.mock('@mobile/spend/v1/DeviceDiaryProvider', async () => {
+   const { View } = await import('react-native');
+   return { DeviceDiaryProvider: ({ children }: { children: unknown }) => createElement(View, { testID: 'device-diary' }, children as never) };
+ });
++// The wallet shell reaches Quick add's command keys, which make ids with expo-crypto.
++vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
++// The shared v1 resources: a marker the stand-in screens read, or a case's fakes.
++const shared = vi.hoisted(() => ({ resources: { marker: 'shared resources' } as unknown }));
+ vi.mock('@mobile/api/sharedV1', () => ({
+-  getSharedV1Resources: () => ({ marker: 'shared resources' }),
++  getSharedV1Resources: () => shared.resources,
+   // The layouts give their screens Bun's AI help; here it never answers, so it stays off.
+   getSharedAiResources: () => new Proxy({}, { get: () => () => new Promise(() => undefined) }),
+ }));
+@@ -59,11 +76,19 @@ vi.mock('@mobile/screens/v1/HomeScreen', async () => {
+   const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
+   return { HomeScreen: () => createElement(Text, null, `v1 home with ${(useSpendV1() as unknown as { marker: string }).marker}`) };
+ });
+-vi.mock('@mobile/screens/redesign/HomeScreen', async () => {
++// Today's Quick add, which /spend/add keeps outside the wallet area.
++vi.mock('@mobile/screens/redesign/QuickAddScreen', async () => {
++  const { createElement } = await import('react');
++  const { Text } = await import('react-native');
++  return { QuickAddScreen: () => createElement(Text, null, 'quick add') };
++});
++// The wallet shell reads Home's sync plan for C5 (P2-T18), so that one export stays real.
++vi.mock('@mobile/screens/redesign/HomeScreen', async (importOriginal) => {
+   const { createElement } = await import('react');
+   const { Text } = await import('react-native');
+   const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
+-  return { HomeScreen: () => createElement(Text, null, `redesigned home with ${(useSpendV1() as unknown as { marker: string }).marker}`) };
++  const { syncPlan } = await importOriginal<typeof import('@mobile/screens/redesign/HomeScreen')>();
++  return { syncPlan, HomeScreen: () => createElement(Text, null, `redesigned home with ${(useSpendV1() as unknown as { marker: string }).marker}`) };
+ });
+ 
+ const ENV = { redesign: process.env.EXPO_PUBLIC_REDESIGN, legacy: process.env.EXPO_PUBLIC_LEGACY_SPEND };
+@@ -76,8 +101,12 @@ function flags({ redesign, legacy }: { redesign?: string; legacy?: string }) {
+ 
+ beforeEach(() => {
+   nav.pathname = '/spend';
++  nav.params = {};
++  nav.slot = null;
++  shared.resources = { marker: 'shared resources' };
+   nav.router.push.mockReset();
+   nav.router.navigate.mockReset();
++  nav.router.replace.mockReset();
+   auth.isAuthed = true;
+   auth.ready = true;
+   flags({});
+@@ -140,7 +169,8 @@ test('flag on: Home and History tabs under the screen, with the add button in th
+ });
+ 
+ test('flag on: History is selected on /spend/all and Home navigates back', () => {
+-  flags({ redesign: 'all' });
++  // Every area but the wallet, whose shell takes the layout's place (P2-T18).
++  flags({ redesign: 'all,-wallet' });
+   nav.pathname = '/spend/all';
+   mount(<SpendLayout />);
+   expect(screen.getByRole('tab', { name: 'History' }).getAttribute('aria-selected')).toBe('true');
+@@ -307,3 +337,149 @@ test("a never-asked question takes the screens' place only in the analytics area
+     setAnalytics(previous);
+   }
+ });
++
++// The Bun Wallet (P2-T18; R58, R82): the wallet branch comes first, so the
++// wallet area draws the wallet shell (its bar, the + and the trays) inside the
++// diary and Bun's AI help, around History's keep and the screen, in place of
++// the kit's bar. The legacy build and the sign-in redirect still come first.
++// Each lookup below asserts, so a case that fails, fails on its assertion.
++
++/** The elements with this test id, which must number `count`. */
++function counted(testID: string, count: number, at: string): HTMLElement[] {
++  const elements = screen.queryAllByTestId(testID);
++  expect(elements, `${at}: ${testID}`).toHaveLength(count);
++  return elements;
++}
++/** The one element with this role and name. */
++function theOne(role: string, name: string, at = ''): HTMLElement {
++  const elements = screen.queryAllByRole(role, { name });
++  expect(elements, `${at}: one ${role} named ${name}`).toHaveLength(1);
++  return elements[0] as HTMLElement;
++}
++/** Starts the tray's entering animations, which happy-dom never starts (the add tray's own suite does the same). */
++function startAnimations() {
++  act(() => {
++    for (const node of document.querySelectorAll<HTMLElement>('[style*="visibility: hidden"]')) node.dispatchEvent(new Event('animationstart'));
++  });
++}
++const settle = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
++
++test('with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes', () => {
++  for (const redesign of ['wallet', 'core,wallet', 'all']) {
++    flags({ redesign });
++    mount(<SpendLayout />, 'th');
++    // The screen inside the shell, inside the diary; the wallet's bar and +, not the kit's bar.
++    const [diary] = counted('device-diary', 1, redesign);
++    const [shell] = counted('wallet-shell', 1, redesign);
++    expect(diary?.contains(shell ?? null), redesign).toBe(true);
++    expect(within(shell as HTMLElement).queryAllByText('current screen'), redesign).toHaveLength(1);
++    counted('wallet-tab-bar', 1, redesign);
++    theOne('tab', 'กระเป๋า', redesign);
++    theOne('button', 'จดรายการ', redesign);
++    counted('tab-bar', 0, redesign);
++    cleanup();
++  }
++  // Without the area (as it ships until E2), or switched off: the layout as it was, the kit's bar and no shell.
++  for (const redesign of [undefined, 'wallet,-wallet']) {
++    flags({ redesign });
++    mount(<SpendLayout />, 'th');
++    counted('tab-bar', 1, String(redesign));
++    counted('wallet-shell', 0, String(redesign));
++    counted('wallet-tab-bar', 0, String(redesign));
++    cleanup();
++  }
++  // The legacy build still wins: no diary and no shell.
++  flags({ redesign: 'wallet', legacy: '1' });
++  mount(<SpendLayout />, 'th');
++  expect(screen.queryAllByText('current screen')).toHaveLength(1);
++  counted('device-diary', 0, 'legacy');
++  counted('wallet-shell', 0, 'legacy');
++  cleanup();
++  // Signed out, the redirect to sign-in comes first.
++  flags({ redesign: 'wallet' });
++  auth.isAuthed = false;
++  mount(<SpendLayout />, 'th');
++  expect(screen.queryAllByText('redirect to /login')).toHaveLength(1);
++  counted('wallet-shell', 0, 'signed out');
++});
++
++test('/spend/add?type=income in the wallet area opens the income tray over Home', async () => {
++  flags({ redesign: 'wallet' });
++  shared.resources = createFakeResources({ categories: BUILTINS }).resources;
++  nav.pathname = '/spend/add';
++  nav.params = { type: 'income' };
++  nav.slot = SpendAddRoute;
++  const view = mount(<SpendLayout />, 'th');
++  await settle();
++  startAnimations();
++  // The route opens the shell's tray on the type its link names, then goes to Home in its place.
++  theOne('dialog', 'จดรายรับ');
++  expect(nav.router.replace.mock.calls).toEqual([['/spend']]);
++  expect(nav.router.push).not.toHaveBeenCalled();
++  // Home under it: the tray stays open over Home, with the bar.
++  nav.pathname = '/spend';
++  nav.slot = null;
++  view.rerender(<IntlProvider locale="th"><ThemeProvider><ThemePreferenceOverride preference="light"><SpendLayout /></ThemePreferenceOverride></ThemeProvider></IntlProvider>);
++  await settle();
++  theOne('dialog', 'จดรายรับ');
++  expect(screen.queryAllByText('current screen')).toHaveLength(1);
++  counted('wallet-tab-bar', 1, 'home');
++  cleanup();
++  nav.router.replace.mockReset();
++  // Outside the wallet area, and in the legacy build (whose layout draws no shell), /spend/add is today's Quick add.
++  for (const flag of [{ redesign: undefined }, { redesign: 'wallet', legacy: '1' }]) {
++    flags(flag);
++    nav.pathname = '/spend/add';
++    nav.slot = SpendAddRoute;
++    mount(<SpendLayout />, 'th');
++    await settle();
++    expect(screen.queryAllByText('quick add'), JSON.stringify(flag)).toHaveLength(1);
++    expect([nav.router.replace.mock.calls, nav.router.push.mock.calls], JSON.stringify(flag)).toEqual([[], []]);
++    cleanup();
++  }
++});
++
++test("a record's copy linked to /spend/add in the wallet area opens in the shell's tray, never today's Quick add", async () => {
++  // A copy asked where no tray host is (useAddTray's fallback pushes /spend/add?copyOf=...) lands in the wallet's tray too.
++  const wallet: WalletSnapshot = { id: '0000000a-0000-4000-8000-000000000001', name: 'เงินสด', currency: 'THB', opening_minor: '0', tracking_start: '2026-01-01', archived: false, version: 1 };
++  const copied = {
++    id: '0000000b-0000-4000-8000-000000000009', type: 'expense', amount_minor: '18200', occurred_on: '2026-11-01', wallet_id: wallet.id,
++    category_id: BUILTINS[0].id, note: null, merchant: null, deleted_at: null, version: 1,
++  } as TransactionDto;
++  flags({ redesign: 'wallet' });
++  shared.resources = createFakeResources({ wallets: [wallet], categories: BUILTINS, records: [copied] }).resources;
++  nav.pathname = '/spend/add';
++  nav.params = { copyOf: copied.id };
++  nav.slot = SpendAddRoute;
++  mount(<SpendLayout />, 'th');
++  await settle();
++  startAnimations();
++  theOne('dialog', 'จดรายจ่าย');
++  expect(screen.queryAllByTestId('add-amount').map((amount) => amount.textContent)).toEqual(['฿182']);
++  expect(screen.queryAllByText('quick add')).toHaveLength(0);
++  expect(nav.router.replace.mock.calls).toEqual([['/spend']]);
++});
++
++test('in the wallet area, a never-asked consent question renders in place of the wallet shell', async () => {
++  const recorded = await recordAnalytics({ consent: 'unasked' });
++  try {
++    flags({ redesign: 'wallet,analytics' });
++    mount(<SpendLayout />, 'th');
++    // The question, inside the diary (and CompanionBoundary), with no shell: no bar, no + and no tray.
++    const question = theOne('heading', 'ช่วยพัฒนา Jotbun');
++    const [diary] = counted('device-diary', 1, 'asked');
++    expect(diary?.contains(question)).toBe(true);
++    counted('wallet-shell', 0, 'asked');
++    counted('wallet-tab-bar', 0, 'asked');
++    expect(screen.queryAllByRole('button', { name: 'จดรายการ' })).toHaveLength(0);
++    expect(screen.queryAllByText('current screen')).toHaveLength(0);
++    // A no is in force at the call: the shell comes back at once.
++    act(() => { void recorded.analytics.answer('no'); });
++    expect(screen.queryAllByRole('heading', { name: 'ช่วยพัฒนา Jotbun' })).toHaveLength(0);
++    counted('wallet-shell', 1, 'answered');
++    counted('wallet-tab-bar', 1, 'answered');
++    expect(screen.queryAllByText('current screen')).toHaveLength(1);
++  } finally {
++    recorded.restore();
++  }
++});
+diff --git a/apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx b/apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx
+index 8a3cea7e8cf6eca6fcf215a084e44e452ce72650..320188a88c0906230c5a404066d122b4041d3ae1 100644
+--- a/apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx
+@@ -35,6 +35,8 @@ vi.mock('expo-router', async () => {
+ });
+ vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }) }));
+ vi.mock('@mobile/auth/useAuthGuardSession', () => ({ useAuthGuardSession: () => ({ isAuthed: true, ready: true }) }));
++// The spend layout loads the wallet shell (P2-T18), which reaches Quick add's command keys and their id maker.
++vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
+ vi.mock('@mobile/spend/v1/DeviceDiaryProvider', async () => {
+   const { createElement } = await import('react');
+   const { View } = await import('react-native');

@@ -1,0 +1,21 @@
+M1 KILLED: an acknowledged command committed by the read is counted [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 7 fail 1; 1 AssertionError; restored sha256 equal
+M2 KILLED: one committed at the read's own revision is counted [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 7 fail 1; 1 AssertionError; restored sha256 equal
+M3 KILLED: revisions compare as text [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 7 fail 1; 1 AssertionError; restored sha256 equal
+M4 KILLED: any state committed by the read is left out [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 7 fail 1; 1 AssertionError; restored sha256 equal
+M5 KILLED: no committed revision is read as one [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 7 fail 1; 1 AssertionError; restored sha256 equal
+M6 KILLED: no read revision reads as the command's own (committed by the read) [savedMoment.ts / savedMoment.test.ts] -> Tests tests 8 pass 6 fail 2; 2 AssertionError; restored sha256 equal
+H1 KILLED: a diary that moved still shows a figure [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 2 failed | 18 passed (20); 2 AssertionError; restored sha256 equal
+H2 KILLED: a diary at the read's own revision counts as moved [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 1 failed | 19 passed (20); 1 AssertionError; restored sha256 equal
+H3 KILLED: revisions compare as text [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 1 failed | 19 passed (20); 1 AssertionError; restored sha256 equal
+H4 KILLED: a diary that closed while the read was out still shows a figure [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 1 failed | 19 passed (20); 1 AssertionError; restored sha256 equal
+H5 KILLED: no diary at all counts as moved [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 2 failed | 18 passed (20); 2 AssertionError; restored sha256 equal
+H6 KILLED: the read's revision is not handed on [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 1 failed | 19 passed (20); 1 AssertionError; restored sha256 equal
+H7 KILLED: iOS hears the real total in private mode (the P2-T17 reviews' M1, O50a) [SavedToastHost.tsx / SavedMoment.render.test.tsx] -> Tests 1 failed | 19 passed (20); 1 AssertionError; restored sha256 equal
+W1 KILLED: the flow is left at every press [NewWalletFlow.tsx / NewWallet.render.test.tsx] -> Tests 1 failed | 17 passed (18); 1 AssertionError; restored sha256 equal
+W2 KILLED: the flow never says it was left [NewWalletFlow.tsx / NewWallet.render.test.tsx] -> Tests 1 failed | 17 passed (18); 1 AssertionError; restored sha256 equal
+W3 KILLED: the card's place has no nativeID [NewWalletFlow.tsx / NewWallet.render.test.tsx] -> Tests 1 failed | 17 passed (18); 1 AssertionError; restored sha256 equal
+W4 KILLED: a refusal's back leaves the flow (the confirming review's Z1) [NewWalletFlow.tsx / NewWallet.render.test.tsx] -> Tests 1 failed | 17 passed (18); 1 AssertionError; restored sha256 equal
+W5 KILLED: back is held after a refusal that blocks (the confirming review's Z2) [NewWalletFlow.tsx / NewWallet.render.test.tsx] -> Tests 1 failed | 17 passed (18); 1 AssertionError; restored sha256 equal
+E1 KILLED: the ref stays set after React's development double run [WalletEditScreen.tsx / WalletEdit.render.test.tsx] -> Tests 1 failed | 15 passed (16); 1 AssertionError; restored sha256 equal
+E2 KILLED: the ref is never set when the editor goes [WalletEditScreen.tsx / WalletEdit.render.test.tsx] -> Tests 1 failed | 15 passed (16); 1 AssertionError; restored sha256 equal
+20 killed, 0 survived (0 equivalent), 0 not as expected

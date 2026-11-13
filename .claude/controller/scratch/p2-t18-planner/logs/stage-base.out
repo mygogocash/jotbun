@@ -1,0 +1,13 @@
+OK  absent  apps/app/src/wallet/home/shellRoutes.ts
+OK  absent  apps/app/src/wallet/home/shellRoutes.test.ts
+OK  absent  apps/app/src/wallet/home/spendLayoutOrder.test.ts
+OK  absent  apps/app/src/wallet/home/WalletTabBar.tsx
+OK  absent  apps/app/src/wallet/home/AddButton.tsx
+OK  absent  apps/app/src/wallet/home/WalletShell.tsx
+OK  absent  apps/app/src/wallet/home/WalletShell.render.test.tsx
+OK  orig    apps/app/src/wallet/home/copy.ts 1bcee592fb99
+OK  orig    apps/app/app/spend/_layout.tsx d3996d895670
+OK  orig    apps/app/app/spend/add.tsx 614f389a7551
+OK  orig    apps/app/src/screens/redesign/SpendLayout.render.test.tsx 249f269df530
+OK  orig    apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx d5392867615e
+base: 12 files, 0 not as expected

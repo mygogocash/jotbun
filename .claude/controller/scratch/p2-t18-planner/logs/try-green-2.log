@@ -1,0 +1,148 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:24205) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > neither answer is chosen before the person taps 39ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag off: exactly the current layout, with no tab bar 19ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > approved: the redesigned layout is the default 15ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: Home and History tabs under the screen, with the add button in the centre 10ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back 5ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/add 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003/edit 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the legacy flag still wins: no diary provider and no tab bar 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag undefined) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag core) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks en, in light and dark, with 44 pt targets 8ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks th, in light and dark, with 44 pt targets 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks vi, in light and dark, with 44 pt targets 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > which tab a path belongs to 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the Home route: the new Home under the flag, the legacy flag first, else the current Home 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > planning on: no tab of its own; the bar hides on budget, wallets and categories 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders 9ms
+(node:24204) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > a never-asked question takes the screens' place only in the analytics area 26ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes 16ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > /spend/add?type=income in the wallet area opens the income tray over Home 27ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > in the wallet area, a never-asked consent question renders in place of the wallet shell 8ms
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > no applies at once and leaves the question 68ms
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > yes waits for the server and stays with a calm line when it fails 79ms
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > every refusal is caught: a yes refused because the account changed asks again, with no line 15ms
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > the screen names what is never sent 13ms
+ ✓ src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx > useAnalyticsConsent says whether analytics is installed 2ms
+(node:24399) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > saves an expense as one exact command and shows it saved only after the acknowledgement 119ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses nothing typed without sending anything 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses zero without sending anything 42ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray 158ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > refuses zero from 000 without sending anything 40ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a third decimal is refused as it is typed, and the amount stays exact 43ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out 59ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed 52ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5) 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an amount above the cap is refused as it is typed 57ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a future date can never be chosen: the chip stops at today and the calendar shuts tomorrow 57ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray 18ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96 7ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time 28ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save freezes the whole entry and offers only Try again, which resends the same command 63ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > records a move between two different wallets, with no category 91ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a move can swap its wallets and move a whole balance 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an upgrade requirement blocks saving but keeps the draft 54ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a changed session blocks saving too 53ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a refused entry shows the field problem, and the corrected entry is a new command for the same record 60ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > with a device diary, an entry is saved on the device first, shown saved only once that commit succeeds, and never sent directly 49ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a failed local save shows a save error and never claims the entry was saved 36ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > offline, Quick add works from the wallets and categories synced to the device 58ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > offline, a move uses the kit wallet picker by name: From and To cards, swap, and no move all without a balance 59ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed online save stays online when the diary opens: Try again resends the same command 50ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a device save that fails says why, and every attempt of one draft keeps its record id and command id 66ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an acknowledgement that arrives garbled is unconfirmed, and retrying the same command finishes 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a lost response after the save committed resolves by replay, with no duplicate 51ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > if this entry already exists under an earlier command, it counts as saved (isOwnCreate) 51ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save stays frozen with its key when the retry is refused before processing; the saved moment shows what the server holds 62ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as policy_required on retry stays frozen with its key 53ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as session_changed on retry stays frozen with its key 53ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an unconfirmed save refused as upgrade_required on retry stays frozen with its key 53ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a create that meets this draft's own record with other details is never shown as saved 65ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a create refused because another record has the id is not mistaken for this one 37ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > note and merchant sit behind More details and are normalized the way the API does 62ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a merchant over 120 characters is refused once, and a note problem reopens More details 69ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a date before the chosen wallet's tracking start is refused before anything is sent 61ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 12.50 + 7.25 56ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 10 ÷ 3 42ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 10 ÷ 3 × 3 48ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 65 + (dangling) 39ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 1 then 000 58ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > keypad maths reaches the save input exactly: 0.1 + 0.2 70ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount is live and spoken while a sum is typed 109ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > category chips are the top three by recent use, the first chosen, and deleted or archived ones never count 29ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the order may follow the recent-use load until the first touch, and never moves after it 78ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > drafts waiting on the device count toward the ranking 20ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > More opens every category in a sheet; a pick closes it and stays in view 66ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy (copyOf) prefills a new draft from the record, dated today, with a new id 38ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy of a move prefills From → To and the amount 32ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Copy of a draft still on the device works from the device 36ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress) 2047ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a copied record whose wallet is closed asks for a wallet instead of guessing one 60ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a record that cannot be copied says so and offers a blank entry 22ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a deleted record cannot be copied through the URL 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount line is a polite live region that says the live result 39ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > move all is the balance less what drafts waiting on this device take from the wallet 44ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another starts a fresh draft with a new record id and a new command id, keeping the choices 94ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another online uses a new record and a new command key 71ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the saved moment is a polite live region with the exact amount 42ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > save problems are announced as alerts 40ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the cheer bun shows at most once a day, and only at full intensity 100ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > at quiet intensity the saved moment has no bun 38ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > at off intensity the saved moment has no bun 35ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > loading, then the form 18ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a load problem that a retry can fix offers Try again 21ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a upgrade_required load is blocked: it says what to do and offers no retry 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a signed_out load is blocked: it says what to do and offers no retry 4ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a policy_required load is blocked: it says what to do and offers no retry 4ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > with no wallet it says to add one on the home screen, with the bun 6ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the empty state bun at quiet intensity: shown true 5ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the empty state bun at off intensity: shown false 4ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Close leaves without saving 29ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > targets are at least 44 points, keypad keys at least 56 23ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the amount never opens the system keyboard: no text field until More details 26ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the screen draws with palette tokens only, and keeps money out of floating point 0ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'en' in 'light', in palette colours 42ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'en' in 'dark', in palette colours 38ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'th' in 'light', in palette colours 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'th' in 'dark', in palette colours 41ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'vi' in 'light', in palette colours 43ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > speaks 'vi' in 'dark', in palette colours 52ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Thai: the screen speaks Thai and the amount stays in exact baht 44ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the route opens Quick add unless the core redesign is switched off 48ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Save and any save problem are pinned under the scrolling form, within thumb reach 47ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > the form opens on the type switch with Close beside it; the title is a heading for screen readers only 23ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Tell Bun fills Quick add from a Thai sentence, and nothing is sent until Save 69ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Tell Bun is not offered for a move between wallets, or with the companion area off 47ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > saving an expense records record_started then one record_saved with its kind and category, and never the amount or the note 57ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a save that Tell Bun filled records source tell_bun, without its sentence; the next entry is typed again 97ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > a save kept on this phone is offline unless the last sync ended synced 122ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform 1727ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > Add another starts a new entry: one more record_started, and its seconds count from there 81ms
+ ✓ src/screens/redesign/QuickAddScreen.render.test.tsx > an income records kind income with its category key, and a move kind transfer with none (the fix round, R119) 101ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > a record and back: the filters, the search and every loaded entry come back, read again from Jotbun 785ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > an entry changed or deleted on its record shows its new state on the way back 216ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > another account, or a sign-out and back in, starts History clean 589ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > leaving for another screen forgets the view; Quick add from the record is still the way back 133ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > only a record or Recently deleted keeps the view: Add from the tab bar and back is History as before 90ms
+ ✓ src/screens/redesign/HistoryReturn.render.test.tsx > the month in the URL wins: a view kept for one month never opens on another 97ms
+
+ Test Files  5 passed (5)
+      Tests  128 passed (128)
+   Start at  00:17:31
+   Duration  13.21s (transform 5.76s, setup 168ms, import 7.68s, tests 10.65s, environment 386ms)
+

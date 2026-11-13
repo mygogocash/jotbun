@@ -1,0 +1,8 @@
+✖ /spend/add's link asks for a known type, a wallet and a record to copy, each only when named
+✖ a screen keeps 84 pt clear of the + under the bar, 96 pt at the largest text sizes, and nothing where the bar is hidden
+✖ the app mounts one add tray host for its life: the wallet shell's
+✖ the bar shows on /spend and /spend/insights only, selecting their tab
+✖ the consent question takes the shell's place inside CompanionBoundary
+✖ the shell nests the shared resources, the looks, the card frames, the toast's host and the add tray's host around its root, in that order
+✖ the wallet branch comes after the sign-in redirect and the legacy build, and before the core branch
+✖ the wallet branch nests the diary, the companion, the shell, History's keep and the slot in that order

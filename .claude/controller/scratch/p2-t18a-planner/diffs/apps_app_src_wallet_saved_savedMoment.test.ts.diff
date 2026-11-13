@@ -1,0 +1,45 @@
+diff --git a/apps/app/src/wallet/saved/savedMoment.test.ts b/apps/app/src/wallet/saved/savedMoment.test.ts
+index 2f3c4e3770a7102e50b15d1131fb1b36971c5343..e6e779ad8977c7ae1cc3e3a789e69552dbd326ee 100644
+--- a/apps/app/src/wallet/saved/savedMoment.test.ts
++++ b/apps/app/src/wallet/saved/savedMoment.test.ts
+@@ -1,7 +1,7 @@
+ // The saved moment's rules (P2-T17; bw-saved, rh-offline, W31, R65, R114,
+ // Review Focus 4): what a landed save says, what Undo does with the outbox as
+-// it is now, today's money out after the save, and the toast's words, in Thai
+-// and English.
++// it is now, today's money out after the save (with P2-T18a's read revision),
++// and the toast's words, in Thai and English.
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+@@ -102,6 +102,30 @@ test("today's money out counts a draft sent or acknowledged while the read does
+   assert.equal(todayOutMinor({ summaryExpenseMinor: '9007199254740993', confirmedIds: new Set(), outbox: [today('unsent', '1')], today: TODAY }), '9007199254740994');
+ });
+ 
++test("today's money out leaves out a command Jotbun acknowledged at or before the read's revision: the read saw it deleted", () => {
++  // Each call through one helper, so a throw is an answer to compare, never the end of the case.
++  const out = (outbox: OutboxCommand[], readRevision?: string) => {
++    try {
++      return todayOutMinor({ summaryExpenseMinor: '8200', confirmedIds: new Set(), outbox, today: TODAY, ...(readRevision === undefined ? {} : { readRevision }) });
++    } catch (error) {
++      return `threw ${(error as Error).name}`;
++    }
++  };
++  const acked = (revision: string | null) => own('acknowledged', { ackedRevision: revision });
++  assert.deepEqual([
++    // Committed at the read's revision or before it (9 is before 10, as numbers), and not listed: deleted since.
++    out([acked('10')], '10'),
++    out([acked('9')], '10'),
++    // Committed after the read: not in its total yet, so counted.
++    out([acked('11')], '10'),
++    // With no read revision, or no committed revision, it counts as before.
++    out([acked('9')]),
++    out([acked(null)], '10'),
++    // Only an acknowledged command was committed: one being sent is counted whatever its revision says.
++    out([own('sending', { ackedRevision: '9' })], '10'),
++  ], ['8200', '8200', '13200', '13200', '13200', '13200']);
++});
++
+ test('the toast follows bw-saved, and hides the amount in private mode', () => {
+   assert.deepEqual(toastWords(notice(), '18200', false, th), { text: 'บันทึกแล้ว · วันนี้ ฿182', spoken: 'บันทึกแล้ว · วันนี้ 182 บาท' });
+   assert.deepEqual(toastWords(notice(), '18250', false, en), { text: 'Saved · Today ฿182.50', spoken: 'Saved · Today 182 baht 50 satang' });

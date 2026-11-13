@@ -1,0 +1,102 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+ × src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray 137ms
+   → expected '// The floating + (P2-T18; bw-home, d…' to match /accessibilityHint=\{t\('home\.addHint…/
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out 319ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a save's chip drops into its wallet's card on the screen: the card frames are the shell's 271ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed 65ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5) 62ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray 24ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96 9ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time 32ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a record copied from a screen in the shell opens in the wallet's tray, never today's Quick add; in private mode the copied amount is masked 18ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress) 2054ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform 1731ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  01:02:38
+   Duration  6.10s (transform 887ms, setup 39ms, import 1.15s, tests 4.72s, environment 81ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:6488) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray
+AssertionError: expected '// The floating + (P2-T18; bw-home, d…' to match /accessibilityHint=\{t\('home\.addHint…/
+
+- Expected:
+/accessibilityHint=\{t\('home\.addHint'\)\}/
+
++ Received:
+"// The floating + (P2-T18; bw-home, dk-home, ax-voiceover): 60 pt, `primary`
+// with a + in `onPrimary`, at the bottom right of the screen, 16 pt above the
+// bar, with bw-home's lift by day and none at night. It is named จดรายการ with
+// the hint แตะสองครั้งเพื่อจดรายจ่ายใหม่, and is disabled while saving is
+// blocked (C5). The shell draws it where it draws the bar.
+import { Pressable, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+
+import { useWalletColors } from '@mobile/theme/ThemeProvider';
+import { DECORATIVE } from '@mobile/ui/a11y';
+import { useDraftCopy } from '../copy/useDraftCopy';
+import { COPY } from './copy';
+
+/** The +'s diameter (bw-home). */
+export const ADD_BUTTON_SIZE = 60;
+/** bw-home's lift; dk-home draws none. */
+const ADD_SHADOW = '0 12px 26px rgba(17, 16, 20, 0.3)';
+
+export function AddButton({ onPress, disabled }: { onPress(): void; disabled: boolean }) {
+  const colors = useWalletColors();
+  const t = useDraftCopy(COPY);
+  return (
+    <Pressable
+      testID=\"wallet-add\"
+      accessibilityRole=\"button\"
+      accessibilityLabel={t('home.add')}
+      accessibilityState={{ disabled }}
+      aria-disabled={disabled}
+      disabled={disabled}
+      onPress={onPress}
+      style={{
+        position: 'absolute',
+        right: 18,
+        bottom: 16,
+        width: ADD_BUTTON_SIZE,
+        height: ADD_BUTTON_SIZE,
+        borderRadius: ADD_BUTTON_SIZE / 2,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: colors.isDark ? undefined : ADD_SHADOW,
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <View {...DECORATIVE}>
+        <Svg width={26} height={26} viewBox=\"0 0 24 24\">
+          <Path d=\"M12 5v14M5 12h14\" fill=\"none\" stroke={colors.onPrimary} strokeWidth={2.6} strokeLinecap=\"round\" />
+        </Svg>
+      </View>
+    </Pressable>
+  );
+}
+"
+
+ ❯ src/wallet/home/WalletShell.render.test.tsx:265:35
+    263|   expect(bar).toMatch(/maxFontSizeMultiplier=\{LARGEST_STANDARD_SCALE\…
+    264|   expect(bar).toMatch(/accessibilityShowsLargeContentViewer\n\s+access…
+    265|   expect(source('AddButton.tsx')).toMatch(/accessibilityHint=\{t\('hom…
+       |                                   ^
+    266|   // The tabs go to their routes; the selected one stays; ฉัน opens Se…
+    267|   await mount();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
