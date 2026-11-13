@@ -49,6 +49,10 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 01:10: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114a.md`, head `fda09f7b`):
+  - **P4-T4, the slip reader's import mode (AI lane):** `mcp:launch:0bed034027fc9e2fddaae20829e12d424ab4102e9bb0b81f3662572ab28773a7`, WT `p4-t4` on `p4/t4-slip-import`. It builds on P3-T9's `real/` `slip-read.ts` (#461), and carries followups lines 896 and 905.
+  - **P4-T7, slip drafts (routes lane):** `mcp:launch:7e8b41d4cbac185778098afd8c665ba0045db64d5cd32b93d408b3e4baa6f56b`, WT `p4-t7` on `p4/t7-slip-drafts`. It builds on P4-T2's `real/` `v1/routes.ts`, `protocol.ts` and `route-coverage.test.ts` (#463), and carries lines 868 and 880 plus source-pins' H9 pin.
+  - **Live now:** the P2-T18, P4-T4 and P4-T7 planners (Opus).
 - **14 Nov 01:00: #456 (P2-T26) fully approved; five PRs are ready and waiting only on CI.**
   - **#456's confirming review (Opus) approved `e4313772`**, with no blocker, major or minor; nits n1 and n2 are optional. Probes are in `scratch/p2-t26-confirm/probes/`.
   - The P2-T18 planner was steered about the copy-to-Quick-add privacy leak outside a tray host, which must be closed before P2-T24.
