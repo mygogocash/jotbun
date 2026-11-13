@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 21:30: the usage limit paused all six agents at about 20:58. T3 snoozed them until 00:00 (17:00Z) and will resume them then.**
+  - Paused:
+    - the P3-T9 reviews (Opus `585ae86c…`, Sonnet `9f345364…`);
+    - the source-pins review `58da09d7…`;
+    - the P4-T2 review `51afe059…`;
+    - the P2-T26 fix planner `59db110d…` (its brief and kit were partly written at 20:04 to 20:07);
+    - the P2-T18 planner `7dd87572…`.
+  - CI is still queued org-wide; the #460 watch hit its cap.
+  - **At the reset:** check that no finished thread resumed, re-arm the watchers, and read each agent's result as it lands.
 - **13 Nov 20:30: P2-T18's planner started (the wallet shell, depth 13, the critical path):** `mcp:launch:7dd87572c7dffd10cf58f085d915b6e1ab70d213b0793dca5906b8ce6279f0cd`, WT `p2-t18` on `p2/t18-wallet-shell`.
   - It carries followups lines 239, 359, 379, 414, 698 to 701, 777 and 838. Among them: P2-T17's first step (the today's-total races and the PV1 pin), P2-T16's must-carries (one host, PROBE-C1 and C3), and P2-T21's m2 (`leave()` once-only).
   - It builds on P3-T13's `real/` `AddTrayHost.tsx` (#460), and on P2-T26's `real/` if it shares `SpendRoutes.render.test.tsx`. It was asked to propose a split if the task is too large.
