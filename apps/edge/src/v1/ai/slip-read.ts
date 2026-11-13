@@ -1,7 +1,7 @@
 import { SLIP_KINDS } from '@gogospend/contracts'
 import type { AiDraft, AiLocale, AiSlipMediaType, SlipKind } from '@gogospend/contracts'
 
-import { sanitizeDrafts } from '../../server/ai/drafts'
+import { draftChoices, sanitizeDrafts } from '../../server/ai/drafts'
 import type { DraftContext } from '../../server/ai/drafts'
 import { ModelUnavailable, finishedJson } from '../../server/ai/model'
 import type { MessageParams, ModelMessage } from '../../server/ai/model'
@@ -59,11 +59,11 @@ type ReadDeps = { transport: ModelTransport; trace: AiTrace; deadline: AiDeadlin
 
 /**
  * D25's triggers (H6): Opus reads the slip again when Haiku declined, when its
- * answer was unusable (truncated, not JSON, or with no kind), when it found no
- * draft, or when any draft's amount does not parse, its date is implausible
- * (sanitizeDrafts flags it date_guessed) or, on a slip, an expense names no
- * receiver. A guessed category or wallet never escalates, and neither does an
- * outage (H7).
+ * answer was unusable (truncated, not JSON, with no kind, or with a draft the
+ * sanitizer cannot read), when it found no draft, or when any draft's amount
+ * does not parse, its date is implausible (sanitizeDrafts flags it
+ * date_guessed) or, on a slip, an expense names no receiver. A guessed
+ * category or wallet never escalates, and neither does an outage (H7).
  */
 export function slipNeedsOpus(outcome: HaikuOutcome): boolean {
   if (outcome.kind === 'failed') return false
@@ -97,14 +97,17 @@ export async function readSlipImage(input: ReadInput, deps: ReadDeps): Promise<S
   return done(opus.kind === 'answer' ? opus.read : { kind: 'unreadable', drafts: [], bank: null }, OPUS, [haiku, opus])
 }
 
+/** A token count as the API reported it, or 0 when it is missing or not a count, so the phone never refuses a read it was billed for (the P3-T8 second review's n1). */
+const counted = (n: number): number => (Number.isSafeInteger(n) && n >= 0 ? n : 0)
+
 /** The read that is shown, with what every call of it added up to. */
 function settled(read: Read, model: ModelTier, outcomes: readonly CallOutcome[], calls: readonly RecordedCall[]): SlipRead {
   let input = 0
   let output = 0
   for (const { usage } of calls) {
     if (!usage) continue
-    input += usage.input + usage.cacheRead + usage.cacheWrite
-    output += usage.output
+    for (const n of [usage.input, usage.cacheRead, usage.cacheWrite]) input += counted(n)
+    output += counted(usage.output)
   }
   return {
     ...read,
@@ -134,7 +137,7 @@ async function readOnce(
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: input.image.mediaType, data: input.image.base64 } },
-          { type: 'text', text: JSON.stringify({ today: input.context.today, locale: input.locale, ...choices(input.context) }) },
+          { type: 'text', text: JSON.stringify({ today: input.context.today, locale: input.locale, ...draftChoices(input.context) }) },
         ],
       },
     ],
@@ -154,16 +157,14 @@ async function readOnce(
   }
   const reply = (typeof raw === 'object' && raw !== null ? raw : {}) as { kind?: unknown; bank?: unknown }
   if (!(SLIP_KINDS as readonly unknown[]).includes(reply.kind)) return { kind: 'unusable' }
-  // An unreadable answer's drafts are dropped, and a read with no draft is unreadable.
-  const drafts = reply.kind === 'unreadable' ? [] : sanitizeDrafts(raw, input.context)
+  // An unreadable answer's drafts are dropped, and a read with no draft is unreadable. A draft the
+  // sanitizer cannot read leaves the answer unusable, so Opus reads it again (the P3-T8 second review's m1).
+  let drafts: AiDraft[]
+  try {
+    drafts = reply.kind === 'unreadable' ? [] : sanitizeDrafts(raw, input.context)
+  } catch {
+    return { kind: 'unusable' }
+  }
   const bank = typeof reply.bank === 'string' && reply.bank.trim() ? reply.bank.trim().slice(0, 60) : null
   return { kind: 'answer', read: { kind: drafts.length > 0 ? (reply.kind as SlipKind) : 'unreadable', drafts, bank } }
-}
-
-/** What the model may choose from, as the service's parse sends it: ids with names, never balances or history. */
-function choices(ctx: DraftContext) {
-  return {
-    wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
-    categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
-  }
 }

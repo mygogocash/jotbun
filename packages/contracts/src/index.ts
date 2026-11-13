@@ -329,6 +329,7 @@ export type {
   BunFact,
   AiNoteResult,
   AiAskRequest,
+  AiFigureScope,
   AiFigure,
   AiAskResult,
 } from "./v1/ai.ts";

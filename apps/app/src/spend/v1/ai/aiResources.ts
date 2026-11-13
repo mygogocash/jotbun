@@ -6,7 +6,7 @@
 // use, and a draft that never arrived is simply asked for again by the person.
 // Each AI route waits its own AI_PHONE_TIMEOUT_MS, longer than the route's
 // deadline on the server, so the phone hears the route's answer (H3).
-import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, SLIP_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
+import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_DRAFT_TYPES, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, SLIP_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
 import type {
   AiAskRequest,
   AiAskResult,
@@ -84,9 +84,18 @@ export function isAiNoteResult(value: unknown): value is AiNoteResult {
     (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
 }
 
+/** What a figure counts over (P3-T9): its days, an expense or income type, and a category id (null for every category). */
+const isFigureScope = (value: unknown) => value === null || (isObject(value) && hasExactly(value, ['from', 'through', 'type', 'category_id']) &&
+  typeof value.from === 'string' && DATE.test(value.from) && typeof value.through === 'string' && DATE.test(value.through) &&
+  (AI_DRAFT_TYPES as readonly unknown[]).includes(value.type) && (value.category_id === null || isUuid(value.category_id)));
+
+/** A figure an answer used: its label and amount, how many records it adds up (null for a budget line), and what it counts over (P3-T9). */
+const isAiFigure = (value: unknown) => isObject(value) && hasExactly(value, ['label', 'amount_minor', 'count', 'scope']) && typeof value.label === 'string' &&
+  typeof value.amount_minor === 'string' && /^-?(?:0|[1-9][0-9]{0,11})$/.test(value.amount_minor) && (value.count === null || isCount(value.count)) && isFigureScope(value.scope);
+
 export function isAiAskResult(value: unknown): value is AiAskResult {
   return isObject(value) && hasExactly(value, ['answer', 'figures', 'source', 'model', 'escalated']) && typeof value.answer === 'string' && value.answer.length <= 2000 &&
-    Array.isArray(value.figures) && value.figures.every((f) => isObject(f) && hasExactly(f, ['label', 'amount_minor']) && typeof f.label === 'string' && typeof f.amount_minor === 'string' && /^-?(?:0|[1-9][0-9]{0,11})$/.test(f.amount_minor)) &&
+    Array.isArray(value.figures) && value.figures.every(isAiFigure) &&
     (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
 }
 
