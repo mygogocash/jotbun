@@ -42,10 +42,10 @@ Locally, in the scratch copy (R100, focused files only):
 
 **2. Undo: holds.**
 
-- `undoPlan` states (`savedMoment.ts:60-64`): no command or `acknowledged` gives the delete at version 1; `unsent` with no first transmission gives the removal (it is `canUndoDraft`, `shared.ts:181-183`); `sending`, `uncertain`, `needs_review`, `paused_upgrade` and unsent-after-a-transmission give `none`. The Node cases pin each; planner mutants P12 (the plan's), and mine O43 and O46 are killed.
-- **No Undo for a phone-kept save with no diary open:** `SavedToastHost.tsx:164` (`notice.via === 'device' && view.phase !== 'ready'` gives `NONE`). H15 and H13 killed on my rerun. An online save does not wait on the diary (H16).
+- `undoPlan` states (`savedMoment.ts:60-64`): no command or `acknowledged` gives the delete at version 1; `unsent` with no first transmission gives the removal (it is `canUndoDraft`, `shared.ts:181-183`); `sending`, `uncertain`, `needs_review`, `paused_upgrade` and unsent-after-a-transmission give `none`. The Node cases pin each; planner mutants P12 (the plan's; I reran it) and P10 (the implementer's log) are killed.
+- **No Undo for a phone-kept save with no diary open:** `SavedToastHost.tsx:164` (`notice.via === 'device' && view.phase !== 'ready'` gives `NONE`). H15 killed on my rerun (and H13, which pins the empty outbox). An online save does not wait on the diary (H16, killed in the implementer's log).
 - **The removal is authoritative in the store:** `removePending` deletes only `state = 'unsent' AND first_transmission_at IS NULL` and throws on anything else (`diaryRepository.ts:488-495`), so a stale view cannot remove a draft the sync took; the host says "Couldn't change this device's copy. Try again." and offers Undo again only if the live outbox still allows it (`:169`, the committed case at `:447-458`).
-- **The delete:** `resources.deleteTransaction(recordId, 1, keys.keyFor('undo:<recordId>', { version: 1 }))` (`:182`). An unconfirmed answer keeps the key (`:192`) and offers Undo again, which resends the same command. Server side, a replay returns the stored acknowledgement before the version is checked (`executor.ts:64-69`, `findReceipt` ahead of `mutate`), so the resend cannot commit twice nor fail with a conflict. H20 (a new key per tap) and H30 (the key dropped) killed.
+- **The delete:** `resources.deleteTransaction(recordId, 1, keys.keyFor('undo:<recordId>', { version: 1 }))` (`:182`). An unconfirmed answer keeps the key (`:192`) and offers Undo again, which resends the same command. Server side, a replay returns the stored acknowledgement before the version is checked (`executor.ts:64-69`, `findReceipt` ahead of `mutate`), so the resend cannot commit twice nor fail with a conflict. H20 (a new key per tap) killed on my rerun; H30 (the key dropped) in the implementer's log.
 - **Each refusal and whether Undo comes back** (outcomes from `client.ts:90-107, 193-225`; `saveProblem`, `parts.tsx:154-172`):
 
   | Outcome | Words | Undo again |
@@ -58,7 +58,7 @@ Locally, in the scratch copy (R100, focused files only):
   | anything else (`purged`, `invalid`, `schema_unsupported`, `too_large`, `idempotency_mismatch`) | "This entry could not be saved." | no (n2) |
 
 - **Two taps in one batch remove once:** `busy` is a ref set before the first await (`:173-175`); the committed case fires two clicks in one act and sees one removal; H17 killed.
-- **`undo_used`:** one `trackUndoUsed({ kind })` after the device commit or the acknowledgement (`:185`), never in the catch (H23 killed), carrying only `kind` (`events.ts:50-52`; `cleanEvent` drops the rest). The committed case asserts the whole JSON holds no `5000`, `฿50`, merchant, wallet name or record id. `trackClientEvent` cannot throw (`bus.ts:50-62`), so an analytics fault cannot turn a done Undo into a "failure".
+- **`undo_used`:** one `trackUndoUsed({ kind })` after the device commit or the acknowledgement (`:185`), never in the catch (H23, killed in the implementer's log), carrying only `kind` (`events.ts:50-52`; `cleanEvent` drops the rest). The committed case asserts the whole JSON holds no `5000`, `฿50`, merchant, wallet name or record id. `trackClientEvent` cannot throw (`bus.ts:50-62`), so an analytics fault cannot turn a done Undo into a "failure".
 
 **3. Private mode: holds; one path is untested (m2b).**
 

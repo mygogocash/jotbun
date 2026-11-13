@@ -829,3 +829,34 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - Take the home currency from the synced settings, adopt a 409's `current`, and write no local copy before the acknowledgement.
     - A `TIMEOUT` (outcome `network`) may still commit. Resend with the same command id, or read `commandStatus([id])`, before offering a retry. Read a `VERSION_CONFLICT` whose `current.home_currency` equals the ask as done.
     - After a commit `pruned_through` moves, so resync before showing any home amount (Sonnet N2).
+- P2-T17 (#451, merged 13 Nov as 9cdc1f8 at fa09a9c0; promotion #453). The reviews are `reviews/P2-T17.md` (Opus, approved: m1, m2, n1 to n5) and `reviews/P2-T17-second.md` (Sonnet, approved: m1 to m3, n1 to n5). Both found the same two minors. The probes are copied out of the review trees:
+  - `scratch/p2-t17-review/probes/SavedReview.render.test.tsx` (R1 to R6, PV1, F1; logs `probes-final.log`, `probes-fix.log`);
+  - `scratch/p2-t17-second/probes/Probe.render.test.tsx` and `probe-final.render.test.tsx`;
+  - the Sonnet prototype fix, `scratch/p2-t17-second/probes/m1-prototype-fix.diff`.
+
+  Carried:
+  - **P2-T18 (the wallet shell), must carry as its first step, before it mounts `SavedToastHost`.** The host is mounted nowhere but the catalogue until then.
+    - **m1, today's total (both reviews).**
+      - *Race A, an undercount:* the draft is sent, acknowledged and reconciled after the vault read the page but before the toast handles it. It is then in neither the page nor the outbox (Opus R1, Sonnet "undercount").
+      - *Fix A:* when the read lands, leave the total unknown if the open diary has applied past the page's revision (`now.phase === 'ready' && BigInt(now.appliedRevision) > BigInt(page.as_of_revision)`). A diary no longer `ready` at landing counts as unknown too.
+      - *Race B, an overcount:* an `acknowledged` command whose record was committed and then deleted is unlisted, so it is counted (Sonnet "overcount").
+      - *Fix B:* skip an `acknowledged` command whose `ackedRevision` is at or before the read's `as_of_revision`, passing `readRevision` as an optional input.
+      - *Pins:* R1's shape, and one mutant for each guard.
+    - **m2, private mode's iOS announcement (both reviews; R65):** the code is right but unpinned (mutant M1 / O50a survives). Add PV1: spy on `announceForAccessibility`, set iOS after the mount, and expect the hidden words with no digit or typed name in any announcement. P2-T37's sweep cannot see announcements.
+    - **Mounting:**
+      - inside `WalletRoot`'s `PrivateModeProvider`, since outside it `usePrivateMode()` answers `hidden: false`;
+      - with the host's box at the window's origin, since the chip aims with `measureInWindow`;
+      - the brief's P20 note (around `AddTrayHost`, inside `CardFramesProvider`, `noticeOf(..., tc)`).
+  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today):**
+    - the Bangkok day at the edge: a case at 00:30 Bangkok checks the read's `from` and `through` (Opus n2, Sonnet m2a; mutants M5 and O3a);
+    - the toast's `top: insets.top + 8` and `pointerEvents="box-none"`, and the chip's `pointerEvents="none"` (Sonnet m3: O1, O2, O5);
+    - where the chip starts (from the bottom centre) and its shrink and fade, with a phone-sized window in the flight's cases (Opus n1 M4, Sonnet n1 O7 to O10, O40);
+    - Sonnet n4: on iOS a total landing after 600 ms is announced as a second message, so "Saved" is heard twice;
+    - Sonnet n5: `busy` resets in `finally` before React draws the answer, so a second tap in that gap reruns the removal.
+  - **E2-B (copy and look), beside the brief's P19 list:**
+    - Opus n3: the chip draws income in ink, not violet (`WalletAmount` at 13 would do both, with the mask).
+    - Opus n4: bw-saved's chip shadow and dk-saved's `#3A3842` fill are missing.
+    - Opus n5 and Sonnet n2: Undo's refusal words speak of saving ("This entry could not be saved.").
+    - Sonnet n3: after an income or a move the toast still says today's money out.
+    - The undo bar's look: P2-T26's rh-undo pill against P2-T17's `toastLink` text link. The owner picks one.
+  - **Phase 5:** `todayOutMinor` adds a draft's `amount_minor` as baht. The page's `summary.currency` (P5-T2) and a draft's wallet currency must agree before they are added.
