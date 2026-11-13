@@ -505,6 +505,33 @@ test("the flow is left once: two quick presses on a back pop one screen, on step
   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
 });
 
+test("with nothing to go back to (a deep link or a reload), the flow is still left once: two quick presses replace one screen, on step 1 and on step 2 once a create's answer is unknown", async () => {
+  router.canGoBack.mockReturnValue(false);
+  mountWallet(<NewWalletFlow now={NOW} />);
+  await settle();
+  const first = named('button', 'กลับ');
+  act(() => {
+    fireEvent.click(first);
+    fireEvent.click(first);
+  });
+  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([0, [['/spend']]]);
+  cleanup();
+  router.replace.mockReset();
+  const lost = createFakeResources();
+  lost.loseResponse('createWallet');
+  mountWallet(<NewWalletFlow now={NOW} />, { resources: lost.resources });
+  await settle();
+  fillBank();
+  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
+  await settle();
+  const second = named('button', 'กลับ');
+  act(() => {
+    fireEvent.click(second);
+    fireEvent.click(second);
+  });
+  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([0, [['/spend']]]);
+});
+
 test("after a refusal, held or not, step 2's back goes to the kinds and leaves nothing", async () => {
   for (const outcome of ['signed_out', 'upgrade_required'] as const) {
     const refused = createFakeResources();

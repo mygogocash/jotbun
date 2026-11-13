@@ -386,8 +386,8 @@ function Added({ input, look, onDone }: { input: CreateWalletRequest; look: Wall
         {/* The drop's originY is in its parent's coordinates (Reanimated animates it to targetOriginY), so the card
             enters at the origin of a place of its own: it falls 200 pt, about one card's height, and the bouncy spring
             overshoots by about 44 pt (R115, n1). On a phone the place stays the card's parent only if it forms a
-            stacking context: a test id alone is flattened away on Fabric, a nativeID is not (P2-T18a, P2-T21's
-            confirming review m1). */}
+            stacking context: a test id alone makes a view whose children Fabric hoists out of it, while a nativeID
+            forms a stacking context, so the card stays inside (P2-T18a, P2-T21's confirming review m1). */}
         <View testID="new-wallet-card-place" nativeID="new-wallet-card-place">
           <Animated.View testID="new-wallet-card" entering={entering}>
             <View accessible accessibilityRole="image" accessibilityLabel={walletCardWords(card, look, hidden, t).spoken}>
