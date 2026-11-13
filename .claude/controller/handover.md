@@ -49,6 +49,11 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 01:00: #456 (P2-T26) fully approved; five PRs are ready and waiting only on CI.**
+  - **#456's confirming review (Opus) approved `e4313772`**, with no blocker, major or minor; nits n1 and n2 are optional. Probes are in `scratch/p2-t26-confirm/probes/`.
+  - The P2-T18 planner was steered about the copy-to-Quick-add privacy leak outside a tray host, which must be closed before P2-T24.
+  - **Merge order when CI returns:** #460 (P3-T13), #461 (P3-T9), #462 (source-pins), #463 (P4-T2), #456 (P2-T26). Rerun promotion #458's failed SQL job. Record each merge's followups (P2-T26: the three reviews, plus Sonnet's real n1, `after.current`).
+  - **Live now:** only the P2-T18 planner (Opus). No builder or reviewer is running.
 - **14 Nov 00:45: #456 (P2-T26) fix round is in, and its confirming review is running.**
   - The fixer committed `0c062e3d`. All 7 fix-kit files are byte-identical, and the 139-mutant log is identical to the planner's. RED was 7 of 39, GREEN 39.
   - The controller merged the integration head as `e4313772`, with no conflicts, and pushed. Gate on the merged tree: `typecheck:app`, `test:unit` 1110, record files 167, kit and add and saved 180, routes 18, catalogue 20 (`scratch/p2-t26-merge/gate.out`).

@@ -48,7 +48,7 @@
   - the catalogue's record, deleted and saved sections 20;
   - `git diff --check` on the range.
 - [ ] CI at `e4313772` (queued org-wide: GitHub Actions).
-- [ ] Confirming review (Opus) of the fix round.
+- [x] Confirming review (Opus): **approved** on `e4313772` (`.claude/controller/reviews/P2-T26-confirm.md`), with no blocker, major or minor. R123 and R124 are confirmed, and nothing the round could have broken was found. Its two optional nits (the late-answer guard pinned in one direction; the dropped `active` half under StrictMode) are carried in `followups.md`.
 - [ ] SKIPPED: device checks (the record, the tray and the bar on a phone; VoiceOver; the largest text).
 
 Closes #172 once merged (closed by hand, since the base is not the default branch).
