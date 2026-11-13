@@ -30,7 +30,7 @@
 - [ ] CI on this pull request is green: the nine jobs. Note: GitHub Actions is queued org-wide (see the controller's handover).
 - [x] Independent review (Opus): **approved** on `a5d93d8a` (`.claude/controller/reviews/source-pins.md`), with no blocker or major. Its m1: the pins hold a source that is there, but not the absence of one, so the review's mutants V5 to V7, which stamp a source onto a record made without one, survive.
 - [x] **The controller added m1's case, `d9b4dfb1` (test-only):** a record made without a source stays without one through an edit, a delete and restore, and a receipt kept, replaced and removed. The file passes 12 of 12 under the heavy lock. V5, V6 and V7 are each killed by that case alone, on an assertion, each file restored. `typecheck:edge` passes (`.claude/controller/scratch/source-pins-m1/`).
-- [ ] The reviewer's confirmation of `d9b4dfb1`.
+- [x] The reviewer's confirmation of `d9b4dfb1`: m1 resolved, **approved** (`reviews/source-pins.md`, "Confirmation of d9b4dfb1").
 - [ ] SKIPPED: `test:edge:db` locally (Docker stopped; CI runs it).
 
 No issue: a follow-up task the backlog does not list.

@@ -10,7 +10,7 @@
 
 **No blocker and no major.** The escalation is built as the plan and the brief say, and it holds under what I threw at it:
 
-- 28 front-door probes (workerd, scripted models, the day already holding 5 uses so that any over-refund shows) over every way an Ask Bun can end;
+- 28 front-door probes (workerd, scripted models; 13 of them drive every way an Ask Bun can end, with the day already holding 5 uses so that any over-refund shows);
 - 17 of the planner's 79 mutants (all six batches), all killed by assertions;
 - 17 mutants of my own: 12 killed by the task's tests; 5 survive them, and my probes kill all 5.
 
@@ -67,7 +67,7 @@ Every 200 passes the phone's `isAiAskResult`, and `remaining.ask` is 20 minus th
 
 **R116 for every route.** `shouldRefund` (`uses.ts:21-25`) refunds a never-sent last call only when no earlier call answered.
 
-- **Ask Bun:** a billed turn followed by turns the deadline never lets start is spent (PR4's rebuilt case; planner's U1 to U4; my Y8). When nothing was ever sent, it is refunded (PS3: a 1.5 s deadline gives the could-not-find line, 0 calls sent, one refund, `remaining.ask` 20).
+- **Ask Bun:** a billed turn followed by turns the deadline never lets start is spent (PR4's rebuilt case; the planner's U1 to U4, killed in the implementer's run and U3 rerun here; my Y8, killed). When nothing was ever sent, it is refunded (PS3: a 1.5 s deadline gives the could-not-find line, 0 calls sent, one refund, `remaining.ask` 20).
 - **Parse and the note are unchanged.** Each makes one call, so an unsent last call has no earlier call. PS3 with 1 s deadlines: parse answers by the rules, the note by the plain facts, 0 calls sent, both uses refunded.
 - **The slip reach is as the controller accepted it.** "Haiku answered, Opus never started" is now spent (the second P3-T8 review's PC2, pinned with a 4 s deadline). In production it needs more than 23 s of vault steps: the route's 45 s, less Haiku's 20 s cap, leaves Opus at least 25 s less the steps. P4's per-slip deadline has to keep that room, as the receipt says.
 
@@ -85,11 +85,11 @@ Every 200 passes the phone's `isAiAskResult`, and `remaining.ask` is 20 minus th
 ### 2. D28's escalation (`ask.ts`)
 
 - **Haiku within 25 s** (`ask.ts:119`, a child deadline): the Node case sees the first Haiku call given 25,000 ms and Opus 31,000 (P4, K29 killed).
-- **A fresh Opus conversation** (`ask.ts:61-67`, `:122`): the first request has one message equal to Haiku's first, the same `system` and `tools`, Opus's own base and no thinking or sampling; Opus's second request is its own tool turn only (the plan's first case; P1, K14 to K19 killed; PS2 adds the exact key sets of both requests).
-- **An outage never goes to Opus** (`:121`; P2 killed). Haiku 429, 500 and a tool-turn 500 all stop at Haiku (PS1).
-- **A failed vault step never escalates** (`:83-90`; K11, K12, Y12 killed; PS1b).
-- **A turn that never started is `no_answer` and escalates** (`:75`; K1 killed). **When no model can be asked in time** the answer is the could-not-find line with the use given back, 200, nothing sent (PS3), as the receipt's second risk says. See n2 for its wording.
-- **`escalated` means it went to Opus** (P7): true on the plain-figures answers after Opus and false after a Haiku outage (K25, Y2, Y11 killed).
+- **A fresh Opus conversation** (`ask.ts:61-67`, `:122`): the first request has one message equal to Haiku's first, the same `system` and `tools`, Opus's own base and no thinking or sampling; Opus's second request is its own tool turn only (the plan's first case; P1 and K19 rerun here and killed, K14 to K18 killed in the implementer's run; PS2 adds the exact key sets of both requests).
+- **An outage never goes to Opus** (`:121`; P2 rerun, killed). Haiku 429, 500 and a tool-turn 500 all stop at Haiku (PS1).
+- **A failed vault step never escalates** (`:83-90`; K10 rerun and my Y12, killed; K11 and K12 killed in the implementer's run; PS1b).
+- **A turn that never started is `no_answer` and escalates** (`:75`; K1 killed in the implementer's run). **When no model can be asked in time** the answer is the could-not-find line with the use given back, 200, nothing sent (PS3), as the receipt's second risk says. See n2 for its wording.
+- **`escalated` means it went to Opus** (P7): true on the plain-figures answers after Opus and false after a Haiku outage (my Y2 and Y11, killed; K25 killed in the implementer's run).
 
 ### 3. What each model is sent; logging (P5)
 
@@ -109,10 +109,10 @@ The first message is the route's earlier one byte for byte (P11). Its content is
 
 ### 5. The P3-T8 carries (P14)
 
-- **The date guard and the `readOnce` catch:** `isRealDate` (`drafts.ts`) refuses `2026-10-32`, `2026-13-05`, `2026-00-10`, `0000-00-00` and `9999-99-99` without a throw (the Node case, D1). A Haiku date of `2026-10-32` or `0000-00-00` is flagged `date_guessed`, so Opus re-reads (two front-door rows pass); parse keeps the draft dated today with `date_guessed` (its case passes). The catch at `slip-read.ts:165` is reachable only with a context day that is no date, which R1 pins. See n1 for the catch's silence.
+- **The date guard and the `readOnce` catch:** `isRealDate` (`drafts.ts`) refuses `2026-10-32`, `2026-13-05`, `2026-00-10`, `0000-00-00` and `9999-99-99` without a throw (the Node case in `ai-grounding.test.ts`; the planner's D1 is killed in the implementer's run). A Haiku date of `2026-10-32` or `0000-00-00` is flagged `date_guessed`, so Opus re-reads (two front-door rows pass); parse keeps the draft dated today with `date_guessed` (its case passes). The catch at `slip-read.ts:165` is reachable only with a context day that is no date, which R1 pins. See n1 for the catch's silence.
 - **MO2** (an unusable, no-draft or unreadable Haiku answer, then an Opus 529: 503, two calls, `remaining.slip` 10): three rows pass; T2 killed.
-- **One `draftChoices`** with its archived filters, used by parse and the slip read: the new slip case and the parse case pass; D2, D3, R5 and R6 are in the planner's list.
-- **MC, MJ, MO3, MA:** T1, T5, T3 and T4 in the planner's list; T1 and T2 I ran (T2 killed).
+- **One `draftChoices`** with its archived filters, used by parse and the slip read: the new slip case and the parse case pass; the planner's D2, D3, R5 and R6 are killed in the implementer's run.
+- **MC, MJ, MO3, MA:** their cases pass in my baseline; T1, T5, T3 and T4 are killed in the implementer's run (I reran T2, not these).
 - **The NaN-token clamp:** `counted` at `slip-read.ts` clamps a missing, negative or fractional count to 0; three rows pass; R2 killed.
 
 ### 6. P15: the rebuilt probes
@@ -163,7 +163,7 @@ None.
 | Y5 | only a 401 is thrown on from a tool step (`!== 500` became `=== 401`) | survives (`ai.test.ts` pins the 401; a 403 `ACCOUNT_UNAVAILABLE` mid-conversation is unpinned) | PS6 `Y5`: killed |
 | Y1 | today's date is not an allowed number for grounding | survives (an answer naming the day, after a tool that allowed no date, is unpinned) | PS6 `Y1`: killed |
 
-- All five lines moved unchanged from the base loop, and the base's `ai.test.ts` cases ran unchanged in my sample, so none of this is new. None is a code bug.
+- Y1, Y3, Y4 and Y5 are lines moved unchanged from the base loop, and the base's own Ask Bun cases in `ai.test.ts` (changed only to script Opus's replies) do not hold them either, so those four are not new. Y9 is in the new escalation itself (`ask.ts:121-122`). None is a code bug.
 - Y3 and Y4 matter most: dropping `today` from both models' first message would make Ask Bun resolve "this month" blindly, and nothing would fail.
 - **Fix:** copy the four probe cases into `ask-escalation.test.ts` (its helpers `person`, `ask`, `total`, `modelsAsked` and `remaining` are the ones the probes use). File: `scratch/p3-t9-second/probes/zz-second-t9.test.ts`.
 
@@ -211,7 +211,7 @@ None.
 
 ## Reproduce
 
-- `bash .claude/controller/scratch/p3-t9-second/mktree.sh <dir>` rebuilds the scratch copy of `5cb1055e` (set `BASE_SHA` in `mktree2.sh` for the base). I removed the two trees when I finished, since their linked node_modules dangle once the worktree goes.
+- `bash .claude/controller/scratch/p3-t9-second/mktree.sh <dir>` rebuilds the scratch copy of `5cb1055e`; `BASE_SHA=fb6aa0bdc565b06e43046b37f3391437abdf6477 bash mktree2.sh <dir>` the base. It needs the task worktree's node_modules while it stands. I removed my two trees when I finished, since their linked node_modules dangle once the worktree goes.
 - Probes: `scratch/p3-t9-second/probes/zz-second-t9.test.ts` (copy into `apps/edge/test/workers/`), `zz-second-deadline.test.ts` (into `apps/edge/test/`), `zz-second-base.test.ts` (into the base copy's `apps/edge/test/workers/`). Run logs: `probe-1.log` to `probe-4.log`, `probe-node-deadline.log`, `probe-base.log`.
 - Mutants: `python3 -I mymutants.py <tree> <log dir> <ids|all>`; the planner's sample logs are in `mutants/` and `mutants-sample-*.out`.
 

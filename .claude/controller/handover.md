@@ -49,6 +49,13 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 00:30: four PRs are reviewed and approved, and waiting only on CI (queued org-wide).**
+  - **#460 (P3-T13):** both approved.
+  - **#461 (P3-T9):** both approved (the Sonnet review at 00:15).
+  - **#462 (source-pins):** approved, and the reviewer confirmed the controller's m1 commit `d9b4dfb1`.
+  - **#463 (P4-T2):** approved. The controller added the review's m1 rows itself (test-only, `19ef67fb`; proof `scratch/p4-t2-m1/`, MY1 and MY2 killed), and the same reviewer is confirming.
+  - **When CI returns:** merge in order #460, #461, #462, #463. Rerun promotion #458's failed SQL job. Each merge needs the usual followups, probe copies (done for P4-T2: `scratch/p4-t2-review/probes/`) and promotion.
+  - **Live now:** the P2-T26 fixer (Haiku), the P2-T18 planner (Opus), and the P4-T2 reviewer's confirmation.
 - **14 Nov 00:20: the P2-T26 fixer is building; source-pins gained its review's m1 case; P3-T9's Opus review approved.**
   - **P2-T26 fix brief READY** (`briefs/P2-T26-fix.md`, kit `scratch/p2-t26-fix-planner/`, proved on the PR head `52110318`).
     - RED was 7 of 39, GREEN 39, mutants 139 of 139. It implements R123, R124, the pins and the late-answer guard.

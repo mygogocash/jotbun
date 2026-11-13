@@ -34,7 +34,7 @@
   - `build:edge`;
   - `git diff --check`.
 - [ ] CI on this pull request is green: the nine jobs, with the whole workers suite.
-- [ ] Independent review (Opus), and a second review (Sonnet): refunds (R116's reach, P6), what each model is sent, the escalation rules (D28), the figures' new keys, and the P3-T8 carries.
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `5cb1055e` (`.claude/controller/reviews/P3-T9.md`, `reviews/P3-T9-second.md`). Their minors are carried in `followups.md` at merge.
 - [ ] SKIPPED: live calls to Anthropic (no keys locally).
 
 Closes #193 once merged (closed by hand, since the base is not the default branch).
