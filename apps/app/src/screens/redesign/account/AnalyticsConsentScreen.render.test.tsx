@@ -35,6 +35,8 @@ vi.mock('expo-router', async () => {
 });
 vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }) }));
 vi.mock('@mobile/auth/useAuthGuardSession', () => ({ useAuthGuardSession: () => ({ isAuthed: true, ready: true }) }));
+// The spend layout loads the wallet shell (P2-T18), which reaches Quick add's command keys and their id maker.
+vi.mock('expo-crypto', () => ({ randomUUID: () => globalThis.crypto.randomUUID() }));
 vi.mock('@mobile/spend/v1/DeviceDiaryProvider', async () => {
   const { createElement } = await import('react');
   const { View } = await import('react-native');
