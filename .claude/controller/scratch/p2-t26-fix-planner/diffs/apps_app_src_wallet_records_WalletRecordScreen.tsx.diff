@@ -1,0 +1,116 @@
+diff --git a/apps/app/src/wallet/records/WalletRecordScreen.tsx b/apps/app/src/wallet/records/WalletRecordScreen.tsx
+index e977458bd0ccd3b9928c38c368e621f7cef17605..c7886bc113a1e58cfe7b3fb6a9778e7da6629da5 100644
+--- a/apps/app/src/wallet/records/WalletRecordScreen.tsx
++++ b/apps/app/src/wallet/records/WalletRecordScreen.tsx
+@@ -24,7 +24,10 @@
+ // - Private mode (W10, R114): every amount is ฿•••• (WalletAmount, the ghost)
+ //   and the undo bar names the entry without one; no free text that quotes the
+ //   person is drawn: the title is the category's name, never the merchant (Bun
+-//   may have filled it), and a note says it is hidden.
++//   may have filled it), and a note says it is hidden. Today's receipt section
++//   is not mounted (R123): a slip shows amounts and names, so a record that
++//   holds one shows the section's frame and ซ่อนอยู่, and nothing is fetched.
++// - The undo bar's words are spoken with ฿ read as บาท (R124).
+ // - This screen sends no event (R61): they sit in useRecordActions.
+ import type { CategoryDto, Minor } from '@gogospend/contracts';
+ import { useRef, useState } from 'react';
+@@ -34,6 +37,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
+ import Svg, { Circle, Path } from 'react-native-svg';
+ 
+ import { V1Error } from '@mobile/api/client';
++import { isRedesignEnabled } from '@mobile/config/featureFlags';
+ import { useActiveLocale, useCopy } from '@mobile/i18n/useCopy';
+ import { LoadingBlock, Notice, useGoBack } from '@mobile/screens/redesign/HistoryParts';
+ import { RecordReceipt } from '@mobile/screens/redesign/import/RecordReceipt';
+@@ -63,7 +67,7 @@ import { MaterialFill } from '../looks/MaterialFill';
+ import { CategoryGlyph, WalletCategoryIcon } from '../looks/WalletCategoryIcon';
+ import { useWalletLooks } from '../looks/WalletLooksProvider';
+ import { WalletAmount } from '../money/WalletAmount';
+-import { HIDDEN_AMOUNT, walletMoneyText } from '../money/walletMoney';
++import { HIDDEN_AMOUNT, spokenMoney, walletMoneyText } from '../money/walletMoney';
+ import type { MoneySign } from '../money/walletMoney';
+ import { usePrivateMode } from '../privacy/PrivateModeProvider';
+ import { PrimaryButton } from '../tray/PrimaryButton';
+@@ -87,12 +91,20 @@ const leadingFor = (size: number, locale: string) => walletLineHeight(size, loca
+ const valueOf = (detail: RecordDetail, key: ReceiptRowKey) => detail.rows.find((row) => row.key === key)?.value ?? null;
+ 
+ /**
+- * The words of the undo bar: the entry and its amount, or in private mode the
+- * entry alone (as records.restoredHidden, R109). The bar is a live region, so
+- * no amount may reach it while amounts are hidden.
++ * The words of the undo bar, drawn and spoken: the entry and its amount, with
++ * the spoken amount in words (฿ read as บาท, R124); or in private mode the
++ * entry alone, both alike (as records.restoredHidden, R109). The bar is a live
++ * region, so no amount may reach it while amounts are hidden.
+  */
+-export function deletedBarText(title: string, amountMinor: Minor, hidden: boolean, t: WalletT): string {
+-  return hidden ? t('records.deletedBarHidden', { title }) : t('records.deletedBar', { title, amount: walletMoneyText(amountMinor) });
++export function deletedBarText(title: string, amountMinor: Minor, hidden: boolean, t: WalletT): { text: string; spoken: string } {
++  if (hidden) {
++    const words = t('records.deletedBarHidden', { title });
++    return { text: words, spoken: words };
++  }
++  return {
++    text: t('records.deletedBar', { title, amount: walletMoneyText(amountMinor) }),
++    spoken: t('records.deletedBar', { title, amount: spokenMoney(amountMinor, t) }),
++  };
+ }
+ 
+ /** What the page shows of one entry, confirmed or a draft. */
+@@ -185,6 +197,26 @@ function WalletSwatch({ walletId }: { walletId: string }) {
+   );
+ }
+ 
++/**
++ * The receipt section while amounts are hidden (R123): its frame in the wallet
++ * look, a card of one fact, รูปใบเสร็จ and ซ่อนอยู่, read as one, as the note
++ * is. Today's panel is not mounted, so no grant, no download, no image, no
++ * open, and no Attach, Replace or Remove.
++ */
++function HiddenReceipt() {
++  const colors = useWalletColors();
++  const t = useDraftCopy(RECORD_COPY);
++  const tc = useCopy();
++  const words = t('records.noteHidden');
++  return (
++    <View testID="wallet-record-receipt-hidden" style={{ backgroundColor: colors.card, borderRadius: 20, overflow: 'hidden' }}>
++      <Fact label={tc('Receipt photo')} spoken={words} first>
++        <WalletText role="label" style={{ fontWeight: '400' }}>{words}</WalletText>
++      </Fact>
++    </View>
++  );
++}
++
+ /** One of the page's 52 pt buttons: the main one, a quiet one or an outlined one. */
+ function PageButton({ label, kind, onPress, disabled = false, grow, testID }: {
+   label: string;
+@@ -336,9 +368,11 @@ export function WalletRecordScreen({ id, mode = 'view', now }: WalletRecordScree
+         </>
+       );
+       if (undoShown) {
++        const words = deletedBarText(title, shown.amountMinor, hidden, t);
+         footer = (
+           <WalletUndoBar
+-            message={deletedBarText(title, shown.amountMinor, hidden, t)}
++            message={words.text}
++            spoken={words.spoken}
+             onUndo={() => void restore(deleted)}
+             onDismiss={() => setUndoGone(undoKey)}
+           />
+@@ -371,9 +405,15 @@ export function WalletRecordScreen({ id, mode = 'view', now }: WalletRecordScree
+         <Notice tone="alert" message={notice ?? ''} action={pending === 'delete' ? { label: tc('Try again'), busy, onPress: () => void remove(record) } : undefined} />
+       );
+     } else {
++      // R123: while amounts are hidden today's panel is not mounted; a record that holds a receipt shows its frame.
++      const receiptHeld = Boolean(record.attachment_id);
+       body = (
+         <>
+-          <RecordReceipt recordId={record.id} version={record.version} attachmentId={record.attachment_id ?? null} onChanged={() => void load()} />
++          {hidden ? (
++            receiptHeld && isRedesignEnabled('import') ? <HiddenReceipt /> : null
++          ) : (
++            <RecordReceipt recordId={record.id} version={record.version} attachmentId={record.attachment_id ?? null} onChanged={() => void load()} />
++          )}
+           {notice ? <Notice tone="alert" message={notice} /> : null}
+         </>
+       );

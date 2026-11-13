@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 00:20: the P2-T26 fixer is building; source-pins gained its review's m1 case; P3-T9's Opus review approved.**
+  - **P2-T26 fix brief READY** (`briefs/P2-T26-fix.md`, kit `scratch/p2-t26-fix-planner/`, proved on the PR head `52110318`).
+    - RED was 7 of 39, GREEN 39, mutants 139 of 139. It implements R123, R124, the pins and the late-answer guard.
+    - `orig/` 5 of 5 equal `52110318`; `check_kit` says "NOT AT HEAD", which is expected for a fix kit.
+    - Fixer (Haiku) `mcp:launch:f411e4ae27cc1da4788bb85aa87add712e515f9d930896f5227137c6b643aa37`, in worktree `p2-t26`, with no sync merge. The planner thread is archived.
+    - My dispatch named the wrong Sonnet n1 (the If-Match regex is P4-T3's). P2-T26's real Sonnet n1 is `after.current` not being cleared after `actionsClosed`; it goes to followups when #456 merges.
+  - **#462 (source-pins):** the Opus review **approved** with m1 (no case held "a record made without a source stays without one"; V5 to V7 survived).
+    - The controller added that one case itself, test-only, as `d9b4dfb1`. Proof in `scratch/source-pins-m1/`: 12 of 12, with V5, V6 and V7 each killed alone.
+    - The same reviewer was asked to confirm `d9b4dfb1`.
+  - **#461 (P3-T9):** the Opus review **approved**; the Sonnet review is pending.
+  - **CI is still queued org-wide.**
+- **14 Nov 00:05: the usage reset at 00:00 resumed exactly the six live agents** (the P2-T26 fix and P2-T18 planners; the P3-T9 Opus and Sonnet, source-pins and P4-T2 reviews). No finished thread resumed. CI is still queued org-wide.
 - **13 Nov 21:30: the usage limit paused all six agents at about 20:58. T3 snoozed them until 00:00 (17:00Z) and will resume them then.**
   - Paused:
     - the P3-T9 reviews (Opus `585ae86c…`, Sonnet `9f345364…`);

@@ -26,7 +26,7 @@ Read first:
   - `real/`: the round's seven files at their repo paths: the record screen, the undo bar, the catalogue's record stages (`recordScreens.tsx`), the main render file, the new receipt render file, `P2-T26.md` corrected and `P2-T26-fix.md` (new);
   - `orig/`: the five of them that `52110318` has, as it has them;
   - `diffs/`: one diff per file (`orig/` to `real/`, or nothing to `real/` for the two new files), with repo paths `a/<path>` and `b/<path>` and full blob ids, and `p2-t26-fix.patch`, the whole round. `PL/logs/applycheck.log` proves the patch turns `orig/` into `real/` byte for byte. The Appendix prints them;
-  - `tools/`: `files.sh` (the file lists), `stage.py` (the planner's forms: base, RED, GREEN), `mutants.py` (the runner), `batches.txt`, `merge_mutants.py` (joins the runner's batches), `first_errors.py` (each failing case's error kind), `diffs.sh`, `diffcheck.sh`, `sums.sh`, `dryrun.py`, `fill_brief.py` and `brief.template.md` (how this brief was built: every diff below is the `diffs/` file, byte for byte);
+  - `tools/`: `files.sh` (the file lists), `stage.py` (the planner's forms: base, RED, GREEN), `mutants.py` (the runner), `batches.txt`, `merge_mutants.py` (joins the runner's batches), `first_errors.py` (each failing case's error kind), `diffs.sh`, `diffcheck.sh`, `sums.sh`, `dryrun.py`, `fill_brief.py` and `brief.template.md` (how this brief was built: every diff below prints the `diffs/` file);
   - `SHA256SUMS` (the kit, 34 files; check it from PL) and `SHA256SUMS.logs` (the planner's `logs/`);
   - four lists to check WT with `shasum -a 256 -c`, paths relative to WT:
     - `SHA256SUMS.base-in-wt`: the 17 unchanged files the round's code and cases rely on, as `52110318` has them;
@@ -275,7 +275,7 @@ The orchestrator reads only this:
 
 ## Appendix: the diffs
 
-Each block is the file in `PL/diffs/`, byte for byte. Copy the `real/` files as Steps 2 and 3 say; do not apply these.
+Each block prints the file in `PL/diffs/`. The files there are the reference: a copy of this brief may have lost the single space that begins an empty context line. Copy the `real/` files as Steps 2 and 3 say; do not apply these.
 
 `apps/app/src/wallet/records/WalletRecordScreen.tsx`:
 ```diff
