@@ -32,7 +32,7 @@
   - `test:app` and `test:unit`;
   - `export:web` (the route changed);
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs.
+- [x] CI at `52110318`: 9 of 9, including the full render suite and the iOS export.
 - [ ] Independent review (Opus), and a second review (Sonnet): private mode (P3, and R123's receipt photo), the actions tray's order (R69), the undo bar's rules, and the events.
 - [ ] Fix round for R123, with the reviews' findings.
 - [ ] SKIPPED: device checks (the record, the tray and the bar on a phone; VoiceOver; the largest text).

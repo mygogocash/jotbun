@@ -3,10 +3,10 @@ import { runInDurableObject } from 'cloudflare:test'
 import { expect, it } from 'vitest'
 
 import { ProblemException } from '@api/common/api-problem.filter'
-import { FeatureGates } from '@api/common/feature-gates'
 
 import type { EdgeConfig } from '../../src/v1/config'
 import { assertFreshSignIn } from '../../src/v1/fresh-sign-in'
+import { EdgeGates } from '../../src/v1/gates'
 import type { VaultClaims, VaultRouteId } from '../../src/v1/protocol'
 import { VAULT_STEP_ROUTES } from '../../src/v1/routes'
 import { vaultSession, workerSessionFor } from '../../src/v1/worker-routes'
@@ -136,7 +136,7 @@ it("a Worker route's vault calls see only the live policies", async () => {
   const user = await member(client)
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
   const config: EdgeConfig = {
-    gates: new FeatureGates(),
+    gates: new EdgeGates(),
     policies: [...TEST_POLICIES, { kind: 'terms', version: 2, required: true, published_at: tomorrow, text: { th: 'ข้อกำหนด 2', en: 'Terms 2' } }],
     clientVersions: { check() {} },
   }

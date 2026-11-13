@@ -1,0 +1,39 @@
+diff --git a/apps/app/src/spend/v1/redesign/quickAddModel.ts b/apps/app/src/spend/v1/redesign/quickAddModel.ts
+index b5983cebdb2dffe6c994dc53848829a8a419dd13..46f148079dacf242022d2fe3dbdf24cbe3bc2194 100644
+--- a/apps/app/src/spend/v1/redesign/quickAddModel.ts
++++ b/apps/app/src/spend/v1/redesign/quickAddModel.ts
+@@ -18,8 +18,12 @@
+ // - "Saved, add another?" starts a new draft with new ids (`anotherDraft`).
+ //   A copy of a record is a new draft with new ids too (`duplicateDraft` in
+ //   recordModel.ts). Nothing ever reuses a saved draft's ids.
++// - How the record was made (`source`, P3-T13; H9: set once, at create) is
++//   named only when the caller gives it, after the fields the current form
++//   sends, so a create without one is the same JSON it always was. The add
++//   tray names one; Quick add names none.
+ import { ContractValidationError, MINOR_AMOUNT_MAX, normalizeMerchant, normalizeNote, validateOccurredOn } from '@gogospend/contracts';
+-import type { CategoryDto, TransactionType, WalletSnapshot } from '@gogospend/contracts';
++import type { CategoryDto, TransactionSource, TransactionType, WalletSnapshot } from '@gogospend/contracts';
+ 
+ import type { PendingEntry } from '../../../storage/types.ts';
+ import type { CreateEntryInput, CreateTransferInput } from '../resources.ts';
+@@ -184,15 +188,16 @@ export type QuickAddResult =
+  * The create input for `resources.createTransaction` / `createTransfer`, and
+  * the same entry as a device draft for `diary.saveDraft(entry, commandId)`.
+  * The input's keys are in the current form's order, so `keys.keyFor` sees the
+- * same JSON for the same draft.
++ * same JSON for the same draft; a `source` the caller gives comes last.
+  */
+-export function buildQuickAdd(draft: QuickAddDraft, context: { today: string; tc: Translate }): QuickAddResult {
++export function buildQuickAdd(draft: QuickAddDraft, context: { today: string; tc: Translate; source?: TransactionSource }): QuickAddResult {
+   const { errors, clean } = checkEntryFields(draft, context);
+   if (!clean) return { ok: false, errors };
+   const common = { id: draft.recordId, amount_minor: clean.amount_minor, occurred_on: clean.occurred_on, note: clean.note, merchant: clean.merchant };
++  const made = context.source === undefined ? {} : { source: context.source };
+   const input: CreateEntryInput | CreateTransferInput = clean.type === 'transfer'
+-    ? { ...common, source_wallet_id: clean.source_wallet_id, destination_wallet_id: clean.destination_wallet_id }
+-    : { ...common, type: clean.type, wallet_id: clean.wallet_id, category_id: clean.category_id };
++    ? { ...common, source_wallet_id: clean.source_wallet_id, destination_wallet_id: clean.destination_wallet_id, ...made }
++    : { ...common, type: clean.type, wallet_id: clean.wallet_id, category_id: clean.category_id, ...made };
+   return { ok: true, input, entry: toPendingEntry(input) };
+ }
+ 
