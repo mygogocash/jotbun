@@ -49,6 +49,9 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **13 Nov 20:30: P2-T18's planner started (the wallet shell, depth 13, the critical path):** `mcp:launch:7dd87572c7dffd10cf58f085d915b6e1ab70d213b0793dca5906b8ce6279f0cd`, WT `p2-t18` on `p2/t18-wallet-shell`.
+  - It carries followups lines 239, 359, 379, 414, 698 to 701, 777 and 838. Among them: P2-T17's first step (the today's-total races and the PV1 pin), P2-T16's must-carries (one host, PROBE-C1 and C3), and P2-T21's m2 (`leave()` once-only).
+  - It builds on P3-T13's `real/` `AddTrayHost.tsx` (#460), and on P2-T26's `real/` if it shares `SpendRoutes.render.test.tsx`. It was asked to propose a split if the task is too large.
 - **13 Nov 20:25: #463 (P4-T2, issue #210) opened at `4e95b987`.**
   - 14 of 15 `real/` files are byte-identical; the receipt adds the install line. RED was Node 2 of 14 and Workers 10 of 10, all assertions.
   - Mutants: 70 of 70 (SQL 8, code 42, Node 20), each batch identical to the planner's. Neighbours 168; `test:edge` 215; `build:edge` binds `CATALOG_DB`.
