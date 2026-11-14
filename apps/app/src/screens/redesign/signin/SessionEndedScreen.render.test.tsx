@@ -203,3 +203,18 @@ test("an Apple account on a build with only the email code: its own address firs
   expect(screen.getByRole('textbox', { name: 'Email address' })).toBeTruthy();
   expect(fake.signIn).toHaveBeenCalledTimes(1);
 });
+
+// 1C-T7 (the 1C-T8 confirming review's m1): R98 holds on every build, not only on
+// one that offers just the email code. Once Apple and Google go live, an email
+// account still gets an email code to another address, so another account is
+// always within reach.
+test('an email account on a build with Apple and Google still gets an email code to another address', async () => {
+  const fake = provider({ account: EMAIL_ENDED, methods: ['apple', 'google', 'email'] });
+  await open({ fake, view: EMAIL_VIEW });
+  expect(screen.queryAllByRole('button', { name: 'Continue with email' })).toHaveLength(1);
+  press('Use another way');
+  expect(screen.queryAllByRole('button', { name: 'Email a code to another address' })).toHaveLength(1);
+  press('Email a code to another address');
+  // An empty address field: the code can go to any address.
+  expect((screen.getByRole('textbox', { name: 'Email address' }) as HTMLInputElement).value).toBe('');
+});
