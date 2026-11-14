@@ -193,8 +193,25 @@ export type BunFact = {
 export type AiNoteResult = { date: string; facts: BunFact[]; text: string; source: "ai" | "facts"; model: AiModel; escalated: boolean };
 
 export type AiAskRequest = { question: string; today: string; locale: AiLocale };
-/** A figure the answer used, read from the user's records by a server tool. */
-export type AiFigure = { label: string; amount_minor: Minor };
+/**
+ * What a figure counts over (P3-T9, H14): its first and last day, the record
+ * type, and the category (null for every category), so the phone can offer
+ * the records behind it.
+ */
+export type AiFigureScope = { from: string; through: string; type: AiDraftType; category_id: string | null };
+/**
+ * A figure the answer used, read from the user's records by a server tool.
+ * `count` is how many records it adds up (null for a budget line); `scope` is
+ * what it counts over (null for a place's total or a budget line). Ask Bun
+ * draws no chart (H14).
+ */
+export type AiFigure = { label: string; amount_minor: Minor; count: number | null; scope: AiFigureScope | null };
+/**
+ * Ask Bun's answer (D28, P3-T9). `model` names whose words are shown: Haiku,
+ * Opus when Haiku's answer was ungrounded, declined or unfinished and Opus,
+ * asked again in a fresh conversation, grounded its own, or `rules` for the
+ * plain figures; `escalated` is true when the question went to Opus.
+ */
 export type AiAskResult = { answer: string; figures: AiFigure[]; source: "ai" | "facts"; model: AiModel; escalated: boolean };
 
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;

@@ -29,7 +29,9 @@ function addDays(iso: string, days: number): string {
 
 function isRealDate(iso: string): boolean {
   if (!DATE.test(iso)) return false
-  return new Date(`${iso}T00:00:00Z`).toISOString().slice(0, 10) === iso
+  const date = new Date(`${iso}T00:00:00Z`)
+  // A month over 12, a day over 31 or a zero is no date at all, and toISOString would throw (the P3-T8 second review's m1).
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === iso
 }
 
 /** "60", "1250.5" or "1,250.50" baht → exact satang; null for anything else. */
@@ -56,6 +58,18 @@ const activeWallets = (ctx: DraftContext) => ctx.wallets.filter((w) => !w.archiv
 function soleWallet(ctx: DraftContext): string | null {
   const wallets = activeWallets(ctx)
   return wallets.length === 1 ? wallets[0].id : null
+}
+
+/**
+ * What a model may choose from when it drafts (parse and the slip read, P3-T9):
+ * the active wallets' and categories' ids with their names, never a balance,
+ * a history or an archived one.
+ */
+export function draftChoices(ctx: DraftContext) {
+  return {
+    wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
+    categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
+  }
 }
 
 /** A draft from the offline rules alone (AI off, unavailable or unsure); shared with the app. */

@@ -46,7 +46,7 @@ export function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrid
     ask: async ({ locale }) => ({
       // The golden month's food: one entry, ฿182 on 26 September.
       answer: locale === 'th' ? 'เดือนนี้ใช้กับอาหารไป ฿182 ทั้งหมดเป็นของวันที่ 26' : 'You spent ฿182 on food this month, all of it on the 26th.',
-      figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200' }],
+      figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200', count: 1, scope: { from: '2026-09-01', through: '2026-09-29', type: 'expense', category_id: BUILTINS[0].id } }],
       source: 'ai',
       model: 'claude-haiku-5-5',
       escalated: false,

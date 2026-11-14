@@ -4,7 +4,9 @@
 // connection, the use goes back to the day it was counted on before the route
 // answers. A decline, an unusable or ungrounded answer and any other failure
 // spend it. The cases count `remaining` (GET /v1/me/ai-preferences) or the
-// vault's own rows. No network: every model reply is scripted.
+// vault's own rows. No network: every model reply is scripted. R116 (P3-T9): a
+// last turn the deadline never let start gives the use back only when no call
+// before it answered.
 import { env } from 'cloudflare:workers'
 import { randomUUID } from 'node:crypto'
 
@@ -118,9 +120,10 @@ describe('a failed model call gives its use back', () => {
 
   it('an ungrounded answer spends the use', async () => {
     const { user, food } = await withLunch()
-    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food }), text('You spent about ฿9,999 on food.'))
+    // D28 (P3-T9): Haiku's ungrounded answer goes to Opus, whose answer strays as well; the question counts once.
+    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food }), text('You spent about ฿9,999 on food.'), text('About ฿9,999 on food.'))
     const answer = await body(await ask(user))
-    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: false, figures: [{ amount_minor: '6000' }] })
+    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '6000' }] })
     expect(answer.answer).not.toContain('9,999')
     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
   })
@@ -274,6 +277,47 @@ describe('the refund on the vault', () => {
   })
 })
 
+describe('R116: a turn the deadline never let start (P3-T9)', () => {
+  it("a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)", async () => {
+    const { user, food } = await withLunch()
+    let sent = 0
+    const transport: ModelTransport = {
+      async send() {
+        sent += 1
+        // The first turn answers after 2.2 s of a 4 s deadline, so no later turn can start with 2 s in hand.
+        await new Promise((resolve) => setTimeout(resolve, 2_200))
+        return toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food })
+      },
+    }
+    const slow = await startV1(undefined, { transport, aiDeadlines: { ask: 4_000 } })
+    const res = await slow.as(user).post('/v1/ai/ask', { question: 'how much on food?', today, locale: 'en' })
+    expect(res.status).toBe(200)
+    // Haiku's second turn could not start, so the question went to Opus (D28), whose first turn could not start either: Haiku's figures answer.
+    expect(await body(res)).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '6000' }] })
+    expect(sent).toBe(1)
+    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+  })
+
+  it("a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)", async () => {
+    const user = await consenting()
+    let sent = 0
+    const transport: ModelTransport = {
+      async send() {
+        sent += 1
+        // Haiku declines after 2.2 s of a 4 s deadline, so Opus cannot start with 2 s in hand.
+        await new Promise((resolve) => setTimeout(resolve, 2_200))
+        return refusal()
+      },
+    }
+    const slow = await startV1(undefined, { transport, aiDeadlines: { slip: 4_000 } })
+    const res = await slip(slow, user)
+    expect(res.status).toBe(503)
+    expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    expect(sent).toBe(1)
+    expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
+  })
+})
+
 describe('when a use comes back', () => {
   /** One recorded call that ended in `failure` (null: the model answered, whatever it said). */
   const call = (failure: CallFailure | null): RecordedCall => ({
@@ -290,6 +334,8 @@ describe('when a use comes back', () => {
     stopReason: null,
     usage: null,
   })
+  /** A turn the deadline never let start: recorded as a timeout that was never sent (P3-T4). */
+  const unsent = (): RecordedCall => ({ ...call('timeout'), latencyMs: 0, sent: false })
 
   it('only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection', () => {
     const rows: [string, RecordedCall[], boolean, boolean][] = [
@@ -304,6 +350,10 @@ describe('when a use comes back', () => {
       ['a failed call, then one that answered', [call('rate_limited'), call(null)], false, false],
       ['a call that answered, then a failed one', [call(null), call('server_error')], false, true],
       ['a model answered before the last call failed (a draft kept, A14)', [call(null), call('server_error')], true, false],
+      // R116 (P3-T9): a turn the deadline never let start.
+      ['a turn the deadline never let start, with no call before it (the vault steps used the time)', [unsent()], false, true],
+      ['a call that answered, then a turn the deadline never let start', [call(null), unsent()], false, false],
+      ['a failed call, then a turn the deadline never let start', [call('rate_limited'), unsent()], false, true],
     ]
     for (const [what, calls, answeredByModel, refunds] of rows) expect(shouldRefund(calls, answeredByModel), what).toBe(refunds)
   })
