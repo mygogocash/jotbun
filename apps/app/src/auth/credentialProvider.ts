@@ -1,3 +1,4 @@
+import { trackSignedIn, trackSignedOut, trackSignedUp } from '../analytics/events.ts';
 import { AuthCancelled, AuthRefused, AuthUnavailable } from './betterAuthPort.ts';
 import type { BetterAuthPort, SignInMethod, SignInRequest } from './betterAuthPort.ts';
 import { INITIAL_SESSION, accepts, reduceSession } from './sessionMachine.ts';
@@ -18,6 +19,8 @@ export type SignInResult = { outcome: SignInOutcome; methods: readonly SignInMet
 export type FreshOutcome = 'fresh' | 'cancelled' | 'failed' | 'unavailable' | 'not_configured' | 'other_account' | 'wrong_code' | 'rate_limited';
 export type CodeOutcome = 'sent' | 'rate_limited' | 'unavailable' | 'failed' | 'not_configured';
 export type RequestCredentials = { accessToken: string; sessionId: string };
+/** `event: false` ends the session without the `signed_out` account event: after a sign-out everywhere, and after an accepted account deletion (R125). */
+export type SignOutOptions = { event?: boolean };
 
 export interface CredentialProvider {
   /** null: no usable session (or the credentials were denied, which locks), or not ready (the token names another session, R86; nothing locks). Rejects when the sign-in service can't be reached right now. */
@@ -31,7 +34,7 @@ export interface CredentialProvider {
   /** At launch: the stored session, active when its cookie is still here, otherwise locked. */
   hydrate(): Promise<void>;
   sendEmailCode(email: string): Promise<CodeOutcome>;
-  /** A sign-in while one runs joins it. */
+  /** A sign-in while one runs joins it. An active result sends one account event: `signed_up` when the server created the account, otherwise `signed_in` (1D-T14). */
   signIn(request: SignInRequest): Promise<SignInResult>;
   freshSignIn(request: SignInRequest): Promise<FreshOutcome>;
   account(): StoredSession | null;
@@ -41,8 +44,8 @@ export interface CredentialProvider {
   requestCredentials(): Promise<RequestCredentials | null>;
   /** Why the session ended, while it is locked or needs signing in again. */
   endedReason(): 'signed_out_elsewhere' | 'account_unavailable' | null;
-  /** Wins over a running sign-in; the session is signed out even if the record could not be cleared. */
-  signOut(): Promise<void>;
+  /** Wins over a running sign-in; the session is signed out even if the record could not be cleared. From an active session it first sends `signed_out` (1D-T14), unless `event` is false (R125). */
+  signOut(options?: SignOutOptions): Promise<void>;
 }
 
 export type CredentialDeps = { port: BetterAuthPort; sessions: SessionRecordStore; epochs?: EpochStore; logoutVault?: (credentials: RequestCredentials) => Promise<void> };
@@ -239,6 +242,12 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
         return CANCELLED;
       }
       dispatch({ type: 'bootstrapped', accountId: next.accountId, binding: next.sessionId });
+      // The account event (1D-T14), after the session change: AnalyticsUpkeep has
+      // dropped the previous account by then (R120), so the event waits for this
+      // account's answer (1D-T1) and is never sent as the previous account's. The
+      // server's `created` decides it (K23), never the request's `signUp`.
+      if (session.created) trackSignedUp({ method: request.method });
+      else trackSignedIn({ method: request.method });
       await reservation;
       return { outcome: 'active', methods: [], created: session.created };
     } catch (error) {
@@ -446,7 +455,19 @@ export function createCredentialProvider(deps: CredentialDeps): CredentialProvid
       return reason;
     },
 
-    signOut: () => endSession(),
+    signOut(options) {
+      // The account event (1D-T14) goes first, before the session change, so it is
+      // tracked under the account signing out, before AnalyticsUpkeep resets the
+      // identity. Only from an active session: a locked or ended one (a sign-out
+      // from elsewhere, or a session that ended by itself, which send nothing) has
+      // no binding, so AnalyticsUpkeep has already dropped its account (R120), and
+      // an event tracked now would wait for the next account's yes. Never with
+      // `event: false` (R125): sign out everywhere sends nothing in phase 1, and
+      // after an accepted deletion an event under the account's analytics id could
+      // bring back the PostHog person the deletion removes.
+      if (options?.event !== false && snapshot.state === 'active') trackSignedOut({ method: provider.account()?.method });
+      return endSession();
+    },
   };
   return provider;
 }

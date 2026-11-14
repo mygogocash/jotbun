@@ -10,7 +10,7 @@ import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
-import type { CredentialProvider, FreshOutcome } from '@mobile/auth/credentialProvider';
+import type { CredentialProvider, FreshOutcome, SignOutOptions } from '@mobile/auth/credentialProvider';
 import type { GlobalLogoutResources } from '@mobile/auth/globalLogout';
 import { getCredentialProvider, setSession } from '@mobile/auth/session';
 import { isLegacySpendEnabled, isRedesignEnabled } from '@mobile/config/featureFlags';
@@ -28,8 +28,8 @@ import { BUN_OUTLINE, BUN_RADIUS, BUN_SPACE, BUN_TOUCH } from '@mobile/ui/layout
 export type AccountServices = {
   /** How this account signs in, when the session says. Today's session does not, so the card says "Signed in". */
   readonly signInMethod: SignInMethod | null;
-  /** Ends the session on this device. The screen erases this phone's diary first. */
-  signOut(): Promise<void>;
+  /** Ends the session on this device. The screen erases this phone's diary first; after a sign-out everywhere it passes `{ event: false }`, so no `signed_out` is sent (R125). */
+  signOut(options?: SignOutOptions): Promise<void>;
   /** Sign out everywhere (the Better Auth port's), through globalLogout.ts. */
   readonly sessions: GlobalLogoutResources;
   /**
@@ -57,11 +57,12 @@ export function freshSignInOf(provider: CredentialProvider | null): (() => Promi
  * Signs this device out through today's session seam: the credential
  * provider when one is installed (it tells the vault, signs this session out
  * of Better Auth and forgets the stored sign-in), otherwise the legacy
- * session store.
+ * session store. `options` go to the provider: `event: false` sends no
+ * `signed_out` (R125).
  */
-export async function signOutOfThisDevice(): Promise<void> {
+export async function signOutOfThisDevice(options?: SignOutOptions): Promise<void> {
   const provider = getCredentialProvider();
-  if (provider) await provider.signOut();
+  if (provider) await provider.signOut(options);
   else setSession(null);
 }
 
