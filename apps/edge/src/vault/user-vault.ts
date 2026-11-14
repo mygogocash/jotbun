@@ -86,6 +86,7 @@ export class UserVault extends DurableObject<VaultEnv> {
    */
   alarmAt: number | null = null
   private readonly rates = new RateBuckets(() => this.clock().getTime())
+  private builtRegistry: CommandRegistry | undefined
   private services: { registry: CommandRegistry; digester: CommandDigester } | undefined
 
   constructor(ctx: DurableObjectStateLike, env: VaultEnv) {
@@ -251,10 +252,19 @@ export class UserVault extends DurableObject<VaultEnv> {
     return { reply, analytics: read ? analyticsAfterCall(read, call.route, before, failure) : { consent: 'unasked', events: [], failure } }
   }
 
+  /**
+   * The registry, built once per instance (1A-T3) and shared by every call and the alarm's file
+   * prunes (P4-T7's slip prune commits a change). It needs no secret, so the alarm never builds the digester.
+   */
+  get registry(): CommandRegistry {
+    this.builtRegistry ??= buildVaultRegistry()
+    return this.builtRegistry
+  }
+
   /** The registry and digester, built on the first call and kept for this instance. */
   private built(): { registry: CommandRegistry; digester: CommandDigester } {
     this.services ??= {
-      registry: buildVaultRegistry(),
+      registry: this.registry,
       digester: commandDigesterFromEnv({ COMMAND_DIGEST_KEY: this.env.COMMAND_DIGEST_KEY, COMMAND_DIGEST_PREVIOUS_KEYS: this.env.COMMAND_DIGEST_PREVIOUS_KEYS }),
     }
     return this.services
