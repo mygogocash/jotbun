@@ -135,6 +135,8 @@ export const VAULT_V1_ROUTES: readonly VaultRoute[] = [
   { method: 'GET', path: '/v1/slips/salt', access: 'bound_session', vault: 'slips.salt' },
   { method: 'GET', path: '/v1/slip-accounts', access: 'bound_session', vault: 'slipAccounts.list', release: 'SLIP_IMPORT_ENABLED' },
   { method: 'PUT', path: '/v1/slip-accounts/:id', access: 'current_policy', vault: 'slipAccounts.update', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
+  // The catalog (P4-T2): the bank apps' album names, the same for everyone, answered by the Worker from CATALOG_DB with an ETag.
+  { method: 'GET', path: '/v1/catalog/bank-albums', access: 'public', worker: 'catalog.bankAlbums' },
 ]
 
 const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
@@ -228,9 +230,9 @@ export const VAULT_RETIRED_ROUTES: readonly string[] = [
  * Routes the PostgreSQL edge never had (plans 1D and P4): served here, absent from the
  * NestJS controllers and never shadowed by one of their routes
  * (route-coverage.test.ts): the live socket (1D-T10), the analytics answer (1D-T11),
- * and the slip salt and slip accounts (P4-T3).
+ * the slip salt and slip accounts (P4-T3), and the bank-album list (P4-T2).
  */
-export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id']
+export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id', 'GET /v1/catalog/bank-albums']
 
 /**
  * The PostgreSQL edge's own routes, which NestJS never had: the AI companion

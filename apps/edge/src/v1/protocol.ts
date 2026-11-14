@@ -39,6 +39,8 @@ export type WorkerRouteId =
   | 'snapshot.chunk.download'
   // 1B-T7
   | 'ai.preferences.get' | 'ai.preferences.put' | 'ai.parse' | 'ai.slip' | 'ai.note' | 'ai.ask'
+  // P4-T2: the bank-album list, from the catalog database.
+  | 'catalog.bankAlbums'
 
 /** The published policy versions from config:v1, or null when none are published. */
 export type PublishedPolicies = PolicyVersionDto[] | null

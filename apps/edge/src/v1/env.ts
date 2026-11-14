@@ -11,6 +11,8 @@ export type V1Env = {
   CONFIG: KVNamespace
   /** The one private bucket. The vault reads it; Worker routes reach it through the same binding. */
   OBJECTS?: VaultBucket
+  /** The shared catalog (P4-T2): bank albums and merchant patterns. Without it the bank-album list is 503 and there are no merchant patterns. */
+  CATALOG_DB?: D1Database
   JOTBUN_ENV?: string
   /** The token issuer and audience, and the JWKS they are verified against (P3). */
   AUTH_ISSUER?: string
