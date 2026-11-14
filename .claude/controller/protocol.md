@@ -35,7 +35,9 @@
 >
 > **Briefs written before this note** keep their focused steps. Their steps that run the suites above are skipped and recorded as "CI" in the receipt.
 >
-> **Re-running CI is free:** when a merge into the base touches code a later PR shares, re-run that PR's checks (`gh run rerun <id>`) rather than proving the merge locally.
+> **Re-running CI is free:** when a merge into the base touches code a later PR shares, have CI test the later PR's merge with the new base, rather than proving the merge locally.
+> - Close and reopen the PR (`gh pr close <n>` then `gh pr reopen <n>`). The `reopened` event makes a fresh run on the current merge with the base, and cancels the PR's older run in the same concurrency group.
+> - **`gh run rerun` does not do this:** it re-tests the original event's merge commit, from before the base moved (the 1C-T7 review's note, 14 Nov). Use it only for a flake.
 
 > **8 November 2026:** macOS cleared `/private/tmp`, which held the old briefs, planner files and checksums. From now on, briefs live in `/Users/kunanonjarat/Developer/jotbun/.claude/controller/briefs/`, reviews in `.../controller/reviews/`, and each agent's scratch files in `.../controller/scratch/<task>/`. Never put anything you need to keep under `/private/tmp`. The heavy lock stays at `/private/tmp/claude-501/jotbun-heavy.lock`.
 
