@@ -49,6 +49,45 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 11:07: THREE MORE MERGED (#469 P6B-T14, #480 P4-T4, #481 P4-T7). The CI change is open as #483. The owner asked: "how can we make CICD of this project better with secure,fast,which support multiple pr or ai agent development in the same time", then said "go". The Mac rebooted at 08:25, and Claude Code's 5-hour limit stopped every agent from 08:35 until the session moved to another account at about 10:30.**
+  - **What stopped:**
+    - The reboot cancelled the four planners' first turns.
+    - The limit ("resets 11:30am", T3 snoozed the threads until then) failed both P4-T4 reviews, the #469 confirmation (run 3) and the P2-T22 and P3-T10 planners (run 3).
+    - All five were resumed at 10:45. P2-T30 and P2-T28 were restarted at 11:07.
+  - **Merged, each on green CI and approved reviews:**
+
+    | PR | Task | Merged as | Promotion | Issue closed |
+    | --- | --- | --- | --- | --- |
+    | #469 | P6B-T14 | `283d01c` | #482 | #298 |
+    | #480 | P4-T4 | `3fd2673` | #484 | #212 |
+    | #481 | P4-T7 | `cf8ea95` | #485 | #215 |
+
+    - #480's SQL job hit the documented `retry_after` edge in frozen `apps/api`, and passed on a rerun of that job. #481 passed 9 of 9 on its first run.
+    - Followups are written for all three.
+    - **New task `p4-t7-pins`:** test only, money path (the confirm's digest, the keyset walk, R41's order, the slip ref's scope). The reviewers' probes are ready (followups, P4-T7).
+  - **The CI change: #483** (`ci/selective-jobs`, worktree `ci-selective`, head `4e001f1b`). The owner's "go" covered this workflow PR; the repo settings wait for the owner's yes.
+    - **How it decides:**
+      - A `changes` job maps the changed files to the gate jobs (`scripts/ci/changed-areas.mjs`, run as the base commit has it), and each gate job's `if:` reads its output.
+      - Unknown paths run everything.
+      - A merge group, a push to `main` and a manual run run every job. A push to the integration branch also runs every job, unless only `.claude/` changed; each push has its own concurrency group.
+      - `ci-ok` ("CI result") is the one check to require.
+    - **Other changes:** two render shards, and every job on `ubuntu-24.04` with no runner variable.
+    - **Proof:**
+      - CI 12 of 12 (run 43554451823). The shards are 70 + 70 files and 1017 + 781 = 1798 tests, the same as the one Render job before.
+      - Locally, 26 tests pass, and 27 mutants are each killed on an `AssertionError` (`scratch/ci-mutants/` in this session's scratchpad).
+    - **Review:** Opus `mcp:launch:5b9b099b9c85b1b3523523896d025a392de26ae7aa250d54f01721281e9ae168`, writing `reviews/ci-selective.md`. Merge on approval; the PR is green.
+    - **Controller side:** `merge_task_pr.sh` now accepts GitHub's "skipping" bucket. Whenever anything was skipped, it requires a passing "CI result" check.
+    - **After #483 merges (asked; the owner's call):**
+      - branch protection on `main` and the integration branch;
+      - the merge queue on the integration branch with "CI result" required (then drop the integration-branch push trigger, and make `merge_task_pr.sh` and `promote_pr.sh` queue-aware);
+      - fork pull requests: approval for all external contributors;
+      - secret scanning and push protection;
+      - SHA pinning required;
+      - a non-admin identity for the agents.
+  - **Live now:**
+    - the P2-T22, P2-T30, P2-T28 and P3-T10 planners (the P2-T30 and P2-T28 restarts read `cf8ea95`'s merges);
+    - the #483 review.
+  - **zsh lessons:** `$VAR:x` applies a modifier, so write `${VAR}:x`; a word starting with `=` is a command lookup.
 - **14 Nov 08:21: #469's fix pushed as `899f6652` (the Opus reviewer confirms; fresh CI on GitHub's runners); followups written for all ten merges; four planners started.**
   - **#469 (P6B-T14):** the controller's commit `899f6652`, proof `scratch/p6b-t14-fix/`:
     - green 64 of 64 and `typecheck:app`;

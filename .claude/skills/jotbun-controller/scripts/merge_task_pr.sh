@@ -3,7 +3,9 @@
 # Usage: merge_task_pr.sh <pr-number> <reviewed-sha-prefix> [task-id]
 #   task-id (e.g. 1B-T5) is looked up in docs/implementation/backlog-map.json to close its issue;
 #   omit it for a PR with no task issue (a fix or follow-up).
-# Refuses unless the PR head still starts with the reviewed SHA and every check passed.
+# Refuses unless the PR head still starts with the reviewed SHA and every check passed. A check the change map skipped
+# (ci-selective-jobs: GitHub's "skipping" bucket) is fine, since the "CI result" check (ci-ok) fails the run when a
+# needed job failed or a full run skipped one. When any check was skipped, that check must be present and pass.
 set -eu
 pr=$1; sha=$2; task=${3:-}
 repo=mygogocash/jotbun
@@ -11,8 +13,13 @@ root=/Users/kunanonjarat/Developer/jotbun
 head=$(gh pr view "$pr" --repo $repo --json headRefOid --jq .headRefOid)
 branch=$(gh pr view "$pr" --repo $repo --json headRefName --jq .headRefName)
 case "$head" in "$sha"*) ;; *) echo "head $head is not the reviewed $sha; not merging"; exit 1;; esac
-bad=$(gh pr checks "$pr" --repo $repo --json bucket,name --jq '.[] | select(.bucket != "pass") | "\(.name): \(.bucket)"')
+checks=$(gh pr checks "$pr" --repo $repo --json bucket,name)
+bad=$(printf '%s' "$checks" | jq -r '.[] | select(.bucket != "pass" and .bucket != "skipping") | "\(.name): \(.bucket)"')
 [ -z "$bad" ] || { echo "checks not all green:"; echo "$bad"; exit 1; }
+if printf '%s' "$checks" | jq -e 'any(.[]; .bucket == "skipping")' >/dev/null; then
+  printf '%s' "$checks" | jq -e 'any(.[]; (.name | startswith("CI result")) and .bucket == "pass")' >/dev/null \
+    || { echo "a job was skipped but no passing \"CI result\" check vouches for the run; not merging"; exit 1; }
+fi
 case "$branch" in main|claude/p1a-vault-core|claude/premium-ai-edge|claude/jotbun-redesign-plan) echo "refusing protected branch $branch"; exit 1;; esac
 gh pr merge "$pr" --repo $repo --merge --match-head-commit "$head"
 merged=$(gh pr view "$pr" --repo $repo --json mergeCommit --jq '.mergeCommit.oid[:7]')

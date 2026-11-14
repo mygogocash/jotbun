@@ -1098,3 +1098,50 @@ The review reports these came from were under /private/tmp and were lost on 8 No
     - n2: `...(config.plugins ?? [])`, so a missing `plugins` key does not throw;
     - n1: the cancel fixture should carry a message other than Expo's, so only the code can match;
     - n3: Privacy's `freshSignIn` always `'fresh'` and Settings' always `null` are unpinned.
+- P6B-T14 (#469, merged 14 Nov as 283d01c at 899f6652; promotion #482). The reviews are `reviews/P6B-T14.md` (Opus: approved; its confirmation of the controller's fix `899f6652`: approved) and `reviews/P6B-T14-second.md` (Sonnet: Needs fixes on M1, answered by `899f6652` with m1 and m4).
+  - **P6B-T13, or the next task to edit `controller.test.ts`:** the Opus confirmation's m1 tests are ready at `scratch/p6b-t14-review/proposed-tests-899f6652.diff`.
+    - 48 lines in `controller.test.ts` only. The patch applies cleanly to `899f6652`.
+    - They kill M1, M5 and M3, each on one `AssertionError`.
+  - **P6B-T15:** a `useRollout` mounted before the controller is installed never hears the flags (Sonnet m3, Opus m2). `useRollout.ts` reads `getAnalytics()` at each render, and `AnalyticsUpkeep.tsx` installs the controller later. P6B-T15's hooks gate real features, so it must subscribe to the install too.
+  - **The receipt's line 10 (Opus m3):** "a launch, offline included, shows the last rollouts" is wrong offline. An offline launch never names the account (`fetchAccountId`), so it shows the defaults. Fix the wording in P6B-T15's receipt or the next housekeeping commit.
+  - **P6C (the proxy host), Sonnet m2:** React Native's fetch ignores `redirect: 'error'`, so the flags proxy host must never redirect.
+  - **Owner item 3 (Q5's key), the native flags preload:** with native crash capture on, the React Native SDK passes `preloadFeatureFlags: true` to the native plugin (`PosthogReactNativePlugin.swift:459`), so a device can ask `/flags` before a yes. Before the key is set, choose one: start the native SDK only after a yes, or keep crash reports before consent off.
+  - **Whoever next edits `remoteFlags.ts` or the flags load (Sonnet n1 to n3):**
+    - n1: the brief's P3 misdescribes a partial answer. The SDK upserts the flags that computed.
+    - n2: `parseKeptFlags` checks the shape, not the value types.
+    - n3: there is no throttle. Each foreground in yes is one `/flags` request, and PostHog bills flag requests; fine for a closed beta.
+- P4-T4 (#480, merged 14 Nov as 3fd2673 at ae0ba163; promotion #484). The reviews are `reviews/P4-T4.md` (Opus, approved: m1, n1 to n3) and `reviews/P4-T4-second.md` (Sonnet, approved: m1 to m3, n1, n2).
+  - **P4-T6, must (Sonnet m2):** clamp the body's `today` before `readSlipImage`, as `trustedToday` does for the single route (`service.ts`), and pin it.
+    - `parseAiDate` checks only the shape.
+    - A body `today` of `2026-02-30` or `9999-12-31` must reach no reader input and no model request; today a bad day costs two billed calls.
+    - Have the reader check `today` before its first call only together with the clamp, or P4-T6's catch-all `paused` turns a bad day into a resend loop.
+  - **The next task to edit `slip-read-import.test.ts` or `slip-import.ts` (test rows only; Opus m1, n1, n2; Sonnet m1, n1):**
+    - time rows `['118:40', null]` and `['at 18:40', null]`;
+    - a name with dots, `['ร้าน 081.234.5678', null]`, and names of exactly 7, 8 and 9 digits;
+    - `flags` as a number and as an object;
+    - a flagged read (`amount_unclear`, `date_guessed`) leaving `readSlipImage`;
+    - `expect(new SlipNotRead('timeout').retryAfterSeconds).toBeNull()`;
+    - a locale `en` case;
+    - the console spy over every outcome: both models declining, a receipt then an unreadable answer, broken JSON, a cut-short answer, a sanitizer throw and a 5xx.
+  - **P4-T16a (the merchant rule; Sonnet m3, Opus n3):** the seven-digit rule misses other separators: `_`, `,`, `/`, two spaces, a zero-width space, an en dash, a no-break space and a spaced dash.
+    - The suggested `/\p{Nd}(?:[^\p{L}\p{N}]{0,2}\p{Nd}){6,}/u` drops them all and keeps `ร้าน 7-11 สาขา 123456`. Add one row per separator.
+    - Reword `slip-import.ts`'s header (Sonnet n2) to "no account or phone number beyond its last four digits".
+- P4-T7 (#481, merged 14 Nov as cf8ea95 at ac0066a6; promotion #485). The reviews are `reviews/P4-T7.md` (Opus, approved: m1 to m4) and `reviews/P4-T7-second.md` (Sonnet, approved: m1 to m3, n1 to n6). The code is right; the minors are unpinned rules, with ready probes.
+  - **`p4-t7-pins` (a test-only PR, next in the routes lane; money path):** lift the reviewers' probes into `slip-drafts.test.ts` and `slips-vault.test.ts`, each failing on its mutant.
+    - **From Opus** (`scratch/p4-t7-review/probes/review-p4t7.test.ts`; its mutants are in `probes/review_mutants.py`):
+      - PR1: the keyset walked across drafts with no date or no time (M2, M3, M3b; under M2 a walk loses half the drafts);
+      - PR4: the confirm's digest covers each record's content (M8; under M8 an edited amount replays the old acknowledgement);
+      - PR3: R41's order on confirm and dismiss (M5, M6, M7);
+      - PR7: m4, no log and no analytics on the new routes.
+    - **From Sonnet** (`scratch/p4-t7-second/probes/pins-probe.test.ts`; its mutants are in `my_mutants.py`):
+      - M43: the slip ref's `UPDATE` scope;
+      - MD and MF: both digests;
+      - M1 and M2: `If-Match` forbidden;
+      - M16: a photo-origin draft is `slip_import`;
+      - n1: the refs' timestamps (M3 to M6).
+  - **P4-T6 (the only writer of `slip_drafts`):**
+    - n2: `slipsDueAt` returns NaN for an unparseable `expires_at`. Write a valid one, or filter with `Number.isNaN` in `prune.ts`.
+    - n3: a draft past `expires_at` stays listed and confirmable until the alarm's prune runs. Decide whether list and confirm filter `expires_at > now`.
+    - n4: confirm names `drafts[i].transaction.id` first when a record has two faults.
+  - **The receipt (Sonnet n6):** its Status line still says "Not pushed". Fix it in the next housekeeping commit.
+  - n5: a dead `touch(c)` in `pruneSlips`; harmless, and it matches the sibling prunes.
