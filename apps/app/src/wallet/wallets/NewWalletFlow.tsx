@@ -125,7 +125,12 @@ export function NewWalletFlow({ returnTo, now }: { returnTo?: NewWalletReturn; n
   // P2-T35 adds /spend/setup; until it lands, typed routes do not know it, so the destination is typed by hand here.
   const destination = (returnTo ?? '/spend') as Href;
 
+  // The flow is left once: two quick presses on a back, before React draws again, pop one screen, as the editor's
+  // leave() does (P2-T18a, P2-T21's confirming review m2).
+  const left = useRef(false);
   const leave = () => {
+    if (left.current) return;
+    left.current = true;
     if (router.canGoBack()) router.back();
     else router.replace(destination);
   };
@@ -380,9 +385,10 @@ function Added({ input, look, onDone }: { input: CreateWalletRequest; look: Wall
         </IconButton>
         {/* The drop's originY is in its parent's coordinates (Reanimated animates it to targetOriginY), so the card
             enters at the origin of a place of its own: it falls 200 pt, about one card's height, and the bouncy spring
-            overshoots by about 44 pt (R115, n1). A view with a test id is never flattened away on Fabric
-            (ViewShadowNode), so on a phone too the place stays the card's parent. */}
-        <View testID="new-wallet-card-place">
+            overshoots by about 44 pt (R115, n1). On a phone the place stays the card's parent only if it forms a
+            stacking context: a test id alone makes a view whose children Fabric hoists out of it, while a nativeID
+            forms a stacking context, so the card stays inside (P2-T18a, P2-T21's confirming review m1). */}
+        <View testID="new-wallet-card-place" nativeID="new-wallet-card-place">
           <Animated.View testID="new-wallet-card" entering={entering}>
             <View accessible accessibilityRole="image" accessibilityLabel={walletCardWords(card, look, hidden, t).spoken}>
               <WalletCard wallet={card} look={look} variant="full" />
