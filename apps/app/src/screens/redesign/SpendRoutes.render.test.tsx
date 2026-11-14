@@ -3,7 +3,8 @@
 // the current list; app/spend/record/[id].tsx shows a record only under the
 // flag (and never in the legacy build or without an id), and otherwise
 // redirects to the list. app/spend/deleted.tsx (Recently deleted) follows the
-// record route's rule.
+// record route's rule. Under the wallet area both show the Bun Wallet's screen
+// (P2-T25, P2-T26).
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
@@ -43,6 +44,21 @@ vi.mock('@mobile/wallet/records/WalletDeletedScreen', async () => {
   const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
   const WalletDeletedScreen = () => createElement(Text, null, `wallet recently deleted on ${(useSpendV1() as unknown as { marker: string }).marker}`);
   return { WalletDeletedScreen };
+});
+// The wallet record, stubbed for the same reason (P2-T26): it reads the route's resources, its id and its mode,
+// and counts its mounts, so a new entry is a new screen.
+const walletMounts = vi.hoisted(() => [] as string[]);
+vi.mock('@mobile/wallet/records/WalletRecordScreen', async () => {
+  const { createElement, useEffect } = await import('react');
+  const { Text } = await import('react-native');
+  const { useSpendV1 } = await import('@mobile/spend/v1/SpendV1Context');
+  const WalletRecordScreen = (props: { id: string; mode?: string }) => {
+    useEffect(() => {
+      walletMounts.push(props.id);
+    }, []);
+    return createElement(Text, null, `wallet record ${props.id} in ${String(props.mode)} mode on ${(useSpendV1() as unknown as { marker: string }).marker}`);
+  };
+  return { WalletRecordScreen };
 });
 vi.mock('@mobile/screens/redesign/RecentlyDeletedScreen', async () => {
   const { createElement } = await import('react');
@@ -160,4 +176,33 @@ test('Recently deleted under the wallet area: the wallet screen on the shared re
     expect(screen.queryAllByText(text), JSON.stringify(flag)).toHaveLength(1);
     cleanup();
   }
+});
+
+test('a record under the wallet area: the wallet screen on the shared resources, with its id and mode; switched off, the old screen; legacy, -core or no id, back to the list', () => {
+  const cases: readonly (readonly [{ redesign?: string; legacy?: string }, Record<string, string>, string])[] = [
+    [{ redesign: 'wallet' }, { id: 'r1' }, 'wallet record r1 in view mode on shared resources'],
+    [{ redesign: 'core,wallet' }, { id: 'r1', mode: 'edit' }, 'wallet record r1 in edit mode on shared resources'],
+    [{ redesign: 'all' }, { id: 'r1', mode: 'other' }, 'wallet record r1 in view mode on shared resources'],
+    [{}, { id: 'r1' }, 'record r1 in view mode'],
+    [{ redesign: 'wallet,-wallet' }, { id: 'r1', mode: 'edit' }, 'record r1 in edit mode'],
+    [{ redesign: '-core,wallet' }, { id: 'r1' }, 'redirect to /spend/all'],
+    [{ redesign: 'wallet', legacy: '1' }, { id: 'r1' }, 'redirect to /spend/all'],
+    [{ redesign: 'wallet' }, {}, 'redirect to /spend/all'],
+  ];
+  for (const [flag, params, text] of cases) {
+    flags(flag);
+    nav.params = params;
+    // A screen drawn outside the route's provider throws while it renders.
+    expect(() => render(<SpendRecordRoute />), JSON.stringify([flag, params])).not.toThrow();
+    expect(screen.queryAllByText(text), JSON.stringify([flag, params])).toHaveLength(1);
+    cleanup();
+  }
+  // Another entry in the same route is a new screen, as today's is.
+  flags({ redesign: 'wallet' });
+  walletMounts.length = 0;
+  nav.params = { id: 'r1' };
+  const view = render(<SpendRecordRoute />);
+  nav.params = { id: 'r2' };
+  view.rerender(<SpendRecordRoute />);
+  expect(walletMounts).toEqual(['r1', 'r2']);
 });
