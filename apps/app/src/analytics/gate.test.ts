@@ -93,11 +93,13 @@ test('after yes, allow-listed events, screens, identify and replay pass; anythin
   assert.equal(gateOutgoing({ event: '$screen', properties: { $screen_name: '/' } }, yes)?.event, '$screen');
   assert.equal(gateOutgoing({ event: '$identify' }, yes)?.event, '$identify');
   assert.equal(gateOutgoing({ event: '$snapshot' }, yes)?.event, '$snapshot');
+  // P6B-T14: a flag exposure passes after yes (Analytics.flag reads flags only then).
+  assert.equal(gateOutgoing({ event: '$feature_flag_called', properties: { $feature_flag: 'rollout-travel', $feature_flag_response: true } }, yes)?.event, '$feature_flag_called');
   const crashed = gateOutgoing(crash(), yes);
   assert.equal(crashed?.event, '$exception');
   assert.equal(crashed?.properties?.$process_person_profile, undefined);
   assert.equal(JSON.stringify(crashed).includes('context_line'), false);
-  for (const event of ['$feature_flag_called', 'Application Opened', '$autocapture', '$pageview', 'survey sent']) {
+  for (const event of ['Application Opened', '$autocapture', '$pageview', 'survey sent']) {
     assert.equal(gateOutgoing({ event, properties: { kind: 'expense' } }, yes), null, event);
   }
 });
@@ -118,4 +120,34 @@ test('the device name, $set and $set_once never leave', () => {
   assert.deepEqual(out, { event: 'signed_in', properties: { method: 'apple' } });
   assert.equal(event.properties.$device_name, "Kan's iPhone");
   assert.equal(event.$set.email, 'kan@example.com');
+});
+
+test('$feature_flag_called passes only after yes, without payloads', () => {
+  const exposure = {
+    event: '$feature_flag_called',
+    $set: { email: 'kan@example.com' },
+    properties: {
+      $feature_flag: 'exp-budget-question',
+      $feature_flag_response: 'no_presets',
+      $feature_flag_payload: { note: 'ค่าเช่าเดือนตุลา ฿4,500' },
+      $feature_flag_bootstrapped_payload: { note: 'สมชาย' },
+      $feature_flag_bootstrapped_response: 'control',
+      $used_bootstrap_value: false,
+      $device_name: "Kan's iPhone",
+      $set: { name: 'กานต์' },
+    },
+  };
+  // Before yes, with or without crash reports: nothing.
+  assert.equal(gateOutgoing(exposure, OFF), null);
+  assert.equal(gateOutgoing(exposure, { analytics: false, crashReportsWithoutConsent: false }), null);
+  // After yes: the flag and its values, and nothing a payload, the phone or a person carries.
+  assert.deepEqual(gateOutgoing(exposure, { analytics: true, crashReportsWithoutConsent: false }), {
+    event: '$feature_flag_called',
+    properties: {
+      $feature_flag: 'exp-budget-question',
+      $feature_flag_response: 'no_presets',
+      $feature_flag_bootstrapped_response: 'control',
+      $used_bootstrap_value: false,
+    },
+  });
 });

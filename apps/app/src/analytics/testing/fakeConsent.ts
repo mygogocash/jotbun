@@ -57,6 +57,9 @@ export function fakeConsent(options: FakeConsentOptions = {}): FakeConsent {
       reset() {},
       startSessionRecording() {},
       stopSessionRecording() {},
+      // No remote flags here (P6B-T14): none is pushed, so none is read.
+      updateFlags() {},
+      getFeatureFlag: () => undefined,
     },
     replay: false,
     store: {

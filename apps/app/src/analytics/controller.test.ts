@@ -4,6 +4,8 @@ import { test } from 'node:test';
 import { getAnalytics } from './bus.ts';
 import { AccountChangedError, HELD_LIMIT, createAnalytics } from './controller.ts';
 import type { ConsentStatus, PostHogLike, ServerAnalyticsState, ServerConsent, StoredConsent } from './controller.ts';
+import { REMOTE_FLAGS_NAME } from './remoteFlags.ts';
+import type { RemoteFlags } from './remoteFlags.ts';
 import { recordAnalytics } from './testing/recordAnalytics.ts';
 
 const ACCOUNT_A = '00000000-0000-4000-8000-0000000000aa';
@@ -22,8 +24,33 @@ function harness(options?: {
   weeks?: number | null;
   stored?: StoredConsent | null;
   client?: null;
+  /**
+   * Remote flags (P6B-T14): what each load answers (null: it fails), what is kept per
+   * account, and whether loads or kept reads wait for `releaseLoads` or `releaseKept`.
+   */
+  flags?: { answer: RemoteFlags | null; kept?: Readonly<Record<string, RemoteFlags>>; holdLoads?: boolean; holdKept?: boolean };
 }) {
   const sent: Sent[] = [];
+  // What the client was given (updateFlags) and asked (getFeatureFlag), apart from `sent`.
+  const pushed: RemoteFlags[] = [];
+  const flagReads: string[] = [];
+  let clientFlags: Record<string, boolean | string> = {};
+  const loads: string[] = [];
+  let flagAnswer = options?.flags?.answer ?? null;
+  const heldLoads: Array<(answer: RemoteFlags | null) => void> = [];
+  const heldKept: Array<() => void> = [];
+  const keptStores = new Map<string, Map<string, string>>();
+  for (const [account, value] of Object.entries(options?.flags?.kept ?? {})) {
+    keptStores.set(account, new Map([[REMOTE_FLAGS_NAME, JSON.stringify(value)]]));
+  }
+  const keptOf = (account: string) => {
+    let names = keptStores.get(account);
+    if (names === undefined) {
+      names = new Map();
+      keptStores.set(account, names);
+    }
+    return names;
+  };
   let stored = options?.stored ?? null;
   let failRead = false;
   let failSet = false;
@@ -45,9 +72,21 @@ function harness(options?: {
     capture(event, properties) { sent.push({ kind: 'capture', name: event, properties: properties ?? {} }); },
     screen(name, properties) { sent.push({ kind: 'screen', name, properties: properties ?? {} }); },
     identify(distinctId) { sent.push({ kind: 'identify', name: distinctId, properties: {} }); },
-    reset() { sent.push({ kind: 'reset', name: '', properties: {} }); },
+    reset() {
+      // As PostHog's reset(), it empties the pushed flags.
+      clientFlags = {};
+      sent.push({ kind: 'reset', name: '', properties: {} });
+    },
     startSessionRecording(resumeCurrent?: boolean) { sent.push({ kind: 'start', name: '', properties: {}, resume: resumeCurrent }); },
     stopSessionRecording() { sent.push({ kind: 'stop', name: '', properties: {} }); },
+    updateFlags(flags, payloads) {
+      pushed.push({ flags: { ...flags }, payloads: { ...payloads } });
+      clientFlags = { ...flags };
+    },
+    getFeatureFlag(key) {
+      flagReads.push(key);
+      return clientFlags[key];
+    },
   };
   const analytics = createAnalytics({
     client,
@@ -80,6 +119,26 @@ function harness(options?: {
         remote = { ...remote, consent: on ? 'yes' : 'no' };
       },
     },
+    ...(options?.flags === undefined ? {} : {
+      flags: {
+        load: async (distinctId: string) => {
+          loads.push(distinctId);
+          if (options.flags?.holdLoads) return new Promise<RemoteFlags | null>((resolve) => { heldLoads.push(resolve); });
+          return flagAnswer;
+        },
+        kept: (account: string) => ({
+          // A held read answers what was kept when it was asked, as a read on its way would.
+          get: async (name: string) => {
+            const value = keptOf(account).get(name) ?? null;
+            if (options.flags?.holdKept) await new Promise<void>((resolve) => { heldKept.push(resolve); });
+            return value;
+          },
+          set: async (name: string, value: string) => { keptOf(account).set(name, value); },
+          remove: async (name: string) => { keptOf(account).delete(name); },
+          eraseAll: async () => { keptStores.delete(account); },
+        }),
+      },
+    }),
   });
   const of = (kind: Sent['kind']) => sent.filter((event) => event.kind === kind);
   return {
@@ -119,6 +178,27 @@ function harness(options?: {
     remoteConsent: () => remote.consent,
     setRemote(patch: Partial<ServerAnalyticsState>) { remote = { ...remote, ...patch }; },
     stored: () => stored,
+    /** This phone loses its stored answer (P6B-T14's unknown-again case). */
+    forgetStored() { stored = null; },
+    /** Remote flags (P6B-T14). */
+    loads,
+    pushed,
+    flagReads,
+    /** The client's flag without reading it (no exposure). */
+    clientFlag: (key: string) => clientFlags[key],
+    /** The account's kept flags, as stored, or null. */
+    kept: (account: string) => keptStores.get(account)?.get(REMOTE_FLAGS_NAME) ?? null,
+    setFlagAnswer(next: RemoteFlags | null) { flagAnswer = next; },
+    /** Answers every held load with `answer`, then lets what follows run. */
+    async releaseLoads(answer: RemoteFlags | null) {
+      for (const release of heldLoads.splice(0)) release(answer);
+      await settle();
+    },
+    /** Lets every held kept read answer, then lets what follows run. */
+    async releaseKept() {
+      for (const release of heldKept.splice(0)) release();
+      await settle();
+    },
     captures: () => of('capture'),
     screens: () => of('screen'),
     identifies: () => of('identify'),
@@ -635,6 +715,8 @@ function sessions(initial: Record<string, ServerConsent>) {
     reset() { sent.push('reset'); },
     startSessionRecording() { sent.push('start'); },
     stopSessionRecording() { sent.push('stop'); },
+    updateFlags() {},
+    getFeatureFlag: () => undefined,
   };
   const analytics = createAnalytics({
     client,
@@ -924,4 +1006,257 @@ test('a yes, or a sign-out, ends a pending no', async () => {
   await h.analytics.setAccount(null);
   assert.equal(h.analytics.status(), 'signed_out');
   assert.equal(h.analytics.pendingNo(), false);
+});
+
+// Remote flags after yes (P6B-T14, X5, B25). LOADED is what the network answers;
+// KEPT is what an earlier yes kept for the account, so each push can be told apart.
+const LOADED: RemoteFlags = { flags: { 'rollout-travel': true, 'exp-budget-question': 'no_presets' }, payloads: { 'rollout-travel': { since: 1 } } };
+const LOADED_LATER: RemoteFlags = { flags: { 'rollout-travel': false }, payloads: {} };
+const KEPT: RemoteFlags = { flags: { 'rollout-travel': 'everyone', 'rollout-bun-ai': true }, payloads: {} };
+
+test('flags are asked for once yes is entered, with the analytics id, and pushed with updateFlags', async () => {
+  const h = harness({ consent: 'yes', flags: { answer: LOADED } });
+  const heard: Array<boolean | string | undefined> = [];
+  h.analytics.subscribe(() => { heard.push(h.analytics.flag('rollout-travel')); });
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [LOADED]);
+  assert.equal(h.analytics.flag('rollout-travel'), true);
+  assert.equal(h.analytics.flag('exp-budget-question'), 'no_presets');
+  // Subscribers hear the push, and read the pushed value then.
+  assert.equal(heard.at(-1), true);
+  // Kept for the account, values only.
+  assert.deepEqual(JSON.parse(h.kept(ACCOUNT_A) ?? 'null'), LOADED);
+  // Each refresh in yes asks again, and pushes and keeps the new answer.
+  h.setFlagAnswer(LOADED_LATER);
+  await h.analytics.refresh();
+  await settle();
+  assert.deepEqual(h.loads, [ANALYTICS_ID, ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [LOADED, LOADED_LATER]);
+  assert.equal(h.analytics.flag('rollout-travel'), false);
+  assert.deepEqual(JSON.parse(h.kept(ACCOUNT_A) ?? 'null'), LOADED_LATER);
+});
+
+test('no flags are asked for unless the answer is yes', async () => {
+  const kept = { [ACCOUNT_A]: KEPT };
+  // Signed out.
+  const out = harness({ consent: 'yes', flags: { answer: LOADED, kept } });
+  await out.analytics.setAccount(null);
+  await settle();
+  assert.equal(out.analytics.status(), 'signed_out');
+  // Never asked: the question is open.
+  const unasked = harness({ consent: 'unasked', flags: { answer: LOADED, kept } });
+  await unasked.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(unasked.analytics.status(), 'unanswered');
+  // The server's no, at the launch and at the next foreground.
+  const no = harness({ consent: 'no', flags: { answer: LOADED, kept } });
+  await no.analytics.setAccount(ACCOUNT_A);
+  await no.analytics.refresh();
+  await settle();
+  assert.equal(no.analytics.status(), 'no');
+  // Offline with nothing known: still loading.
+  const unknown = harness({ consent: 'yes', flags: { answer: LOADED, kept } });
+  unknown.setFailRead(true);
+  await unknown.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(unknown.analytics.status(), 'loading');
+  // A no given to the open question.
+  await unasked.analytics.answer('no');
+  await settle();
+  assert.equal(unasked.analytics.status(), 'no');
+  for (const h of [out, unasked, no, unknown]) {
+    assert.deepEqual(h.loads, []);
+    assert.deepEqual(h.pushed, []);
+  }
+  // Then a yes asks, once, under the analytics id.
+  await unasked.analytics.answer('yes');
+  await settle();
+  assert.deepEqual(unasked.loads, [ANALYTICS_ID]);
+  assert.deepEqual(unasked.pushed, [LOADED]);
+});
+
+test('a launch shows the kept rollouts before the network answers', async () => {
+  const h = harness({ consent: 'yes', flags: { answer: LOADED, kept: { [ACCOUNT_A]: KEPT }, holdLoads: true } });
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  // The load is on its way, and the kept flags are already pushed.
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [KEPT]);
+  assert.equal(h.analytics.flag('rollout-travel'), 'everyone');
+  assert.equal(h.analytics.flag('rollout-bun-ai'), true);
+  await h.releaseLoads(LOADED);
+  assert.deepEqual(h.pushed, [KEPT, LOADED]);
+  assert.equal(h.analytics.flag('rollout-travel'), true);
+  assert.deepEqual(JSON.parse(h.kept(ACCOUNT_A) ?? 'null'), LOADED);
+});
+
+test('an offline launch in yes keeps the last loaded rollouts', async () => {
+  const h = harness({
+    consent: 'yes',
+    stored: { accountId: ACCOUNT_A, answer: 'yes', pendingServer: false },
+    flags: { answer: null, kept: { [ACCOUNT_A]: KEPT } },
+  });
+  h.setFailRead(true);
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.pushed, [KEPT]);
+  assert.equal(h.analytics.flag('rollout-bun-ai'), true);
+  // Offline there is no analytics id yet, so nothing is asked for.
+  assert.deepEqual(h.loads, []);
+  // Back online, a load that fails keeps the last rollouts, shown and kept.
+  h.setFailRead(false);
+  await h.analytics.refresh();
+  await settle();
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [KEPT]);
+  assert.equal(h.analytics.flag('rollout-bun-ai'), true);
+  assert.deepEqual(JSON.parse(h.kept(ACCOUNT_A) ?? 'null'), KEPT);
+});
+
+test('a no, an unanswered question or a sign-out clears the kept flags', async () => {
+  async function loaded() {
+    const h = harness({ consent: 'yes', flags: { answer: LOADED } });
+    await h.analytics.setAccount(ACCOUNT_A);
+    await settle();
+    assert.deepEqual(JSON.parse(h.kept(ACCOUNT_A) ?? 'null'), LOADED);
+    assert.equal(h.analytics.flag('rollout-travel'), true);
+    return h;
+  }
+  // A no given on this phone.
+  const no = await loaded();
+  await no.analytics.answer('no');
+  await settle();
+  // The question opens again: the server no longer holds an answer.
+  const reopened = await loaded();
+  reopened.setRemote({ consent: 'unasked' });
+  await reopened.analytics.refresh();
+  await settle();
+  assert.equal(reopened.analytics.status(), 'unanswered');
+  // A sign-out.
+  const out = await loaded();
+  await out.analytics.setAccount(null, { signedOut: true });
+  await settle();
+  for (const h of [no, reopened, out]) {
+    assert.equal(h.kept(ACCOUNT_A), null);
+    assert.equal(h.analytics.flag('rollout-travel'), undefined);
+    // reset() emptied the client's.
+    assert.equal(h.clientFlag('rollout-travel'), undefined);
+    assert.deepEqual(h.pushed, [LOADED]);
+  }
+});
+
+test('a no from another phone empties the flags at the next foreground', async () => {
+  const h = harness({ consent: 'yes', flags: { answer: LOADED } });
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(h.analytics.flag('rollout-travel'), true);
+  // Said on another phone; AnalyticsUpkeep refreshes at the next foreground.
+  h.setRemote({ consent: 'no' });
+  await h.analytics.refresh();
+  await settle();
+  assert.equal(h.analytics.status(), 'no');
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  assert.equal(h.clientFlag('rollout-travel'), undefined);
+  assert.equal(h.kept(ACCOUNT_A), null);
+  // That foreground asked for no flags.
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+});
+
+test('flag reads nothing before yes', async () => {
+  const h = harness({ consent: 'unasked', flags: { answer: LOADED, holdLoads: true } });
+  // Loading, at the launch.
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  await h.analytics.setAccount(null);
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  await h.analytics.setAccount(ACCOUNT_A);
+  assert.equal(h.analytics.status(), 'unanswered');
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  await h.analytics.answer('no');
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  // In yes, nothing is read before the first push either.
+  await h.analytics.answer('yes');
+  await settle();
+  assert.equal(h.analytics.status(), 'yes');
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  assert.deepEqual(h.flagReads, []);
+  await h.releaseLoads(LOADED);
+  assert.equal(h.analytics.flag('rollout-travel'), true);
+  assert.deepEqual(h.flagReads, ['rollout-travel']);
+  // After a no and a yes again, nothing is read until that yes pushes.
+  await h.analytics.answer('no');
+  await h.analytics.answer('yes');
+  await settle();
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  assert.deepEqual(h.flagReads, ['rollout-travel']);
+  await h.releaseLoads(LOADED);
+  assert.equal(h.analytics.flag('rollout-travel'), true);
+  // A yes that is unknown again (the stored answer lost, the server out of reach) reads nothing.
+  h.forgetStored();
+  h.setFailRead(true);
+  await h.analytics.refresh();
+  assert.equal(h.analytics.status(), 'loading');
+  assert.equal(h.analytics.flag('rollout-travel'), undefined);
+  assert.deepEqual(h.flagReads, ['rollout-travel', 'rollout-travel']);
+});
+
+test('without a client, no flags are asked for and every flag reads undefined', async () => {
+  const none = harness({ consent: 'yes', client: null, flags: { answer: LOADED, kept: { [ACCOUNT_A]: KEPT } } });
+  await none.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(none.analytics.status(), 'yes');
+  assert.deepEqual(none.loads, []);
+  assert.equal(none.analytics.flag('rollout-bun-ai'), undefined);
+  // The same yes with a client asks, once.
+  const some = harness({ consent: 'yes', flags: { answer: LOADED, kept: { [ACCOUNT_A]: KEPT } } });
+  await some.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.deepEqual(some.loads, [ANALYTICS_ID]);
+});
+
+test('a yes without an analytics id asks for no flags, and still shows the kept ones', async () => {
+  const h = harness({ consent: 'yes', analyticsId: null, flags: { answer: LOADED, kept: { [ACCOUNT_A]: KEPT } } });
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.loads, []);
+  assert.deepEqual(h.pushed, [KEPT]);
+  // Once the server names the analytics id, the next refresh asks under it.
+  h.setRemote({ analyticsId: ANALYTICS_ID });
+  await h.analytics.refresh();
+  await settle();
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [KEPT, LOADED]);
+});
+
+test('flags still on their way when a no comes are never pushed or kept', async () => {
+  // The kept read on its way.
+  const reading = harness({ consent: 'yes', flags: { answer: LOADED, kept: { [ACCOUNT_A]: KEPT }, holdKept: true } });
+  await reading.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  await reading.analytics.answer('no');
+  await reading.releaseKept();
+  // The load on its way.
+  const loading = harness({ consent: 'yes', flags: { answer: LOADED, holdLoads: true } });
+  await loading.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.deepEqual(loading.loads, [ANALYTICS_ID]);
+  await loading.analytics.answer('no');
+  await loading.releaseLoads(LOADED);
+  for (const h of [reading, loading]) {
+    assert.equal(h.analytics.status(), 'no');
+    assert.deepEqual(h.pushed, []);
+    assert.equal(h.kept(ACCOUNT_A), null);
+    assert.equal(h.clientFlag('rollout-travel'), undefined);
+  }
+  // The same load answered in yes is pushed and kept.
+  const kept = harness({ consent: 'yes', flags: { answer: LOADED, holdLoads: true } });
+  await kept.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  await kept.releaseLoads(LOADED);
+  assert.deepEqual(kept.pushed, [LOADED]);
+  assert.deepEqual(JSON.parse(kept.kept(ACCOUNT_A) ?? 'null'), LOADED);
 });

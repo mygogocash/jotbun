@@ -152,6 +152,8 @@ test('coming to the foreground reads the answer again', async () => {
     reset() { sent.push('reset'); },
     startSessionRecording() { sent.push('start'); },
     stopSessionRecording() { sent.push('stop'); },
+    updateFlags() {},
+    getFeatureFlag: () => undefined,
   };
   const analytics = createAnalytics({
     client,
