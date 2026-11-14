@@ -7,12 +7,14 @@ import { Platform } from 'react-native';
 
 import { getSharedAnalyticsServer, v1ClientVersion } from '@mobile/api/sharedV1';
 import { getMobileEnv } from '@mobile/config/env';
+import { walletAccountStore } from '@mobile/wallet/store/deviceWalletStore';
 import { getAnalytics, setAnalytics, takeEarlyEvents } from './bus';
 import { eraseStoredConsent, readStoredConsent, writeStoredConsent } from './consentStorage';
 import { createAnalytics } from './controller';
 import type { Analytics, PostHogLike } from './controller';
 import { gateOutgoing } from './gate';
 import { REPLAY_TOUCHES_CAN_BE_OFF, posthogOptions } from './posthogOptions';
+import { fetchRemoteFlags } from './remoteFlags';
 
 let installing: Promise<Analytics> | null = null;
 
@@ -47,6 +49,13 @@ async function install(): Promise<Analytics> {
     server: {
       read: () => getSharedAnalyticsServer().read(),
       setConsent: (on) => getSharedAnalyticsServer().setConsent(on),
+    },
+    // Remote flags (P6B-T14): asked for through PostHog's host (the proxy) with the
+    // project key, only in yes and never without a client; kept in the account's
+    // store (P2-T3), so a confirmed deletion erases them with the rest.
+    flags: {
+      load: (distinctId) => fetchRemoteFlags({ host: env.posthogHost, apiKey: env.posthogKey, distinctId }),
+      kept: (accountId) => walletAccountStore(accountId),
     },
   });
   analytics = created;

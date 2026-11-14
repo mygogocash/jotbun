@@ -49,6 +49,74 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 08:21: #469's fix pushed as `899f6652` (the Opus reviewer confirms; fresh CI on GitHub's runners); followups written for all ten merges; four planners started.**
+  - **#469 (P6B-T14):** the controller's commit `899f6652`, proof `scratch/p6b-t14-fix/`:
+    - green 64 of 64 and `typecheck:app`;
+    - F1 to F4 and Sonnet's M10 each killed;
+    - `scrubException` drops `$active_feature_flags` and `$feature/*` before yes, and the kept read has `.catch(() => null)`;
+    - the redirect comments are corrected.
+
+    **The Opus reviewer (`mcp:launch:2720062974f45f4b113d217d5db883063d9094ac5ae58a09828f9bcdc1d944cc`, run 2) confirms `899f6652`.** The Sonnet thread is archived. m3 (a late-installed `useRollout`) goes to P6B-T15, and m2's host rule to P6C.
+  - **Followups:** entries are written for P3-T13, source-pins, P4-T2, P2-T26 and 1C-T7, and the headers of P2-T18a, P2-T18, P4-T17 and 1D-T14 are updated. P3-T13's probe is copied out of its tree.
+  - **Planners (Opus xhigh)**, common notes `scratch/dispatch/planner-common-notes-20261114d.md` (R127 for kits and gates), head `42cadcce`:
+
+    | Task | Thread | WT and branch | Notes |
+    | --- | --- | --- | --- |
+    | P2-T22, wallet detail and the streak | `mcp:launch:85dd91bad7ee9bff23a5b1319aec0a2e2cc2ae599a8c06b3a997837b6afbc253` | `p2-t22`, `p2/t22-wallet-detail` | critical path, depth 12 |
+    | P2-T30, budget | `mcp:launch:d474d37bcb3e5baa75854769f72ba9ba110eefa79ee2008172e9a24e23be932c` | `p2-t30`, `p2/t30-budget` | touches `WalletShell.tsx` |
+    | P2-T28, history | `mcp:launch:043d053d2969b427cb8378e32f692ac8947c980953b117ba5e3390877cd8727f` | `p2-t28`, `p2/t28-history` | |
+    | P3-T10, `$ai_generation` | `mcp:launch:2c1f01b8971febe599718f9219a2d2972be40888b9f10761f641f6fdeb5cf01a` | `p3-t10`, `p3/t10-ai-generations` | builds on P4-T4's `real/` if it needs `slip-read.ts` |
+
+  - **Not started yet:**
+    - P4-T14 (it shares `WalletShell.tsx` with P2-T30);
+    - P2-T27 and P3-T19 (they share `WalletRecordScreen.tsx`);
+    - P5-T6 and P5-T9 (the routes lane, after P4-T7);
+    - P3-T18 (it shares `analytics/events.ts` with P4-T14, and the saved moment with `saved-pins`);
+    - P3-T15, P6B-T10, P6A-T7, P2-T34 and P5-T19;
+    - the follow-up tasks `saved-pins` and `shell-carry`.
+  - **Live now:**
+    - the P4-T4 and P4-T7 implementers;
+    - the #469 confirmation;
+    - the four planners above.
+- **14 Nov 08:12: TEN PRs MERGED since CI came back.** The integration head is `a7070ae`, and stack #379 holds 53. Only #469 is open, with a fix in proof.
+
+  | PR | Task | Merged as | Promotion | Issue closed |
+  | --- | --- | --- | --- | --- |
+  | #461 | P3-T9 | `37877cb` | #470 | #193 |
+  | #460 | P3-T13 | `8df0702` | #471 | #197 |
+  | #463 | P4-T2 | `e363e2a` | #472 | #210 |
+  | #456 | P2-T26 | `a9cb580` | #473 | #172 |
+  | #467 | 1D-T14 | `52f25f4` | #474 | #145 |
+  | #462 | source-pins | `bc975e0` | #475 | none |
+  | #466 | P4-T17 | `1fd4eb8` | #476 | #226 |
+  | #464 | P2-T18a | `376de26` | #477 | none (part of #164) |
+  | #468 | 1C-T7 | `98f1355` | #478 | #124 |
+  | #465 | P2-T18 | `a7070ae` | #479 | #164 |
+
+  - **Each merge was checked** against what merged before it for shared files and changed contracts. All were disjoint, except #465 after #464 (the toast's host). #465 was closed and reopened, so a fresh run tested its merge with #464; it was 9 of 9.
+  - **#464's** reviewed head went green through the dispatch run. `gh pr checks` keeps the newest check per name, so `merge_task_pr.sh` passed and the merge was by the script.
+  - **#468 (1C-T7):** both reviews approved, with minors only. Google ships hidden. Before Google's ids are set:
+    - sign out of Google's SDK once the token is taken (Opus m2);
+    - decide the iOS URL scheme (Opus m4, Sonnet m4; a release build would crash without it).
+
+    The followups entry is to write.
+  - **R127 corrected:** `gh run rerun` re-tests the original merge commit, not a moved base (the 1C-T7 review's note). Closing and reopening the PR is how to test a later PR against a moved base.
+  - **#469 (P6B-T14):** Opus approves; **Sonnet says Needs fixes, M1 (major).** After a relaunch, the SDK's persisted flags ride on crash reports that leave before consent is known. Its m1 is a kept read that rejects and stops the load; m2, `redirect: 'error'`, does nothing on React Native; m3 is a late-installed `useRollout`; m4 is payload stripping on crash reports, unpinned.
+    - **The controller's fix, in proof** (`scratch/p6b-t14-fix/`):
+      - `scrubException` drops `$active_feature_flags` and `$feature/*` before yes;
+      - `.catch(() => null)` on the kept read;
+      - the redirect comments are corrected;
+      - a gate case (flags and payloads on an `$exception`, before and after yes);
+      - a controller case (a failing kept read, with the harness gaining `failKeptGet`);
+      - mutants F1 to F4 and M10.
+    - It is waiting on the heavy lock (task `b94fow1lb`).
+    - Then: copy into worktree `p6b-t14`, commit, push, and ask the Opus reviewer (`mcp:launch:2720062974f45f4b113d217d5db883063d9094ac5ae58a09828f9bcdc1d944cc`) to confirm, folding Sonnet's review in.
+    - m3 goes to P6B-T15; m2's host rule goes to P6C.
+  - **Building:** P4-T4 (`mcp:launch:0e23f6c5…`, worktree `p4-t4`) and P4-T7 (`mcp:launch:e757ebab…`, worktree `p4-t7`).
+  - **To do next:**
+    - followups entries for #460, #462, #463, #456 and #468, and "merged" headers for #464 to #467;
+    - plan `saved-pins` (#464 is in) and `shell-carry` (#465 is in);
+    - `ready_tasks.py` for what these merges unlocked.
 - **14 Nov 07:39: #461 (P3-T9) MERGED as `37877cb` (CI 9 of 9 on GitHub's runners); promotion #470 (stack #379 now 44). P4-T4 building.**
   - **#461 before #460, on purpose:** #461 went green first. The two share no file. #461 changes `AiFigure` in the contracts, which #460 does not use; #460 uses `AiDraft`, which #461 leaves unchanged. So the order is safe. Issue #193 is closed, and the worktree and branch are removed. The followups entry for P3-T9 is written.
   - **P4-T4 implementer (Haiku max):** `mcp:launch:0e23f6c5192a7fbc768890eea19e655c818a7264e588438a743f1de1141c40ae`, in worktree `p4-t4` on `p4/t4-slip-import` (install-edge) at `37877cb2`. Its kit is 28 of 28, and both `orig/` files now match the head. Under R127 its notes skip `test:edge`, `build:edge` and the five neighbouring AI workers files, which CI's edge job runs.
