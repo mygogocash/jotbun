@@ -1,0 +1,61 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/ai.test.ts (44 tests | 1 failed) 1065ms
+     × the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced 38ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai.test.ts > Tell Bun > the model sees only the active wallets' and categories' ids and names, and a date more than a day from the server's is replaced
+AssertionError: expected { sentence: 'กาแฟ 65', …(4) } to deeply equal { sentence: 'กาแฟ 65', …(4) }
+
+- Expected
++ Received
+
+@@ -24,10 +24,15 @@
+        "id": "999032f3-c393-861c-979e-77acf7a20f52",
+        "name": "shopping",
+        "type": "expense",
+      },
+      {
++       "id": "585834e3-9f0f-862e-8ad7-44fd60525e9e",
++       "name": "fun",
++       "type": "expense",
++     },
++     {
+        "id": "21372919-4396-8466-b65f-6c543dfa79ba",
+        "name": "salary",
+        "type": "income",
+      },
+      {
+@@ -56,8 +61,12 @@
+    "today": "2026-11-12",
+    "wallets": [
+      {
+        "id": "f236e940-ca1c-484f-b039-80be4714913f",
+        "name": "เงินสด",
++     },
++     {
++       "id": "8d09f2c2-7031-480d-a6ba-ce9989a5616e",
++       "name": "Spare",
+      },
+    ],
+  }
+
+ ❯ test/workers/ai.test.ts:294:41
+    292|     expect((await client.as(user).post('/v1/ai/parse', { text: 'กาแฟ 6…
+    293|     expect((await client.as(user).post('/v1/ai/parse', { text: 'กาแฟ 6…
+    294|     expect(sentContent(model.calls[0])).toEqual({ sentence: 'กาแฟ 65',…
+       |                                         ^
+    295|     expect(sentContent(model.calls[1])).toEqual({ sentence: 'กาแฟ 65',…
+    296|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 43 passed (44)
+   Start at  19:34:52
+   Duration  3.60s (transform 945ms, setup 1.87s, import 53ms, tests 1.06s, environment 0ms)
+

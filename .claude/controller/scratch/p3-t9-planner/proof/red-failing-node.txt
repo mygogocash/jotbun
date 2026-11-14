@@ -1,0 +1,6 @@
+ai-grounding.test.ts > sanitizeDrafts > a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1)
+ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+ask-deadline.test.ts > how one conversation ends (D28) > a refusal
+ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent
+ask-deadline.test.ts > how one conversation ends (D28) > an answer cut short
+ask-deadline.test.ts > how one conversation ends (D28) > an empty answer

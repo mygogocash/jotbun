@@ -1,0 +1,36 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 1 failed) 821ms
+     × an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2) 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2)
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+    "e32b0b64-7dbd-4a94-a4e8-0896722cd172",
++   "fc358ab1-1506-4157-a44a-6b33ceb0fc6d",
+  ]
+
+ ❯ test/workers/slip-read.test.ts:417:55
+    415|     for (const call of model.calls) {
+    416|       const sent = JSON.parse(textOf(call) ?? 'null') as { wallets: { …
+    417|       expect(sent.wallets.map((wallet) => wallet.id)).toEqual([who.cas…
+       |                                                       ^
+    418|       expect(sent.categories.map((category) => category.id)).toContain…
+    419|       expect(sent.categories.map((category) => category.id)).not.toCon…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
+   Start at  19:34:21
+   Duration  3.67s (transform 1.20s, setup 2.30s, import 31ms, tests 821ms, environment 0ms)
+

@@ -1,0 +1,71 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stdout | test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag
+{"level":"error","request_id":"cd89c103-eec3-42e5-96a5-7a80b74db9fb","route":"GET /v1/catalog/bank-albums","status":500,"error":"TypeError"}
+
+stdout | test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name
+{"level":"error","request_id":"1b06325e-6e1d-4449-ae2b-387d4ab7b30b","route":"GET /v1/catalog/bank-albums","status":500,"error":"TypeError"}
+
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 3ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 9ms
+ × test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 7ms
+   → expected 500 to be 200 // Object.is equality
+ × test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+   → expected 500 to be 200 // Object.is equality
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ test/workers/catalog.test.ts:164:24
+    162|     // No token and no client header: the list is public.
+    163|     const res = await client.raw(albumsRequest())
+    164|     expect(res.status).toBe(200)
+       |                        ^
+    165|     const text = await res.text()
+    166|     const body = JSON.parse(text)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ test/workers/catalog.test.ts:190:26
+    188|       ]).toEqual(['ok', 'ok', 'ok'])
+    189|       const res = await (await startV1()).raw(albumsRequest())
+    190|       expect(res.status).toBe(200)
+       |                          ^
+    191|       const text = await res.text()
+    192|       expect(JSON.parse(text)).toEqual({
+ ❯ withRowsUndone test/workers/catalog.test.ts:73:5
+ ❯ test/workers/catalog.test.ts:183:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  19:51:54
+   Duration  2.16s (transform 798ms, setup 1.62s, import 13ms, tests 27ms, environment 0ms)
+

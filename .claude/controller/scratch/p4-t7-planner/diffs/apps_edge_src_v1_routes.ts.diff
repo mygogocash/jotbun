@@ -1,0 +1,39 @@
+--- a/apps/edge/src/v1/routes.ts
++++ b/apps/edge/src/v1/routes.ts
+@@ -137,6 +137,12 @@
+   { method: 'PUT', path: '/v1/slip-accounts/:id', access: 'current_policy', vault: 'slipAccounts.update', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
+   // The catalog (P4-T2): the bank apps' album names, the same for everyone, answered by the Worker from CATALOG_DB with an ETag.
+   { method: 'GET', path: '/v1/catalog/bank-albums', access: 'public', worker: 'catalog.bankAlbums' },
++  // Slip drafts (P4-T7, S1): read online; a confirm or a dismiss is a command on the slip inbox. All three are 404
++  // until SLIP_IMPORT_ENABLED is on. A single read's slip ref is a plain write that answers before slip import opens (S13).
++  { method: 'GET', path: '/v1/drafts', access: 'bound_session', vault: 'drafts.list', release: 'SLIP_IMPORT_ENABLED' },
++  { method: 'POST', path: '/v1/drafts/confirm', access: 'current_policy', vault: 'drafts.confirm', gates: ['imports', 'writes'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
++  { method: 'POST', path: '/v1/drafts/:id/dismiss', access: 'current_policy', vault: 'drafts.dismiss', gates: ['imports'], status: 200, release: 'SLIP_IMPORT_ENABLED' },
++  { method: 'POST', path: '/v1/slips/refs', access: 'current_policy', vault: 'slips.refs', gates: ['imports'], status: 204 },
+ ]
+ 
+ const ROUTE_BY_ID = new Map<VaultRouteId, VaultRoute>(VAULT_V1_ROUTES.flatMap((route) => (route.vault ? [[route.vault, route] as const] : [])))
+@@ -230,9 +236,21 @@
+  * Routes the PostgreSQL edge never had (plans 1D and P4): served here, absent from the
+  * NestJS controllers and never shadowed by one of their routes
+  * (route-coverage.test.ts): the live socket (1D-T10), the analytics answer (1D-T11),
+- * the slip salt and slip accounts (P4-T3), and the bank-album list (P4-T2).
++ * the slip salt and slip accounts (P4-T3), the bank-album list (P4-T2), and the slip
++ * drafts and a single read's slip ref (P4-T7).
+  */
+-export const VAULT_ADDED_ROUTES: readonly string[] = ['GET /v1/sync/live', 'GET /v1/me/analytics', 'GET /v1/slips/salt', 'GET /v1/slip-accounts', 'PUT /v1/slip-accounts/:id', 'GET /v1/catalog/bank-albums']
++export const VAULT_ADDED_ROUTES: readonly string[] = [
++  'GET /v1/sync/live',
++  'GET /v1/me/analytics',
++  'GET /v1/slips/salt',
++  'GET /v1/slip-accounts',
++  'PUT /v1/slip-accounts/:id',
++  'GET /v1/catalog/bank-albums',
++  'GET /v1/drafts',
++  'POST /v1/drafts/confirm',
++  'POST /v1/drafts/:id/dismiss',
++  'POST /v1/slips/refs',
++]
+ 
+ /**
+  * The PostgreSQL edge's own routes, which NestJS never had: the AI companion

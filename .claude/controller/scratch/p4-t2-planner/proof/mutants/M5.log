@@ -1,0 +1,91 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 4ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 12ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 8ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 4ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 1ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 4ms
+   → expected [ …(7) ] to deeply equal [ …(7) ]
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+   → expected null to be 'shopping' // Object.is equality
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing
+AssertionError: expected [ …(7) ] to deeply equal [ …(7) ]
+
+- Expected
++ Received
+
+@@ -1,25 +1,25 @@
+  [
+    [
+      "7-ELEVEN สาขา 01234",
+-     "food",
++     null,
+    ],
+    [
+      "ร้านเซเว่นอีเลฟเว่น",
+      "food",
+    ],
+    [
+      "BTS SKYTRAIN",
+-     "travel",
++     null,
+    ],
+    [
+      "Big  C Extra",
+-     "shopping",
++     null,
+    ],
+    [
+      "LOTUS'S GO FRESH",
+-     "shopping",
++     null,
+    ],
+    [
+      "Makrobiotic",
+      null,
+    ],
+
+ ❯ test/workers/catalog.test.ts:272:70
+    270|     ]
+    271|     expect(() => cases.map(([name]) => matchMerchant(name, seed))).not…
+    272|     expect(cases.map(([name]) => [name, matchMerchant(name, seed)])).t…
+       |                                                                      ^
+    273|     // Thai vowels and tone marks are marks, so they stay.
+    274|     expect(merchantKey('ร้านเซเว่น')).toBe('ร้านเซเว่น')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing
+AssertionError: expected null to be 'shopping' // Object.is equality
+
+- Expected:
+"shopping"
+
++ Received:
+null
+
+ ❯ test/workers/catalog.test.ts:279:108
+    277|   it('the longest pattern wins and the first listed wins a tie; patter…
+    278|     const list = (...entries: [string, string][]): MerchantPattern[] =…
+    279|     expect(matchMerchant('BTS Skytrain Shop', list(['bts', 'travel'], …
+       |                                                                                                            ^
+    280|     expect(matchMerchant('Big C Extra', list(['big c', 'shopping'], ['…
+    281|     expect(matchMerchant('Big C Extra', list(['extra', 'food'], ['big …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  19:51:02
+   Duration  2.55s (transform 959ms, setup 1.97s, import 13ms, tests 36ms, environment 0ms)
+

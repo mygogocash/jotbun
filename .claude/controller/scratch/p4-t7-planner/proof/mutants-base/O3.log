@@ -1,0 +1,23 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs 44ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404 23ms
+ ✓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector 0ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits 15ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts 25ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps 35ms
+ ✓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session 18ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward 18ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact 26ms
+ ✓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate 20ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7) 54ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row 36ms
+ ✓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule 19ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  01:38:48
+   Duration  2.48s (transform 819ms, setup 1.61s, import 36ms, tests 334ms, environment 0ms)
+

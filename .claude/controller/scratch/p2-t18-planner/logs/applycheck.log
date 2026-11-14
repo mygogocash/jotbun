@@ -1,0 +1,39 @@
+patch: diffs/p2-t18.patch (12 files)
+Checking patch apps/app/src/wallet/home/shellRoutes.ts...
+Checking patch apps/app/src/wallet/home/shellRoutes.test.ts...
+Checking patch apps/app/src/wallet/home/spendLayoutOrder.test.ts...
+Checking patch apps/app/src/wallet/home/WalletTabBar.tsx...
+Checking patch apps/app/src/wallet/home/AddButton.tsx...
+Checking patch apps/app/src/wallet/home/WalletShell.tsx...
+Checking patch apps/app/src/wallet/home/WalletShell.render.test.tsx...
+Checking patch apps/app/src/wallet/home/copy.ts...
+Checking patch apps/app/app/spend/_layout.tsx...
+Checking patch apps/app/app/spend/add.tsx...
+Checking patch apps/app/src/screens/redesign/SpendLayout.render.test.tsx...
+Checking patch apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx...
+Applied patch apps/app/src/wallet/home/shellRoutes.ts cleanly.
+Applied patch apps/app/src/wallet/home/shellRoutes.test.ts cleanly.
+Applied patch apps/app/src/wallet/home/spendLayoutOrder.test.ts cleanly.
+Applied patch apps/app/src/wallet/home/WalletTabBar.tsx cleanly.
+Applied patch apps/app/src/wallet/home/AddButton.tsx cleanly.
+Applied patch apps/app/src/wallet/home/WalletShell.tsx cleanly.
+Applied patch apps/app/src/wallet/home/WalletShell.render.test.tsx cleanly.
+Applied patch apps/app/src/wallet/home/copy.ts cleanly.
+Applied patch apps/app/app/spend/_layout.tsx cleanly.
+Applied patch apps/app/app/spend/add.tsx cleanly.
+Applied patch apps/app/src/screens/redesign/SpendLayout.render.test.tsx cleanly.
+Applied patch apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx cleanly.
+git apply exit 0
+same as real/: apps/app/src/wallet/home/shellRoutes.ts
+same as real/: apps/app/src/wallet/home/shellRoutes.test.ts
+same as real/: apps/app/src/wallet/home/spendLayoutOrder.test.ts
+same as real/: apps/app/src/wallet/home/WalletTabBar.tsx
+same as real/: apps/app/src/wallet/home/AddButton.tsx
+same as real/: apps/app/src/wallet/home/WalletShell.tsx
+same as real/: apps/app/src/wallet/home/WalletShell.render.test.tsx
+same as real/: apps/app/src/wallet/home/copy.ts
+same as real/: apps/app/app/spend/_layout.tsx
+same as real/: apps/app/app/spend/add.tsx
+same as real/: apps/app/src/screens/redesign/SpendLayout.render.test.tsx
+same as real/: apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx
+applycheck: 12 files, 0 differ

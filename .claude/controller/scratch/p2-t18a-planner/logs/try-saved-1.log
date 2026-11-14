@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:33828) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > after a save the toast shows today's total and Undo, and its check is neutral 58ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a slow total read leaves the toast saying บันทึกแล้ว after 600 ms, then today's total from the outbox as it is when the read lands 8ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a total read that fails, or that holds more of today than one page, leaves บันทึกแล้ว at once 12ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > offline, the toast says rh-offline's words at once, reads nothing and offers Undo 5ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo removes a draft still on the phone, says เลิกทำแล้ว and sends one undo_used 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo after the draft has left the phone deletes the record, which stays restorable 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo refused by a newer version changes nothing and says so; one already gone says so 25ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > an unconfirmed Undo keeps its command key, so Undo again resends the same delete; another refusal ends it 21ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo follows the diary: none while the draft is sent or checked, or with no diary open; a removal the diary refuses says so 24ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the toast leaves 6 s after its words last change, never while Undo is on its way; a newer save takes its place 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the chip flies from the bottom to the card's top, measured again just before, once the tray has left, and is gone once it lands 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the flying chip hides its amount in private mode, and its title too, which may quote the person 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > no flight under reduced motion, or when the card is not on screen 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > iOS hears the toast's words, and Undo's answer 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo is a 44 pt control 6ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the saved moment's sections come after the add tray's, and each opens in its state 447ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A) 8ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B) 6ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว 4ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > in private mode iOS hears that the amount is hidden, and nothing typed, also after Undo 9ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  00:39:43
+   Duration  2.21s (transform 937ms, setup 64ms, import 1.21s, tests 702ms, environment 131ms)
+

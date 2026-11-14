@@ -1,0 +1,151 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 5 failed) 29ms
+     × Opus failing after Haiku's import read keeps Haiku's read (A14) 3ms
+     × an Opus that calls it unreadable leaves Haiku's read and its bank (the P3-T8 reviews' MC) 2ms
+     × an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+     × an Opus that answers in broken JSON leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+     × on a 21999 ms deadline, Haiku's import read is capped at 20 s and Opus gets no call, and Haiku's read stands (P4-T6's per-slip deadline must leave it 2 s) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku's import read keeps Haiku's read (A14)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (serv… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:205:23
+    203|   it("Opus failing after Haiku's import read keeps Haiku's read (A14)"…
+    204|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    205|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    206|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    207|   })
+
+Caused by: SlipNotRead: No model read the slip (server_error).
+ ❯ readSlipImport src/v1/ai/slip-read.ts:146:37
+ ❯ test/slip-read-import.test.ts:205:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'server_error', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that calls it unreadable leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that answers in broken JSON leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": null,
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-haiku-5-5",
++   "kind": "unreadable",
++   "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:268:23
+    266|   ])("an Opus that %s leaves Haiku's read and its bank (the P3-T8 revi…
+    267|     const { read } = importRead([json(answer({ to: { ...PA_DAENG, name…
+    268|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    269|   })
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": true,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": null,
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-haiku-5-5",
++   "kind": "unreadable",
++   "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:268:23
+    266|   ])("an Opus that %s leaves Haiku's read and its bank (the P3-T8 revi…
+    267|     const { read } = importRead([json(answer({ to: { ...PA_DAENG, name…
+    268|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    269|   })
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > on a 21999 ms deadline, Haiku's import read is capped at 20 s and Opus gets no call, and Haiku's read stands (P4-T6's per-slip deadline must leave it 2 s)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (time… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:302:25
+    300|     if (opusMs === null) {
+    301|       // Under 2 s left: Opus is never sent (recorded unsent), and Hai…
+    302|       await expect(read).resolves.toStrictEqual(shown({ ...READ, to: {…
+       |                         ^
+    303|       expect(given).toEqual([[HAIKU, 20_000]])
+    304|       expect(trace.calls.map((call) => [call.requested, call.sent, cal…
+
+Caused by: SlipNotRead: No model read the slip (timeout).
+ ❯ readSlipImport src/v1/ai/slip-read.ts:146:37
+ ❯ test/slip-read-import.test.ts:302:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'timeout', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 43 passed (48)
+   Start at  01:28:05
+   Duration  259ms (transform 75ms, setup 0ms, import 124ms, tests 29ms, environment 0ms)
+

@@ -1,0 +1,35 @@
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch prune > S/mutants-prune.out 2>&1; echo "rc=$?"; tail -1 S/mutants-prune.out
+## exit 0
+rc=0
+29 of 29 killed; survivors []; not clean []; not restored []
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch pins > S/mutants-pins.out 2>&1; echo "rc=$?"; tail -1 S/mutants-pins.out
+## exit 0
+rc=0
+10 of 10 killed; survivors []; not clean []; not restored []
+## step 6 RUN: for b in confirm list prune pins; do diff PL/proof/mutants-$b.out S/mutants-$b.out; done; echo compared
+## exit 0
+compared
+## step 6 RUN: python3 -I PL/first_errors.py S/mutants | tail -1
+## exit 0
+83 logs, 0 with a failing case that is not an AssertionError (or with none)
+## step 6 SKIP: /usr/bin/git -C WT status --short --untracked-files=all
+## step 7 RUN: PL/place.sh receipt WT
+## exit 0
+receipt: real/docs/implementation/receipts/P4-T7.md
+receipt: 1 files placed
+## step 8 RUN: cd PL && for f in $(grep -v '^#' files.txt | awk '{print $3}'); do cmp -s "real/$f" "WT/$f" || echo "DIFFERS $f"; done; echo compared
+## exit 0
+compared
+## step 9 RUN: cd WT && npm run typecheck:edge > S/gate-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 9 RUN: cd WT && npm run test:edge > S/gate-test-edge.log 2>&1; echo "test:edge rc=$?"
+## exit 0
+test:edge rc=0
+## step 9 RUN: cd WT && npm run build:edge > S/gate-build-edge.log 2>&1; echo "build:edge rc=$?"
+## exit 0
+build:edge rc=0
+## step 9 RUN: grep -q "SELECT ref_id FROM slip_drafts WHERE id = ?" WT/apps/edge/dist/server/index.js && echo bundled
+## exit 0
+bundled
+## step 9 SKIP: /usr/bin/git -C WT diff --check

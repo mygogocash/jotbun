@@ -1,0 +1,38 @@
+## step 4 RUN: PL/place.sh green WT
+## exit 0
+green: real/apps/edge/src/vault/slips/drafts.ts
+green: real/apps/edge/src/vault/slips/refs.ts
+green: real/apps/edge/src/vault/slips/prune.ts
+green: real/apps/edge/src/vault/domain/transactions.ts
+green: real/apps/edge/src/vault/commands/registry.ts
+green: real/apps/edge/src/vault/commands/change-log.ts
+green: real/apps/edge/src/vault/files/jobs.ts
+green: real/apps/edge/src/vault/user-vault.ts
+green: real/apps/edge/src/v1/protocol.ts
+green: real/apps/edge/src/v1/routes.ts
+green: real/apps/edge/src/vault/routes.ts
+green: real/apps/edge/test/workers/support/slips.ts
+green: real/apps/edge/test/workers/slip-drafts.test.ts
+green: real/apps/edge/test/workers/slips-vault.test.ts
+green: real/apps/edge/test/route-coverage.test.ts
+green: 15 files placed
+## step 5 RUN: cd WT && npm run typecheck:edge > S/green-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 5 RUN: cd WT/apps/edge && npx vitest run --reporter=verbose test/route-coverage.test.ts > S/green-node-edge.log 2>&1; echo "rc=$?"; grep -E "Tests  " S/green-node-edge.log
+## exit 0
+rc=0
+      Tests  14 passed (14)
+## step 5 RUN: PL/locked.sh S/green-workers.log WT/apps/edge npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/slip-drafts.test.ts test/workers/slips-vault.test.ts test/workers/transaction-source.test.ts; rc=$?; echo "rc=$rc"; grep -E "Tests  " S/green-workers.log; grep -cE "stdout \||stderr \|" S/green-workers.log
+## exit 1
+locked
+exit 0; unlocked
+rc=0
+      Tests  49 passed (49)
+0
+## step 5 RUN: PL/locked.sh S/green-neighbours.log WT/apps/edge npx vitest run --config vitest.workers.config.ts test/workers/ai.test.ts test/workers/attachments.test.ts test/workers/download-aborts.test.ts test/workers/transactions.test.ts test/workers/money-hardening.test.ts test/workers/files-alarm.test.ts test/workers/retention.test.ts test/workers/sync.test.ts test/workers/commands.test.ts test/workers/server-events.test.ts test/workers/live.test.ts; rc=$?; echo "rc=$rc"; grep -E "Test Files" S/green-neighbours.log
+## exit 0
+locked
+exit 0; unlocked
+rc=0
+ Test Files  11 passed (11)

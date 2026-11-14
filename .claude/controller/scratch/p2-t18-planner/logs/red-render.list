@@ -1,0 +1,15 @@
+ × src/screens/redesign/SpendLayout.render.test.tsx > /spend/add?type=income in the wallet area opens the income tray over Home
+ × src/screens/redesign/SpendLayout.render.test.tsx > a record's copy linked to /spend/add in the wallet area opens in the shell's tray, never today's Quick add
+ × src/screens/redesign/SpendLayout.render.test.tsx > in the wallet area, a never-asked consent question renders in place of the wallet shell
+ × src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes
+ × src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray
+ × src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5)
+ × src/wallet/home/WalletShell.render.test.tsx > a record copied from a screen in the shell opens in the wallet's tray, never today's Quick add; in private mode the copied amount is masked
+ × src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out
+ × src/wallet/home/WalletShell.render.test.tsx > a save's chip drops into its wallet's card on the screen: the card frames are the shell's
+ × src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress)
+ × src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform
+ × src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96
+ × src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed
+ × src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray
+ × src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time

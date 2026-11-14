@@ -1,0 +1,126 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ × test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 5ms
+   → expected [ { bank: 'kbank', …(2) }, …(4) ] to deeply equal [ { bank: 'kbank', …(2) }, …(5) ]
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 10ms
+ × test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 5ms
+   → expected { albums: [ { …(3) }, …(4) ] } to deeply equal { Object (albums) }
+ × test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+   → expected { albums: [ …(7) ] } to deeply equal { albums: [ …(8) ] }
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms
+AssertionError: expected [ { bank: 'kbank', …(2) }, …(4) ] to deeply equal [ { bank: 'kbank', …(2) }, …(5) ]
+
+- Expected
++ Received
+
+@@ -1,14 +1,9 @@
+  [
+    {
+      "album_name": "K PLUS",
+      "bank": "kbank",
+-     "platform": "android",
+-   },
+-   {
+-     "album_name": "K PLUS",
+-     "bank": "kbank",
+      "platform": "ios",
+    },
+    {
+      "album_name": "Krungthai NEXT",
+      "bank": "ktb",
+
+ ❯ test/workers/catalog.test.ts:103:116
+    101|     // The table list is not pinned: P5-T6 adds fx_rates.
+    102|     expect(await select(TABLES)).toEqual(expect.arrayContaining([{ nam…
+    103|     expect(await select('SELECT bank, platform, album_name FROM bank_a…
+       |                                                                                                                    ^
+    104|     const merchants = await select('SELECT pattern, category_key, gogo…
+    105|     expect(merchants).toEqual(SEED_MERCHANTS.map((merchant) => ({ ...m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag
+AssertionError: expected { albums: [ { …(3) }, …(4) ] } to deeply equal { Object (albums) }
+
+- Expected
++ Received
+
+@@ -1,15 +1,10 @@
+  {
+    "albums": [
+      {
+        "album_name": "K PLUS",
+        "bank": "kbank",
+-       "platform": "android",
+-     },
+-     {
+-       "album_name": "K PLUS",
+-       "bank": "kbank",
+        "platform": "ios",
+      },
+      {
+        "album_name": "Krungthai NEXT",
+        "bank": "ktb",
+
+ ❯ test/workers/catalog.test.ts:167:18
+    165|     const text = await res.text()
+    166|     const body = JSON.parse(text)
+    167|     expect(body).toEqual({ albums: SEED_ALBUMS })
+       |                  ^
+    168|     expect(isBankAlbumsDto(body)).toBe(true)
+    169|     const etag = res.headers.get('etag')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name
+AssertionError: expected { albums: [ …(7) ] } to deeply equal { albums: [ …(8) ] }
+
+- Expected
++ Received
+
+@@ -4,15 +4,10 @@
+        "album_name": "Bualuang mBanking",
+        "bank": "bbl",
+        "platform": "ios",
+      },
+      {
+-       "album_name": "K PLUS",
+-       "bank": "kbank",
+-       "platform": "android",
+-     },
+-     {
+        "album_name": "กสิกรไทย",
+        "bank": "kbank",
+        "platform": "android",
+      },
+      {
+
+ ❯ test/workers/catalog.test.ts:192:32
+    190|       expect(res.status).toBe(200)
+    191|       const text = await res.text()
+    192|       expect(JSON.parse(text)).toEqual({
+       |                                ^
+    193|         albums: [{ bank: 'bbl', platform: 'ios', album_name: 'Bualuang…
+    194|       })
+ ❯ withRowsUndone test/workers/catalog.test.ts:73:5
+ ❯ test/workers/catalog.test.ts:183:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+   Start at  19:49:12
+   Duration  2.49s (transform 921ms, setup 1.88s, import 15ms, tests 29ms, environment 0ms)
+

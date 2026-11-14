@@ -1,0 +1,27 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 1 failed) 870ms
+     × an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2) 32ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2)
+AssertionError: expected [ …(10) ] to not include 'ed41d490-0491-8999-b586-7a47644fe9dc'
+ ❯ test/workers/slip-read.test.ts:419:66
+    417|       expect(sent.wallets.map((wallet) => wallet.id)).toEqual([who.cas…
+    418|       expect(sent.categories.map((category) => category.id)).toContain…
+    419|       expect(sent.categories.map((category) => category.id)).not.toCon…
+       |                                                                  ^
+    420|     }
+    421|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
+   Start at  19:34:26
+   Duration  3.28s (transform 949ms, setup 1.87s, import 31ms, tests 870ms, environment 0ms)
+

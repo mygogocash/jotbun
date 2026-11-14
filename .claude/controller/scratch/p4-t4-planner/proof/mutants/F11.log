@@ -1,0 +1,63 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 30ms
+     × Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait 4ms
+     × a single read's SlipNotRead carries the failed call's wait too 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 30,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:211:31
+    209|   it("Opus failing after Haiku read no bank slip throws SlipNotRead wi…
+    210|     const limited = importRead([json(answer({ kind: 'unreadable' })), …
+    211|     await expect(limited.read).rejects.toMatchObject({ name: 'SlipNotR…
+       |                               ^
+    212|     expect(asked(limited.model)).toEqual([HAIKU, OPUS])
+    213|     const down = importRead([refusal(), apiFailure(529)])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the single read keeps P3-T8's shape > a single read's SlipNotRead carries the failed call's wait too
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 30,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:522:80
+    520|       readSlipImage({ image: png, context, locale: 'th' }, { transport…
+    521|     await expect(single([apiFailure(429, { 'retry-after': '40' })])).r…
+    522|     await expect(single([refusal(), apiFailure(429, { 'retry-after': '…
+       |                                                                                ^
+    523|     await expect(single([apiFailure(529)])).rejects.toMatchObject({ na…
+    524|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:07
+   Duration  268ms (transform 76ms, setup 0ms, import 128ms, tests 30ms, environment 0ms)
+

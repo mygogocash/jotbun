@@ -1,0 +1,105 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/imports-review.test.ts > the frozen selection and its batches > a record id already used is never written again, even if its progress row were lost
+{"level":"error","event":"vault_call_failed","failure":"Error"}
+
+ ↓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > parse, corrections and the freeze alone save no transaction
+ ↓ test/workers/imports-review.test.ts > nothing is saved before a confirmation batch commits > progress shows a frozen selection with every row remaining
+ ↓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > another account cannot correct, freeze, confirm or read an import, and a foreign row or wallet is refused
+ ↓ test/workers/imports-review.test.ts > foreign jobs, selections and rows > the app login cannot write selections or candidates directly, nor record progress that is not its frozen row
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a 5,000-row frozen selection succeeds, but a 501-row confirmation batch is rejected
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > second_batch_uses_same_frozen_selection
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a changed frozen revision, a stale selection and rows outside the selection conflict, and committed rows are never rewritten
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > overlapping retries acknowledge committed rows and continue the untouched ones
+ × test/workers/imports-review.test.ts > the frozen selection and its batches > a record id already used is never written again, even if its progress row were lost 97ms
+   → expected [ 500, 'INTERNAL_ERROR' ] to deeply equal [ 200, undefined ]
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a kill after commit and before the response, retried with the original key and body, has the same outcome
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a batch over the change-group budget is refused before commit, and smaller batches with new keys save it
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row whose wallet was archived after the freeze is conflicted; the rest are saved
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze after a partial confirmation does not re-validate rows already committed, even if their wallet or category was archived since
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a re-freeze of only committed rows succeeds after their wallet and category are archived
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > a row dated before its wallet's tracking start, moved after the freeze, is conflicted
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > the database refuses stale, unknown and committed rows even when its routines are called directly
+ ↓ test/workers/imports-review.test.ts > the frozen selection and its batches > every selected row needs its labels mapped, and transfers cannot be confirmed from a file
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the record an image row becomes holds the kept receipt, in the same command, only with consent
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > an invalid batch makes no copy: a wrong revision, a stale selection or an unknown selection never reaches the receipt copy
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt that can no longer be kept refuses the batch, and the record can be saved without it
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a receipt goes only with its image row
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation with a receipt copies the import image once and attaches it to the image row's record
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a confirmation whose receipt was never prepared answers 503 and saves nothing, and one with nothing copied is refused as expired
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a selection frozen while its confirmation was being prepared answers 503 with a retry, never saving the image record without its receipt
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > a copy the confirmation did not use is due at once
+ ↓ test/workers/imports-review.test.ts > receipts (P2c) kept with a confirmed image row > the confirmation steps check the session: after sign-out nothing is reserved or saved
+ ↓ test/workers/imports-review.test.ts > review corrections > are versioned commands that clear the corrected issues and recompute the totals
+ ↓ test/workers/imports-review.test.ts > review corrections > a correction clears the issues of the fields it names and keeps the others
+ ↓ test/workers/imports-review.test.ts > expiry and retention > an expired preview cannot be frozen or confirmed, and retention removes its frozen copies and synced records
+ ↓ test/workers/imports-review.test.ts > a 5,000-row synthetic import > confirms in batches of 500 through one interruption and restart, and reconciles exact wallet and category totals
+ ↓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > receipts, audit rows and synced progress carry no candidate fields
+ ↓ test/workers/imports-review.test.ts > privacy of receipts and synced progress > registers selection retention, and the new tables cascade from accounts
+ ↓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a confirmation batch of 500 rows commits as one command under one revision
+ ↓ test/workers/imports-review.test.ts > one command per batch, and lists bound as one parameter > a selection naming 1,000 rows freezes
+ ↓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > serves exact candidates, issues and totals to the owner, with a 7-day expiry and revision 1
+ ↓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > 5,000 rows parse with exact totals (no float arithmetic anywhere)
+ ↓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > before parsing there is no preview yet: queued, nothing to review
+ ↓ test/workers/imports-review.test.ts > a parsed upload becomes a reviewable preview and nothing else > is owner-only: another account and an unknown id get the same 404
+ ↓ test/workers/imports-review.test.ts > duplicates are advice only > names matching records and same-file twins, and keeps every row
+ ↓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > no parameters is exactly the whole preview, with no page key
+ ↓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > pages only candidates: summary and issues stay whole-file, advice follows the page rows, pages rejoin the whole
+ ↓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > defaults the missing parameter, and a page past the end is empty
+ ↓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > refuses malformed paging as a validation error, and keeps owner-only 404s
+ ↓ test/workers/imports-review.test.ts > preview paging is additive (P2b) > a preview that is not ready is served as before, whatever the paging
+ ↓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 identical rows against 5,000 identical records, with statistics older than the import: answered in time, five matches each
+ ↓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > 5,000 distinct rows with statistics older than the import are answered in time
+ ↓ test/workers/imports-review.test.ts > duplicate advice stays linear in the file and the records (M1) > names exactly what the self-join named, row for row
+ ↓ test/workers/imports-review.test.ts > unconfirmed candidates expire after 7 days > queues one expiry job at the preview expiry, and it deletes the candidates when due
+ ↓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > an account disabled at the due time: its job ends superseded, the route says expired at once, retention deletes the candidates
+ ↓ test/workers/imports-review.test.ts > a preview past its 7 days is expired, whatever happened to its expiry job (M4) > leaves a preview inside its 7 days alone
+ ↓ test/workers/imports-review.test.ts > a parsed import keeps its state until its rows are pruned (minor 4) > pruning its succeeded parse job does not turn it into an expired upload; its rows, preview and totals go 30 days after its raw expiry
+ ↓ test/workers/imports-review.test.ts > the parser container > parses an upload the edge accepted, which the edge then reviews and confirms
+ ↓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a preview expires after 7 days: its candidates go, it reads expired, and an unattached image is due
+ ↓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > after pruneImports at importsDueAt, the next importsDueAt is later or null
+ ↓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > a confirmation resent to another import is not found, and one resent after its preview expired is told the preview is unavailable
+ ↓ test/workers/imports-review.test.ts > expiry on the vault clock (ruling R37) > the preview says until when its image can be kept: two minutes before the image is due, while more than two minutes are left
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a rejected file reads rejected with its issue, and corrections and freezes are refused as rejected
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > a freeze names each row it cannot take and why: incomplete, after today or before tracking, an unknown or mistyped wallet or category
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > rows that cannot be saved now are conflicted: a category archived after the freeze, a date after today
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > progress reads stale after a correction and expired past the preview's expiry, and a re-freeze counts the rows already committed
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > an import with no preview reads its parse state: parsing, failed with its issue, cancelled or expired
+ ↓ test/workers/imports-review.test.ts > the planner's cases on the review rules > the synced records stay while their preview and selection are live, however old their last change
+ ↓ test/workers/imports-review.test.ts > the 1B-T10 review's pins (brief download-pins) > a correction of 500 rows at once, the most a correction takes, binds its row ids as one parameter and is saved
+ ↓ test/workers/imports-review.test.ts > the 1B-T10 review's pins (brief download-pins) > an upload that was never accepted (still receiving, or refused at intake) has no preview: 404, as the API answers
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/imports-review.test.ts > the frozen selection and its batches > a record id already used is never written again, even if its progress row were lost
+AssertionError: expected [ 500, 'INTERNAL_ERROR' ] to deeply equal [ 200, undefined ]
+
+- Expected
++ Received
+
+  [
+-   200,
+-   undefined,
++   500,
++   "INTERNAL_ERROR",
+  ]
+
+ ❯ confirmed test/workers/imports-review.test.ts:208:39
+    206| async function confirmed(kit: Kit, setup: Setup, selectionId: string, …
+    207|   const res = await confirm(kit, setup, selectionId, ids, options)
+    208|   expect([res.status, res.body.code]).toEqual([200, undefined])
+       |                                       ^
+    209|   return res.body as ConfirmImportBatchResult
+    210| }
+ ❯ test/workers/imports-review.test.ts:486:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 63 skipped (64)
+   Start at  19:33:17
+   Duration  5.82s (transform 2.94s, setup 4.74s, import 102ms, tests 98ms, environment 0ms)
+

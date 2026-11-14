@@ -1,0 +1,56 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/sim/wt/apps/edge
+
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2) 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip drafts and a single read's slip ref are added routes; the drafts wait for SLIP_IMPORT_ENABLED and the slip ref does not (P4-T7, S13) 3ms
+   → expected [ { method: 'GET', …(4) }, …(3) ] to deeply equal [ { method: 'GET', …(4) }, …(3) ]
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the added routes are exactly the ones the plans added: the live socket, the analytics answer, and the slip and catalog routes 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip drafts and a single read's slip ref are added routes; the drafts wait for SLIP_IMPORT_ENABLED and the slip ref does not (P4-T7, S13)
+AssertionError: expected [ { method: 'GET', …(4) }, …(3) ] to deeply equal [ { method: 'GET', …(4) }, …(3) ]
+
+- Expected
++ Received
+
+@@ -13,11 +13,10 @@
+        "writes",
+      ],
+      "method": "POST",
+      "path": "/v1/drafts/confirm",
+      "release": "SLIP_IMPORT_ENABLED",
+-     "status": 200,
+      "vault": "drafts.confirm",
+    },
+    {
+      "access": "current_policy",
+      "gates": [
+
+ ❯ test/route-coverage.test.ts:218:150
+    216|   it("the slip drafts and a single read's slip ref are added routes; t…
+    217|     for (const key of ['GET /v1/drafts', 'POST /v1/drafts/confirm', 'P…
+    218|     expect(VAULT_V1_ROUTES.filter((route) => ['/v1/drafts', '/v1/draft…
+       |                                                                                                                                                      ^
+    219|       { method: 'GET', path: '/v1/drafts', access: 'bound_session', va…
+    220|       { method: 'POST', path: '/v1/drafts/confirm', access: 'current_p…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  01:59:51
+   Duration  416ms (transform 207ms, setup 0ms, import 302ms, tests 7ms, environment 0ms)
+

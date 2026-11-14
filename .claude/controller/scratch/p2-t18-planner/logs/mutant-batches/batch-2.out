@@ -1,0 +1,21 @@
+B1 KILLED: ฉัน is a tab [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 2 failed | 9 passed (11); 2 AssertionError; restored sha256 equal
+B2 KILLED: ฉัน says it is not selected [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B3 KILLED: the wrong tab is selected [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B4 KILLED: each place is one more [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B5 KILLED: no item says its place [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B6 KILLED: ฉัน says it is second [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B7 KILLED: items are 40 pt tall [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B8 KILLED: items are 44 pt wide [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B9 KILLED: the largest sizes keep the standard items [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B10 KILLED: the largest sizes keep the labels [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B11 KILLED: the largest sizes keep 24 pt icons [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B12 KILLED: the selected label is quiet and the others ink [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B13 KILLED: a selected tab navigates again [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B14 KILLED: ฉัน navigates in place of opening Settings over the shell [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B15 KILLED: the inset ignores the text size [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B16 KILLED: the inset ignores where the bar is [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B17 KILLED: the bar is no tablist [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B18 KILLED: the bar ignores the phone's bottom inset [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B19 KILLED: the labels grow past iOS's largest standard size [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+B20 KILLED: no large content viewer [WalletTabBar.tsx / WalletShell.render.test.tsx] -> Tests 1 failed | 10 passed (11); 1 AssertionError; restored sha256 equal
+20 killed, 0 survived, 0 not as expected

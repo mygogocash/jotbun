@@ -1,0 +1,203 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+ × src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray 33ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ × src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out 7ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ × src/wallet/home/WalletShell.render.test.tsx > a save's chip drops into its wallet's card on the screen: the card frames are the shell's 5ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ × src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed 6ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ × src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5) 6ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ ✓ src/wallet/home/WalletShell.render.test.tsx > Magic Tap opens the add tray 31ms
+ ✓ src/wallet/home/WalletShell.render.test.tsx > at AX5 the labels hide, the items keep their names and the inset is 96 8ms
+ × src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time 32ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ ✓ src/wallet/home/WalletShell.render.test.tsx > a record copied from a screen in the shell opens in the wallet's tray, never today's Quick add; in private mode the copied amount is masked 20ms
+ × src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress) 5ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+ × src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform 1712ms
+   → one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 3 passed (11)
+   Start at  01:05:21
+   Duration  3.28s (transform 926ms, setup 37ms, import 1.20s, tests 1.87s, environment 72ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:17092) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > the bar has กระเป๋า and สรุป as tabs and ฉัน as a link, each 44 pt, and the + opens the add tray
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ src/wallet/home/WalletShell.render.test.tsx:243:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > a save shows the toast once, with today's money out
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ pressAdd src/wallet/home/WalletShell.render.test.tsx:189:7
+ ❯ src/wallet/home/WalletShell.render.test.tsx:297:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > a save's chip drops into its wallet's card on the screen: the card frames are the shell's
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ pressAdd src/wallet/home/WalletShell.render.test.tsx:189:7
+ ❯ src/wallet/home/WalletShell.render.test.tsx:331:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > in private mode the shell's toast masks today's money out and quotes nothing typed
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ pressAdd src/wallet/home/WalletShell.render.test.tsx:189:7
+ ❯ src/wallet/home/WalletShell.render.test.tsx:342:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > a draft paused for an update, or an update-required outcome, disables the + and nothing opens (C5)
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ src/wallet/home/WalletShell.render.test.tsx:364:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > the shell's screens reach its one add tray host, and one tray shows at a time
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ src/wallet/home/WalletShell.render.test.tsx:435:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > a tray that waits on iOS for a dismissal is freed at the bound while the shell keeps drawing (sync progress)
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ pressAdd src/wallet/home/WalletShell.render.test.tsx:189:7
+ ❯ src/wallet/home/WalletShell.render.test.tsx:466:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/wallet/home/WalletShell.render.test.tsx > an open and a close in one batch never show a tray, and the bound frees the host on every platform
+AssertionError: one button named จดรายการ: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ named src/wallet/home/WalletShell.render.test.tsx:107:49
+    105| function named(role: string, name: string): HTMLElement {
+    106|   const elements = screen.queryAllByRole(role, { name });
+    107|   expect(elements, `one ${role} named ${name}`).toHaveLength(1);
+       |                                                 ^
+    108|   return elements[0] as HTMLElement;
+    109| }
+ ❯ pressAdd src/wallet/home/WalletShell.render.test.tsx:189:7
+ ❯ src/wallet/home/WalletShell.render.test.tsx:494:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

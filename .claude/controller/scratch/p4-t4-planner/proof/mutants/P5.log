@@ -1,0 +1,88 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 3 failed) 29ms
+     × an outage on Haiku throws SlipNotRead with the wait it was given, and calls no Opus 11ms
+     × with the real transport a 429 is not retried, and its retry-after reaches SlipNotRead 3ms
+     × an import read writes no log line, so no image, name or number reaches one 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an outage on Haiku throws SlipNotRead with the wait it was given, and calls no Opus
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:198:25
+    196|       const { read, model } = importRead([failure])
+    197|       await expect(read).rejects.toBeInstanceOf(SlipNotRead)
+    198|       await expect(read).rejects.toMatchObject({ name: 'SlipNotRead', …
+       |                         ^
+    199|       expect(asked(model)).toEqual([HAIKU])
+    200|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > with the real transport a 429 is not retried, and its retry-after reaches SlipNotRead
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:226:23
+    224|     const start = Date.now()
+    225|     const read = readSlipImage({ image: png, context, locale: 'th' }, …
+    226|     await expect(read).rejects.toMatchObject({ name: 'SlipNotRead', fa…
+       |                       ^
+    227|     expect(fetches).toBe(1)
+    228|     expect(Date.now() - start).toBeLessThan(1_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an import read writes no log line, so no image, name or number reaches one
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:341:80
+    339|     try {
+    340|       await expect(importRead([json(answer({ to: { ...PA_DAENG, name: …
+    341|       await expect(importRead([apiFailure(429, { 'retry-after': '40' }…
+       |                                                                                ^
+    342|       for (const spy of spies) expect(spy).not.toHaveBeenCalled()
+    343|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+   Start at  01:27:59
+   Duration  272ms (transform 78ms, setup 0ms, import 130ms, tests 29ms, environment 0ms)
+

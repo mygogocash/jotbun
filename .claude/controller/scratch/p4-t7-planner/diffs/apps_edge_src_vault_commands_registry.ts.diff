@@ -1,0 +1,19 @@
+--- a/apps/edge/src/vault/commands/registry.ts
++++ b/apps/edge/src/vault/commands/registry.ts
+@@ -6,6 +6,7 @@
+ import { CONFIRM_KIND, FREEZE_KIND, PATCH_KIND, REVIEW_ENTITY, SELECTION_ENTITY } from '@api/imports/confirmation.service'
+ 
+ import { EXPORT_ENTITY, EXPORT_REQUEST_KIND } from '../files/exports'
++import { SLIP_CONFIRM_KIND, SLIP_DISMISS_KIND } from '../slips/drafts'
+ import { SLIP_INBOX_ENTITY } from '../slips/inbox'
+ 
+ const WALLET_COMMANDS: [string, CommandOutcome][] = [
+@@ -64,5 +65,8 @@
+   registry.defineCommand({ kind: CONFIRM_KIND, entity: SELECTION_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
+   // P4-T3: the slip inbox's open count (S1), the one slip entity that syncs, after the import entities. P4-T7 adds its two commands after it.
+   registry.defineEntity({ entity: SLIP_INBOX_ENTITY, validate: isSlipInboxSnapshot })
++  // P4-T7: confirming a batch of slip drafts (its records join the group) and dismissing one, both on the inbox.
++  registry.defineCommand({ kind: SLIP_CONFIRM_KIND, entity: SLIP_INBOX_ENTITY, outcome: 'accepted', schemaVersions: [1], policy: 'current' })
++  registry.defineCommand({ kind: SLIP_DISMISS_KIND, entity: SLIP_INBOX_ENTITY, outcome: 'updated', schemaVersions: [1], policy: 'current' })
+   return registry
+ }

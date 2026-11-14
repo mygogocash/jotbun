@@ -1,0 +1,87 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ❯ test/workers/ai-uses.test.ts (16 tests | 3 failed) 7272ms
+     × an ask that loses its second turn to a 500 answers with its figures and gives the use back 29ms
+     × a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1) 16ms
+     × only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > a failed model call gives its use back > an ask that loses its second turn to a 500 answers with its figures and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ai-uses.test.ts:118:41
+    116|     expect(res.status).toBe(200)
+    117|     expect(await body(res)).toMatchObject({ source: 'facts', model: 'r…
+    118|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                         ^
+    119|   })
+    120|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > the refund on the vault > a slip's refund the vault fails never changes the 503, and is logged before the answer (the P3-T7 review's n1)
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "ProblemException",
+-     "feature": "slip",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ai-uses.test.ts:225:54
+    223|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    224|       expect(res.status).toBe(503)
+    225|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    226|     } finally {
+    227|       VAULT_HANDLERS['ai.refund'] = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+AssertionError: a call that answered, then a failed one: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/workers/ai-uses.test.ts:358:116
+    356|       ['a failed call, then a turn the deadline never let start', [cal…
+    357|     ]
+    358|     for (const [what, calls, answeredByModel, refunds] of rows) expect…
+       |                                                                                                                    ^
+    359|   })
+    360| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 13 passed (16)
+   Start at  19:33:03
+   Duration  9.74s (transform 977ms, setup 1.94s, import 32ms, tests 7.27s, environment 0ms)
+

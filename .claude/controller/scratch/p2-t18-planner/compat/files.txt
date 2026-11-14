@@ -1,0 +1,10 @@
+apps/app/src/screens/redesign/entry/entrySave.render.test.tsx
+apps/app/src/screens/redesign/entry/entrySave.ts
+apps/app/src/spend/v1/ai/draftReview.test.ts
+apps/app/src/spend/v1/ai/draftReview.ts
+apps/app/src/spend/v1/redesign/quickAddModel.test.ts
+apps/app/src/spend/v1/redesign/quickAddModel.ts
+apps/app/src/wallet/add/AddTray.render.test.tsx
+apps/app/src/wallet/add/AddTrayHost.tsx
+apps/app/src/wallet/add/draftOrigin.test.ts
+apps/app/src/wallet/add/draftOrigin.ts

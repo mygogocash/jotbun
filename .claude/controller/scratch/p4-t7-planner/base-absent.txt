@@ -1,0 +1,5 @@
+apps/edge/src/vault/slips/drafts.ts
+apps/edge/src/vault/slips/refs.ts
+apps/edge/src/vault/slips/prune.ts
+apps/edge/test/workers/slip-drafts.test.ts
+docs/implementation/receipts/P4-T7.md

@@ -1,0 +1,10 @@
+red: stubs/apps/edge/migrations/catalog/0001_catalog.sql
+red: stubs/apps/edge/migrations/catalog/0002_catalog_seed.sql
+red: stubs/apps/edge/src/catalog/catalog.ts
+red: real/apps/edge/src/cloudflare-workers.d.ts
+red: real/apps/edge/src/v1/env.ts
+red: real/apps/edge/src/v1/protocol.ts
+red: real/apps/edge/test/workers/catalog.test.ts
+red: real/apps/edge/test/route-coverage.test.ts
+red: real/apps/edge/test/c1-shape.test.ts
+red: 9 files placed

@@ -847,7 +847,7 @@ The review reports these came from were under /private/tmp and were lost on 8 No
       - inside `WalletRoot`'s `PrivateModeProvider`, since outside it `usePrivateMode()` answers `hidden: false`;
       - with the host's box at the window's origin, since the chip aims with `measureInWindow`;
       - the brief's P20 note (around `AddTrayHost`, inside `CardFramesProvider`, `noticeOf(..., tc)`).
-  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today):**
+  - **The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx` (test-only pins; the code is right today). Owner since 14 Nov: `saved-pins`, a pins-only follow-up task (see P2-T18a's entry at the end):**
     - the Bangkok day at the edge: a case at 00:30 Bangkok checks the read's `from` and `through` (Opus n2, Sonnet m2a; mutants M5 and O3a);
     - the toast's `top: insets.top + 8` and `pointerEvents="box-none"`, and the chip's `pointerEvents="none"` (Sonnet m3: O1, O2, O5);
     - where the chip starts (from the bottom centre) and its shrink and fade, with a phone-sized window in the flight's cases (Opus n1 M4, Sonnet n1 O7 to O10, O40);
@@ -909,3 +909,98 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **P3-T10 (logs):** a model failure inside a read that is then shown leaves no `ai_fallback` line now (an Opus failure or refusal, or a Haiku refusal that Opus then reads). Only the trace keeps it, so `$ai_generation` is where an Opus 429 or a refusal rate shows. A floor-skipped Opus call is recorded `sent: false, escalated: true, latencyMs: 0`; do not emit it as a model call. `RecordedCall.model` is the response's model.
   - **P3-T17:** decide what the tray shows from `kind` and `drafts`, not `declined`: `declined: true` can come with Opus's drafts. `kind` is the model's word about the image, so do not read it as a check on what the image is.
   - **P6C and P3-T22:** watch the `rejected` rate on `/v1/ai/slip` after an escalation. A systematic 400 on Opus (the fallback beta) would spend a use on every escalated read.
+- P3-T3 (#457, merged 13 Nov as ab350e4 at 2c642055; promotion #459). The reviews are `reviews/P3-T3.md` (Opus, approved: n1) and `reviews/P3-T3-second.md` (Sonnet, approved: n1 to n5), with no blocker, major or minor. Both found that the 503 before the token reveals only the service's state. The probes are `scratch/p3-t3-review/probes/zz-review-probe.test.ts` and `scratch/p3-t3-second/probes/zz-second-probe.test.ts`. Carried:
+  - **P4-T6 (the slips route):**
+    - add `'slips.read'` to `MODEL_ROUTE_WORKERS` and to the coverage case's first list;
+    - carry `gates: ['ai', 'imports']`, with `ai` first so `AI_PAUSED` answers when both are paused, and pin whichever code P4's plan wants;
+    - keep the release check (404) before the gates.
+    - `MODEL_ROUTE_WORKERS` is kept by hand: a model route in neither list passes the coverage case (Sonnet n2).
+  - **The next task that edits `ai-gate.test.ts` (test-only pins):**
+    - a model route under a fail-closed config answers `AI_PAUSED` with 30 (Opus n1, probe B's second case);
+    - a person can switch Bun off by name while `ai` is paused or the config is unreadable (Sonnet n1).
+  - **P3-T24 (the notice bump):** `ai-gate.test.ts:40` and `:77` hard-code `notice_version: 1`, as do `ai.test.ts`, `ai-uses.test.ts` and `ai-routing.test.ts`.
+  - **App tasks that build Tell Bun, the slip read, the attach step and Ask Bun in the wallet look (P3-T14's followers, P3-T17, T20, T21, P6B-T15):**
+    - treat `companion && !available` as "Bun is resting", not as missing consent, as `WalletAiSettingsScreen` does; today the old sheets open the consent sheet for someone who already agreed.
+    - During a pause `BunNote` calls the note route for everyone and drops the failure, so the Home note is absent for all.
+  - **P6C and the runbook:**
+    - deploy this reader before any `config:v1` names `ai`, rolled out everywhere: with gradual deployments, wait for 100% (Sonnet n3, Opus note 2);
+    - put the deploy order beside `apps/edge/README.md:98`;
+    - a scope name outside `EDGE_GATE_SCOPES` (`"AI"`, `"ai "`) fails the whole config closed, so validate scope names in `kv-seed` (P6C-T6);
+    - a KV change can take 60 s or more to reach other locations.
+  - **Owner, Q5:** today the preferences PUT saves while `writes` is paused and while the config fails closed. If the owner gates the preferences, say whether `writes` covers the PUT.
+  - **A transport follow-up (`followups.md` line 303, not P3-T3's):** `transportFromEnv`'s `ANTHROPIC_BASE_URL` mapping has no pin (mutant O12 survives). Without it, model calls would skip AI Gateway (§6.7).
+  - **If a pause is ever used to shed load** (Sonnet n4): the body is read before the gate answers.
+- P2-T18a (#464, approved twice; not merged yet, since CI is queued org-wide). The reviews are `reviews/P2-T18a.md` (Opus, approved: m1, m2, n1) and `reviews/P2-T18a-second.md` (Sonnet, approved: m1a to m1d, n1 to n3). Their findings were test gaps on the task's own guards and one comment. The controller added them all itself as `7e2ae0dc` (test-only plus the comment; proof `scratch/p2-t18a-pins/`), and the Opus reviewer confirmed it (approved, `reviews/P2-T18a.md`, "Confirmation of 7e2ae0dc"). The probes are in `scratch/p2-t18a-review/probes/ReviewProbe.render.test.tsx` and `scratch/p2-t18a-second/probes/` (`SecondSaved`, `SecondFlow` and `SecondEdit` `.append.tsx`). Carried:
+  - **P2-T22 (the editor gains a kind), a guard and its pin (Sonnet n3):** `WalletEditScreen`'s own `goBack` (`:88-91`) drives the header in the loading, error and gone states (`:111`) without `leave()`, so two quick presses on กลับ pop two screens. Probe PE1: `expected [ 2, [] ] to deeply equal [ 1, [] ]`. Wrap it in the once-only guard and pin it.
+  - **`saved-pins`, a pins-only follow-up task like source-pins, to plan once #464 merges (Opus's note):** the P2-T17 carry above ("The next task that edits `SavedToastHost.tsx` or `SaveFlight.tsx`") has no other owner. P2-T18a edited the host but its brief deferred the carry (P16), P2-T18 edits no host file, and no later plan task edits either file. It owns:
+    - the 00:30 Bangkok day;
+    - the toast's box and touches;
+    - where the chip starts;
+    - Sonnet n4 (on iOS "Saved" is heard twice);
+    - Sonnet n5 (a second Undo tap in the `finally` gap reruns the removal);
+    - the #464 confirmation's n2 (optional): race A's part for a diary still opening is dressed as a device save the read does not list, which cannot begin with the diary opening. Make it `raced([EARLIER, SAVED], { phase: 'opening', outbox: [], appliedRevision: '0' }, { phase: 'ready', outbox: [], appliedRevision: '11' }, 'online')`, and say that the diary's other drafts could be in neither (probes A1 and A2 in `scratch/p2-t18a-review/`).
+  - **A later pass over `spendDiary.ts` (both reviews):**
+    - `switchTo` emits `phase: 'ready'` with the placeholder `outbox: []` and `appliedRevision: '0'` until its first `refresh` (`spendDiary.ts:214-215`).
+    - A toast read landing in that window counts no drafts. Any later screen that takes `ready` to mean "loaded" should know.
+    - Emitting `opening` until the first refresh would close it.
+  - **For the owner, only if "unknown" is ever wanted (Sonnet):**
+    - A diary `locked` or `opening` for the whole toast reads like no diary, so the figure is the read alone and leaves that diary's drafts out. P2-T17 pinned this deliberately (`SavedMoment.render.test.tsx:441-445`).
+    - A command `sending` or `uncertain` that the read does not list, and that was deleted elsewhere, still counts: it has no revision.
+  - **P2-T18 (the shell, #465):** keep `spendLayoutOrder.test.ts`'s order, with the saved moment's host under `DeviceDiaryProvider`. Outside a diary provider the view reads `unavailable` from the start, and neither guard could fire (Sonnet).
+  - **Device checks, SKIPPED, on a phone:**
+    - the 200 pt drop with the `nativeID`;
+    - VoiceOver hearing the masked toast in private mode;
+    - two quick presses on back;
+    - two on เสร็จ (`POP_TO` makes them idempotent; a glance is enough).
+- P2-T18 (#465, approved twice; not merged yet, since CI is queued org-wide; it merges after #464). The reviews are `reviews/P2-T18.md` (Opus, approved: m1, m2, n1 to n3) and `reviews/P2-T18-second.md` (Sonnet, approved: m1 to m4, n1 to n4). The controller added the test pins itself as `74142ebc` (Opus m2, n1, n3's V4 and V5; Sonnet m2, m3), with the receipt corrections (Opus m1, Sonnet m1 and n4); proof `scratch/p2-t18-pins/`. The Opus reviewer confirmed it (approved, `reviews/P2-T18.md`, "Confirmation of 74142ebc"; it found the glyph's size and stroke width still unpinned, look-only, for E2-B's captures). The probes are in `scratch/p2-t18-review/probes/` (`zzReviewTwoShells`, `zzReviewChip`, `zzReviewCopy` `.render.test.tsx`, `stackPush.cjs`, `slotReplace.cjs`) and `scratch/p2-t18-second/probes/` (`probeCopy`, `probeLife`, `probeRoute`, `probeRoutes`, `probeType` `.render.test.tsx`). Carried:
+  - **`shell-carry`, a small follow-up task owned by the controller, to plan once #465 merges and to merge before P2-T24's card stack (at the latest before P2-T38):**
+    - **Opus m1, two spend layouts:** Settings' diary links push a second spend layout over the first (`SettingsScreen.tsx:171`; the root Stack gives `spend` no `getId`), each with its own shell, tray host and `WalletLooksProvider`. A look, order or icon changed under Settings is stale in the layout below, and a reorder made below can undo it (`zzReviewTwoShells` cases 1 and 2). The controller's call: share the looks between providers, one store per account with subscribers, as `DeviceDiaryProvider` shares its diary (`WalletLooksProvider.tsx`, P2-T11's file). That keeps today's Back. The other way, one spend layout (`dismissTo`, or a singular `spend` screen), changes Back, so it would be the owner's call.
+    - **Opus n2, Sonnet m4, Insights under the +:** `WalletInsightsScreen.tsx:114` pads `insets.bottom + 24`. Under the shell the + covers 18 pt of its last row with a 34 pt inset, and 52 pt with none (iPhone SE, Android buttons, the web). The bar already takes the inset, so it counts twice. Replace the whole padding with `useWalletTabInset()`, and pin it.
+    - **Sonnet n1:** pin `home.addHint`'s words in both languages with a Node case that imports `COPY`.
+  - **The device check before E2-B (P2-T38's list), Sonnet m1, first:** Magic Tap may not reach JS on iOS. React Native 0.88's Fabric view answers only a raw prop named `onAccessibilityMagicTap`, and JS sends `onMagicTap` (`RCTViewComponentView.mm:1683-1690`, `AccessibilityProps.cpp:148-152`, `BaseViewConfig.ios.js:383`). On a physical iPhone with VoiceOver, in a development build with `EXPO_PUBLIC_REDESIGN=wallet`, two-finger double tap on Insights. If the tray does not open, either keep the + as the only path and drop Magic Tap from the plan, or add a small native hook (new native code: the owner's call). Also check:
+    - the shell fills the window: the bar on the bottom edge, the + 16 pt above it, the toast at the top (Sonnet n4);
+    - VoiceOver's count on the bar (Opus): Fabric maps `tablist` to a tab bar, so iOS may count the items itself. Listen for a doubled or a differing count ("1 of 2" beside `1 จาก 3`). Dropping `aria-valuetext` alone would leave ฉัน without its `3 จาก 3`.
+  - **P2-T35 (the deep links) or E2-B (Opus):** `/spend/add` then `router.replace('/spend')` leaves a second Home in the spend navigator's history (`[index, index']`, or `[index, all, index']`; `probes/slotReplace.log`), so Android's back from it goes to Home, or to History. `router.dismissTo('/spend')` (POP_TO) would return to the Home below.
+  - **P6B (widen `walletTab`), P2-T35 and P2-T24, say where things are (Sonnet n3):** `WalletTabKey`, `walletTab`, `walletTabInset` and `WALLET_TAB_ROUTES` are in `home/shellRoutes.ts`; `useWalletTabInset`, `ITEMS` and the place count are in `WalletTabBar.tsx` (`home.tabPlace` is a fixed `{n} จาก 3`). `WalletShell.tsx` exports only `WalletShell`.
+  - **1C-T9 (Sonnet):** the wallet branch is one line (`_layout.tsx:24`), so `<TermsGate>` will conflict textually. Put it between `<DeviceDiaryProvider>` and `<CompanionBoundary>`; the order test then checks it.
+  - **P2-T26 (#456, Sonnet):** its Copy should call `useAddTray().open({ copyOf })`. Opening from `onClosed` (followups line 777) still applies.
+  - **E2-B, shared English (Opus):** `home.add` "Add an entry" is the catalog's `spendV1AddEntry` (เพิ่มรายการ); `home.tabWallets` "Wallet" is `Wallet` (กระเป๋าเงิน); `home.tabInsights` "Insights" is `redesignInsights` (ภาพรวม). Mark them on the contact sheets for P2-T38.
+  - **P2-T37's private-mode sweep (Opus):** at this base the wallet area's Home, record and History are still today's screens, which read no private mode. That is expected until P2-T24, #456 and P2-T28 merge, so the sweep must run on that merged set.
+  - **Merge order (both):** #464 first, since #465 mounts `SavedToastHost` and relies on #464's guards. CI on #465 runs again once #464 has merged; the Opus review's compat run with #464 laid over is green (`scratch/p2-t18-review/compat464`).
+- P4-T17 (#466, approved twice; not merged yet, since CI is queued org-wide). The reviews are `reviews/P4-T17.md` (Opus, approved: m1 to m3, n1 to n3) and `reviews/P4-T17-second.md` (Sonnet, approved: m1 to m4, n1 to n4). The controller added the two test pins itself as `b5458587` (Opus m1 = Sonnet m2, registrations one at a time; Sonnet m4, one notification handler) and corrected the PR body's native-config line (Opus m3); proof `scratch/p4-t17-pins/`. The Opus reviewer confirmed it (approved, `reviews/P4-T17.md`, "Confirmation of b5458587"; the one-handler scan cannot see a call through an alias, X3, a nit). The probes are in `scratch/p4-t17-review/probes/` (`reviewOrderProbe`, `reviewLockProbe` `.render.test.tsx`) and `scratch/p4-t17-second/probes/` (`PushLockProbe`, `PushRealTransportProbe` `.render.test.tsx`, `pushProbe.test.ts`). Carried:
+  - **For the owner, before D33 turns registration on (Opus m2, Sonnet m3): does quiet iOS delivery count as the person's yes to server pushes?**
+    - `permissionOf` (`pushRegistration.ts:39-42`) counts iOS provisional as granted, as the reminders read it. The reminders ask with `allowProvisional: true` (`notificationsPort.ts:53`), which iOS grants without a prompt. Android 12 and below reports granted unless notifications were switched off.
+    - So such a phone registers at the next launch with slip notices on, and `useNotificationPermission()` tells P4-T21's screens `granted`, so sl-done and sl-settings never ask. Its pushes (slips, statements, exports, the 1st-of-month recap) arrive quietly in the Notification Center.
+    - Opus's view: registration may count quiet delivery as granted (quiet beats none). The hook should report it apart (a `quiet` flag, or `undetermined` for provisional), so P4-T21 can ask.
+    - Whether `ask()` while provisional brings up iOS's prompt is open on a device.
+  - **P4-T21 (the slip screens), must carry:**
+    - m2/m3's answer, above, in how sl-done and sl-settings read the hook;
+    - a registration after the switch changes or an ask is granted must go through the host's chain (expose an `enqueue`), or a module-level chain in `pushRegistration.ts`. A call beside the host's run can overlap it (a duplicate PUT and a last-writer record);
+    - the slip-notice switch is a device setting and leaves at sign-out, so the next account starts with it on;
+    - adopt `PushLockProbe` A to E (the real `LockGate` over the host; Sonnet n1) when it next edits `PushHost.render.test.tsx`.
+  - **The sign-out owner (P6B or 1C) (Sonnet m1, Opus n3):** sign-out erases the device settings, then ends the session (`SettingsScreen.tsx:223`, then `:234`). A registration whose PUT answers between the two writes `push-device` after the erase (probe G2), leaving the token and the dead session's hash. Logout revokes the session on the server, so the window is a PUT's length. Drain the host's chain before the erase, or erase the device settings once more after `signOut()`.
+  - **P2-T36 (reminders) (both):** never call `setNotificationHandler`. While the app is open, a reminder is silent (R126), not even in the list; the controller's one-handler case pins it. Reversing R126 takes the one line in `presentation`, plus H3, H4 and the presentation case.
+  - **D33 and P6C:**
+    - put a lowercase UUID in `extra.eas.projectId`; an id in capitals is `no_project` for ever, silently (Sonnet n2);
+    - set `mode` on the explicit plugin entry for store builds, and `icon`, `color` and `defaultChannel` for Android;
+    - signing without the push capability already fails at the base;
+    - consider a count-only registration-failure event (Sonnet n3);
+    - a run on the return to the front (AppState `active`) would renew a phone kept open for days (Opus n2).
+  - **Device checks (P15) stay SKIPPED.** Also check on a device:
+    - the cold-start `router.push`, on both OSes;
+    - the order of AppState and a tap's response on a warm return;
+    - Android's foreground "list only";
+    - Android `slips_ready` with `ref: null`;
+    - whether `ask()` upgrades iOS provisional.
+  - **If notification categories or actions are ever added (Sonnet):** `take()` treats every response as a tap and ignores `actionIdentifier`, so a dismiss action would route.
+  - **Hardening, optional (Sonnet n4):** the route effect's `router.push` and `clearLastNotificationResponse()` are the host's only unguarded calls; a `try/catch` around the pair would match the file's style.
+- 1D-T14 (#467, approved twice; not merged yet, since CI is queued org-wide). The reviews are `reviews/1D-T14.md` (Opus, approved: m1 to m3, n1) and `reviews/1D-T14-second.md` (Sonnet, approved: m1 to m3, n1, n2). The controller added the test pins itself as `e3c2ae74` (Opus m2, m3, n1; Sonnet m1, m2 and half of m3); proof `scratch/1d-t14-pins/`. The Opus reviewer confirmed it (approved, `reviews/1D-T14.md`, "Confirmation of e3c2ae74": c1 and c2 below). The probes are in `scratch/1d-t14-review/probes/` (`zzReviewT14` `.test.ts` and `.render.test.tsx`) and `scratch/1d-t14-second/probes/` (`zzReview` `.test.ts`, `.render.test.tsx`, `zzReview2.test.ts`). Carried:
+  - **A 1D-T13 follow-up or 1D-T15, before 1C-T11 serves `POST /v1/me/deletion` (Opus m1):** R125 holds at Privacy's Done only.
+    - After an accepted deletion, leaving Privacy by its back button (`PrivacyScreen.tsx:520-524`) and signing out in Settings sends the deleted account's `signed_out` under its analytics id (probe PR5). The back navigation also sends a screen event.
+    - At acceptance, drop the analytics account on this phone (`setAccount(null, { signedOut: true })`, or a local no, from the `accepted` settle), so screens and that sign-out send nothing. Done's option stays as a second guard.
+    - Deletion is not served yet (`VAULT_DEFERRED_ROUTES`), so nothing is live.
+  - **The next round that touches `SettingsScreen.tsx` (Sonnet n1):** the comment at `:234` reads "Signed out everywhere: no signed_out ..." above a line that both sign-outs run. Say "After a sign out everywhere".
+  - **Any new sign-out path (Sonnet n2):** a deletion that completes from another phone, a passkey flow or a forced sign-out must decide `event` on purpose, since the option defaults to sending.
+  - **1D-T15's `AnalyticsUpkeep` round (both, and the confirmation's c1):** hoist `accountFollower` into a pure module that the component and the Node file both import, so the stand-in cannot drift. Or adopt Sonnet's R4 (`scratch/1d-t14-second/probes/zzReview.render.test.tsx:158`, about 15 lines with its `signedIn({ named, first })` and `mount(..., waitForIdentify)` options), with the mutant U1. U1 marks a session seen only after its account read succeeds (`AnalyticsUpkeep.tsx:55-59`), and it survives every committed render case: under it, a never-named account's held `signed_up` and `signed_out` go out with the next account's yes. The render file's two new cases hold M5 and M6 on the real component meanwhile. The receipt's "Sonnet m1 to m3" overstates m3 (c2, a nit for its next touch).
+  - **1D-T15 (device run, Sonnet):** confirm in PostHog's live events that `signed_out` lands under the person's analytics id, not an anonymous one.
+  - **1D-T13 and 1D-T15 (Sonnet):** `reset()` keeps the SDK's queue, so events captured just before a deletion's step 6 can still flush after it; Q15's daily retry for 7 days covers that.

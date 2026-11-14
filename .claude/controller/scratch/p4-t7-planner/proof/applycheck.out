@@ -1,0 +1,12 @@
+rebuilt: apps/edge/src/vault/domain/transactions.ts
+rebuilt: apps/edge/src/vault/commands/registry.ts
+rebuilt: apps/edge/src/vault/commands/change-log.ts
+rebuilt: apps/edge/src/vault/files/jobs.ts
+rebuilt: apps/edge/src/vault/user-vault.ts
+rebuilt: apps/edge/src/v1/protocol.ts
+rebuilt: apps/edge/src/v1/routes.ts
+rebuilt: apps/edge/src/vault/routes.ts
+rebuilt: apps/edge/test/workers/support/slips.ts
+rebuilt: apps/edge/test/workers/slips-vault.test.ts
+rebuilt: apps/edge/test/route-coverage.test.ts
+applycheck: ok

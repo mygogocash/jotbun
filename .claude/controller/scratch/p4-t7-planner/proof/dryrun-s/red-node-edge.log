@@ -1,0 +1,69 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/sim/wt/apps/edge
+
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > reads a plausible number of routes from the controllers 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > places every NestJS route in exactly one of the served, deferred and retired sets 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > lists each route once, and nothing NestJS lacks but the edge-only and the added routes 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > keeps each served NestJS route’s access class, gates and status 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > defers exactly the two deletion routes to 1C (B16), and retires exactly the six routes §6.4 retires 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > serves the seven AI and bridge routes and the added ones, and no NestJS route shadows them 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > each served route is one vault call or one Worker route with its handler, and a step id is only a vault call 1ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > a live route has neither a vault call nor a Worker handler, and is an added route 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > GET /v1/me/analytics is an added route with a vault handler (1D-T11) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip salt and slip accounts are added routes, and only the accounts wait for SLIP_IMPORT_ENABLED, a var wrangler.jsonc keeps off (P4-T3, S13) 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > every route that calls a model carries the ai gate (P3-T3), and no other route does 0ms
+ ✓ test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the bank-album list is a public added route that the catalog answers, with no gate and no release (P4-T2) 0ms
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip drafts and a single read's slip ref are added routes; the drafts wait for SLIP_IMPORT_ENABLED and the slip ref does not (P4-T7, S13) 2ms
+   → expected [ 'GET /v1/sync/live', …(5) ] to include 'GET /v1/drafts'
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the added routes are exactly the ones the plans added: the live socket, the analytics answer, and the slip and catalog routes 1ms
+   → expected [ 'GET /v1/catalog/bank-albums', …(5) ] to deeply equal [ 'GET /v1/catalog/bank-albums', …(9) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip drafts and a single read's slip ref are added routes; the drafts wait for SLIP_IMPORT_ENABLED and the slip ref does not (P4-T7, S13)
+AssertionError: expected [ 'GET /v1/sync/live', …(5) ] to include 'GET /v1/drafts'
+ ❯ test/route-coverage.test.ts:217:151
+    215|
+    216|   it("the slip drafts and a single read's slip ref are added routes; t…
+    217|     for (const key of ['GET /v1/drafts', 'POST /v1/drafts/confirm', 'P…
+       |                                                                                                                                                       ^
+    218|     expect(VAULT_V1_ROUTES.filter((route) => ['/v1/drafts', '/v1/draft…
+    219|       { method: 'GET', path: '/v1/drafts', access: 'bound_session', va…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the added routes are exactly the ones the plans added: the live socket, the analytics answer, and the slip and catalog routes
+AssertionError: expected [ 'GET /v1/catalog/bank-albums', …(5) ] to deeply equal [ 'GET /v1/catalog/bank-albums', …(9) ]
+
+- Expected
++ Received
+
+  [
+    "GET /v1/catalog/bank-albums",
+-   "GET /v1/drafts",
+    "GET /v1/me/analytics",
+    "GET /v1/slip-accounts",
+    "GET /v1/slips/salt",
+    "GET /v1/sync/live",
+-   "POST /v1/drafts/:id/dismiss",
+-   "POST /v1/drafts/confirm",
+-   "POST /v1/slips/refs",
+    "PUT /v1/slip-accounts/:id",
+  ]
+
+ ❯ test/route-coverage.test.ts:229:44
+    227|   // The exact list, in a case of its own that each task adding a rout…
+    228|   it('the added routes are exactly the ones the plans added: the live …
+    229|     expect([...VAULT_ADDED_ROUTES].sort()).toEqual([
+       |                                            ^
+    230|       'GET /v1/catalog/bank-albums',
+    231|       'GET /v1/drafts',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  01:55:53
+   Duration  454ms (transform 204ms, setup 0ms, import 334ms, tests 7ms, environment 0ms)
+

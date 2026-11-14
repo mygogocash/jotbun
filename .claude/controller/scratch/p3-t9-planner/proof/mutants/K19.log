@@ -1,0 +1,92 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 3 failed) 408ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 45ms
+     × a Haiku refusal goes to Opus 30ms
+     × five Haiku tool turns without an answer go to Opus 37ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected [ { role: 'user', …(1) } ] to deeply equal [ { role: 'user', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[{\"id\":\"736a7a48-813b-82ed-abb3-1146802697c7\",\"name\":\"food\"},{\"id\":\"ce9792fe-f13d-8124-9af5-5ed9e2d3500b\",\"name\":\"travel\"},{\"id\":\"60bacdda-ac59-895e-bfed-76b86bafe649\",\"name\":\"household\"},{\"id\":\"45851067-68e5-8169-ac6f-2be2abb2407c\",\"name\":\"bills\"},{\"id\":\"fae2625e-1529-85fb-9a8b-dafbbfe63fb4\",\"name\":\"shopping\"},{\"id\":\"fde72e22-e9ec-8ef9-9aee-2e34511d38a6\",\"name\":\"fun\"},{\"id\":\"e0bbf889-50dd-8313-a455-3bfb530c452f\",\"name\":\"salary\"},{\"id\":\"5d0cf43b-1cbc-8cec-b9b6-73eba9be03dd\",\"name\":\"bonus\"},{\"id\":\"a0c60915-304b-8440-a01b-1242e5e730d9\",\"name\":\"side_job\"},{\"id\":\"dff270b6-9974-8de4-b113-3a07c67dec75\",\"name\":\"gift\"}]}",
++     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[]}",
+      "role": "user",
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:94:27
+     92|     const [haiku, , opus, opusAgain] = model.calls
+     93|     // Fresh: Opus's first request is the person's question alone, as …
+     94|     expect(opus.messages).toEqual([haiku.messages[0]])
+       |                           ^
+     95|     expect(opus.messages[0]).toMatchObject({ role: 'user' })
+     96|     expect(opus.system).toEqual(haiku.system)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+AssertionError: expected [ { role: 'user', …(1) } ] to deeply equal [ { role: 'user', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[{\"id\":\"dbfd1568-ab95-8591-8eaa-2afefcf3c366\",\"name\":\"food\"},{\"id\":\"f776c112-ff72-8f74-a229-dab75c161af4\",\"name\":\"travel\"},{\"id\":\"92a5f0e1-6297-85ae-b736-6cb85e422c39\",\"name\":\"household\"},{\"id\":\"4c817dac-780a-8920-b35e-ac93837b4e98\",\"name\":\"bills\"},{\"id\":\"f2c66c44-5152-8df9-be05-338c38ae3ffd\",\"name\":\"shopping\"},{\"id\":\"abb951a5-da81-8e5a-a950-2d2dfd86cd19\",\"name\":\"fun\"},{\"id\":\"e42e8962-bb21-816e-a416-5115fb214295\",\"name\":\"salary\"},{\"id\":\"f64317a5-4f72-82c1-bc90-bcc6961a1caf\",\"name\":\"bonus\"},{\"id\":\"226a4db2-cc1b-868b-b285-d13801ec2c2e\",\"name\":\"side_job\"},{\"id\":\"e0f84cce-be0b-880b-bc5e-640d496f57f7\",\"name\":\"gift\"}]}",
++     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[]}",
+      "role": "user",
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:111:37
+    109|     expect(await body(await ask(who.user))).toMatchObject({ answer: 'T…
+    110|     expect(modelsAsked()).toEqual([HAIKU, OPUS, OPUS])
+    111|     expect(model.calls[1].messages).toEqual([model.calls[0].messages[0…
+       |                                     ^
+    112|   })
+    113|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+AssertionError: expected [ { role: 'user', …(1) } ] to deeply equal [ { role: 'user', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+-     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[{\"id\":\"3c888a76-157e-85af-ae41-dba18c4e0cb4\",\"name\":\"food\"},{\"id\":\"bec81811-19cd-850a-abc3-7d96bfd3df90\",\"name\":\"travel\"},{\"id\":\"d62fb2d1-bace-8abe-856a-5ea1a053e8d5\",\"name\":\"household\"},{\"id\":\"b6d62050-b251-817e-929a-bb116dc2996c\",\"name\":\"bills\"},{\"id\":\"b4708397-4966-83a1-a02b-0693e62031dd\",\"name\":\"shopping\"},{\"id\":\"43a54a6f-d3d1-8f6b-8b24-abf4725e1823\",\"name\":\"fun\"},{\"id\":\"ffb49be1-45a6-89ca-b988-fbe40c2af6c2\",\"name\":\"salary\"},{\"id\":\"675df6d1-ec6f-8e67-bf5f-e1827fb1675b\",\"name\":\"bonus\"},{\"id\":\"9332d58a-0c82-8573-912b-1215fd4a02c5\",\"name\":\"side_job\"},{\"id\":\"57c6970b-78f8-897f-8fe1-474860c80c6f\",\"name\":\"gift\"}]}",
++     "content": "{\"question\":\"how much did I spend on food this month?\",\"today\":\"2026-11-13\",\"locale\":\"en\",\"categories\":[]}",
+      "role": "user",
+    },
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:122:37
+    120|     expect(answer.figures).toHaveLength(1)
+    121|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, …
+    122|     expect(model.calls[5].messages).toEqual([model.calls[0].messages[0…
+       |                                     ^
+    123|   })
+    124|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 10 passed (13)
+   Start at  19:30:42
+   Duration  3.38s (transform 1.09s, setup 2.11s, import 28ms, tests 408ms, environment 0ms)
+

@@ -1,0 +1,193 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:43530) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:43529) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing shows the wallet's card, its fields, its look and why archive waits, in both modes and languages 145ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > look changes are kept at once and need no command 44ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a new wallet: kind, name, face, material and opening balance, then the ceremony 332ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a look is not kept when the create is refused 155ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow offers four kinds, never e-wallet 153ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing a wallet with records asks why before a correction is sent 558ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > archive is offered only at ฿0; otherwise the screen says why 106ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > opened with ?setup=1 the ceremony returns to /spend/setup 191ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > nothing changed goes back once with nothing sent, and two presses on บันทึก send one update 111ms
+ × src/wallet/wallets/WalletEdit.render.test.tsx > under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2) 28ms
+   → expected [ +0, [] ] to deeply equal [ 1, [] ]
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > every face, material and key is at least 44 pt, and each is named 118ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > two presses on เพิ่มกระเป๋า send one create and one wallet_added; a lost answer offers Try again under the same key 198ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > a save whose answer is lost offers Try again under the same key; a wallet changed on another device says so and starts over; an archive refused because the balance moved says so 314ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > step 2's back is held only while the create is out; once its answer is unknown, or its resend is blocked, back leaves the flow and keeps no look 176ms
+ × src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown 15ms
+   → expected [ 2, [] ] to deeply equal [ 1, [] ]
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > once the person has left, a save or an archive that lands takes them nowhere more 165ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > after a refusal, held or not, step 2's back goes to the kinds and leaves nothing 111ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported 61ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > delete on the stored opening balance clears it to ฿0, and ฿0 is what is sent, with its reason 49ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > two presses on Try again resend once, and the save that lands goes back once 45ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > while a save's answer is unknown archive is held, and a press on it sends nothing 42ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > one wallet id per flow, however often the flow draws: the card it shows is the wallet it creates 41ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a name or an opening balance the create cannot take says so on its field, and sends nothing 85ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > the next save clears the notice that the wallet changed on another device, so it never sits beside that save's answer 59ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > private mode hides the preview card's amount and the ceremony's, while what the person types shows 90ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > with no account open the look is not offered, and the wallet shows the look it will have 37ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archive refused because the balance moved says its ฿0 in words, and in private mode masks it as the line below does 136ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > private mode hides every amount on the edit screen, and the opening balance until a key is pressed 46ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > under Reduce Motion the card fades in, and walletAdded still plays once 50ms
+ × src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests 50ms
+   → expected '' to be 'new-wallet-card-place' // Object.is equality
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archived or unknown wallet says it is gone; a load problem says so, and Try again reads again 59ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > every control on the edit screen is at least 44 pt, and the tray's reasons are named 144ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > at AX5 nothing is clamped to a line, and the kinds and the looks wrap 58ms
+(node:43675) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > after a save the toast shows today's total and Undo, and its check is neutral 56ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a slow total read leaves the toast saying บันทึกแล้ว after 600 ms, then today's total from the outbox as it is when the read lands 8ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > a total read that fails, or that holds more of today than one page, leaves บันทึกแล้ว at once 12ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > offline, the toast says rh-offline's words at once, reads nothing and offers Undo 4ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo removes a draft still on the phone, says เลิกทำแล้ว and sends one undo_used 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo after the draft has left the phone deletes the record, which stays restorable 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo refused by a newer version changes nothing and says so; one already gone says so 26ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > an unconfirmed Undo keeps its command key, so Undo again resends the same delete; another refusal ends it 20ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo follows the diary: none while the draft is sent or checked, or with no diary open; a removal the diary refuses says so 25ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the toast leaves 6 s after its words last change, never while Undo is on its way; a newer save takes its place 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the chip flies from the bottom to the card's top, measured again just before, once the tray has left, and is gone once it lands 10ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the flying chip hides its amount in private mode, and its title too, which may quote the person 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > no flight under reduced motion, or when the card is not on screen 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > iOS hears the toast's words, and Undo's answer 9ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > Undo is a 44 pt control 8ms
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > the saved moment's sections come after the add tray's, and each opens in its state 440ms
+ × src/wallet/saved/SavedMoment.render.test.tsx > a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A) 11ms
+   → expected 'บันทึกแล้ว · วันนี้ ฿82' to be 'บันทึกแล้ว' // Object.is equality
+ × src/wallet/saved/SavedMoment.render.test.tsx > an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B) 6ms
+   → expected 'บันทึกแล้ว · วันนี้ ฿132' to be 'บันทึกแล้ว · วันนี้ ฿82' // Object.is equality
+ × src/wallet/saved/SavedMoment.render.test.tsx > a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว 5ms
+   → expected 'บันทึกแล้ว · วันนี้ ฿82' to be 'บันทึกแล้ว' // Object.is equality
+ ✓ src/wallet/saved/SavedMoment.render.test.tsx > in private mode iOS hears that the amount is hidden, and nothing typed, also after Undo 10ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new wallet's and editing's sections come right after the wallets list's, and each opens in its state on the catalogue's own account 1641ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/saved/SavedMoment.render.test.tsx > a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A)
+AssertionError: expected 'บันทึกแล้ว · วันนี้ ฿82' to be 'บันทึกแล้ว' // Object.is equality
+
+Expected: "บันทึกแล้ว"
+Received: "บันทึกแล้ว · วันนี้ ฿82"
+
+ ❯ src/wallet/saved/SavedMoment.render.test.tsx:664:115
+    662|   // The read ran at revision 10 and lists only the ฿82. The sync then…
+    663|   // and the draft left the outbox before the read's answer was handle…
+    664|   expect(await raced([EARLIER], { outbox: [OWN], appliedRevision: '10'…
+       |                                                                                                                   ^
+    665|   cleanup();
+    666|   vi.useRealTimers();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/wallet/saved/SavedMoment.render.test.tsx > an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B)
+AssertionError: expected 'บันทึกแล้ว · วันนี้ ฿132' to be 'บันทึกแล้ว · วันนี้ ฿82' // Object.is equality
+
+Expected: "บันทึกแล้ว · วันนี้ ฿82"
+Received: "บันทึกแล้ว · วันนี้ ฿132"
+
+ ❯ src/wallet/saved/SavedMoment.render.test.tsx:675:110
+    673|   // read, as numbers (as text "9" sorts after "10").
+    674|   const acknowledged = queued(draft(RECORD_ID, '5000'), 'acknowledged'…
+    675|   expect(await raced([EARLIER], { outbox: [acknowledged], appliedRevis…
+       |                                                                                                              ^
+    676| });
+    677|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/wallet/saved/SavedMoment.render.test.tsx > a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว
+AssertionError: expected 'บันทึกแล้ว · วันนี้ ฿82' to be 'บันทึกแล้ว' // Object.is equality
+
+Expected: "บันทึกแล้ว"
+Received: "บันทึกแล้ว · วันนี้ ฿82"
+
+ ❯ src/wallet/saved/SavedMoment.render.test.tsx:680:91
+    678| test('a save kept on the phone whose diary closed while the read was o…
+    679|   // Its drafts are not known once the diary has closed, so ฿82 would …
+    680|   expect(await raced([EARLIER], { outbox: [OWN] }, { phase: 'unavailab…
+       |                                                                                           ^
+    681| });
+    682|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown
+AssertionError: expected [ 2, [] ] to deeply equal [ 1, [] ]
+
+- Expected
++ Received
+
+  [
+-   1,
++   2,
+    [],
+  ]
+
+ ❯ src/wallet/wallets/NewWallet.render.test.tsx:490:70
+    488|     fireEvent.click(first);
+    489|   });
+    490|   expect([router.back.mock.calls.length, router.replace.mock.calls]).t…
+       |                                                                      ^
+    491|   cleanup();
+    492|   router.back.mockReset();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests
+AssertionError: expected '' to be 'new-wallet-card-place' // Object.is equality
+
+- Expected
++ Received
+
+- new-wallet-card-place
+
+ ❯ src/wallet/wallets/NewWallet.render.test.tsx:654:20
+    652|   expect([found('new-wallet-card').parentElement === place, place.chil…
+    653|   // A stacking context on a phone too: a nativeID, which react-native…
+    654|   expect(place.id).toBe('new-wallet-card-place');
+       |                    ^
+    655| });
+    656|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/wallet/wallets/WalletEdit.render.test.tsx > under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2)
+AssertionError: expected [ +0, [] ] to deeply equal [ 1, [] ]
+
+- Expected
++ Received
+
+  [
+-   1,
++   0,
+    [],
+  ]
+
+ ❯ src/wallet/wallets/WalletEdit.render.test.tsx:336:70
+    334|     fireEvent.click(back);
+    335|   });
+    336|   expect([router.back.mock.calls.length, router.replace.mock.calls]).t…
+       |                                                                      ^
+    337| });
+    338|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  6 failed | 48 passed (54)
+   Start at  00:42:24
+   Duration  4.68s (transform 1.20s, setup 115ms, import 1.98s, tests 6.31s, environment 233ms)
+

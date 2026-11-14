@@ -1,0 +1,8 @@
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch confirm > S/mutants-confirm.out 2>&1; echo "rc=$?"; tail -1 S/mutants-confirm.out
+## exit 0
+rc=0
+16 of 16 killed; survivors []; not clean []; not restored []
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch list > S/mutants-list.out 2>&1; echo "rc=$?"; tail -1 S/mutants-list.out
+## exit 0
+rc=0
+28 of 28 killed; survivors []; not clean []; not restored []

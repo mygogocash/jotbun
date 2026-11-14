@@ -1,0 +1,83 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)
+{"level":"warn","event":"ai_fallback","feature":"slip","failure":"SlipNotRead"}
+
+ ❯ test/workers/ai-uses.test.ts (16 tests | 3 failed) 7287ms
+     × a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4) 2236ms
+     × a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2) 2236ms
+     × only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)
+AssertionError: expected 20 to be 19 // Object.is equality
+
+- Expected
++ Received
+
+- 19
++ 20
+
+ ❯ test/workers/ai-uses.test.ts:298:41
+    296|     expect(await body(res)).toMatchObject({ source: 'facts', model: 'r…
+    297|     expect(sent).toBe(1)
+    298|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+       |                                         ^
+    299|   })
+    300|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > R116: a turn the deadline never let start (P3-T9) > a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)
+AssertionError: expected 10 to be 9 // Object.is equality
+
+- Expected
++ Received
+
+- 9
++ 10
+
+ ❯ test/workers/ai-uses.test.ts:317:42
+    315|     expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    316|     expect(sent).toBe(1)
+    317|     expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
+       |                                          ^
+    318|   })
+    319| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/workers/ai-uses.test.ts > when a use comes back > only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection
+AssertionError: a call that answered, then a turn the deadline never let start: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ test/workers/ai-uses.test.ts:358:116
+    356|       ['a failed call, then a turn the deadline never let start', [cal…
+    357|     ]
+    358|     for (const [what, calls, answeredByModel, refunds] of rows) expect…
+       |                                                                                                                    ^
+    359|   })
+    360| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 13 passed (16)
+   Start at  19:32:33
+   Duration  9.69s (transform 875ms, setup 1.76s, import 29ms, tests 7.29s, environment 0ms)
+

@@ -1,0 +1,52 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:37216) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:37215) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing shows the wallet's card, its fields, its look and why archive waits, in both modes and languages 150ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > look changes are kept at once and need no command 43ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a new wallet: kind, name, face, material and opening balance, then the ceremony 336ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a look is not kept when the create is refused 155ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing a wallet with records asks why before a correction is sent 552ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow offers four kinds, never e-wallet 144ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > archive is offered only at ฿0; otherwise the screen says why 101ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > opened with ?setup=1 the ceremony returns to /spend/setup 173ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > nothing changed goes back once with nothing sent, and two presses on บันทึก send one update 104ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2) 23ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > every face, material and key is at least 44 pt, and each is named 111ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > two presses on เพิ่มกระเป๋า send one create and one wallet_added; a lost answer offers Try again under the same key 186ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > a save whose answer is lost offers Try again under the same key; a wallet changed on another device says so and starts over; an archive refused because the balance moved says so 302ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > step 2's back is held only while the create is out; once its answer is unknown, or its resend is blocked, back leaves the flow and keeps no look 168ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown 62ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > once the person has left, a save or an archive that lands takes them nowhere more 159ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > delete on the stored opening balance clears it to ฿0, and ฿0 is what is sent, with its reason 50ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > after a refusal, held or not, step 2's back goes to the kinds and leaves nothing 102ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported 60ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > two presses on Try again resend once, and the save that lands goes back once 47ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > while a save's answer is unknown archive is held, and a press on it sends nothing 43ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > one wallet id per flow, however often the flow draws: the card it shows is the wallet it creates 42ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a name or an opening balance the create cannot take says so on its field, and sends nothing 85ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > the next save clears the notice that the wallet changed on another device, so it never sits beside that save's answer 59ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > private mode hides the preview card's amount and the ceremony's, while what the person types shows 95ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > with no account open the look is not offered, and the wallet shows the look it will have 35ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > under Reduce Motion the card fades in, and walletAdded still plays once 45ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests 45ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archive refused because the balance moved says its ฿0 in words, and in private mode masks it as the line below does 131ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > private mode hides every amount on the edit screen, and the opening balance until a key is pressed 42ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archived or unknown wallet says it is gone; a load problem says so, and Try again reads again 58ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > every control on the edit screen is at least 44 pt, and the tray's reasons are named 157ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > at AX5 nothing is clamped to a line, and the kinds and the looks wrap 67ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new wallet's and editing's sections come right after the wallets list's, and each opens in its state on the catalogue's own account 1656ms
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  00:40:35
+   Duration  4.65s (transform 1.12s, setup 79ms, import 1.66s, tests 5.59s, environment 166ms)
+

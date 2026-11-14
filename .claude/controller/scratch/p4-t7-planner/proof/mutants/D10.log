@@ -1,0 +1,61 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > drafts come newest first, 50 a page and at most 200, with the total and a cursor
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > the list names a live record with the same amount and date as a possible duplicate
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref 67ms
+   → expected [ 'slip_inbox', …(50) ] to deeply equal [ …(51) ]
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a shared slip's draft confirms as share_extension
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > more than 50 drafts, a repeated draft or a repeated record id is 422, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a resent confirm replays its acknowledgement and writes nothing more
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a draft confirmed on another phone makes the batch 409, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > each record is checked as transactions.create checks it, and a refused record is named by its draft index
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a transaction carrying source or slip_ref_id is 422 UNKNOWN_FIELD: the vault sets both
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > slip confirmations send no record_saved (S18)
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > dismissing keeps the slip known, and a dismissed draft cannot be confirmed
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > confirm and dismiss poke the other phones with the new inbox count
+ ↓ test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record
+ ↓ test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a slip ref leaves the record as it was: its version, its source or none, its change log and a slip ref it has
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > an open draft leaves the inbox 30 days after it was read, and its slip stays known (C11)
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > after pruneSlips at slipsDueAt, the next slipsDueAt is later or null (R37), and backfill uses go once more than 31 Bangkok days old
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > the prune takes more drafts than SQLite has parameters
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > the drafts routes are 404 until SLIP_IMPORT_ENABLED is on, as a missing path answers, and the slip ref answers before it
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > confirm, dismiss and the slip ref are writes under the current policy and the imports gate, confirm also under writes; the list needs only the session
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref
+AssertionError: expected [ 'slip_inbox', …(50) ] to deeply equal [ …(51) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  [
++   "slip_inbox",
+    "d7bcc541-d17e-4b77-bf36-2cfcc760a9b0",
+    "2fa8c155-e6d0-46bf-ab2e-0dab59b5433b",
+    "9e5b451c-ddd6-4419-9bd4-89704e25ab99",
+    "0dba3a16-8ad7-4fb3-9dc8-33bdd0a8040d",
+    "6fcbeb9a-1d55-4590-aafe-614c0f5f366a",
+@@ -47,7 +48,6 @@
+    "7595d80a-328d-4b7e-8edd-b2b518e5fd4f",
+    "1b144526-44af-4f59-b450-ed702757c2a4",
+    "4e1d3f50-7000-41ca-9f3e-6f1fa072bd20",
+    "be5dfe68-0220-4049-a341-6438b52af8cb",
+    "4f0290e8-448d-48b2-a78e-7440e17a31b4",
+-   "slip_inbox",
+  ]
+
+ ❯ test/workers/slip-drafts.test.ts:195:100
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  01:48:16
+   Duration  2.13s (transform 789ms, setup 1.56s, import 43ms, tests 68ms, environment 0ms)
+

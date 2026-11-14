@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 33ms
+     × a single read's SlipNotRead carries the failed call's wait too 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the single read keeps P3-T8's shape > a single read's SlipNotRead carries the failed call's wait too
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:521:69
+    519|     const single = (replies: (ModelMessage | Error)[]) =>
+    520|       readSlipImage({ image: png, context, locale: 'th' }, { transport…
+    521|     await expect(single([apiFailure(429, { 'retry-after': '40' })])).r…
+       |                                                                     ^
+    522|     await expect(single([refusal(), apiFailure(429, { 'retry-after': '…
+    523|     await expect(single([apiFailure(529)])).rejects.toMatchObject({ na…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:17
+   Duration  260ms (transform 70ms, setup 0ms, import 121ms, tests 33ms, environment 0ms)
+

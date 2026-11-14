@@ -1,0 +1,8 @@
+
+> gogospend@0.0.0 typecheck:edge
+> npm run typecheck --prefix apps/edge
+
+
+> gogospend-edge@0.1.0 typecheck
+> tsc --noEmit
+

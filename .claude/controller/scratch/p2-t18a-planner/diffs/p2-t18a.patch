@@ -1,0 +1,420 @@
+diff --git a/apps/app/src/wallet/saved/savedMoment.ts b/apps/app/src/wallet/saved/savedMoment.ts
+index 245c5cbec197231caea7604bb73c896e222bacb1..c581dfbe6d3d7d3894b6bddc5b3d1f10e4c5dae0 100644
+--- a/apps/app/src/wallet/saved/savedMoment.ts
++++ b/apps/app/src/wallet/saved/savedMoment.ts
+@@ -14,8 +14,11 @@
+ // - Today's money out (todayOutMinor): the read's confirmed total, plus each
+ //   expense command dated today whose record the read does not list, so its
+ //   money is not in that total yet, whatever its state; but never one Jotbun
+-//   refused (needs review), which counts nowhere. The caller reads a page that
+-//   holds every expense of the day, so a listed record is never counted twice.
++//   refused (needs review), which counts nowhere, nor one Jotbun acknowledged
++//   at or before the read's revision (P2-T18a, the P2-T17 reviews' m1): it was
++//   committed when the read was made, so a read that does not list it saw it
++//   deleted since. The caller reads a page that holds every expense of the
++//   day, so a listed record is never counted twice.
+ // - The toast's words (toastWords): bw-saved's บันทึกแล้ว · วันนี้ ฿182, the
+ //   amount masked in private mode and said to be hidden (R65); บันทึกแล้ว
+ //   while the total is unknown; rh-offline's words offline, with no total.
+@@ -63,12 +66,17 @@ export function undoPlan(notice: SavedNotice, outbox: readonly OutboxCommand[]):
+   return canUndoDraft(command) ? { kind: 'remove_draft', commandId: command.commandId } : { kind: 'none' };
+ }
+ 
+-/** The confirmed total plus each expense command dated today whose record is not confirmed, unless Jotbun refused it. */
+-export function todayOutMinor(input: { summaryExpenseMinor: Minor; confirmedIds: ReadonlySet<string>; outbox: readonly OutboxCommand[]; today: string }): Minor {
++/**
++ * The confirmed total plus each expense command dated today whose record is not confirmed, unless Jotbun refused it,
++ * or acknowledged it at or before the read's revision (`readRevision`, the page's `as_of_revision`).
++ */
++export function todayOutMinor(input: { summaryExpenseMinor: Minor; confirmedIds: ReadonlySet<string>; outbox: readonly OutboxCommand[]; today: string; readRevision?: string }): Minor {
+   let total = BigInt(input.summaryExpenseMinor);
+-  for (const { payload, state } of input.outbox) {
++  for (const { payload, state, ackedRevision } of input.outbox) {
+     if (payload.type !== 'expense' || payload.occurred_on !== input.today) continue;
+     if (state === 'needs_review' || input.confirmedIds.has(payload.id)) continue;
++    // Committed by the time of the read, yet not listed: deleted since, so not money out.
++    if (state === 'acknowledged' && ackedRevision !== null && input.readRevision !== undefined && BigInt(ackedRevision) <= BigInt(input.readRevision)) continue;
+     total += BigInt(payload.amount_minor);
+   }
+   return total.toString();
+diff --git a/apps/app/src/wallet/saved/savedMoment.test.ts b/apps/app/src/wallet/saved/savedMoment.test.ts
+index 2f3c4e3770a7102e50b15d1131fb1b36971c5343..e6e779ad8977c7ae1cc3e3a789e69552dbd326ee 100644
+--- a/apps/app/src/wallet/saved/savedMoment.test.ts
++++ b/apps/app/src/wallet/saved/savedMoment.test.ts
+@@ -1,7 +1,7 @@
+ // The saved moment's rules (P2-T17; bw-saved, rh-offline, W31, R65, R114,
+ // Review Focus 4): what a landed save says, what Undo does with the outbox as
+-// it is now, today's money out after the save, and the toast's words, in Thai
+-// and English.
++// it is now, today's money out after the save (with P2-T18a's read revision),
++// and the toast's words, in Thai and English.
+ import assert from 'node:assert/strict';
+ import { test } from 'node:test';
+ 
+@@ -102,6 +102,30 @@ test("today's money out counts a draft sent or acknowledged while the read does
+   assert.equal(todayOutMinor({ summaryExpenseMinor: '9007199254740993', confirmedIds: new Set(), outbox: [today('unsent', '1')], today: TODAY }), '9007199254740994');
+ });
+ 
++test("today's money out leaves out a command Jotbun acknowledged at or before the read's revision: the read saw it deleted", () => {
++  // Each call through one helper, so a throw is an answer to compare, never the end of the case.
++  const out = (outbox: OutboxCommand[], readRevision?: string) => {
++    try {
++      return todayOutMinor({ summaryExpenseMinor: '8200', confirmedIds: new Set(), outbox, today: TODAY, ...(readRevision === undefined ? {} : { readRevision }) });
++    } catch (error) {
++      return `threw ${(error as Error).name}`;
++    }
++  };
++  const acked = (revision: string | null) => own('acknowledged', { ackedRevision: revision });
++  assert.deepEqual([
++    // Committed at the read's revision or before it (9 is before 10, as numbers), and not listed: deleted since.
++    out([acked('10')], '10'),
++    out([acked('9')], '10'),
++    // Committed after the read: not in its total yet, so counted.
++    out([acked('11')], '10'),
++    // With no read revision, or no committed revision, it counts as before.
++    out([acked('9')]),
++    out([acked(null)], '10'),
++    // Only an acknowledged command was committed: one being sent is counted whatever its revision says.
++    out([own('sending', { ackedRevision: '9' })], '10'),
++  ], ['8200', '8200', '13200', '13200', '13200', '13200']);
++});
++
+ test('the toast follows bw-saved, and hides the amount in private mode', () => {
+   assert.deepEqual(toastWords(notice(), '18200', false, th), { text: 'บันทึกแล้ว · วันนี้ ฿182', spoken: 'บันทึกแล้ว · วันนี้ 182 บาท' });
+   assert.deepEqual(toastWords(notice(), '18250', false, en), { text: 'Saved · Today ฿182.50', spoken: 'Saved · Today 182 baht 50 satang' });
+diff --git a/apps/app/src/wallet/saved/SavedToastHost.tsx b/apps/app/src/wallet/saved/SavedToastHost.tsx
+index 558b333aa6b410df8e7184b24f2199c713b22701..b219ef2ba7cae2a9c33705b910cfe521ad73fb53 100644
+--- a/apps/app/src/wallet/saved/SavedToastHost.tsx
++++ b/apps/app/src/wallet/saved/SavedToastHost.tsx
+@@ -10,10 +10,12 @@
+ //   did not end synced, the toast says rh-offline's words at once and reads
+ //   nothing. Otherwise it reads one page of today's expenses and appears when
+ //   the read lands or after TOTAL_WAIT_MS, whichever comes first: บันทึกแล้ว
+-//   while the total is unknown (still reading, a failed read, or a day with
+-//   more expenses than one page holds), then today's money out (todayOutMinor,
+-//   with the outbox as it was when the read landed, so a shown figure never
+-//   moves).
++//   while the total is unknown (still reading, a failed read, a day with more
++//   expenses than one page holds, or a diary that moved while the read was on
++//   its way: it applied a revision the read did not see, or the diary open
++//   when the toast began has closed), then today's money out (todayOutMinor,
++//   with the outbox as it was when the read landed and the read's revision, so
++//   a shown figure never moves). P2-T18a, from the P2-T17 reviews' m1.
+ // - Private mode masks the amount and says it is hidden; the toast quotes
+ //   nothing the person typed (R65, R114).
+ // - The check is neutral (§5.3): an onToast circle with a toast-coloured tick.
+@@ -121,11 +123,12 @@ function Toast({ id, notice, onGone }: { id: number; notice: SavedNotice; onGone
+   const view = useDiaryView();
+   const keys = useCommandKeys();
+ 
+-  // The diary as the last commit left it, for the read that lands later.
++  // The diary as the last commit left it, for the read that lands later; and whether it was open when the toast began.
+   const latest = useRef(view);
+   useEffect(() => {
+     latest.current = view;
+   });
++  const openAtStart = useRef(view.phase === 'ready');
+ 
+   const [appeared, setAppeared] = useState(notice.offline);
+   const [total, setTotal] = useState<Minor | null>(null);
+@@ -137,14 +140,19 @@ function Toast({ id, notice, onGone }: { id: number; notice: SavedNotice; onGone
+     resources.history({ from: today, through: today, type: 'expense', sort: 'date_desc' }, undefined, HISTORY_MAX_LIMIT).then(
+       (page) => {
+         if (!live) return;
++        const now = latest.current;
++        // The outbox and the read are one moment only while the diary has applied nothing past the read's revision,
++        // and a diary open when the toast began is open still; otherwise a draft could be in neither, or its
++        // money unknown.
++        const moved = now.phase === 'ready' ? BigInt(now.appliedRevision) > BigInt(page.as_of_revision) : openAtStart.current;
+         // A day with more expenses than one page could leave a counted draft's record unlisted.
+-        if (page.next_cursor === null) {
+-          const now = latest.current;
++        if (page.next_cursor === null && !moved) {
+           setTotal(todayOutMinor({
+             summaryExpenseMinor: page.summary.expense_minor,
+             confirmedIds: new Set(page.items.map((item) => item.id)),
+             outbox: now.phase === 'ready' ? now.outbox : [],
+             today,
++            readRevision: page.as_of_revision,
+           }));
+         }
+         setAppeared(true);
+diff --git a/apps/app/src/wallet/saved/SavedMoment.render.test.tsx b/apps/app/src/wallet/saved/SavedMoment.render.test.tsx
+index 64ac4ec093654100362e09b21e249e9d040b7550..6eb874c9be246ea0e8c9a12ee245d8e6a4573e09 100644
+--- a/apps/app/src/wallet/saved/SavedMoment.render.test.tsx
++++ b/apps/app/src/wallet/saved/SavedMoment.render.test.tsx
+@@ -631,3 +631,68 @@ test("the saved moment's sections come after the add tray's, and each opens in i
+     cleanup();
+   }
+ }, 60_000);
++
++// P2-T18a, before the wallet shell mounts this host (the P2-T17 reviews' m1 and m2). A figure shows only when the
++// read and the diary are one moment: the diary has applied nothing past the read's revision, and a diary open when
++// the toast began is open still. An acknowledged command committed by the read's revision, which the read does not
++// list, was deleted since. In private mode iOS hears that the amount is hidden, and nothing typed.
++
++/**
++ * A save whose read is held: Jotbun's page lists `records`, at the fake's revision 10. While the read is on its way
++ * the diary moves to `during`; then the read lands. Returns the toast's line.
++ */
++async function raced(records: TransactionDto[], before: Parameters<typeof createFakeDiary>[0], during: Parameters<ReturnType<typeof createFakeDiary>['set']>[0]) {
++  const fake = resources(records);
++  const release = fake.hold('history');
++  const diary = readyDiary(before);
++  await mount(<Host />, { resources: fake.resources, diary: diary.diary });
++  vi.useFakeTimers();
++  act(() => { probe.toast?.show(notice({ via: 'device' })); });
++  await flush();
++  tick(TOTAL_WAIT_MS);
++  startAnimations();
++  expect(text('saved-line')).toBe(PLAIN);
++  act(() => { diary.set(during); });
++  release();
++  await flush();
++  return text('saved-line');
++}
++
++test('a read that lands after the diary applied past it says บันทึกแล้ว, since the save could be in neither (race A)', async () => {
++  // The read ran at revision 10 and lists only the ฿82. The sync then committed this ฿50 at 11, the diary applied 11
++  // and the draft left the outbox before the read's answer was handled: ฿82 would leave out the very save.
++  expect(await raced([EARLIER], { outbox: [OWN], appliedRevision: '10' }, { outbox: [], appliedRevision: '11' })).toBe(PLAIN);
++  cleanup();
++  vi.useRealTimers();
++  // Applied at the read's revision, the save is listed, and counted once: ฿82 and ฿50.
++  expect(await raced([EARLIER, SAVED], { outbox: [OWN], appliedRevision: '9' }, { outbox: [], appliedRevision: '10' })).toBe('บันทึกแล้ว · วันนี้ ฿132');
++});
++
++test("an acknowledged save that Jotbun committed by the read's revision, and that the read does not list, was deleted since: it is no money out (race B)", async () => {
++  // Acknowledged at 9 (as queued() acknowledges), the read at 10 lists only the ฿82; the diary is at 9, behind the
++  // read, as numbers (as text "9" sorts after "10").
++  const acknowledged = queued(draft(RECORD_ID, '5000'), 'acknowledged', COMMAND_ID);
++  expect(await raced([EARLIER], { outbox: [acknowledged], appliedRevision: '9' }, { appliedRevision: '9' })).toBe('บันทึกแล้ว · วันนี้ ฿82');
++});
++
++test('a save kept on the phone whose diary closed while the read was on its way says บันทึกแล้ว', async () => {
++  // Its drafts are not known once the diary has closed, so ฿82 would leave this ฿50 out.
++  expect(await raced([EARLIER], { outbox: [OWN] }, { phase: 'unavailable', outbox: [] })).toBe(PLAIN);
++});
++
++test('in private mode iOS hears that the amount is hidden, and nothing typed, also after Undo', async () => {
++  const announce = vi.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
++  await mount(<Host />, { resources: resources([EARLIER, SAVED]).resources, device: { [PRIVATE_MODE_NAME]: '1' } });
++  // iOS from here on (the theme read the web's store as the mount began).
++  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
++  await show(notice({ via: 'online' }));
++  fireEvent.click(named('button', 'เลิกทำ'));
++  await settle();
++  const heard = announce.mock.calls.map(([words]) => words);
++  expect(heard).toEqual(['บันทึกแล้ว · วันนี้ ซ่อนยอดเงินอยู่', UNDONE_DELETED]);
++  for (const words of heard) expect(words).not.toMatch(/\d|ข้าวมันไก่/);
++  // Nothing in the toast, drawn or labelled, has a digit or the typed name.
++  const toast = found('saved-toast');
++  expect(toast.textContent).not.toMatch(/\d|ข้าวมันไก่/);
++  for (const node of toast.querySelectorAll('[aria-label]')) expect(node.getAttribute('aria-label')).not.toMatch(/\d|ข้าวมันไก่/);
++});
+diff --git a/apps/app/src/wallet/wallets/NewWalletFlow.tsx b/apps/app/src/wallet/wallets/NewWalletFlow.tsx
+index 651127e32a67c4948ac17c087d05387592b4a145..706fe39a502130b6413d3c87e2c2bf0328de7742 100644
+--- a/apps/app/src/wallet/wallets/NewWalletFlow.tsx
++++ b/apps/app/src/wallet/wallets/NewWalletFlow.tsx
+@@ -125,7 +125,12 @@ export function NewWalletFlow({ returnTo, now }: { returnTo?: NewWalletReturn; n
+   // P2-T35 adds /spend/setup; until it lands, typed routes do not know it, so the destination is typed by hand here.
+   const destination = (returnTo ?? '/spend') as Href;
+ 
++  // The flow is left once: two quick presses on a back, before React draws again, pop one screen, as the editor's
++  // leave() does (P2-T18a, P2-T21's confirming review m2).
++  const left = useRef(false);
+   const leave = () => {
++    if (left.current) return;
++    left.current = true;
+     if (router.canGoBack()) router.back();
+     else router.replace(destination);
+   };
+@@ -380,9 +385,10 @@ function Added({ input, look, onDone }: { input: CreateWalletRequest; look: Wall
+         </IconButton>
+         {/* The drop's originY is in its parent's coordinates (Reanimated animates it to targetOriginY), so the card
+             enters at the origin of a place of its own: it falls 200 pt, about one card's height, and the bouncy spring
+-            overshoots by about 44 pt (R115, n1). A view with a test id is never flattened away on Fabric
+-            (ViewShadowNode), so on a phone too the place stays the card's parent. */}
+-        <View testID="new-wallet-card-place">
++            overshoots by about 44 pt (R115, n1). On a phone the place stays the card's parent only if it forms a
++            stacking context: a test id alone is flattened away on Fabric, a nativeID is not (P2-T18a, P2-T21's
++            confirming review m1). */}
++        <View testID="new-wallet-card-place" nativeID="new-wallet-card-place">
+           <Animated.View testID="new-wallet-card" entering={entering}>
+             <View accessible accessibilityRole="image" accessibilityLabel={walletCardWords(card, look, hidden, t).spoken}>
+               <WalletCard wallet={card} look={look} variant="full" />
+diff --git a/apps/app/src/wallet/wallets/NewWallet.render.test.tsx b/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
+index aeda1a035b71b6cb6e792f15da1d5fb151dbcab5..7699ca95f76ee28827139e4bf5c415d838829c10 100644
+--- a/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
++++ b/apps/app/src/wallet/wallets/NewWallet.render.test.tsx
+@@ -326,12 +326,16 @@ test('opened with ?setup=1 the ceremony returns to /spend/setup', async () => {
+     cleanup();
+     router.dismissTo.mockReset();
+   }
+-  // Back on the first step leaves the flow: back where it came from, or to where it would return.
++  // Back on the first step leaves the flow: back where it came from, or to where it would return (a mount of its
++  // own, since the flow is left once).
+   mountWallet(at({ setup: '1' }, <SpendNewWalletRoute />));
+   await settle();
+   fireEvent.click(named('button', 'กลับ'));
+   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
++  cleanup();
+   router.canGoBack.mockReturnValue(false);
++  mountWallet(at({ setup: '1' }, <SpendNewWalletRoute />));
++  await settle();
+   fireEvent.click(named('button', 'กลับ'));
+   expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, [['/spend/setup']]]);
+ });
+@@ -473,6 +477,51 @@ test("step 2's back is held only while the create is out; once its answer is unk
+   expect([router.back.mock.calls.length, router.replace.mock.calls, keptLooks(again.stored)]).toEqual([0, [['/spend/wallets']], {}]);
+ });
+ 
++// P2-T18a (P2-T21's confirming review, m2 and n1). Once the shell hides its bar on /spend/wallet/*, step 2's back is
++// the flow's only way out while a create's answer is unknown, so the flow is left once.
++test("the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown", async () => {
++  mountWallet(<NewWalletFlow now={NOW} />);
++  await settle();
++  const first = named('button', 'กลับ');
++  act(() => {
++    fireEvent.click(first);
++    fireEvent.click(first);
++  });
++  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
++  cleanup();
++  router.back.mockReset();
++  const lost = createFakeResources();
++  lost.loseResponse('createWallet');
++  mountWallet(<NewWalletFlow now={NOW} />, { resources: lost.resources });
++  await settle();
++  fillBank();
++  fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++  await settle();
++  const second = named('button', 'กลับ');
++  act(() => {
++    fireEvent.click(second);
++    fireEvent.click(second);
++  });
++  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
++});
++
++test("after a refusal, held or not, step 2's back goes to the kinds and leaves nothing", async () => {
++  for (const outcome of ['signed_out', 'upgrade_required'] as const) {
++    const refused = createFakeResources();
++    refused.fail('createWallet', outcome);
++    mountWallet(<NewWalletFlow now={NOW} />, { resources: refused.resources });
++    await settle();
++    fillBank();
++    fireEvent.click(named('button', 'เพิ่มกระเป๋า'));
++    await settle();
++    // Back is never held after a refusal; เพิ่มกระเป๋า is held only until Jotbun is updated.
++    expect([named('button', 'กลับ').getAttribute('aria-disabled'), named('button', 'เพิ่มกระเป๋า').getAttribute('aria-disabled')], outcome).toEqual([null, outcome === 'upgrade_required' ? 'true' : null]);
++    fireEvent.click(named('button', 'กลับ'));
++    expect([found('new-wallet-step').textContent, router.back.mock.calls.length, router.replace.mock.calls], outcome).toEqual([WORDS.th.step(1), 0, []]);
++    cleanup();
++  }
++});
++
+ test("while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported", async () => {
+   const { sent, restore } = await recordAnalytics();
+   try {
+@@ -601,6 +650,8 @@ test("the new card drops in a place of its own, so it falls about one card's hei
+   // height above where it rests, not above the scroll view's top (the review's n1).
+   const place = found('new-wallet-card-place');
+   expect([found('new-wallet-card').parentElement === place, place.children.length, drops.asked]).toEqual([true, 1, [false]]);
++  // A stacking context on a phone too: a nativeID, which react-native-web draws as the id (P2-T21's confirming review m1).
++  expect(place.id).toBe('new-wallet-card-place');
+ });
+ 
+ test('at AX5 nothing is clamped to a line, and the kinds and the looks wrap', async () => {
+diff --git a/apps/app/src/wallet/wallets/WalletEditScreen.tsx b/apps/app/src/wallet/wallets/WalletEditScreen.tsx
+index cc68f35d14d0f314722faa69039b0f812d7a648c..701278df2a2819e7e97eba99f76032f741cb7051 100644
+--- a/apps/app/src/wallet/wallets/WalletEditScreen.tsx
++++ b/apps/app/src/wallet/wallets/WalletEditScreen.tsx
+@@ -150,7 +150,13 @@ function EditForm({ wallet, hasRecords, today, notice, onNotice, onBack, onArchi
+   // The person leaves once: back, a save or an archive that lands, or this screen gone. A save that lands after that,
+   // or a second press before React draws again, navigates nothing more (R115, m1).
+   const left = useRef(false);
+-  useEffect(() => () => { left.current = true; }, []);
++  // Set again at each mount, so React's development double run (StrictMode) leaves it unset (P2-T21's confirming review n2).
++  useEffect(() => {
++    left.current = false;
++    return () => {
++      left.current = true;
++    };
++  }, []);
+   const leave = (go: () => void) => {
+     if (left.current) return;
+     left.current = true;
+diff --git a/apps/app/src/wallet/wallets/WalletEdit.render.test.tsx b/apps/app/src/wallet/wallets/WalletEdit.render.test.tsx
+index f6523e20c98454f92b2ac65d54ad92f6d042f64a..4c86306de6d9f773935908112bb4e090fa9ae89a 100644
+--- a/apps/app/src/wallet/wallets/WalletEdit.render.test.tsx
++++ b/apps/app/src/wallet/wallets/WalletEdit.render.test.tsx
+@@ -16,6 +16,7 @@
+ // while a save's answer is unknown (Y6), the notice cleared by the next save
+ // (Y9), and the refused archive's ฿0 in private mode (n2, PR5).
+ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
++import { StrictMode } from 'react';
+ import { afterEach, expect, test, vi } from 'vitest';
+ 
+ // The real safe-area package loads React Native itself, which vitest cannot run.
+@@ -323,6 +324,18 @@ test('nothing changed goes back once with nothing sent, and two presses on บ
+   expect([found('wallet-name-problem').textContent, updates(blank)]).toEqual([translateCopy('Enter a wallet name', 'th'), []]);
+ });
+ 
++test("under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2)", async () => {
++  const fake = board();
++  mountWallet(<StrictMode><WalletEditScreen walletId={W.main} now={NOW} /></StrictMode>, { resources: fake.resources, account: KEPT });
++  await settle();
++  const back = named('button', 'กลับ');
++  act(() => {
++    fireEvent.click(back);
++    fireEvent.click(back);
++  });
++  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
++});
++
+ test('a save whose answer is lost offers Try again under the same key; a wallet changed on another device says so and starts over; an archive refused because the balance moved says so', async () => {
+   const lost = board();
+   lost.loseResponse('updateWallet');
+diff --git a/docs/implementation/receipts/P2-T21-fix.md b/docs/implementation/receipts/P2-T21-fix.md
+index a124ab56f96cdeffa6e70fdf06a5c2b748a35f36..12586565f24383476104441d4372272916d58bc3 100644
+--- a/docs/implementation/receipts/P2-T21-fix.md
++++ b/docs/implementation/receipts/P2-T21-fix.md
+@@ -31,8 +31,8 @@
+ - **n1, the card's own place (R115.5):**
+   - The ceremony's card enters inside a view of its own (`new-wallet-card-place`). Reanimated animates an entering view's `originY` to its `targetOriginY`, which is in the parent's coordinates. So `walletAddedEntering`'s `originY: -200` is 200 pt above the card's place only when the card's parent starts where the card does.
+   - Before, the card was a child of the scroll content and fell about `insets.top + 268` pt (about 327 pt with a 59 pt inset), with about 70 pt of overshoot.
+-  - It now falls 200 pt. The bouncy spring (damping 14, stiffness 260, mass 1, a damping ratio of about 0.43) overshoots by about 22% of that, about 44 pt, as `P2-T21.md`'s note said.
+-  - The place has a test id, which also keeps Fabric from flattening it away: in React Native 0.88's `ViewShadowNode`, a view with a `testID` forms a view. So on a phone too, the place stays the card's parent.
++  - It now falls 200 pt on the web, and on a phone since P2-T18a. The bouncy spring (damping 14, stiffness 260, mass 1, a damping ratio of about 0.43) overshoots by about 22% of that, about 44 pt, as `P2-T21.md`'s note said.
++  - Corrected by P2-T18a (P2-T21's confirming review, m1): a test id alone does not keep the place on a phone. In React Native 0.88's `ViewShadowNode` a `testID` makes a view but not a stacking context, and Fabric hoists such a view's children into the nearest ancestor that forms one, so the card still fell about `insets.top + 268` pt. P2-T18a gives the place a `nativeID`, which forms a stacking context, so on a phone too the place stays the card's parent.
+   - The case: the card's parent is the place, and the place holds only the card.
+ - **n2, the refused archive's ฿0 (R115.6):**
+   - The refused archive's line (`ArchiveRefused`) masks its ฿0 in private mode as the line below does: ฿•••• on screen, and ซ่อนยอดเงินอยู่ in its spoken words. Out of private mode it says the amount in words (0 บาท), as `ArchiveLater` does.
+@@ -76,6 +76,7 @@
+   - The tracking start (m3): a wallet made here starts today, so earlier dates cannot be logged to it, and nothing in the wallet area can change that until the owner decides.
+   - A save that lands after the person left is not shown to them. A refusal or an unknown answer then goes unseen, and the screen they return to shows what Jotbun holds.
+   - With a create's answer unknown, back leaves the flow, and whether the wallet was made shows only in the list on return. A person who starts a new wallet instead makes a second one, with a new id.
++  - Leaving then also loses the chosen look for good if the create had in fact committed: the look carries the kind, which nothing else holds, so the wallet shows as a plain wallet, and its `wallet_added` is never sent. Try again keeps both. The owner decides at E2-B (P2-T21's confirming review, m3; added by P2-T18a).
+ - **Notes for later tasks:**
+   - **P2-T18:** once `walletTab` hides the bar on `/spend/wallet/*`, step 2's back is the flow's way out while a create's answer is unknown. Keep it there.
+   - **P2-T22:** the edit screen leaves once (`leave()`), so a detail that pushes the edit route gets one pop per back or save. Where an archive lands is still P2-T22's to decide (the first review's note).
+diff --git a/docs/implementation/receipts/P2-T21.md b/docs/implementation/receipts/P2-T21.md
+index ee87470741951db95eb74d0f0e3e188e30ebb86e..b6a18dda3bc57b427908b9797d01af015c4a480e 100644
+--- a/docs/implementation/receipts/P2-T21.md
++++ b/docs/implementation/receipts/P2-T21.md
+@@ -64,7 +64,7 @@
+   - The full render suite (CI, R100; the catalogue's every-section and screen-reader suites pick up the five sections there), and the iOS export (CI).
+   - `test:ops`: no package or lockfile change.
+   - The API, edge and database suites: nothing outside `apps/app` changes, and Docker is stopped.
+-  - Device and simulator checks: VoiceOver on the kinds, the preview's image, the faces' and materials' radios and the ceremony's announcement; a quick double tap on เพิ่มกระเป๋า, บันทึก, a reason and เก็บกระเป๋านี้ถาวร on a phone; the drop on the simulator (200 pt from its own place since the fix round, so about 44 pt of overshoot) and under Reduce Motion; the keyboard over the name field and the pinned footer; `dismissTo` back to the list, the checklist and Home on a development build with the wallet area on; the system back during the flow; AX5 on a phone; and E2-B's screenshots (the controller's, after P2-T28).
++  - Device and simulator checks: VoiceOver on the kinds, the preview's image, the faces' and materials' radios and the ceremony's announcement; a quick double tap on เพิ่มกระเป๋า, บันทึก, a reason and เก็บกระเป๋านี้ถาวร on a phone; the drop on the simulator (200 pt from its own place since P2-T18a's `nativeID`, so about 44 pt of overshoot; before it, about `insets.top + 268` pt on a phone) and under Reduce Motion; the keyboard over the name field and the pinned footer; `dismissTo` back to the list, the checklist and Home on a development build with the wallet area on; the system back during the flow; AX5 on a phone; and E2-B's screenshots (the controller's, after P2-T28).
+ - **Risks:**
+   - With no account open, a new wallet keeps no look and shows the look derived from its id (P9).
+   - `/spend/setup` does not exist until P2-T35, so `?setup=1` would end on expo-router's unmatched route, although nothing opens it before P2-T35 (P8).
+@@ -77,4 +77,4 @@
+   - **P2-T37:** every stored amount here is a `WalletAmount` or masked by `isFilled`. The sweep's exemptions must know the keypad's keys and the cap's words (P2-T14's note) on both screens, and the archive line's ฿0, which `WalletAmount` masks too. Since the fix round the refused archive's line masks its ฿0 as well.
+   - **A hook test task:** P2-T19's review's m3 and m4 (P4c).
+   - **P2-T24 or P2-T30:** P2-T9's m-1 (GrowBar) is still open.
+-  - **E2-B:** P20's differences. Capture `bw-wallet-added` and check the drop on the simulator (200 pt from its own place since the fix round, so about 44 pt of overshoot), and capture `bw-wallet-correction` from a fresh launch. The differences from the boards: wc-wallet-type drops the e-wallet row, uses the wallet's round 44 pt back button and draws the travel card's BTS / MRT in the line's type; the fields' preview is the kit's full card, the fields are white cards, and the entries note sits under the keypad; the tracking start reads as a date chip does but is text, not the board's link, and nothing in the wallet area changes it (the brief's P9 and P20 said today's Wallets screen keeps its date chip, but that screen cannot be reached while the `wallet` area is on; the owner decides, R115); bw-adding follows the mode and plays success for every new wallet; wc-wallet-edit's archive has no confirmation and its amounts are 13 pt `WalletAmount`s; with no account open no faces or materials are offered; every English line is a draft.
++  - **E2-B:** P20's differences. Capture `bw-wallet-added` and check the drop on the simulator (200 pt from its own place since P2-T18a's `nativeID`, so about 44 pt of overshoot), and capture `bw-wallet-correction` from a fresh launch. The differences from the boards: wc-wallet-type drops the e-wallet row, uses the wallet's round 44 pt back button and draws the travel card's BTS / MRT in the line's type; the fields' preview is the kit's full card, the fields are white cards, and the entries note sits under the keypad; the tracking start reads as a date chip does but is text, not the board's link, and nothing in the wallet area changes it (the brief's P9 and P20 said today's Wallets screen keeps its date chip, but that screen cannot be reached while the `wallet` area is on; the owner decides, R115); bw-adding follows the mode and plays success for every new wallet; wc-wallet-edit's archive has no confirmation and its amounts are 13 pt `WalletAmount`s; with no account open no faces or materials are offered; every English line is a draft.

@@ -1,0 +1,44 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 612ms
+     × a refund whose vault call itself fails never changes the 503, and is logged by name only 34ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+AssertionError: expected [] to deeply equal [ { level: 'warn', …(3) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "event": "ai_refund_failed",
+-     "failure": "Error",
+-     "feature": "ask",
+-     "level": "warn",
+-   },
+- ]
++ []
+
+ ❯ test/workers/ask-escalation.test.ts:222:54
+    220|       expect(res.status).toBe(503)
+    221|       expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    222|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+       |                                                      ^
+    223|     } finally {
+    224|       UserVault.prototype.call = original
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:32:19
+   Duration  3.78s (transform 1.43s, setup 2.65s, import 32ms, tests 612ms, environment 1ms)
+

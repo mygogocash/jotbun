@@ -1,0 +1,60 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a new wallet: kind, name, face, material and opening balance, then the ceremony 331ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a look is not kept when the create is refused 154ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow offers four kinds, never e-wallet 137ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > opened with ?setup=1 the ceremony returns to /spend/setup 163ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > every face, material and key is at least 44 pt, and each is named 102ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > two presses on เพิ่มกระเป๋า send one create and one wallet_added; a lost answer offers Try again under the same key 165ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > step 2's back is held only while the create is out; once its answer is unknown, or its resend is blocked, back leaves the flow and keeps no look 162ms
+ × src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown 13ms
+   → expected [ 2, [] ] to deeply equal [ 1, [] ]
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > after a refusal, held or not, step 2's back goes to the kinds and leaves nothing 99ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported 58ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > one wallet id per flow, however often the flow draws: the card it shows is the wallet it creates 39ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a name or an opening balance the create cannot take says so on its field, and sends nothing 79ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > private mode hides the preview card's amount and the ceremony's, while what the person types shows 89ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > with no account open the look is not offered, and the wallet shows the look it will have 33ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > under Reduce Motion the card fades in, and walletAdded still plays once 45ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests 43ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > at AX5 nothing is clamped to a line, and the kinds and the looks wrap 53ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new wallet's and editing's sections come right after the wallets list's, and each opens in its state on the catalogue's own account 1653ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  00:52:11
+   Duration  4.61s (transform 780ms, setup 36ms, import 990ms, tests 3.42s, environment 72ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:72962) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown
+AssertionError: expected [ 2, [] ] to deeply equal [ 1, [] ]
+
+- Expected
++ Received
+
+  [
+-   1,
++   2,
+    [],
+  ]
+
+ ❯ src/wallet/wallets/NewWallet.render.test.tsx:490:70
+    488|     fireEvent.click(first);
+    489|   });
+    490|   expect([router.back.mock.calls.length, router.replace.mock.calls]).t…
+       |                                                                      ^
+    491|   cleanup();
+    492|   router.back.mockReset();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

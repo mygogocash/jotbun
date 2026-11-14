@@ -1,0 +1,1688 @@
+diff --git a/apps/app/src/dev/catalogue/companion/companionSections.tsx b/apps/app/src/dev/catalogue/companion/companionSections.tsx
+index 59b76f3f..096460e6 100644
+--- a/apps/app/src/dev/catalogue/companion/companionSections.tsx
++++ b/apps/app/src/dev/catalogue/companion/companionSections.tsx
+@@ -46,7 +46,7 @@ export function catalogueAi(preferences: Partial<AiPreferencesDto> = {}, overrid
+     ask: async ({ locale }) => ({
+       // The golden month's food: one entry, ฿182 on 26 September.
+       answer: locale === 'th' ? 'เดือนนี้ใช้กับอาหารไป ฿182 ทั้งหมดเป็นของวันที่ 26' : 'You spent ฿182 on food this month, all of it on the 26th.',
+-      figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200' }],
++      figures: [{ label: locale === 'th' ? 'อาหาร 1–29 ก.ย. 2569' : 'Food, 1–29 Sep 2026', amount_minor: '18200', count: 1, scope: { from: '2026-09-01', through: '2026-09-29', type: 'expense', category_id: BUILTINS[0].id } }],
+       source: 'ai',
+       model: 'claude-haiku-5-5',
+       escalated: false,
+diff --git a/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx b/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+index a1e75c08..abb44c7f 100644
+--- a/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
++++ b/apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+@@ -30,7 +30,7 @@ test('with AI help off, Ask Bun explains itself and offers to turn it on', async
+ 
+ test('a suggested question is answered, with the figures the answer used', async () => {
+   const ai = fakeAiResources({
+-    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [{ label: 'expense 2026-10-01…2026-10-24 (food)', amount_minor: '10500' }], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
++    ask: vi.fn(async () => ({ answer: 'You spent ฿105 on food this month.', figures: [{ label: 'expense 2026-10-01…2026-10-24 (food)', amount_minor: '10500', count: 2, scope: { from: '2026-10-01', through: '2026-10-24', type: 'expense' as const, category_id: null } }], source: 'ai' as const, model: 'claude-haiku-5-5' as const, escalated: false })),
+   }, { companion: true, notice_version: 1 });
+   mount(ai);
+   fireEvent.click(await screen.findByRole('button', { name: 'How much did I spend on food this month?' }));
+diff --git a/apps/app/src/spend/v1/ai/aiResources.test.ts b/apps/app/src/spend/v1/ai/aiResources.test.ts
+index a9ad162b..3e15834d 100644
+--- a/apps/app/src/spend/v1/ai/aiResources.test.ts
++++ b/apps/app/src/spend/v1/ai/aiResources.test.ts
+@@ -8,6 +8,12 @@ import { createAiResources, isAiAskResult, isAiNoteResult, isAiParseResult, isAi
+ // AI call waits its route's phone timeout, longer than the route's deadline (H3).
+ // P3-T8: a slip read also says what it found, whether a model refused, and the
+ // tokens its calls used.
++// P3-T9: each figure Ask Bun used carries its record count and what it counts
++// over (H14).
++
++const FOOD = '22222222-2222-4222-8222-222222222222';
++/** A figure as the edge answers it: ฿2,460 over 41 food records from 1 to 24 October. */
++const figure = { label: 'Food', amount_minor: '246000', count: 41, scope: { from: '2026-10-01', through: '2026-10-24', type: 'expense', category_id: FOOD } };
+ 
+ const draft = {
+   type: 'expense',
+@@ -26,7 +32,7 @@ const RESULTS = [
+   { name: 'parse', valid: isAiParseResult, bare: { drafts: [draft], source: 'ai' }, mark: { model: 'claude-haiku-5-5', escalated: false } },
+   { name: 'slip', valid: isAiSlipResult, bare: { drafts: [draft], bank: 'K PLUS', source: 'ai', kind: 'slip', declined: false, tokens: { input: 2_400, output: 310 } }, mark: { model: 'claude-opus-5-5', escalated: true } },
+   { name: 'note', valid: isAiNoteResult, bare: { date: '2026-11-12', facts: [{ kind: 'no_records_today' }], text: 'Nothing logged yet today.', source: 'facts' }, mark: { model: 'rules', escalated: false } },
+-  { name: 'ask', valid: isAiAskResult, bare: { answer: 'You spent ฿60 on food.', figures: [{ label: 'Food', amount_minor: '6000' }], source: 'ai' }, mark: { model: 'claude-haiku-5-5', escalated: false } },
++  { name: 'ask', valid: isAiAskResult, bare: { answer: 'You spent ฿2,460 on food.', figures: [figure], source: 'ai' }, mark: { model: 'claude-haiku-5-5', escalated: false } },
+ ] as const;
+ 
+ test('AI results without model or escalated are refused, and with them accepted', () => {
+@@ -65,6 +71,39 @@ test('a slip result needs kind, declined and tokens', () => {
+   for (const [what, value] of refused) assert.equal(isAiSlipResult(value), false, what);
+ });
+ 
++test('figures need count and scope', () => {
++  const answer = (...figures: unknown[]) => ({ answer: 'You spent ฿2,460 on food.', figures, source: 'ai', model: 'claude-opus-5-5', escalated: true });
++  /** The figure without some of its keys. */
++  const without = (...keys: string[]) => Object.fromEntries(Object.entries(figure).filter(([key]) => !keys.includes(key)));
++  const accepted: [string, unknown][] = [
++    ['a total with its count and scope', figure],
++    ['a total over every category', { ...figure, scope: { ...figure.scope, category_id: null } }],
++    ['an income total', { ...figure, scope: { ...figure.scope, type: 'income' } }],
++    ["a place's total: a count and no scope", { ...figure, label: 'Grab', count: 3, scope: null }],
++    ['a budget line: neither, and an amount below zero', { ...figure, label: 'Left', amount_minor: '-1200', count: null, scope: null }],
++  ];
++  for (const [what, value] of accepted) assert.equal(isAiAskResult(answer(value)), true, what);
++  assert.equal(isAiAskResult(answer(figure, { ...figure, count: 2, scope: null })), true, 'two figures');
++  // A figure as P3-T8 answered it is refused, and so is one without either key.
++  assert.equal(isAiAskResult(answer(without('count', 'scope'))), false, 'without count and scope');
++  for (const key of ['count', 'scope']) assert.equal(isAiAskResult(answer(without(key))), false, `without ${key}`);
++  const refused: [string, unknown][] = [
++    ['a figure with another key', { ...figure, records: 41 }],
++    ['a count as text', { ...figure, count: '41' }],
++    ['a negative count', { ...figure, count: -1 }],
++    ['a fractional count', { ...figure, count: 4.5 }],
++    ['a scope as text', { ...figure, scope: '2026-10' }],
++    ['a scope with another key', { ...figure, scope: { ...figure.scope, wallet_id: null } }],
++    ['a scope without its category', { ...figure, scope: { from: '2026-10-01', through: '2026-10-24', type: 'expense' } }],
++    ['a first day that is not a date', { ...figure, scope: { ...figure.scope, from: '1 October' } }],
++    ['a last day that is not a date', { ...figure, scope: { ...figure.scope, through: 20261024 } }],
++    ['a transfer', { ...figure, scope: { ...figure.scope, type: 'transfer' } }],
++    ['a category that is not an id', { ...figure, scope: { ...figure.scope, category_id: 'food' } }],
++  ];
++  for (const [what, value] of refused) assert.equal(isAiAskResult(answer(value)), false, what);
++  assert.equal(isAiAskResult(answer(figure, without('scope'))), false, 'one good figure and one without its scope');
++});
++
+ test("each AI call waits its route's phone timeout", async () => {
+   const seen: { method: string; path: string; options: V1RequestOptions<unknown> }[] = [];
+   const answers: Record<string, unknown> = {
+diff --git a/apps/app/src/spend/v1/ai/aiResources.ts b/apps/app/src/spend/v1/ai/aiResources.ts
+index 6403fed4..e97cb3ed 100644
+--- a/apps/app/src/spend/v1/ai/aiResources.ts
++++ b/apps/app/src/spend/v1/ai/aiResources.ts
+@@ -6,7 +6,7 @@
+ // use, and a draft that never arrived is simply asked for again by the person.
+ // Each AI route waits its own AI_PHONE_TIMEOUT_MS, longer than the route's
+ // deadline on the server, so the phone hears the route's answer (H3).
+-import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, SLIP_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
++import { AI_CONFIDENCE, AI_DRAFT_FLAGS, AI_DRAFT_TYPES, AI_FEATURES, AI_MODELS, AI_PHONE_TIMEOUT_MS, BUN_FACT_KINDS, SLIP_KINDS, isCashbackCatalogue, isUuid } from '@gogospend/contracts';
+ import type {
+   AiAskRequest,
+   AiAskResult,
+@@ -84,9 +84,18 @@ export function isAiNoteResult(value: unknown): value is AiNoteResult {
+     (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
+ }
+ 
++/** What a figure counts over (P3-T9): its days, an expense or income type, and a category id (null for every category). */
++const isFigureScope = (value: unknown) => value === null || (isObject(value) && hasExactly(value, ['from', 'through', 'type', 'category_id']) &&
++  typeof value.from === 'string' && DATE.test(value.from) && typeof value.through === 'string' && DATE.test(value.through) &&
++  (AI_DRAFT_TYPES as readonly unknown[]).includes(value.type) && (value.category_id === null || isUuid(value.category_id)));
++
++/** A figure an answer used: its label and amount, how many records it adds up (null for a budget line), and what it counts over (P3-T9). */
++const isAiFigure = (value: unknown) => isObject(value) && hasExactly(value, ['label', 'amount_minor', 'count', 'scope']) && typeof value.label === 'string' &&
++  typeof value.amount_minor === 'string' && /^-?(?:0|[1-9][0-9]{0,11})$/.test(value.amount_minor) && (value.count === null || isCount(value.count)) && isFigureScope(value.scope);
++
+ export function isAiAskResult(value: unknown): value is AiAskResult {
+   return isObject(value) && hasExactly(value, ['answer', 'figures', 'source', 'model', 'escalated']) && typeof value.answer === 'string' && value.answer.length <= 2000 &&
+-    Array.isArray(value.figures) && value.figures.every((f) => isObject(f) && hasExactly(f, ['label', 'amount_minor']) && typeof f.label === 'string' && typeof f.amount_minor === 'string' && /^-?(?:0|[1-9][0-9]{0,11})$/.test(f.amount_minor)) &&
++    Array.isArray(value.figures) && value.figures.every(isAiFigure) &&
+     (value.source === 'ai' || value.source === 'facts') && namesItsModel(value);
+ }
+ 
+diff --git a/apps/edge/src/server/ai/drafts.ts b/apps/edge/src/server/ai/drafts.ts
+index ea2b12c0..ec706c21 100644
+--- a/apps/edge/src/server/ai/drafts.ts
++++ b/apps/edge/src/server/ai/drafts.ts
+@@ -29,7 +29,9 @@ function addDays(iso: string, days: number): string {
+ 
+ function isRealDate(iso: string): boolean {
+   if (!DATE.test(iso)) return false
+-  return new Date(`${iso}T00:00:00Z`).toISOString().slice(0, 10) === iso
++  const date = new Date(`${iso}T00:00:00Z`)
++  // A month over 12, a day over 31 or a zero is no date at all, and toISOString would throw (the P3-T8 second review's m1).
++  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === iso
+ }
+ 
+ /** "60", "1250.5" or "1,250.50" baht → exact satang; null for anything else. */
+@@ -58,6 +60,18 @@ function soleWallet(ctx: DraftContext): string | null {
+   return wallets.length === 1 ? wallets[0].id : null
+ }
+ 
++/**
++ * What a model may choose from when it drafts (parse and the slip read, P3-T9):
++ * the active wallets' and categories' ids with their names, never a balance,
++ * a history or an archived one.
++ */
++export function draftChoices(ctx: DraftContext) {
++  return {
++    wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
++    categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
++  }
++}
++
+ /** A draft from the offline rules alone (AI off, unavailable or unsure); shared with the app. */
+ export const draftFromRules = (text: string, ctx: DraftContext): AiDraft | null => draftFromQuickText(text, ctx)
+ 
+diff --git a/apps/edge/src/v1/ai/ask.ts b/apps/edge/src/v1/ai/ask.ts
+new file mode 100644
+index 00000000..0a5f620c
+--- /dev/null
++++ b/apps/edge/src/v1/ai/ask.ts
+@@ -0,0 +1,162 @@
++import type Anthropic from '@anthropic-ai/sdk'
++import type { AiFigure, AiLocale, AiModel } from '@gogospend/contracts'
++
++import { ProblemException } from '@api/common/api-problem.filter'
++import { failureName } from '@api/common/operational-metrics'
++
++import { figuresText } from '../../server/ai/fact-text'
++import { AllowedNumbers, isGrounded } from '../../server/ai/grounding'
++import { ModelUnavailable, finishedText } from '../../server/ai/model'
++import type { ModelMessage } from '../../server/ai/model'
++import { ASK_SYSTEM } from '../../server/ai/prompts'
++import type { Allowance } from '../../vault/ai'
++import { HAIKU, HAIKU_ASK_CAP_MS, OPUS, haikuRequest, opusRequest } from './models'
++import type { ModelTier } from './models'
++import { ASK_TOOLS } from './tools'
++import { DeadlinePassed, callFailure, tracedSend } from './transport'
++import type { AiDeadline, AiTrace, CallFailure, ModelTransport } from './transport'
++
++// Ask Bun with D28's escalation (P3-T9, H7). Haiku 5.5 answers first, its
++// whole conversation under HAIKU_ASK_CAP_MS of the route's deadline (H3). When
++// its answer fails the grounding check, it declines, or it ends without an
++// answer (the turn limit, a cut-short or empty answer, or a turn the deadline
++// never let start), Opus 5.5 is asked again in a fresh conversation: the
++// person's question alone, as Haiku first saw it, with the same system and
++// tools and what is left of the deadline. Nothing of Haiku's turns reaches
++// Opus. An outage never escalates. When neither model's words can be shown,
++// the plain figures answer: Opus's, else Haiku's. This module counts no use
++// and gives none back: the service does (H5, R116).
++
++/** The tool turns one conversation may take before it must answer (AiService's ASK_MAX_TURNS). */
++export const ASK_MAX_TURNS = 5
++
++/** How one conversation ended, with every figure its tools read. */
++export type AskOutcome =
++  | { kind: 'grounded'; answer: string; figures: AiFigure[] }
++  | { kind: 'ungrounded' | 'declined' | 'no_answer'; figures: AiFigure[] }
++  | { kind: 'failed'; failure: CallFailure; figures: AiFigure[] }
++
++export type AskDeps = {
++  transport: ModelTransport
++  trace: AiTrace
++  deadline: AiDeadline
++  /** One read-only tool, run in the vault: its result, its figures and the numbers it allows, or the input's refusal. */
++  tool(name: string, input: Record<string, unknown>): Promise<{ result: unknown; figures: AiFigure[]; allow: Allowance } | { error: string }>
++}
++
++/**
++ * One conversation with `tier` (today's Ask Bun loop, P3-T9): at most
++ * ASK_MAX_TURNS turns, its own AllowedNumbers and figures. A grounded text is
++ * `grounded`, any other text `ungrounded`; a refusal is `declined`; the turn
++ * limit, a cut-short or empty answer, or a turn the deadline never let start
++ * (DeadlinePassed) is `no_answer`; any other failed call is `failed`. A vault
++ * refusal at a tool step (a session that ended, a newer policy) is thrown on as
++ * the route's answer; a tool step that failed ends the conversation as `failed`.
++ */
++export async function runAskConversation(
++  tier: ModelTier,
++  input: { question: string; today: string; locale: AiLocale; categories: readonly { id: string; name: string | null }[] },
++  deps: AskDeps,
++): Promise<AskOutcome> {
++  const allowed = new AllowedNumbers().addDate(input.today)
++  const figures: AiFigure[] = []
++  // The person's question as both models first see it: an Opus conversation starts here too, with nothing of Haiku's.
++  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
++    { role: 'user', content: JSON.stringify({ question: input.question, today: input.today, locale: input.locale, categories: input.categories }) },
++  ]
++  const base = tier === OPUS ? opusRequest('medium', 12_000) : haikuRequest('medium', 12_000)
++  for (let turn = 0; turn < ASK_MAX_TURNS; turn += 1) {
++    let message: ModelMessage
++    try {
++      message = await tracedSend(deps.transport, deps.trace, deps.deadline, { feature: 'ask', escalated: tier === OPUS, params: { ...base, system: ASK_SYSTEM, tools: ASK_TOOLS, messages } })
++    } catch (error) {
++      logFallback(error)
++      // A turn the deadline never let start is no answer; any other failed call is an outage or a rejection (H7).
++      return error instanceof DeadlinePassed ? { kind: 'no_answer', figures } : { kind: 'failed', failure: callFailure(error), figures }
++    }
++    if (message.stop_reason !== 'tool_use') return finished(message, allowed, figures)
++    messages.push({ role: 'assistant', content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] })
++    const results: Anthropic.Beta.Messages.BetaToolResultBlockParam[] = []
++    for (const block of message.content) {
++      if (block.type !== 'tool_use') continue
++      let run: Awaited<ReturnType<AskDeps['tool']>>
++      try {
++        run = await deps.tool(block.name, (block.input ?? {}) as Record<string, unknown>)
++      } catch (error) {
++        // A refusal (any problem but a 500) is the route's answer; a step that failed is a failure, as a database error was.
++        if (error instanceof ProblemException && error.getStatus() !== 500) throw error
++        logFallback(error)
++        return { kind: 'failed', failure: callFailure(error), figures }
++      }
++      if ('error' in run) {
++        results.push({ type: 'tool_result', tool_use_id: block.id, content: run.error, is_error: true })
++        continue
++      }
++      figures.push(...run.figures)
++      allowAll(allowed, run.allow)
++      results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(run.result) })
++    }
++    messages.push({ role: 'user', content: results })
++  }
++  return { kind: 'no_answer', figures }
++}
++
++/**
++ * Ask Bun (D28, H7): Haiku under HAIKU_ASK_CAP_MS of the deadline; a grounded
++ * answer is Haiku's. An ungrounded, declined or unfinished one starts Opus from
++ * scratch under what is left of the deadline (`escalated: true`), and Opus's
++ * grounded answer is Opus's. Otherwise the plain figures answer (`model:
++ * 'rules'`): Opus's, else Haiku's, or Bun's could-not-find line when neither
++ * conversation read any. A failed Haiku never reaches Opus. Only when the
++ * conversation that ended the request failed and no figure was read is there
++ * nothing to answer with (`{ paused: true }`, 503 AI_PAUSED).
++ */
++export async function askWithEscalation(
++  input: Parameters<typeof runAskConversation>[1],
++  deps: AskDeps,
++): Promise<{ answer: string; figures: AiFigure[]; source: 'ai' | 'facts'; model: AiModel; escalated: boolean } | { paused: true }> {
++  // H3: every Haiku turn shares one child deadline, so Opus keeps the rest of the route's.
++  const haiku = await runAskConversation(HAIKU, input, { ...deps, deadline: deps.deadline.child(HAIKU_ASK_CAP_MS) })
++  if (haiku.kind === 'grounded') return { answer: haiku.answer, figures: haiku.figures, source: 'ai', model: HAIKU, escalated: false }
++  if (haiku.kind === 'failed') return plainFigures(haiku, [], input.locale, false)
++  const opus = await runAskConversation(OPUS, input, deps)
++  if (opus.kind === 'grounded') return { answer: opus.answer, figures: opus.figures, source: 'ai', model: OPUS, escalated: true }
++  return plainFigures(opus, haiku.figures, input.locale, true)
++}
++
++/** The plain figures (H4: no model's words): the last conversation's, else the earlier one's; nothing to answer with only after a failure with none. */
++function plainFigures(
++  last: AskOutcome,
++  earlier: AiFigure[],
++  locale: AiLocale,
++  escalated: boolean,
++): { answer: string; figures: AiFigure[]; source: 'facts'; model: 'rules'; escalated: boolean } | { paused: true } {
++  const figures = last.figures.length > 0 ? last.figures : earlier
++  if (last.kind === 'failed' && figures.length === 0) return { paused: true }
++  return { answer: figuresText(figures, locale), figures, source: 'facts', model: 'rules', escalated }
++}
++
++/** How a turn that did not ask for a tool ended. */
++function finished(message: ModelMessage, allowed: AllowedNumbers, figures: AiFigure[]): AskOutcome {
++  let answer: string
++  try {
++    answer = finishedText(message).trim()
++  } catch (error) {
++    // finishedText throws ModelUnavailable only: a refusal is a decline; a cut-short answer is no answer.
++    return error instanceof ModelUnavailable && error.reason === 'refusal' ? { kind: 'declined', figures } : { kind: 'no_answer', figures }
++  }
++  if (!answer) return { kind: 'no_answer', figures }
++  return isGrounded(answer, allowed) ? { kind: 'grounded', answer, figures } : { kind: 'ungrounded', figures }
++}
++
++/** Replays a tool's allowed numbers into the conversation's AllowedNumbers, in the order the tool allowed them. */
++function allowAll(allowed: AllowedNumbers, allow: Allowance): void {
++  for (const minor of allow.satang) allowed.addSatang(minor)
++  for (const count of allow.counts) allowed.addCount(count)
++  for (const date of allow.dates) allowed.addDate(date)
++}
++
++/** One line per failed or unstarted call, by the failure's class name only (Global Constraints, Logging), as the service's logFailure writes it. */
++function logFallback(error: unknown): void {
++  console.warn(JSON.stringify({ level: 'warn', event: 'ai_fallback', feature: 'ask', failure: failureName(error) }))
++}
+diff --git a/apps/edge/src/v1/ai/service.ts b/apps/edge/src/v1/ai/service.ts
+index dd0f41b6..cc379380 100644
+--- a/apps/edge/src/v1/ai/service.ts
++++ b/apps/edge/src/v1/ai/service.ts
+@@ -1,10 +1,8 @@
+-import type Anthropic from '@anthropic-ai/sdk'
+ import { AI_ROUTE_DEADLINE_MS, bangkokDate } from '@gogospend/contracts'
+ import type {
+   AiAskRequest,
+   AiAskResult,
+   AiFeature,
+-  AiFigure,
+   AiLocale,
+   AiModel,
+   AiNoteResult,
+@@ -20,19 +18,18 @@ import type {
+ import { ProblemException } from '@api/common/api-problem.filter'
+ import { failureName } from '@api/common/operational-metrics'
+ 
+-import { draftFromRules, sanitizeDrafts } from '../../server/ai/drafts'
++import { draftChoices, draftFromRules, sanitizeDrafts } from '../../server/ai/drafts'
+ import type { DraftContext } from '../../server/ai/drafts'
+-import { factsText, figuresText } from '../../server/ai/fact-text'
++import { factsText } from '../../server/ai/fact-text'
+ import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/grounding'
+-import { ModelUnavailable, finishedJson, finishedText } from '../../server/ai/model'
+-import type { MessageParams } from '../../server/ai/model'
+-import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM } from '../../server/ai/prompts'
+-import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
++import { ModelUnavailable, finishedJson } from '../../server/ai/model'
++import { NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM } from '../../server/ai/prompts'
++import type { AiContext, AiStoredPreferences, AiToolReply } from '../../vault/ai'
+ import type { VaultRouteId } from '../protocol'
+ import type { VaultSession } from '../worker-routes'
+-import { HAIKU, HAIKU_ASK_CAP_MS, haikuRequest } from './models'
++import { askWithEscalation } from './ask'
++import { HAIKU, haikuRequest } from './models'
+ import { readSlipImage } from './slip-read'
+-import { ASK_TOOLS } from './tools'
+ import { AiDeadline, newTrace, tracedSend } from './transport'
+ import type { AiTrace, ModelTransport } from './transport'
+ import { shouldRefund } from './uses'
+@@ -43,17 +40,17 @@ import { shouldRefund } from './uses'
+ // use (counted before the model runs), then the model. Every step carries the
+ // route's access, so the vault checks the session (and the current policy on
+ // a current_policy route) before anything is read and before any model call.
+-// Since P3-T6 every call is Haiku 5.5's (models.ts), each request runs under
+-// one deadline (AI_ROUTE_DEADLINE_MS), and every result names its model (H4).
++// Since P3-T6 parse, the note and Ask Bun call Haiku 5.5 first (models.ts),
++// each request runs under one deadline (AI_ROUTE_DEADLINE_MS), and every result
++// names its model (H4).
+ // Since P3-T7 a call that fails with a rate limit, a 5xx, a timeout or no
+ // connection gives its use back (H5, uses.ts) before the route answers.
+ // Since P3-T8 a slip is read by readSlipImage (slip-read.ts): Haiku, then Opus
+ // in the same request when D25 says so; the result names the read's model.
++// Since P3-T9 Ask Bun asks through askWithEscalation (ask.ts): Haiku, then Opus
++// in a fresh conversation when D28 says so, for one use.
+ 
+-/** Ask Bun's turns before it answers from the figures it read (AiService's ASK_MAX_TURNS). */
+-const ASK_MAX_TURNS = 5
+-
+-/** Haiku wrote the words (H4): parse, the note and Ask Bun call Haiku only; Ask Bun's escalation comes with P3-T9. */
++/** Haiku wrote the words (H4): parse and the note call Haiku only. */
+ const BY_HAIKU: { model: AiModel; escalated: boolean } = { model: HAIKU, escalated: false }
+ /** The offline rules or the plain facts wrote them. */
+ const BY_RULES: { model: AiModel; escalated: boolean } = { model: 'rules', escalated: false }
+@@ -74,13 +71,6 @@ async function step<T>(vault: VaultSession, route: VaultRouteId, input?: { query
+   return reply.body as T
+ }
+ 
+-/** Replays a tool's allowed numbers into the answer's AllowedNumbers, in the order the tool allowed them. */
+-function allowAll(allowed: AllowedNumbers, allow: Allowance): void {
+-  for (const minor of allow.satang) allowed.addSatang(minor)
+-  for (const count of allow.counts) allowed.addCount(count)
+-  for (const date of allow.dates) allowed.addDate(date)
+-}
+-
+ export type VaultAiServiceDeps = {
+   /** Null when AI is not configured or switched off (AI_ENABLED, ANTHROPIC_API_KEY). */
+   transport: ModelTransport | null
+@@ -129,7 +119,7 @@ export class VaultAiService {
+           // The base's effort, with the JSON format (the P3-T6 review's n2).
+           output_config: { ...base.output_config, format: { type: 'json_schema', schema: PARSE_SCHEMA } },
+           system: PARSE_SYSTEM,
+-          messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
++          messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...draftChoices(ctx) }) }],
+         },
+       })
+       const drafts = sanitizeDrafts(finishedJson(message), ctx, request.text)
+@@ -209,7 +199,13 @@ export class VaultAiService {
+     }
+   }
+ 
+-  /** Ask Bun: a question answered with read-only tools over the person's records, each run in the vault. */
++  /**
++   * Ask Bun: a question answered with read-only tools over the person's
++   * records, each run in the vault. The conversations are ask.ts's (P3-T9):
++   * Haiku first, then Opus in a fresh conversation when Haiku's answer is
++   * ungrounded, declined or unfinished (D28). The question counts one use,
++   * whichever models answer it.
++   */
+   async ask(s: VaultSession, request: AiAskRequest): Promise<AiAskResult> {
+     const { trace, deadline } = this.start('ask')
+     const ctx = await step<AiContext>(s, 'ai.context')
+@@ -218,50 +214,20 @@ export class VaultAiService {
+     const use = await this.consume(s, 'ask')
+     const today = trustedToday(request.today, bangkokDate(this.now()))
+     const categories = ctx.categories.map((category) => ({ id: category.id, name: category.label ?? category.builtin_key }))
+-    const allowed = new AllowedNumbers().addDate(today)
+-    const figures: AiFigure[] = []
+-    const fromFigures = (): AiAskResult => ({ answer: figuresText(figures, request.locale), figures, source: 'facts', ...BY_RULES })
+-    const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+-      { role: 'user', content: JSON.stringify({ question: request.question, today, locale: request.locale, categories }) },
+-    ]
+-    // Every Haiku turn shares one child deadline (H3): at most HAIKU_ASK_CAP_MS of the route's, so Opus keeps the rest (P3-T9).
+-    const haiku = deadline.child(HAIKU_ASK_CAP_MS)
+-    try {
+-      for (let turn = 0; turn < ASK_MAX_TURNS; turn += 1) {
+-        const params: MessageParams = { ...haikuRequest('medium', 12_000), system: ASK_SYSTEM, tools: ASK_TOOLS, messages }
+-        const message = await tracedSend(this.deps.transport, trace, haiku, {
+-          feature: 'ask',
+-          escalated: false,
+-          params,
+-        })
+-        if (message.stop_reason === 'tool_use') {
+-          messages.push({ role: 'assistant', content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] })
+-          const results: Anthropic.Beta.Messages.BetaToolResultBlockParam[] = []
+-          for (const block of message.content) {
+-            if (block.type !== 'tool_use') continue
+-            const run = await step<AiToolReply>(s, 'ai.tool', { body: { name: block.name, input: block.input ?? {}, locale: request.locale } })
+-            if ('error' in run) {
+-              results.push({ type: 'tool_result', tool_use_id: block.id, content: run.error, is_error: true })
+-              continue
+-            }
+-            figures.push(...run.figures)
+-            allowAll(allowed, run.allow)
+-            results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(run.result) })
+-          }
+-          messages.push({ role: 'user', content: results })
+-          continue
+-        }
+-        const answer = finishedText(message).trim()
+-        if (answer && isGrounded(answer, allowed)) return { answer, figures, source: 'ai', ...BY_HAIKU }
+-        return fromFigures()
+-      }
+-      return fromFigures()
+-    } catch (error) {
+-      this.logFailure('ask', error)
+-      await this.giveBack(s, use, trace)
+-      if (figures.length > 0) return fromFigures()
+-      throw this.paused()
+-    }
++    const answered = await askWithEscalation(
++      { question: request.question, today, locale: request.locale, categories },
++      {
++        transport: this.deps.transport,
++        trace,
++        deadline,
++        tool: (name, input) => step<AiToolReply>(s, 'ai.tool', { body: { name, input, locale: request.locale } }),
++      },
++    )
++    // H5 (P3-T7's carry, R116): the use goes back when no model's words are shown (the plain figures or 503) and
++    // the last call failed with an outage. A grounded answer's last call answered, so it never gives the use back.
++    await this.giveBack(s, use, trace)
++    if ('paused' in answered) throw this.paused()
++    return answered
+   }
+ 
+   /**
+@@ -290,10 +256,11 @@ export class VaultAiService {
+   }
+ 
+   /**
+-   * H5 (P3-T7), on a route's path where a call threw, before it answers with
+-   * the rules, the plain facts or 503: the use goes back to the day it was
+-   * counted on when the request's last call failed with a rate limit, a 5xx, a
+-   * timeout or no connection. A call that answered spends the use, whatever it
++   * H5 (P3-T7), on a route's path where a call threw, and after every Ask Bun
++   * answer (P3-T9), before the route answers: the use goes back to the day it
++   * was counted on when the request's last call failed with a rate limit, a
++   * 5xx, a timeout or no connection (shouldRefund, with R116 for a turn the
++   * deadline never let start). A call that answered spends the use, whatever it
+    * said (a decline, an unusable or ungrounded answer). The vault runs the step
+    * even after the session ended; a refund that fails is logged by name and
+    * never fails the request.
+@@ -314,14 +281,6 @@ export class VaultAiService {
+     return { today: trustedToday(clientToday, bangkokDate(this.now())), wallets: ctx.wallets, categories: ctx.categories }
+   }
+ 
+-  /** What the model may choose from: ids with names, never balances or history. */
+-  private choices(ctx: DraftContext) {
+-    return {
+-      wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
+-      categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
+-    }
+-  }
+-
+   /**
+    * A refusal (any problem but a 500) is the answer and is thrown on. Anything
+    * else is a failure, logged by name, and the caller falls back: the model's,
+diff --git a/apps/edge/src/v1/ai/slip-read.ts b/apps/edge/src/v1/ai/slip-read.ts
+index 84ec64c5..92b9c0a5 100644
+--- a/apps/edge/src/v1/ai/slip-read.ts
++++ b/apps/edge/src/v1/ai/slip-read.ts
+@@ -1,7 +1,7 @@
+ import { SLIP_KINDS } from '@gogospend/contracts'
+ import type { AiDraft, AiLocale, AiSlipMediaType, SlipKind } from '@gogospend/contracts'
+ 
+-import { sanitizeDrafts } from '../../server/ai/drafts'
++import { draftChoices, sanitizeDrafts } from '../../server/ai/drafts'
+ import type { DraftContext } from '../../server/ai/drafts'
+ import { ModelUnavailable, finishedJson } from '../../server/ai/model'
+ import type { MessageParams, ModelMessage } from '../../server/ai/model'
+@@ -59,11 +59,11 @@ type ReadDeps = { transport: ModelTransport; trace: AiTrace; deadline: AiDeadlin
+ 
+ /**
+  * D25's triggers (H6): Opus reads the slip again when Haiku declined, when its
+- * answer was unusable (truncated, not JSON, or with no kind), when it found no
+- * draft, or when any draft's amount does not parse, its date is implausible
+- * (sanitizeDrafts flags it date_guessed) or, on a slip, an expense names no
+- * receiver. A guessed category or wallet never escalates, and neither does an
+- * outage (H7).
++ * answer was unusable (truncated, not JSON, with no kind, or with a draft the
++ * sanitizer cannot read), when it found no draft, or when any draft's amount
++ * does not parse, its date is implausible (sanitizeDrafts flags it
++ * date_guessed) or, on a slip, an expense names no receiver. A guessed
++ * category or wallet never escalates, and neither does an outage (H7).
+  */
+ export function slipNeedsOpus(outcome: HaikuOutcome): boolean {
+   if (outcome.kind === 'failed') return false
+@@ -97,14 +97,17 @@ export async function readSlipImage(input: ReadInput, deps: ReadDeps): Promise<S
+   return done(opus.kind === 'answer' ? opus.read : { kind: 'unreadable', drafts: [], bank: null }, OPUS, [haiku, opus])
+ }
+ 
++/** A token count as the API reported it, or 0 when it is missing or not a count, so the phone never refuses a read it was billed for (the P3-T8 second review's n1). */
++const counted = (n: number): number => (Number.isSafeInteger(n) && n >= 0 ? n : 0)
++
+ /** The read that is shown, with what every call of it added up to. */
+ function settled(read: Read, model: ModelTier, outcomes: readonly CallOutcome[], calls: readonly RecordedCall[]): SlipRead {
+   let input = 0
+   let output = 0
+   for (const { usage } of calls) {
+     if (!usage) continue
+-    input += usage.input + usage.cacheRead + usage.cacheWrite
+-    output += usage.output
++    for (const n of [usage.input, usage.cacheRead, usage.cacheWrite]) input += counted(n)
++    output += counted(usage.output)
+   }
+   return {
+     ...read,
+@@ -134,7 +137,7 @@ async function readOnce(
+         role: 'user',
+         content: [
+           { type: 'image', source: { type: 'base64', media_type: input.image.mediaType, data: input.image.base64 } },
+-          { type: 'text', text: JSON.stringify({ today: input.context.today, locale: input.locale, ...choices(input.context) }) },
++          { type: 'text', text: JSON.stringify({ today: input.context.today, locale: input.locale, ...draftChoices(input.context) }) },
+         ],
+       },
+     ],
+@@ -154,16 +157,14 @@ async function readOnce(
+   }
+   const reply = (typeof raw === 'object' && raw !== null ? raw : {}) as { kind?: unknown; bank?: unknown }
+   if (!(SLIP_KINDS as readonly unknown[]).includes(reply.kind)) return { kind: 'unusable' }
+-  // An unreadable answer's drafts are dropped, and a read with no draft is unreadable.
+-  const drafts = reply.kind === 'unreadable' ? [] : sanitizeDrafts(raw, input.context)
++  // An unreadable answer's drafts are dropped, and a read with no draft is unreadable. A draft the
++  // sanitizer cannot read leaves the answer unusable, so Opus reads it again (the P3-T8 second review's m1).
++  let drafts: AiDraft[]
++  try {
++    drafts = reply.kind === 'unreadable' ? [] : sanitizeDrafts(raw, input.context)
++  } catch {
++    return { kind: 'unusable' }
++  }
+   const bank = typeof reply.bank === 'string' && reply.bank.trim() ? reply.bank.trim().slice(0, 60) : null
+   return { kind: 'answer', read: { kind: drafts.length > 0 ? (reply.kind as SlipKind) : 'unreadable', drafts, bank } }
+ }
+-
+-/** What the model may choose from, as the service's parse sends it: ids with names, never balances or history. */
+-function choices(ctx: DraftContext) {
+-  return {
+-    wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
+-    categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
+-  }
+-}
+diff --git a/apps/edge/src/v1/ai/uses.ts b/apps/edge/src/v1/ai/uses.ts
+index 0a8a5ea3..db07a282 100644
+--- a/apps/edge/src/v1/ai/uses.ts
++++ b/apps/edge/src/v1/ai/uses.ts
+@@ -3,8 +3,10 @@ import type { CallFailure, RecordedCall } from './transport'
+ // B5 as A14 refines it (H5, P3-T7): when a model call gives its use back. A use
+ // is counted before the first call (vault ai.consume); the service asks this
+ // before it answers, and gives the use back through the vault's ai.refund.
++// R116 (P3-T9) reads B5's "a failed model call" for a turn the deadline never
++// let start: it gives the use back only when no call before it answered.
+ 
+-/** The failures that are nobody's doing: the model, or the way to it, was busy, broken, too slow or gone. */
++/** The failures the person is not charged for: the model, or the way to it, was busy, broken, too slow or gone. */
+ const GIVES_BACK: readonly CallFailure[] = ['rate_limited', 'server_error', 'timeout', 'no_connection']
+ 
+ /**
+@@ -12,9 +14,12 @@ const GIVES_BACK: readonly CallFailure[] = ['rate_limited', 'server_error', 'tim
+  * facts or 503) and its last call failed with a rate limit, a 5xx, a timeout
+  * or no connection. A decline, an unusable or ungrounded answer, a request the
+  * API rejected (another 4xx) or any other failure spends the use, and so does
+- * a request that made no call.
++ * a request that recorded no call. A last turn the deadline never let start
++ * (`sent: false`) gives it back only when no call before it answered (R116):
++ * once a model answered, the use is spent, as at Ask Bun's turn limit.
+  */
+ export function shouldRefund(calls: readonly RecordedCall[], answeredByModel: boolean): boolean {
+   const last = calls.at(-1)
+-  return !answeredByModel && last !== undefined && last.failure !== null && GIVES_BACK.includes(last.failure)
++  if (answeredByModel || last === undefined || last.failure === null || !GIVES_BACK.includes(last.failure)) return false
++  return last.sent || !calls.some((call) => call.failure === null)
+ }
+diff --git a/apps/edge/src/vault/ai.ts b/apps/edge/src/vault/ai.ts
+index 35bc888b..912af833 100644
+--- a/apps/edge/src/vault/ai.ts
++++ b/apps/edge/src/vault/ai.ts
+@@ -6,7 +6,7 @@
+ // Nothing a person writes to Bun, and no slip image, reaches the vault: the
+ // only row an AI call writes is its use. Sums leave SQLite as CAST(... AS TEXT).
+ import { AI_DAILY_LIMITS, AI_FEATURES, AI_NOTICE_VERSION, bangkokDate } from '@gogospend/contracts'
+-import type { AiFeature, AiFigure, AiLocale, AiPreferences, AiPreferencesDto, AiPreferencesUpdate, BunFact, CategoryDto, WalletDto } from '@gogospend/contracts'
++import type { AiFeature, AiFigure, AiFigureScope, AiLocale, AiPreferences, AiPreferencesDto, AiPreferencesUpdate, BunFact, CategoryDto, WalletDto } from '@gogospend/contracts'
+ 
+ import { ProblemException } from '@api/common/api-problem.filter'
+ 
+@@ -228,9 +228,10 @@ const categoryShown = (names: CategoryNames, id: string | null, locale: AiLocale
+ }
+ 
+ function runVaultTool(c: VaultContext, name: string, input: Record<string, unknown>, names: CategoryNames, allowed: AllowanceRecorder, locale: AiLocale): { result: unknown; figures: AiFigure[] } {
+-  const money = (label: string, minor: string): AiFigure => {
++  /** A figure the phone shows (P3-T9, H14): its label and amount, how many records it adds up, and what it counts over. */
++  const money = (label: string, minor: string, count: number | null, scope: AiFigureScope | null): AiFigure => {
+     allowed.addSatang(minor)
+-    return { label, amount_minor: minor }
++    return { label, amount_minor: minor, count, scope }
+   }
+   switch (name) {
+     case 'spending_total': {
+@@ -252,7 +253,7 @@ function runVaultTool(c: VaultContext, name: string, input: Record<string, unkno
+       allowed.addCount(row.n).addDate(from).addDate(through)
+       const what = category ? categoryShown(names, category, locale) : figureWord(type === 'income' ? 'in' : 'out', locale)
+       const label = figureLabel(what, periodText(from, through, locale), locale)
+-      return { result: { total_say: formatBaht(row.total), count: row.n }, figures: [money(label, row.total)] }
++      return { result: { total_say: formatBaht(row.total), count: row.n }, figures: [money(label, row.total, row.n, { from, through, type, category_id: category })] }
+     }
+     case 'category_totals': {
+       const { from, through } = dates(input)
+@@ -269,7 +270,7 @@ function runVaultTool(c: VaultContext, name: string, input: Record<string, unkno
+         .toArray()
+       allowed.addDate(from).addDate(through)
+       const when = periodText(from, through, locale)
+-      const figures = rows.map((r) => money(figureLabel(categoryShown(names, r.category_id, locale), when, locale), r.total))
++      const figures = rows.map((r) => money(figureLabel(categoryShown(names, r.category_id, locale), when, locale), r.total, r.n, { from, through, type, category_id: r.category_id }))
+       for (const r of rows) allowed.addCount(r.n)
+       return { result: rows.map((r) => ({ category: categoryName(names, r.category_id), total_say: formatBaht(r.total), count: r.n })), figures }
+     }
+@@ -287,7 +288,8 @@ function runVaultTool(c: VaultContext, name: string, input: Record<string, unkno
+       allowed.addDate(from).addDate(through)
+       for (const r of rows) allowed.addCount(r.n)
+       const when = periodText(from, through, locale)
+-      const figures = rows.map((r) => money(figureLabel(r.merchant ?? figureWord('noDescription', locale), when, locale), r.total))
++      // A place's total names no category or type to see all of.
++      const figures = rows.map((r) => money(figureLabel(r.merchant ?? figureWord('noDescription', locale), when, locale), r.total, r.n, null))
+       return { result: rows.map((r) => ({ merchant: r.merchant ?? '(no description)', total_say: formatBaht(r.total), count: r.n })), figures }
+     }
+     case 'budget_status': {
+@@ -300,13 +302,14 @@ function runVaultTool(c: VaultContext, name: string, input: Record<string, unkno
+       if (!totals.budget) return { result: null, figures: [] }
+       const b = totals.budget
+       const when = monthText(month, locale)
++      // A budget's lines are limits and what is left of them: no records to count.
+       const figures = [
+-        money(figureLabel(figureWord('budget', locale), when, locale), b.overall_limit_minor),
+-        money(figureLabel(figureWord('spent', locale), when, locale), b.spent_minor),
+-        money(figureLabel(figureWord('left', locale), when, locale), b.remaining_minor),
++        money(figureLabel(figureWord('budget', locale), when, locale), b.overall_limit_minor, null, null),
++        money(figureLabel(figureWord('spent', locale), when, locale), b.spent_minor, null, null),
++        money(figureLabel(figureWord('left', locale), when, locale), b.remaining_minor, null, null),
+       ]
+       const categories = b.categories.map((limit) => {
+-        figures.push(money(figureLabel(leftOf(categoryShown(names, limit.category_id, locale), locale), when, locale), limit.remaining_minor))
++        figures.push(money(figureLabel(leftOf(categoryShown(names, limit.category_id, locale), locale), when, locale), limit.remaining_minor, null, null))
+         allowed.addSatang(limit.limit_minor).addSatang(limit.spent_minor)
+         return { category: categoryName(names, limit.category_id), limit_say: formatBaht(limit.limit_minor), spent_say: formatBaht(limit.spent_minor), left_say: formatBaht(limit.remaining_minor) }
+       })
+diff --git a/apps/edge/test/ai-grounding.test.ts b/apps/edge/test/ai-grounding.test.ts
+index 379b3d96..05faea79 100644
+--- a/apps/edge/test/ai-grounding.test.ts
++++ b/apps/edge/test/ai-grounding.test.ts
+@@ -111,6 +111,16 @@ describe('sanitizeDrafts', () => {
+     }
+   })
+ 
++  it("a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1)", () => {
++    for (const date of ['2026-10-32', '2026-13-05', '2026-00-10', '0000-00-00', '9999-99-99']) {
++      let drafts: ReturnType<typeof sanitizeDrafts> = []
++      expect(() => {
++        drafts = sanitizeDrafts(raw({ date }), ctx(), 'ข้าวมันไก่ 50')
++      }, date).not.toThrow()
++      expect(drafts[0], date).toMatchObject({ occurred_on: '2026-10-24', flags: ['date_guessed'] })
++    }
++  })
++
+   it('cleans text, drops unknown flags and keeps at most five drafts', () => {
+     const many = { drafts: Array.from({ length: 9 }, () => raw({ merchant: 'Tea\u202E\u0000 shop', flags: ['nonsense', 'multiple_amounts'] }).drafts[0]) }
+     const out = sanitizeDrafts(many, ctx(), 'tea 50')
+@@ -166,7 +176,7 @@ describe('plain facts', () => {
+   })
+ 
+   it('figures stand in for an answer Bun could not ground', () => {
+-    expect(figuresText([{ label: 'Money out, 1–31 Oct 2026', amount_minor: '6000' }], 'en')).toBe('From your diary — Money out, 1–31 Oct 2026: ฿60')
++    expect(figuresText([{ label: 'Money out, 1–31 Oct 2026', amount_minor: '6000', count: 1, scope: { from: '2026-10-01', through: '2026-10-31', type: 'expense', category_id: null } }], 'en')).toBe('From your diary — Money out, 1–31 Oct 2026: ฿60')
+     expect(figuresText([], 'th')).toBe('บันหาข้อมูลนี้ในบันทึกของคุณไม่เจอ')
+   })
+ })
+diff --git a/apps/edge/test/ask-deadline.test.ts b/apps/edge/test/ask-deadline.test.ts
+new file mode 100644
+index 00000000..b06a0cc1
+--- /dev/null
++++ b/apps/edge/test/ask-deadline.test.ts
+@@ -0,0 +1,120 @@
++// P3-T9: Ask Bun's conversations alone, in Node, with a scripted model and a
++// fake tool (no vault, no network). First the plan's case: on a fake clock, a
++// slow Haiku conversation is cut at its 25 s and Opus, asked again with the
++// rest of the route's 55 s, still answers (H3, D28). Then how one conversation
++// ends (runAskConversation), which decides whether Opus is asked (D28, H7).
++import type { AiFigure } from '@gogospend/contracts'
++import { describe, expect, it, vi } from 'vitest'
++
++import { ProblemException } from '@api/common/api-problem.filter'
++
++import type { ModelMessage } from '../src/server/ai/model'
++import { ASK_MAX_TURNS, askWithEscalation, runAskConversation } from '../src/v1/ai/ask'
++import type { AskDeps, AskOutcome } from '../src/v1/ai/ask'
++import { HAIKU, OPUS } from '../src/v1/ai/models'
++import { AiDeadline, newTrace } from '../src/v1/ai/transport'
++import type { ModelTransport } from '../src/v1/ai/transport'
++import { apiFailure, fakeModel, refusal, text, toolUse } from './support/fake-model'
++
++/** 10:00 on 12 November 2026 in Bangkok. */
++const NOW = Date.parse('2026-11-12T03:00:00.000Z')
++const FOOD = '2c000000-0000-4000-8000-000000000001'
++const input = { question: 'เดือนนี้กินไปเท่าไหร่', today: '2026-11-12', locale: 'th' as const, categories: [{ id: FOOD, name: 'food' }] }
++/** What the fake tool reads every time: ฿60 over one food record this month. */
++const FIGURE: AiFigure = { label: 'อาหาร', amount_minor: '6000', count: 1, scope: { from: '2026-11-01', through: '2026-11-12', type: 'expense', category_id: FOOD } }
++/** The vault's tool, faked: it reads FIGURE and allows its amount and count. */
++const tool: AskDeps['tool'] = async () => ({ result: { total_say: '฿60', count: 1 }, figures: [FIGURE], allow: { satang: ['6000'], counts: [1], dates: [] } })
++const total = () => toolUse('spending_total', { from: '2026-11-01', through: '2026-11-12', type: 'expense', category_id: FOOD })
++const GROUNDED = 'เดือนนี้ใช้กับอาหารไป ฿60'
++
++describe("Ask Bun's deadline", () => {
++  it('a slow Haiku conversation is cut at 25 s and Opus still answers', async () => {
++    const clock = { ms: NOW }
++    const given: { model: string; timeoutMs: number }[] = []
++    const transport: ModelTransport = {
++      async send(params, options): Promise<ModelMessage> {
++        given.push({ model: params.model, timeoutMs: options.timeoutMs })
++        // Each Haiku tool turn takes 12 s. Opus reads the total at once, then answers with it.
++        if (params.model === HAIKU) {
++          clock.ms += 12_000
++          return total()
++        }
++        return given.filter((call) => call.model === OPUS).length === 1 ? total() : text(GROUNDED)
++      },
++    }
++    const trace = newTrace()
++    const answer = await askWithEscalation(input, { transport, trace, deadline: new AiDeadline(55_000, () => clock.ms), tool })
++    expect(answer).toEqual({ answer: GROUNDED, figures: [FIGURE], source: 'ai', model: OPUS, escalated: true })
++    // Two 12 s turns use 24 of Haiku's 25 s, so its third cannot start; Opus is given the 31 s left of the route's 55.
++    expect(given).toEqual([
++      { model: HAIKU, timeoutMs: 25_000 },
++      { model: HAIKU, timeoutMs: 13_000 },
++      { model: OPUS, timeoutMs: 31_000 },
++      { model: OPUS, timeoutMs: 31_000 },
++    ])
++    // The trace keeps every call, the turn that never started included, and marks Opus's as escalated (P3-T10 reads them).
++    expect(trace.calls.map(({ requested, escalated, sent, failure }) => [requested, escalated, sent, failure])).toEqual([
++      [HAIKU, false, true, null],
++      [HAIKU, false, true, null],
++      [HAIKU, false, false, 'timeout'],
++      [OPUS, true, true, null],
++      [OPUS, true, true, null],
++    ])
++  })
++})
++
++describe('how one conversation ends (D28)', () => {
++  /** One Haiku conversation over the scripted replies, under 25 s of the real clock unless `deps` says otherwise. */
++  async function conversation(replies: Parameters<typeof fakeModel>[0], deps: Partial<AskDeps> = {}) {
++    const model = fakeModel(replies)
++    const outcome = await runAskConversation(HAIKU, input, { transport: model.transport, trace: newTrace(), deadline: new AiDeadline(25_000), tool, ...deps })
++    return { outcome, model }
++  }
++
++  const rows: [string, Parameters<typeof fakeModel>[0], AskOutcome][] = [
++    ['a grounded answer', [total(), text(GROUNDED)], { kind: 'grounded', answer: GROUNDED, figures: [FIGURE] }],
++    ['an answer with a number no tool read', [total(), text('เดือนนี้ใช้ไป ฿999')], { kind: 'ungrounded', figures: [FIGURE] }],
++    ['a refusal', [total(), refusal()], { kind: 'declined', figures: [FIGURE] }],
++    ['an answer cut short', [text('เดือนนี้ใช้กับอาหาร', 'max_tokens')], { kind: 'no_answer', figures: [] }],
++    ['an empty answer', [text('  ')], { kind: 'no_answer', figures: [] }],
++    ['five tool turns', [total(), total(), total(), total(), total()], { kind: 'no_answer', figures: [FIGURE, FIGURE, FIGURE, FIGURE, FIGURE] }],
++    ['an outage', [total(), apiFailure(529)], { kind: 'failed', failure: 'server_error', figures: [FIGURE] }],
++    ['a request the API rejected', [apiFailure(400)], { kind: 'failed', failure: 'rejected', figures: [] }],
++  ]
++  it.each(rows)('%s', async (_what, replies, expected) => {
++    const { outcome, model } = await conversation(replies)
++    expect(outcome).toEqual(expected)
++    expect(model.left()).toBe(0)
++  })
++
++  it('takes five turns at most', () => {
++    expect(ASK_MAX_TURNS).toBe(5)
++  })
++
++  it('a turn the deadline never let start is no answer, recorded as never sent', async () => {
++    const trace = newTrace()
++    const { outcome, model } = await conversation([], { trace, deadline: new AiDeadline(1_500) })
++    expect(outcome).toEqual({ kind: 'no_answer', figures: [] })
++    expect(model.calls).toHaveLength(0)
++    expect(trace.calls).toMatchObject([{ requested: HAIKU, sent: false, failure: 'timeout' }])
++  })
++
++  it('a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer', async () => {
++    const failing: AskDeps['tool'] = async () => {
++      throw new ProblemException(500, 'INTERNAL_ERROR')
++    }
++    const warnings = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
++    try {
++      await expect(conversation([total()], { tool: failing })).resolves.toMatchObject({ outcome: { kind: 'failed', failure: 'other', figures: [] } })
++      expect(warnings.mock.calls.map(([line]) => JSON.parse(String(line)))).toEqual([{ level: 'warn', event: 'ai_fallback', feature: 'ask', failure: 'ProblemException' }])
++    } finally {
++      warnings.mockRestore()
++    }
++    const refusing: AskDeps['tool'] = async () => {
++      throw new ProblemException(401, 'SESSION_REQUIRED')
++    }
++    const thrown = await conversation([total()], { tool: refusing }).catch((error: unknown) => error)
++    expect(thrown).toBeInstanceOf(ProblemException)
++    expect(thrown).toMatchObject({ code: 'SESSION_REQUIRED' })
++  })
++})
+diff --git a/apps/edge/test/workers/ai-uses.test.ts b/apps/edge/test/workers/ai-uses.test.ts
+index b671411b..5ce251d9 100644
+--- a/apps/edge/test/workers/ai-uses.test.ts
++++ b/apps/edge/test/workers/ai-uses.test.ts
+@@ -4,7 +4,9 @@
+ // connection, the use goes back to the day it was counted on before the route
+ // answers. A decline, an unusable or ungrounded answer and any other failure
+ // spend it. The cases count `remaining` (GET /v1/me/ai-preferences) or the
+-// vault's own rows. No network: every model reply is scripted.
++// vault's own rows. No network: every model reply is scripted. R116 (P3-T9): a
++// last turn the deadline never let start gives the use back only when no call
++// before it answered.
+ import { env } from 'cloudflare:workers'
+ import { randomUUID } from 'node:crypto'
+ 
+@@ -118,9 +120,10 @@ describe('a failed model call gives its use back', () => {
+ 
+   it('an ungrounded answer spends the use', async () => {
+     const { user, food } = await withLunch()
+-    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food }), text('You spent about ฿9,999 on food.'))
++    // D28 (P3-T9): Haiku's ungrounded answer goes to Opus, whose answer strays as well; the question counts once.
++    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food }), text('You spent about ฿9,999 on food.'), text('About ฿9,999 on food.'))
+     const answer = await body(await ask(user))
+-    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: false, figures: [{ amount_minor: '6000' }] })
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '6000' }] })
+     expect(answer.answer).not.toContain('9,999')
+     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+   })
+@@ -274,6 +277,47 @@ describe('the refund on the vault', () => {
+   })
+ })
+ 
++describe('R116: a turn the deadline never let start (P3-T9)', () => {
++  it("a question whose last turn the deadline never let start spends its use once a model answered (the P3-T7 review's PR4)", async () => {
++    const { user, food } = await withLunch()
++    let sent = 0
++    const transport: ModelTransport = {
++      async send() {
++        sent += 1
++        // The first turn answers after 2.2 s of a 4 s deadline, so no later turn can start with 2 s in hand.
++        await new Promise((resolve) => setTimeout(resolve, 2_200))
++        return toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: food })
++      },
++    }
++    const slow = await startV1(undefined, { transport, aiDeadlines: { ask: 4_000 } })
++    const res = await slow.as(user).post('/v1/ai/ask', { question: 'how much on food?', today, locale: 'en' })
++    expect(res.status).toBe(200)
++    // Haiku's second turn could not start, so the question went to Opus (D28), whose first turn could not start either: Haiku's figures answer.
++    expect(await body(res)).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '6000' }] })
++    expect(sent).toBe(1)
++    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
++  })
++
++  it("a slip whose Opus re-read the deadline never let start spends its use once Haiku answered (the P3-T8 second review's PC2)", async () => {
++    const user = await consenting()
++    let sent = 0
++    const transport: ModelTransport = {
++      async send() {
++        sent += 1
++        // Haiku declines after 2.2 s of a 4 s deadline, so Opus cannot start with 2 s in hand.
++        await new Promise((resolve) => setTimeout(resolve, 2_200))
++        return refusal()
++      },
++    }
++    const slow = await startV1(undefined, { transport, aiDeadlines: { slip: 4_000 } })
++    const res = await slip(slow, user)
++    expect(res.status).toBe(503)
++    expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
++    expect(sent).toBe(1)
++    expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
++  })
++})
++
+ describe('when a use comes back', () => {
+   /** One recorded call that ended in `failure` (null: the model answered, whatever it said). */
+   const call = (failure: CallFailure | null): RecordedCall => ({
+@@ -290,6 +334,8 @@ describe('when a use comes back', () => {
+     stopReason: null,
+     usage: null,
+   })
++  /** A turn the deadline never let start: recorded as a timeout that was never sent (P3-T4). */
++  const unsent = (): RecordedCall => ({ ...call('timeout'), latencyMs: 0, sent: false })
+ 
+   it('only when no model answered and the last call failed with a rate limit, a 5xx, a timeout or no connection', () => {
+     const rows: [string, RecordedCall[], boolean, boolean][] = [
+@@ -304,6 +350,10 @@ describe('when a use comes back', () => {
+       ['a failed call, then one that answered', [call('rate_limited'), call(null)], false, false],
+       ['a call that answered, then a failed one', [call(null), call('server_error')], false, true],
+       ['a model answered before the last call failed (a draft kept, A14)', [call(null), call('server_error')], true, false],
++      // R116 (P3-T9): a turn the deadline never let start.
++      ['a turn the deadline never let start, with no call before it (the vault steps used the time)', [unsent()], false, true],
++      ['a call that answered, then a turn the deadline never let start', [call(null), unsent()], false, false],
++      ['a failed call, then a turn the deadline never let start', [call('rate_limited'), unsent()], false, true],
+     ]
+     for (const [what, calls, answeredByModel, refunds] of rows) expect(shouldRefund(calls, answeredByModel), what).toBe(refunds)
+   })
+diff --git a/apps/edge/test/workers/ai.test.ts b/apps/edge/test/workers/ai.test.ts
+index 5d4f97b8..a6e47a95 100644
+--- a/apps/edge/test/workers/ai.test.ts
++++ b/apps/edge/test/workers/ai.test.ts
+@@ -2,6 +2,8 @@
+ // are ported by name and assertion, with fakeModel as startV1's `send`; the plan
+ // adds two; the rest are the planner's (brief 1B-T7). No network: every model
+ // call is a scripted fake, and the env's own model is only ever built, never called.
++// Since P3-T9 an Ask Bun answer that is ungrounded, declined or unfinished is asked
++// again of Opus (D28), and each tool figure carries its count and scope.
+ import { env } from 'cloudflare:workers'
+ import { randomUUID } from 'node:crypto'
+ 
+@@ -213,6 +215,16 @@ describe('Tell Bun', () => {
+     expect((await body(await client.as(user).get('/v1/me/ai-preferences'))).remaining.parse).toBe(AI_DAILY_LIMITS.parse - 1)
+   })
+ 
++  it("a model date that is no calendar date keeps the model's draft, dated today and flagged (the P3-T8 second review's m1)", async () => {
++    // Before P3-T9 the sanitizer threw on 2026-10-32 and Tell Bun fell back to the rules.
++    const user = await consenting()
++    const { cash, food } = await withCashAndFood(user)
++    model.push(json({ drafts: [{ type: 'expense', amount_baht: '50', date: '2026-10-32', category_id: food, wallet_id: cash, merchant: 'ข้าวมันไก่', note: null, confidence: 'high', flags: [] }] }))
++    const res = await client.as(user).post('/v1/ai/parse', { text: 'ข้าวมันไก่ 50', today, locale: 'th' })
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ source: 'ai', model: 'claude-haiku-5-5', drafts: [{ amount_minor: '5000', occurred_on: today, flags: ['date_guessed'] }] })
++  })
++
+   it('never passes on an amount the person did not write', async () => {
+     const user = await consenting()
+     const { food } = await withCashAndFood(user)
+@@ -452,9 +464,10 @@ describe('Ask Bun', () => {
+   it('an answer with a number no tool read becomes the plain figures', async () => {
+     const user = await consenting()
+     await withCashAndFood(user)
+-    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null }), text('You spent about ฿9,999.'))
++    // D28 (P3-T9): Haiku's ungrounded answer is asked again of Opus, whose answer strays too.
++    model.push(toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null }), text('You spent about ฿9,999.'), text('About ฿9,999 in all.'))
+     const answer = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' }))
+-    expect(answer).toMatchObject({ source: 'facts', answer: expect.stringContaining('From your diary') })
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, answer: expect.stringContaining('From your diary') })
+     expect(answer.answer).not.toContain('9,999')
+   })
+ 
+@@ -490,9 +503,10 @@ describe('Ask Bun', () => {
+       answer: grounded,
+       figures: [{ amount_minor: '40780' }],
+     })
+-    model.push(toolUse('spending_total', { from: '2016-01-01', through: '2016-02-09', type: 'expense', category_id: null }), text('About ฿407.81 in all.'))
++    // D28 (P3-T9): Opus is asked again and strays as well, so Haiku's figures answer.
++    model.push(toolUse('spending_total', { from: '2016-01-01', through: '2016-02-09', type: 'expense', category_id: null }), text('About ฿407.81 in all.'), text('About ฿407.81 in all.'))
+     const strayed = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much in early 2016?', today, locale: 'en' }))
+-    expect(strayed).toMatchObject({ source: 'facts', figures: [{ amount_minor: '40780' }] })
++    expect(strayed).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '40780' }] })
+     expect(strayed.answer).not.toContain('407.81')
+   })
+ 
+@@ -517,11 +531,12 @@ describe('Ask Bun', () => {
+   it('Ask Bun stops after five tool turns and answers from the figures it read', async () => {
+     const user = await consenting()
+     const turn = () => toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: null })
+-    model.push(turn(), turn(), turn(), turn(), turn())
++    // D28 (P3-T9): five turns without an answer go to Opus, who declines here, so Haiku's figures answer.
++    model.push(turn(), turn(), turn(), turn(), turn(), refusal())
+     const answer = await body(await client.as(user).post('/v1/ai/ask', { question: 'how much?', today, locale: 'en' }))
+-    expect(answer).toMatchObject({ source: 'facts', answer: expect.stringContaining('From your diary') })
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, answer: expect.stringContaining('From your diary') })
+     expect(answer.figures).toHaveLength(5)
+-    expect(model.calls).toHaveLength(5)
++    expect(model.calls.map((call) => call.model)).toEqual([...Array(5).fill('claude-haiku-5-5'), 'claude-opus-5-5'])
+   })
+ 
+   it('two tools in one turn both run, and their results go back to Claude together', async () => {
+@@ -775,18 +790,18 @@ describe("the vault's facts and tools", () => {
+     ])
+     const september = { from: '2026-09-01', through: '2026-09-30' }
+     const dates = ['2026-09-01', '2026-09-30']
+-    const spent = { result: { total_say: '฿135', count: 3 }, figures: [{ label: 'Money out, 1–30 Sep 2026', amount_minor: '13500' }], allow: { satang: ['13500'], counts: [3], dates } }
++    const spent = { result: { total_say: '฿135', count: 3 }, figures: [{ label: 'Money out, 1–30 Sep 2026', amount_minor: '13500', count: 3, scope: { ...september, type: 'expense', category_id: null } }], allow: { satang: ['13500'], counts: [3], dates } }
+     expect(await tool(user, 'spending_total', { ...september, type: 'expense', category_id: null })).toEqual(spent)
+     // Any type but income reads expenses, and a category the person does not have reads every category.
+     expect(await tool(user, 'spending_total', { ...september, type: 'transfer', category_id: randomUUID() })).toEqual(spent)
+     expect(await tool(user, 'spending_total', { ...september, type: 'expense', category_id: food })).toEqual({
+       result: { total_say: '฿105', count: 2 },
+-      figures: [{ label: 'Food, 1–30 Sep 2026', amount_minor: '10500' }],
++      figures: [{ label: 'Food, 1–30 Sep 2026', amount_minor: '10500', count: 2, scope: { ...september, type: 'expense', category_id: food } }],
+       allow: { satang: ['10500'], counts: [2], dates },
+     })
+     expect(await tool(user, 'spending_total', { ...september, type: 'income', category_id: null }, 'th')).toEqual({
+       result: { total_say: '฿500', count: 1 },
+-      figures: [{ label: 'รับเข้า 1–30 ก.ย. 2569', amount_minor: '50000' }],
++      figures: [{ label: 'รับเข้า 1–30 ก.ย. 2569', amount_minor: '50000', count: 1, scope: { ...september, type: 'income', category_id: null } }],
+       allow: { satang: ['50000'], counts: [1], dates },
+     })
+     expect(await tool(user, 'category_totals', { ...september, type: 'expense' })).toEqual({
+@@ -795,14 +810,14 @@ describe("the vault's facts and tools", () => {
+         { category: 'travel', total_say: '฿30', count: 1 },
+       ],
+       figures: [
+-        { label: 'Food, 1–30 Sep 2026', amount_minor: '10500' },
+-        { label: 'Travel, 1–30 Sep 2026', amount_minor: '3000' },
++        { label: 'Food, 1–30 Sep 2026', amount_minor: '10500', count: 2, scope: { ...september, type: 'expense', category_id: food } },
++        { label: 'Travel, 1–30 Sep 2026', amount_minor: '3000', count: 1, scope: { ...september, type: 'expense', category_id: travel } },
+       ],
+       allow: { satang: ['10500', '3000'], counts: [2, 1], dates },
+     })
+     expect(await tool(user, 'category_totals', { ...september, type: 'income' })).toEqual({
+       result: [{ category: 'salary', total_say: '฿500', count: 1 }],
+-      figures: [{ label: 'Salary, 1–30 Sep 2026', amount_minor: '50000' }],
++      figures: [{ label: 'Salary, 1–30 Sep 2026', amount_minor: '50000', count: 1, scope: { ...september, type: 'income', category_id: salary } }],
+       allow: { satang: ['50000'], counts: [1], dates },
+     })
+   })
+@@ -830,9 +845,9 @@ describe("the vault's facts and tools", () => {
+         { merchant: '(no description)', total_say: '฿8', count: 1 },
+       ],
+       figures: [
+-        { label: 'Café Amazon, 1–30 Sep 2026', amount_minor: '5000' },
+-        { label: 'ข้าวมันไก่, 1–30 Sep 2026', amount_minor: '1500' },
+-        { label: 'No description, 1–30 Sep 2026', amount_minor: '800' },
++        { label: 'Café Amazon, 1–30 Sep 2026', amount_minor: '5000', count: 2, scope: null },
++        { label: 'ข้าวมันไก่, 1–30 Sep 2026', amount_minor: '1500', count: 1, scope: null },
++        { label: 'No description, 1–30 Sep 2026', amount_minor: '800', count: 1, scope: null },
+       ],
+       allow: { satang: ['5000', '1500', '800'], counts: [2, 1, 1], dates: ['2026-09-01', '2026-09-30'] },
+     })
+@@ -841,10 +856,10 @@ describe("the vault's facts and tools", () => {
+     expect(await tool(user, 'budget_status', { month: '2026-07' })).toEqual({
+       result: { limit_say: '฿200', spent_say: '฿70', left_say: '฿130', categories: [{ category: 'food', limit_say: '฿80', spent_say: '฿60', left_say: '฿20' }] },
+       figures: [
+-        { label: 'Budget, Jul 2026', amount_minor: '20000' },
+-        { label: 'Spent, Jul 2026', amount_minor: '7000' },
+-        { label: 'Left, Jul 2026', amount_minor: '13000' },
+-        { label: 'Food left, Jul 2026', amount_minor: '2000' },
++        { label: 'Budget, Jul 2026', amount_minor: '20000', count: null, scope: null },
++        { label: 'Spent, Jul 2026', amount_minor: '7000', count: null, scope: null },
++        { label: 'Left, Jul 2026', amount_minor: '13000', count: null, scope: null },
++        { label: 'Food left, Jul 2026', amount_minor: '2000', count: null, scope: null },
+       ],
+       allow: { satang: ['20000', '7000', '13000', '2000', '8000', '6000'], counts: [], dates: [] },
+     })
+@@ -863,7 +878,7 @@ describe("the vault's facts and tools", () => {
+     expect((categories.result as { category: string }[] | undefined)?.map((row) => row.category)).toEqual(labels.slice(0, 12))
+     expect(categories.allow?.counts.length).toBe(12)
+     // A person's own category is shown by its label.
+-    expect(categories.figures?.[0]).toEqual({ label: 'c01, 1–30 Sep 2026', amount_minor: '1300' })
++    expect(categories.figures?.[0]).toEqual({ label: 'c01, 1–30 Sep 2026', amount_minor: '1300', count: 1, scope: { ...september, type: 'expense', category_id: ids[0] } })
+     const places = (await tool(user, 'top_merchants', september)) as Run
+     expect((places.result as { merchant: string }[] | undefined)?.map((row) => row.merchant)).toEqual(labels.slice(0, 8).map((label) => label.replace('c', 'm')))
+     expect(places.figures?.map((figure) => figure.amount_minor)).toEqual(['1300', '1200', '1100', '1000', '900', '800', '700', '600'])
+diff --git a/apps/edge/test/workers/ask-escalation.test.ts b/apps/edge/test/workers/ask-escalation.test.ts
+new file mode 100644
+index 00000000..b2acc29d
+--- /dev/null
++++ b/apps/edge/test/workers/ask-escalation.test.ts
+@@ -0,0 +1,296 @@
++// P3-T9: Ask Bun asks Opus again in a fresh conversation (D28, H7). Haiku 5.5
++// answers first; when its answer fails the grounding check, it declines, or it
++// ends without an answer, Opus 5.5 is asked the same question from scratch,
++// with the same system and tools and the rest of the route's deadline. An
++// outage never escalates. A question counts one use, which goes back when no
++// model's words are shown and the last call failed with an outage (H5; R116's
++// pins are in ai-uses.test.ts). Each figure carries its record count and what
++// it counts over (H14). The front-door cases script the models' replies (no
++// network); the last case asks the vault's tool step directly.
++import { env } from 'cloudflare:workers'
++import { randomUUID } from 'node:crypto'
++
++import { AI_DAILY_LIMITS, bangkokDate } from '@gogospend/contracts'
++import type { AiFeature, AiLocale } from '@gogospend/contracts'
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
++
++import type { VaultCall, VaultClaims, VaultReply } from '../../src/v1/protocol'
++import { vaultSession } from '../../src/v1/worker-routes'
++import type { AiToolReply } from '../../src/vault/ai'
++import { UserVault } from '../../src/vault/user-vault'
++import { apiFailure, fakeModel, refusal, text, toolUse } from '../support/fake-model'
++import { vaultExec, vaultIdOf, vaultRows } from './support/files'
++import { TEST_POLICIES, member, startV1 } from './support/v1-client'
++import type { TestUser, V1Client } from './support/v1-client'
++
++let model: ReturnType<typeof fakeModel>
++let client: V1Client
++
++beforeEach(async () => {
++  model = fakeModel()
++  client = await startV1(undefined, { transport: model.transport })
++})
++
++afterEach(() => {
++  // Every scripted reply was asked for.
++  expect(model.left()).toBe(0)
++})
++
++const today = bangkokDate(new Date())
++const monthStart = `${today.slice(0, 7)}-01`
++const body = async (res: Response) => res.json()
++const HAIKU = 'claude-haiku-5-5'
++const OPUS = 'claude-opus-5-5'
++
++type Person = { user: TestUser; cash: string; food: string; travel: string; salary: string }
++
++/** A member who agreed to the AI notice. */
++async function consenting(): Promise<TestUser> {
++  const user = await member(client)
++  expect((await client.as(user).put('/v1/me/ai-preferences', { companion: true, notice_version: 1 })).status).toBe(200)
++  return user
++}
++
++/** A consenting member with a cash wallet opened at ฿1,000 (a balance no prompt may carry), the built-in categories, and today a ฿60 lunch and a ฿40 taxi. */
++async function person(): Promise<Person> {
++  const user = await consenting()
++  const cash = randomUUID()
++  expect((await client.as(user).post('/v1/wallets', { id: cash, name: 'เงินสด', opening_minor: '100000', tracking_start: '2026-01-01' })).status).toBe(201)
++  const categories = (await body(await client.as(user).post('/v1/categories/builtins'))) as { id: string; builtin_key: string | null }[]
++  const id = (key: string) => {
++    const found = categories.find((category) => category.builtin_key === key)?.id
++    if (!found) throw new Error(`the built-in categories have no ${key}`)
++    return found
++  }
++  const [food, travel, salary] = [id('food'), id('travel'), id('salary')]
++  for (const [minor, category] of [['6000', food], ['4000', travel]]) {
++    expect((await client.as(user).post('/v1/transactions', { id: randomUUID(), type: 'expense', amount_minor: minor, occurred_on: today, wallet_id: cash, category_id: category })).status).toBe(201)
++  }
++  return { user, cash, food, travel, salary }
++}
++
++const ask = (user: TestUser, locale: AiLocale = 'en') => client.as(user).post('/v1/ai/ask', { question: 'how much did I spend on food this month?', today, locale })
++const remaining = async (user: TestUser): Promise<Record<AiFeature, number>> => (await body(await client.as(user).get('/v1/me/ai-preferences'))).remaining
++const modelsAsked = () => model.calls.map((call) => call.model)
++/** The month's spending, on food (฿60) or, with null, on everything (฿100). */
++const total = (category: string | null, id?: string) => toolUse('spending_total', { from: monthStart, through: today, type: 'expense', category_id: category }, id)
++
++describe('Ask Bun asks Opus again in a fresh conversation', () => {
++  it('an answer that fails the grounding check is asked again of Opus in a fresh conversation', async () => {
++    const who = await person()
++    model.push(total(who.food, 'toolu_haiku'), text('This month you spent ฿999 on food.'), total(who.food, 'toolu_opus'), text('This month you spent ฿60 on food.'))
++    const res = await ask(who.user)
++    expect(res.status).toBe(200)
++    expect(await body(res)).toEqual({
++      answer: 'This month you spent ฿60 on food.',
++      figures: [{ label: expect.any(String), amount_minor: '6000', count: 1, scope: { from: monthStart, through: today, type: 'expense', category_id: who.food } }],
++      source: 'ai',
++      model: OPUS,
++      escalated: true,
++    })
++    expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
++    const [haiku, , opus, opusAgain] = model.calls
++    // Fresh: Opus's first request is the person's question alone, as Haiku first saw it, with the same system and tools.
++    expect(opus.messages).toEqual([haiku.messages[0]])
++    expect(opus.messages[0]).toMatchObject({ role: 'user' })
++    expect(opus.system).toEqual(haiku.system)
++    expect(opus.tools).toEqual(haiku.tools)
++    // Opus's own base (H2) at Ask Bun's effort and length, and no thinking or sampling.
++    expect(opus).toMatchObject({ model: OPUS, max_tokens: 12_000, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default', output_config: { effort: 'medium' } })
++    for (const key of ['thinking', 'temperature', 'top_p', 'top_k']) expect(opus, key).not.toHaveProperty(key)
++    // Nothing of Haiku's conversation reaches Opus: not its tool turn, not its words. Opus's second turn holds only its own.
++    expect(opusAgain.messages).toHaveLength(3)
++    for (const earlier of ['toolu_haiku', '฿999']) expect(JSON.stringify([opus, opusAgain]), earlier).not.toContain(earlier)
++  })
++
++  it('a Haiku refusal goes to Opus', async () => {
++    const who = await person()
++    model.push(refusal(), total(who.food), text('This month you spent ฿60 on food.'))
++    expect(await body(await ask(who.user))).toMatchObject({ answer: 'This month you spent ฿60 on food.', source: 'ai', model: OPUS, escalated: true })
++    expect(modelsAsked()).toEqual([HAIKU, OPUS, OPUS])
++    expect(model.calls[1].messages).toEqual([model.calls[0].messages[0]])
++  })
++
++  it('five Haiku tool turns without an answer go to Opus', async () => {
++    const who = await person()
++    model.push(total(who.food), total(who.food), total(who.food), total(who.food), total(who.food), total(who.food), text('This month you spent ฿60 on food.'))
++    const answer = await body(await ask(who.user))
++    // Opus's answer, with the one figure its own tool read.
++    expect(answer).toMatchObject({ answer: 'This month you spent ฿60 on food.', source: 'ai', model: OPUS, escalated: true, figures: [{ amount_minor: '6000' }] })
++    expect(answer.figures).toHaveLength(1)
++    expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, OPUS, OPUS])
++    expect(model.calls[5].messages).toEqual([model.calls[0].messages[0]])
++  })
++
++  it('when Opus is not grounded either, the plain figures answer', async () => {
++    const who = await person()
++    // Opus reads everything (฿100), then quotes Haiku's ฿60, which no tool of its own read: its own grounding refuses it.
++    model.push(total(who.food), text('This month you spent ฿999 on food.'), total(null), text('Food was ฿60 of it.'))
++    const answer = await body(await ask(who.user))
++    expect(answer).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '10000', count: 2, scope: { category_id: null } }] })
++    // Opus's figures, not Haiku's.
++    expect(answer.figures).toHaveLength(1)
++    expect(answer.answer).toContain('฿100')
++    expect(answer.answer).not.toContain('฿60')
++    expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
++  })
++
++  it('a Haiku outage never reaches Opus', async () => {
++    const who = await person()
++    const warnings = vi.spyOn(console, 'warn')
++    try {
++      // A 429 after one tool turn: Haiku's figures, as they were before.
++      model.push(total(who.food), apiFailure(429, { 'retry-after': '40' }))
++      const res = await ask(who.user)
++      expect(res.status).toBe(200)
++      expect(await body(res)).toMatchObject({ source: 'facts', model: 'rules', escalated: false, figures: [{ amount_minor: '6000' }] })
++      expect(modelsAsked()).toEqual([HAIKU, HAIKU])
++      // The outage is logged by its class name only (Global Constraints, Logging).
++      const logged = warnings.mock.calls.map(([line]) => String(line)).filter((line) => line.includes('"event":"ai_fallback"'))
++      expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: 'warn', event: 'ai_fallback', feature: 'ask', failure: 'Error' }])
++    } finally {
++      warnings.mockRestore()
++    }
++    // The use is given back.
++    expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
++  })
++
++  it("an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back", async () => {
++    // Review Focus 3.
++    const who = await person()
++    model.push(total(who.food), text('This month you spent ฿999 on food.'), apiFailure(529))
++    expect(await body(await ask(who.user))).toMatchObject({ source: 'facts', model: 'rules', escalated: true, figures: [{ amount_minor: '6000' }] })
++    expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
++    expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
++  })
++
++  it('a question neither model grounds, with no figures, answers that Bun could not find it', async () => {
++    const user = await consenting()
++    model.push(text('เดือนนี้ใช้ไป ฿500'), text('ประมาณ ฿700'))
++    const res = await ask(user, 'th')
++    expect(res.status).toBe(200)
++    expect(await body(res)).toEqual({ answer: 'บันหาข้อมูลนี้ในบันทึกของคุณไม่เจอ', figures: [], source: 'facts', model: 'rules', escalated: true })
++    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
++  })
++
++  it('an escalated question counts once', async () => {
++    const user = await consenting()
++    model.push(refusal(), text('Bun can answer that from your diary.'))
++    expect(await body(await ask(user))).toMatchObject({ source: 'ai', model: OPUS, escalated: true })
++    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
++    expect(await vaultRows(user, 'SELECT day, feature, uses FROM ai_usage')).toEqual([{ day: today, feature: 'ask', uses: 1 }])
++  })
++
++  it('the prompts carry no account, session or device identifier (both conversations)', async () => {
++    const who = await person()
++    model.push(total(who.food), text('This month you spent ฿999 on food.'), total(who.food), text('This month you spent ฿60 on food.'))
++    expect((await ask(who.user)).status).toBe(200)
++    expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
++    // Only the question, the day and the names to choose from, then the tools' results; never who the person is or a balance.
++    const wire = JSON.stringify(model.calls)
++    for (const secret of [who.user.sub, who.user.sid, vaultIdOf(who.user), 'ios/1.0.0', '100000', '฿1,000']) expect(wire, secret).not.toContain(secret)
++  })
++})
++
++describe('Ask Bun gives its use back (the P3-T7 reviews)', () => {
++  it.each([529, 500])('a question whose first Haiku call fails with %i is 503 AI_PAUSED and gives the use back', async (status) => {
++    const user = await consenting()
++    model.push(apiFailure(status))
++    const res = await ask(user)
++    expect(res.status).toBe(503)
++    expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_after_seconds: 300 })
++    expect(modelsAsked()).toEqual([HAIKU])
++    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask)
++  })
++
++  it('a refund whose vault call itself fails never changes the 503, and is logged by name only', async () => {
++    // The second review's PK: the call to the vault rejects (not a problem reply), so the use stays spent.
++    const user = await consenting()
++    const original = UserVault.prototype.call
++    UserVault.prototype.call = function (this: UserVault, call: VaultCall): VaultReply {
++      if (call.route === 'ai.refund') throw new Error('the vault call failed')
++      return original.call(this, call)
++    }
++    const warnings = vi.spyOn(console, 'warn')
++    try {
++      model.push(apiFailure(529))
++      const res = await ask(user)
++      // Read as soon as the answer is in: the refund ran before the route answered.
++      const logged = warnings.mock.calls.map(([line]) => String(line)).filter((line) => line.includes('"event":"ai_refund_failed"'))
++      expect(res.status).toBe(503)
++      expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
++      expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: 'warn', event: 'ai_refund_failed', feature: 'ask', failure: 'Error' }])
++    } finally {
++      UserVault.prototype.call = original
++      warnings.mockRestore()
++    }
++    expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
++  })
++})
++
++describe("each figure's count and scope", () => {
++  const claimsOf = (user: TestUser): VaultClaims => ({ accountId: user.sub, sessionId: user.sid, issuedAt: Math.floor(Date.now() / 1000), clientId: 'ios/1.0.0' })
++
++  /** One Ask Bun tool, run as the ai.tool step runs it. */
++  async function tool(user: TestUser, name: string, input: Record<string, unknown>): Promise<AiToolReply> {
++    const reply = await vaultSession(env, claimsOf(user), TEST_POLICIES, 'bound_session', 'read').call('ai.tool', { body: { name, input, locale: 'en' } })
++    expect(reply, name).toMatchObject({ ok: true, status: 200 })
++    return (reply as { body: AiToolReply }).body
++  }
++
++  /** The figures of a tool reply that is not an input's refusal. */
++  const figuresOf = (reply: AiToolReply) => ('figures' in reply ? reply.figures : [])
++
++  it('figures carry their record count and scope', async () => {
++    const who = await person()
++    const at = new Date().toISOString()
++    // 41 food records from 1 to 24 October 2026 at ฿10 each, 21 of them at ร้านป้าแดง; beside them a taxi and a salary in the same days, and a food record on the 25th.
++    const rows = [
++      ...Array.from({ length: 41 }, (_, i) => ({ type: 'expense', amount_minor: 1_000, occurred_on: `2026-10-${String(1 + (i % 24)).padStart(2, '0')}`, category_id: who.food, merchant: i % 2 === 0 ? 'ร้านป้าแดง' : null })),
++      { type: 'expense', amount_minor: 7_000, occurred_on: '2026-10-10', category_id: who.travel, merchant: 'Grab' },
++      { type: 'income', amount_minor: 3_000_000, occurred_on: '2026-10-05', category_id: who.salary, merchant: null },
++      { type: 'expense', amount_minor: 5_000, occurred_on: '2026-10-25', category_id: who.food, merchant: null },
++    ]
++    await vaultExec(
++      who.user,
++      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, merchant, version, created_at, updated_at)
++       SELECT json_extract(r.value, '$.id'), json_extract(r.value, '$.type'), json_extract(r.value, '$.amount_minor'), json_extract(r.value, '$.occurred_on'),
++              ?, json_extract(r.value, '$.category_id'), json_extract(r.value, '$.merchant'), 1, ?, ?
++         FROM json_each(?) AS r`,
++      who.cash,
++      at,
++      at,
++      JSON.stringify(rows.map((row) => ({ id: randomUUID(), ...row }))),
++    )
++    const october = { from: '2026-10-01', through: '2026-10-24' }
++    // A total over food: its 41 records, and a scope naming the days, the type and food.
++    expect(figuresOf(await tool(who.user, 'spending_total', { ...october, type: 'expense', category_id: who.food }))).toEqual([
++      { label: expect.any(String), amount_minor: '41000', count: 41, scope: { ...october, type: 'expense', category_id: who.food } },
++    ])
++    // Over every category, the taxi joins; an id that is none of the person's categories reads as every category.
++    for (const category of [null, randomUUID()]) {
++      expect(figuresOf(await tool(who.user, 'spending_total', { ...october, type: 'expense', category_id: category }))).toMatchObject([
++        { amount_minor: '48000', count: 42, scope: { ...october, type: 'expense', category_id: null } },
++      ])
++    }
++    // Income counts over income.
++    expect(figuresOf(await tool(who.user, 'spending_total', { ...october, type: 'income', category_id: null }))).toMatchObject([
++      { amount_minor: '3000000', count: 1, scope: { ...october, type: 'income', category_id: null } },
++    ])
++    // Per category: each row's records, and a scope naming that category.
++    expect(figuresOf(await tool(who.user, 'category_totals', { ...october, type: 'expense' }))).toMatchObject([
++      { amount_minor: '41000', count: 41, scope: { ...october, type: 'expense', category_id: who.food } },
++      { amount_minor: '7000', count: 1, scope: { ...october, type: 'expense', category_id: who.travel } },
++    ])
++    // A place's total has its count and no scope.
++    expect(figuresOf(await tool(who.user, 'top_merchants', october)).map(({ amount_minor, count, scope }) => ({ amount_minor, count, scope }))).toEqual([
++      { amount_minor: '21000', count: 21, scope: null },
++      { amount_minor: '20000', count: 20, scope: null },
++      { amount_minor: '7000', count: 1, scope: null },
++    ])
++    // A budget's lines have neither.
++    expect((await client.as(who.user).put('/v1/budgets/2026-10', { overall_limit_minor: '500000', category_limits: [{ category_id: who.food, limit_minor: '100000' }] })).status).toBe(200)
++    const budget = figuresOf(await tool(who.user, 'budget_status', { month: '2026-10' }))
++    expect(budget.map(({ count, scope }) => ({ count, scope }))).toEqual(Array(4).fill({ count: null, scope: null }))
++  })
++})
+diff --git a/apps/edge/test/workers/slip-read.test.ts b/apps/edge/test/workers/slip-read.test.ts
+index 0fea46a0..d71604f1 100644
+--- a/apps/edge/test/workers/slip-read.test.ts
++++ b/apps/edge/test/workers/slip-read.test.ts
+@@ -5,6 +5,9 @@
+ // when no model read the slip and the last call failed with an outage (H5), and
+ // writes nothing else (B9). The front-door cases script the models' replies (no
+ // network); the last cases run slipNeedsOpus, readSlipImage and the cap alone.
++// P3-T9 carries the P3-T8 reviews' pins: a model date that is no calendar date,
++// an Opus outage after any unusable Haiku answer, an Opus answer with no draft,
++// the media type, the archived choices, a bare answer, and the read's tokens.
+ import { randomUUID } from 'node:crypto'
+ 
+ import Anthropic from '@anthropic-ai/sdk'
+@@ -39,6 +42,12 @@ function imageOf(call: MessageParams): string | undefined {
+   return content.find((block) => block.type === 'image')?.source?.data
+ }
+ 
++/** The media type of the image a request sent. */
++function mediaOf(call: MessageParams): string | undefined {
++  const content = call.messages[0].content as { type: string; source?: { media_type?: string } }[]
++  return content.find((block) => block.type === 'image')?.source?.media_type
++}
++
+ /** The text a request sent beside the image. */
+ function textOf(call: MessageParams): string | undefined {
+   const content = call.messages[0].content as { type: string; text?: string }[]
+@@ -185,6 +194,15 @@ describe('reading one slip through the front door', () => {
+     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
+   })
+ 
++  it.each(['2026-10-32', '0000-00-00'])("a Haiku date of %s, which is no calendar date, is re-read by Opus (the P3-T8 second review's m1)", async (date) => {
++    const who = await person()
++    model.push(slipReply('slip', [drafted(who, { date })]), slipReply('slip', [drafted(who)], 'SCB EASY'))
++    const res = await readSlip(who.user)
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ model: 'claude-opus-5-5', escalated: true, kind: 'slip', bank: 'SCB EASY', drafts: [{ amount_minor: '125000', occurred_on: today }] })
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++  })
++
+   it('a guessed category or wallet never escalates', async () => {
+     // No wallet and no category to choose from, so both are guessed.
+     const user = await consenting()
+@@ -253,6 +271,15 @@ describe('reading one slip through the front door', () => {
+     expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
+   })
+ 
++  it("Haiku's draft and bank stand when Opus answers with no draft (the P3-T8 reviews' m2 and MC)", async () => {
++    const who = await person()
++    model.push(slipReply('slip', [drafted(who, { amount_baht: null })]), slipReply('unreadable', [], 'SCB EASY'))
++    const res = await readSlip(who.user)
++    expect(res.status).toBe(200)
++    expect(await body(res)).toMatchObject({ model: 'claude-haiku-5-5', escalated: true, declined: false, kind: 'slip', bank: 'K PLUS', drafts: [{ amount_minor: null, merchant: 'ร้านป้าแดง' }] })
++    expect((await remaining(who.user)).slip).toBe(AI_DAILY_LIMITS.slip - 1)
++  })
++
+   it('a Haiku refusal followed by an Opus outage is 503 AI_PAUSED and gives the use back (Review Focus 3)', async () => {
+     const who = await person()
+     model.push(refusal(), apiFailure(529))
+@@ -273,6 +300,20 @@ describe('reading one slip through the front door', () => {
+     expect(logged.map((line) => JSON.parse(line))).toEqual([{ level: 'warn', event: 'ai_fallback', feature: 'slip', failure: 'SlipNotRead' }])
+   })
+ 
++  it.each([
++    ['is not JSON', () => text('I read ฿1,250.')],
++    ['has no draft', () => slipReply('slip', [])],
++    ['says unreadable', () => slipReply('unreadable', [], null)],
++  ])("a Haiku answer that %s, then an Opus outage, is 503 AI_PAUSED and gives the use back (Review Focus 3; the P3-T8 reviews' m1 and MO2)", async (_what, haikuReply) => {
++    const user = await consenting()
++    model.push(haikuReply(), apiFailure(529))
++    const res = await readSlip(user)
++    expect(res.status).toBe(503)
++    expect(await body(res)).toMatchObject({ code: 'AI_PAUSED', retry_after_seconds: 300 })
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++    expect((await remaining(user)).slip).toBe(AI_DAILY_LIMITS.slip)
++  })
++
+   it('an outage on Haiku is 503 AI_PAUSED, with no Opus call and the use given back', async () => {
+     const who = await person()
+     model.push(apiFailure(529))
+@@ -352,6 +393,33 @@ describe('reading one slip through the front door', () => {
+     for (const secret of [who.user.sub, who.user.sid, vaultIdOf(who.user), 'ios/1.0.0', '100000', '฿1,000']) expect(wire, secret).not.toContain(secret)
+   })
+ 
++  it("both calls carry the image's media type, a phone's JPEG included (the P3-T8 reviews' n1 and MO3)", async () => {
++    const who = await person()
++    model.push(refusal(), slipReply('slip', [drafted(who)]))
++    expect((await client.as(who.user).post('/v1/ai/slip', { image_base64: tinyPng, media_type: 'image/jpeg', today, locale: 'th' })).status).toBe(200)
++    expect(model.calls.map(mediaOf)).toEqual(['image/jpeg', 'image/jpeg'])
++  })
++
++  it("an archived wallet or category reaches neither call (the P3-T8 reviews' m3, MB1 and MB2)", async () => {
++    const who = await person()
++    const spare = randomUUID()
++    expect((await client.as(who.user).post('/v1/wallets', { id: spare, name: 'Spare', opening_minor: '0', tracking_start: '2026-01-01' })).status).toBe(201)
++    expect((await client.as(who.user).post(`/v1/wallets/${spare}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
++    const listed = (await body(await client.as(who.user).get('/v1/categories'))) as { id: string; builtin_key: string | null }[]
++    const fun = listed.find((category) => category.builtin_key === 'fun')?.id
++    if (!fun) throw new Error('the built-in categories have no fun')
++    expect((await client.as(who.user).post(`/v1/categories/${fun}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
++    model.push(refusal(), slipReply('slip', [drafted(who)]))
++    expect((await readSlip(who.user)).status).toBe(200)
++    expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-5'])
++    for (const call of model.calls) {
++      const sent = JSON.parse(textOf(call) ?? 'null') as { wallets: { id: string }[]; categories: { id: string }[] }
++      expect(sent.wallets.map((wallet) => wallet.id)).toEqual([who.cash])
++      expect(sent.categories.map((category) => category.id)).toContain(who.food)
++      expect(sent.categories.map((category) => category.id)).not.toContain(fun)
++    }
++  })
++
+   it('tokens add up both calls, cache reads and writes included', async () => {
+     const who = await person()
+     const used = (message: ModelMessage, usage: Record<string, number>) => ({ ...message, usage }) as unknown as ModelMessage
+@@ -465,4 +533,45 @@ describe("D25's triggers and the slip's deadline, directly", () => {
+     await expect(read(refusal(), apiFailure(429))).rejects.toMatchObject({ name: 'SlipNotRead', failure: 'rate_limited' })
+     await expect(read(apiFailure(529))).rejects.toBeInstanceOf(SlipNotRead)
+   })
++
++  it.each([
++    ['null', 'null'],
++    ['an array', '[]'],
++    ['a string', '"hello"'],
++  ])("%s as the whole answer is re-read by Opus (the P3-T8 second review's MJ)", async (_what, whole) => {
++    const replies = fakeModel([text(whole), slipReply('slip', [written()])])
++    await expect(readSlipImage({ image, context, locale: 'th' }, { transport: replies.transport, trace: newTrace(), deadline: new AiDeadline(45_000) })).resolves.toMatchObject({
++      model: 'claude-opus-5-5',
++      escalated: true,
++      kind: 'slip',
++    })
++    expect(replies.calls).toHaveLength(2)
++  })
++
++  it("a draft the sanitizer cannot read leaves the answer unusable, so Opus reads it again and nothing crashes (the P3-T8 second review's m1)", async () => {
++    // A day that is no date makes sanitizeDrafts throw for any draft (the service always sends a real one), so neither read can be used.
++    const replies = fakeModel([slipReply('slip', [written()]), slipReply('slip', [written()])])
++    await expect(
++      readSlipImage({ image, context: { ...context, today: 'not-a-date' }, locale: 'th' }, { transport: replies.transport, trace: newTrace(), deadline: new AiDeadline(45_000) }),
++    ).resolves.toMatchObject({ kind: 'unreadable', drafts: [], bank: null, model: 'claude-opus-5-5', escalated: true })
++    expect(replies.calls).toHaveLength(2)
++  })
++
++  it("tokens count this read's calls only, when its trace already holds another (the P3-T8 reviews' n2 and MA)", async () => {
++    const trace = newTrace()
++    const used = (usage: Record<string, number>) => ({ ...slipReply('slip', [written()]), usage }) as unknown as ModelMessage
++    const read = (usage: Record<string, number>) => readSlipImage({ image, context, locale: 'th' }, { transport: fakeModel([used(usage)]).transport, trace, deadline: new AiDeadline(45_000) })
++    expect((await read({ input_tokens: 1_000, output_tokens: 100 })).tokens).toEqual({ input: 1_000, output: 100 })
++    expect((await read({ input_tokens: 70, output_tokens: 7 })).tokens).toEqual({ input: 70, output: 7 })
++  })
++
++  it.each([
++    ['without input tokens', { output_tokens: 7 }, { input: 0, output: 7 }],
++    ['without output tokens', { input_tokens: 70 }, { input: 70, output: 0 }],
++    ['with a count below zero', { input_tokens: -5, output_tokens: 7 }, { input: 0, output: 7 }],
++  ])("a usage %s counts what it has, so the phone takes the read (the P3-T8 second review's n1)", async (_what, usage, tokens) => {
++    const reply = { ...slipReply('slip', [written()]), usage } as unknown as ModelMessage
++    const read = await readSlipImage({ image, context, locale: 'th' }, { transport: fakeModel([reply]).transport, trace: newTrace(), deadline: new AiDeadline(45_000) })
++    expect(read.tokens).toEqual(tokens)
++  })
+ })
+diff --git a/docs/implementation/receipts/P3-T8.md b/docs/implementation/receipts/P3-T8.md
+index ed31cc1f..411b0add 100644
+--- a/docs/implementation/receipts/P3-T8.md
++++ b/docs/implementation/receipts/P3-T8.md
+@@ -31,9 +31,10 @@
+ - **Not locked yet:** `SLIP_SYSTEM` and `SLIP_SCHEMA` are locked only after P3-T22's run of about 100 real slips (D25).
+ - **Risks:**
+   - With `HAIKU_SLIP_CAP_MS` (20 s), a Haiku slip read that runs past its cap is a timeout after a call Anthropic may still bill: the use comes back (H5), and Opus is not asked (H7), so the route answers 503 while about 25 s of its deadline remain. B27 (no global limiter in v1) and P6C's spend alerts are the guards.
++  - A second path gives the use back after calls Anthropic may bill (added at P3-T9, from both reviews' n3): a Haiku answer with nothing usable (a decline, an unusable answer or no draft) followed by an Opus call that times out after it was sent. Review Focus 3 asks for that refund. The owner's refund-caps item (followups, "Owner (B27, P4, P6C)") is the guard for both paths.
+   - An escalated read makes two billed calls for one use (D25), and a Haiku draft kept after an Opus outage spends the use (A14).
+ - **Notes for later tasks:**
+-  - **P3-T9** (shares `service.ts`, contracts `ai.ts` and `aiResources.ts`): R116 is Ask Bun's; the slip's `shouldRefund` is unchanged (its Opus call always has the deadline Haiku's cap leaves, less the vault steps).
++  - **P3-T9** (shares `service.ts`, contracts `ai.ts` and `aiResources.ts`): R116 is Ask Bun's; the slip's `shouldRefund` is unchanged (its Opus call always has the deadline Haiku's cap leaves, less the vault steps). P3-T9 revisited this (R116; the second review's PC2): `shouldRefund` now spends a use whose last call never started once an earlier call answered, on every route, so a slip whose Opus re-read the deadline never let start after a Haiku answer spends its use (`receipts/P3-T9.md`).
+   - **P3-T10:** the Opus call is recorded with `escalated: true` and `requested: 'claude-opus-5-5'`; a result's `model` is the read that is shown.
+   - **P3-T17:** `kind` decides B3: keep a photo only after a `receipt` read; `unreadable` always comes with no draft and `escalated: true`.
+   - **P4 (A16, A26):** `/v1/slips` calls `readSlipImage` with its own trace and deadline per slip; `declined` and `tokens` cover only that read's calls (the trace from its first call), and `SlipNotRead.failure` tells an outage from a rejected request. P4-T4 adds the import mode and `SlipNotRead.retryAfterSeconds` additively.
+diff --git a/docs/implementation/receipts/P3-T9.md b/docs/implementation/receipts/P3-T9.md
+new file mode 100644
+index 00000000..374020fa
+--- /dev/null
++++ b/docs/implementation/receipts/P3-T9.md
+@@ -0,0 +1,44 @@
++# P3-T9: Ask Bun asks Opus again in a fresh conversation
++
++- **Status:** built and verified locally on `p3/t9-ask-escalation`, from `origin/claude/p1a-vault-core`. Not pushed. Under R87 this receipt is its own file; `premium-progress.md` is not edited. Under R100 whole suites are CI's (the full workers suite, the full render suite and its sections, the exports and the database suites). No HTTP route, app entry, config or catalogue section changed, so `typecheck:routes` and `export:web` are not in the local gate.
++- **Delivers:** D28 as H7. Haiku 5.5 answers first, its whole conversation under 25 s of the route's 55 s (H3). When its answer fails the grounding check, it declines, or it ends without an answer (the turn limit, a cut-short or empty answer, or a turn the deadline never let start), Opus 5.5 is asked again in a fresh conversation: the person's question alone, as Haiku first saw it, with the same system and tools and the rest of the deadline. An outage never escalates. When neither model's words can be shown, the plain figures answer (Opus's, else Haiku's), or Bun's could-not-find line. A question counts one use, which goes back when no model's words are shown and the last call failed with an outage (H5, R116). Each figure carries its record count and what it counts over (H14), and the phone needs both. The P3-T8 reviews' carries ride along: a model date that is no calendar date no longer crashes a read, `choices` lives once, and the slip's tokens count only what the API reported as counts.
++- **Files:**
++  - New:
++    - `apps/edge/src/v1/ai/ask.ts`: `ASK_MAX_TURNS`, `AskOutcome`, `AskDeps`, `runAskConversation`, `askWithEscalation`.
++    - `apps/edge/test/workers/ask-escalation.test.ts` (13 cases: the plan's 10, the P3-T7 reviews' PR3 as two rows and PK).
++    - `apps/edge/test/ask-deadline.test.ts` (Node, 12 cases: the plan's slow-conversation case and how one conversation ends).
++    - `docs/implementation/receipts/P3-T9.md` (this receipt).
++  - Modified (shared):
++    - `packages/contracts/src/v1/ai.ts`: `AiFigureScope`; `AiFigure` gains `count` and `scope`; `AiAskResult`'s comment. `packages/contracts/src/index.ts`: exports `AiFigureScope`.
++    - `apps/edge/src/v1/ai/service.ts`: Ask Bun asks through `askWithEscalation` and gives the use back after every answer through `giveBack` (which refunds only when no model's words are shown and the last call failed with an outage); parse uses `draftChoices`; the header names each route's model (the P3-T8 second review's n2).
++    - `apps/edge/src/v1/ai/uses.ts`: R116 in `shouldRefund`, and the P3-T7 second review's n1 wording.
++    - `apps/edge/src/vault/ai.ts`: each tool's figures carry `count` and `scope`.
++    - `apps/edge/src/server/ai/drafts.ts`: `isRealDate` refuses a date that is no calendar date instead of throwing; `draftChoices` (the one copy of what a model may choose from).
++    - `apps/edge/src/v1/ai/slip-read.ts`: `draftChoices`; a draft the sanitizer cannot read leaves the answer unusable; `tokens` count only counts.
++    - `apps/edge/test/workers/ai.test.ts`, `ai-uses.test.ts`, `slip-read.test.ts`, `apps/edge/test/ai-grounding.test.ts`: the cases below.
++    - `apps/app/src/spend/v1/ai/aiResources.ts`: `isAiAskResult` needs each figure's `count` and `scope`. `aiResources.test.ts`: one case, and the ask row's figure.
++    - Type-only fixtures: `apps/app/src/dev/catalogue/companion/companionSections.tsx`, `apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx` and the figure in `ai-grounding.test.ts`.
++    - `docs/implementation/receipts/P3-T8.md`: its risk note's second refund-after-billing path, and R116's change to its "unchanged" note.
++- **RED to GREEN** (typed stubs: `ask.ts` holds today's Ask Bun in the new shape, with no Opus; `vault/ai.ts` answers `count` and `scope` null; `drafts.ts` has `draftChoices` but no date guard; `uses.ts`, `slip-read.ts` and `aiResources.ts` at base; the root, app and edge typechecks pass at RED):
++  - `apps/app` `src/spend/v1/ai/aiResources.test.ts` (Node): RED `tests 4, pass 1, fail 3`, GREEN `tests 4, pass 4`.
++  - `apps/edge` `test/ask-deadline.test.ts` and `test/ai-grounding.test.ts` (Node): RED `Tests  6 failed | 40 passed (46)`, GREEN `Tests  46 passed (46)`.
++  - Workers, under the heavy lock, `ask-escalation`, `ai-uses`, `ai.test`, `ai-routing` and `slip-read`: RED `Tests  26 failed | 100 passed (126)`, GREEN `Tests  126 passed (126)`.
++  - Every RED failure is an `AssertionError`. Passing at RED by design (pins of what must stay true): a Haiku outage never reaches Opus and is logged by name; the P3-T7 reviews' Ask Bun refund pins (PR3 at 529 and 500, PK); the moved conversation's grounded, ungrounded, five-turn, outage, rejected and tool-step rows; and the P3-T8 reviews' slip pins on code that was already right (an Opus outage after any unusable Haiku answer, an Opus answer with no draft, the media type, the archived choices, a bare answer, the trace's offset).
++- **Mutation check:** `mutants.py`, 79 of 79 killed, every failing case of every kill an `AssertionError`; each file restored byte for byte. The plan's five: P1 (Haiku's turns replayed to Opus), P2 (escalate on a 429), P3 (a second use for Opus), P4 (Haiku given the parent deadline) and P5 (paused whenever no figures exist). The conversations K1 to K29; the service S1 to S6 (S6 is the P3-T7 second review's M9); R116 U1 to U4; the figures V1 to V10; the phone A1 to A12; the P3-T8 carries D1 to D3, R1 to R6 and T1 to T5 (the reviews' O1, O2, O3, O6 and MJ).
++- **Fast local gate (R100):**
++  - `npm run typecheck` (contracts changed), `npm run typecheck:app`, `npm run typecheck:edge`: passed.
++  - The focused files above: RED to GREEN as listed.
++  - The render files on the AI fakes (`TellBunSheet`, `AskBunScreen`, `BunNote`, `CompanionSettings`, `CashbackCard`, `AnalyticsUpkeep`, `AmountStep`, `AddTray`, `walletHarness`, `WalletRecap`, `WalletAiSettings`, `AiConsent`) and the four routes tests (`SpendRoutes`, `account/AccountRoutes`, `insights/InsightsRoutes`, `planning/PlanningRoutes`): passed.
++  - `test:edge`, `test:app`, `test:unit`: passed. `build:edge`: passed. `git diff --check`: clean.
++- **CI (R100):** the full `test:edge:workers`, the full render suite and sections 1 to 3 (the catalogue's whole-catalogue files render `catalogueAi`), `export:web` and the iOS export, `test:edge:db` and `test:db` (Docker is stopped locally), `test:ops`.
++- **Deviations:** the brief's planner rulings P1 to P16 (`.claude/controller/briefs/P3-T9.md`), as accepted by the controller. In short: the conversations log their own failed calls by class name; a vault refusal at a tool step is the route's answer and a failed step ends that conversation as an outage; R116 lives in `shouldRefund` for every route; `escalated` is true whenever the question went to Opus; the category name is `string | null`; `fakeAiResources.ts` needs no change; the P3-T8 reviews' must-carry items and pins ride along.
++- **Client minimum (P6C):** the phone's Ask Bun validator now needs each figure's `count` and `scope`, and an older app refuses the new answer (exact keys). Any release carrying P3-T9 needs a client minimum of at least `AI_MIN_CLIENT_VERSION` (`0.2.0`), with the server's minimum versions raised in the same release (the followups' release rule for P6C-T6 applies).
++- **Risks:**
++  - An escalated question makes calls to both models for one use (D28); the question counts once, as the spec says.
++  - A question no model could be asked in time (only when the vault steps leave under 2 s of the 55) answers Bun's could-not-find line, with its use given back, as the plan's rules read (a turn that cannot start is `no_answer`).
++  - Refunds after billed calls stay uncapped (the owner's refund-caps item): an Ask Bun outage after an ungrounded Haiku answer gives the use back after a billed Haiku call, as Review Focus 3 asks.
++- **Notes for later tasks:**
++  - **P3-T10:** both conversations' calls are in the one trace, Opus's marked `escalated: true`; a turn the deadline never let start is recorded `sent: false` (no `$ai_generation`). Ask Bun's failed calls still log `ai_fallback` by class name; a decline or an ungrounded answer that escalates logs nothing.
++  - **P3-T20 (Ask Bun in the Bun Wallet look):** `count` reads "41 records" and `scope` offers the records behind a figure; a place's total has a count and no scope, a budget line neither. `escalated` can be true on a plain-figures answer.
++  - **P4-T4 (import mode):** `shouldRefund` now carries R116 for the slip too: a per-slip deadline must leave Opus at least 2 s after Haiku's 20 s cap, or a read whose Opus call never starts spends its use. `draftChoices` is the one place the choices are built.
++  - **P5-T18e (currency):** `ask.ts` is where the currency reaches Ask Bun's figures and words; they stay in baht until then (B7).
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index aca1af7a..4cb22793 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -329,6 +329,7 @@ export type {
+   BunFact,
+   AiNoteResult,
+   AiAskRequest,
++  AiFigureScope,
+   AiFigure,
+   AiAskResult,
+ } from "./v1/ai.ts";
+diff --git a/packages/contracts/src/v1/ai.ts b/packages/contracts/src/v1/ai.ts
+index 9f24c859..ffc00e17 100644
+--- a/packages/contracts/src/v1/ai.ts
++++ b/packages/contracts/src/v1/ai.ts
+@@ -193,8 +193,25 @@ export type BunFact = {
+ export type AiNoteResult = { date: string; facts: BunFact[]; text: string; source: "ai" | "facts"; model: AiModel; escalated: boolean };
+ 
+ export type AiAskRequest = { question: string; today: string; locale: AiLocale };
+-/** A figure the answer used, read from the user's records by a server tool. */
+-export type AiFigure = { label: string; amount_minor: Minor };
++/**
++ * What a figure counts over (P3-T9, H14): its first and last day, the record
++ * type, and the category (null for every category), so the phone can offer
++ * the records behind it.
++ */
++export type AiFigureScope = { from: string; through: string; type: AiDraftType; category_id: string | null };
++/**
++ * A figure the answer used, read from the user's records by a server tool.
++ * `count` is how many records it adds up (null for a budget line); `scope` is
++ * what it counts over (null for a place's total or a budget line). Ask Bun
++ * draws no chart (H14).
++ */
++export type AiFigure = { label: string; amount_minor: Minor; count: number | null; scope: AiFigureScope | null };
++/**
++ * Ask Bun's answer (D28, P3-T9). `model` names whose words are shown: Haiku,
++ * Opus when Haiku's answer was ungrounded, declined or unfinished and Opus,
++ * asked again in a fresh conversation, grounded its own, or `rules` for the
++ * plain figures; `escalated` is true when the question went to Opus.
++ */
+ export type AiAskResult = { answer: string; figures: AiFigure[]; source: "ai" | "facts"; model: AiModel; escalated: boolean };
+ 
+ const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;

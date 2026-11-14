@@ -1,0 +1,183 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 6 failed) 29ms
+     × the import mode asks for the time and both sides, and sends only today and the locale 6ms
+     × a slip read in import mode fills import with exact satang and clean sides 1ms
+     × an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped 1ms
+     × a bank outside the list becomes null, and an impossible time null 0ms
+     × what an import read does not need never sends the slip to Opus: the time, the accounts, the sender name and the receiver bank 0ms
+     × an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK) 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale
+AssertionError: expected [ { …(5) }, …(1) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ test/slip-read-import.test.ts:103:25
+    101|     const { read, model, trace } = importRead([json(answer())])
+    102|     await expect(read).resolves.toMatchObject({ kind: 'slip', model: H…
+    103|     expect(model.calls).toHaveLength(1)
+       |                         ^
+    104|     const [haiku] = model.calls
+    105|     // The whole request: Haiku's base and effort, the import schema a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip read in import mode fills import with exact satang and clean sides
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": "1234",
+
+ ❯ test/slip-read-import.test.ts:148:23
+    146|   it('a slip read in import mode fills import with exact satang and cl…
+    147|     const { read, model } = importRead([json(answer())])
+    148|     await expect(read).resolves.toStrictEqual(shown(READ, HAIKU, false…
+       |                       ^
+    149|     expect(asked(model)).toEqual([HAIKU])
+    150|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": "6789",
+
+ ❯ test/slip-read-import.test.ts:154:23
+    152|   it('an account number longer than four digits keeps only its last fo…
+    153|     const { read, model } = importRead([json(answer({ from: { bank: 'k…
+    154|     await expect(read).resolves.toStrictEqual(shown({ ...READ, from: {…
+       |                       ^
+    155|     expect(asked(model)).toEqual([HAIKU])
+    156|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": "1234",
+
+ ❯ test/slip-read-import.test.ts:160:23
+    158|   it('a bank outside the list becomes null, and an impossible time nul…
+    159|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    160|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    161|     expect(asked(model)).toEqual([HAIKU])
+    162|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > what an import read does not need never sends the slip to Opus: the time, the accounts, the sender name and the receiver bank
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": null,
+
+ ❯ test/slip-read-import.test.ts:185:23
+    183|     const { read, model } = importRead([json(answer(sparse))])
+    184|     const kept: SlipImportRead = { ...READ, occurred_time: null, from:…
+    185|     await expect(read).resolves.toStrictEqual(shown(kept, HAIKU, false…
+       |                       ^
+    186|     expect(asked(model)).toEqual([HAIKU])
+    187|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK)
+AssertionError: expected { kind: 'slip', drafts: [], …(6) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  {
+    "bank": "kbank",
+    "declined": false,
+    "drafts": [],
+-   "escalated": false,
++   "escalated": true,
+    "import": {
+      "amount_minor": "125050",
+      "flags": [],
+      "from": {
+        "account_last4": "1234",
+
+ ❯ test/slip-read-import.test.ts:319:23
+    317|   it("an old genuine slip keeps its day and is read once: no 90-day wi…
+    318|     const { read, model } = importRead([json(answer({ date: '2024-03-1…
+    319|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    320|     expect(asked(model)).toEqual([HAIKU])
+    321|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 42 passed (48)
+   Start at  01:28:04
+   Duration  250ms (transform 69ms, setup 0ms, import 117ms, tests 29ms, environment 0ms)
+

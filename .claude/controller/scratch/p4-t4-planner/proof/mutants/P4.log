@@ -1,0 +1,277 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 10 failed) 29ms
+     × Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait 3ms
+     × a slip Haiku calls unreadable is re-read once by Opus, and Opus's read is the draft 1ms
+     × a slip Haiku calls receipt is re-read once by Opus, and Opus's read is the draft 0ms
+     × a slip both models call unreadable has no import read 0ms
+     × null as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+     × an array as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+     × a string as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+     × an answer cut short as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+     × the image's media type reaches both calls (the P3-T8 reviews' MO3) 0ms
+     × a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait
+AssertionError: promise resolved "{ kind: 'unreadable', drafts: [], …(5) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "bank": null,
++   "declined": false,
++   "drafts": [],
++   "escalated": false,
++   "kind": "unreadable",
++   "model": "claude-haiku-5-5",
++   "tokens": {
++     "input": 10,
++     "output": 10,
++   },
+  }
+
+ ❯ test/slip-read-import.test.ts:211:31
+    209|   it("Opus failing after Haiku read no bank slip throws SlipNotRead wi…
+    210|     const limited = importRead([json(answer({ kind: 'unreadable' })), …
+    211|     await expect(limited.read).rejects.toMatchObject({ name: 'SlipNotR…
+       |                               ^
+    212|     expect(asked(limited.model)).toEqual([HAIKU, OPUS])
+    213|     const down = importRead([refusal(), apiFailure(529)])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls unreadable is re-read once by Opus, and Opus's read is the draft
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls receipt is re-read once by Opus, and Opus's read is the draft
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "kind": "unreadable",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:233:23
+    231|   it.each(['unreadable', 'receipt'])("a slip Haiku calls %s is re-read…
+    232|     const { read, model } = importRead([json(answer({ kind })), json(a…
+    233|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    234|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    235|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip both models call unreadable has no import read
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { Object (kind, drafts, ...) }
+
+- Expected
++ Received
+
+  {
+    "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:239:23
+    237|   it('a slip both models call unreadable has no import read', async ()…
+    238|     const { read, model } = importRead([json(answer({ kind: 'unreadabl…
+    239|     await expect(read).resolves.toStrictEqual(unreadable(2))
+       |                       ^
+    240|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    241|     // Both were asked for an import read.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > null as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an array as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a string as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an answer cut short as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "kind": "unreadable",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:258:23
+    256|   ])("%s as Haiku's whole answer is re-read by Opus (the P3-T8 second …
+    257|     const { read, model } = importRead([whole, json(answer())])
+    258|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    259|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    260|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-opus-5-5",
++   "escalated": false,
++   "kind": "unreadable",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:326:23
+    324|     const jpeg: Image = { base64: tinyPng, mediaType: 'image/jpeg' }
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+    328|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { Object (kind, drafts, ...) }
+
+- Expected
++ Received
+
+  {
+    "bank": null,
+    "declined": false,
+    "drafts": [],
+-   "escalated": true,
++   "escalated": false,
+    "kind": "unreadable",
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "tokens": {
+-     "input": 20,
+-     "output": 20,
++     "input": 10,
++     "output": 10,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:356:23
+    354|       { fields: 'import' },
+    355|     )
+    356|     await expect(read).resolves.toStrictEqual(unreadable(2))
+       |                       ^
+    357|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    358|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 38 passed (48)
+   Start at  01:27:59
+   Duration  254ms (transform 69ms, setup 0ms, import 116ms, tests 29ms, environment 0ms)
+

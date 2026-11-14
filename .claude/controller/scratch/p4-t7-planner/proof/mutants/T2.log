@@ -1,0 +1,298 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > drafts come newest first, 50 a page and at most 200, with the total and a cursor
+ ↓ test/workers/slip-drafts.test.ts > the drafts list (P4-T7) > the list names a live record with the same amount and date as a possible duplicate
+ × test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref 60ms
+   → expected [] to deeply equal [ [ …(3) ], [ …(3) ], [ …(3) ], …(47) ]
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a shared slip's draft confirms as share_extension
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > more than 50 drafts, a repeated draft or a repeated record id is 422, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a resent confirm replays its acknowledgement and writes nothing more
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a draft confirmed on another phone makes the batch 409, and nothing is written
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > each record is checked as transactions.create checks it, and a refused record is named by its draft index
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > a transaction carrying source or slip_ref_id is 422 UNKNOWN_FIELD: the vault sets both
+ ↓ test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > slip confirmations send no record_saved (S18)
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > dismissing keeps the slip known, and a dismissed draft cannot be confirmed
+ ↓ test/workers/slip-drafts.test.ts > dismissing a draft, and the inbox count > confirm and dismiss poke the other phones with the new inbox count
+ ↓ test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a single read's slip ref is recorded once against its record
+ ↓ test/workers/slip-drafts.test.ts > a single read's slip ref (P4-T16b) > a slip ref leaves the record as it was: its version, its source or none, its change log and a slip ref it has
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > an open draft leaves the inbox 30 days after it was read, and its slip stays known (C11)
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > after pruneSlips at slipsDueAt, the next slipsDueAt is later or null (R37), and backfill uses go once more than 31 Bangkok days old
+ ↓ test/workers/slip-drafts.test.ts > the 30-day expiry (C11, R37) > the prune takes more drafts than SQLite has parameters
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > the drafts routes are 404 until SLIP_IMPORT_ENABLED is on, as a missing path answers, and the slip ref answers before it
+ ↓ test/workers/slip-drafts.test.ts > the routes (S13, C12) > confirm, dismiss and the slip ref are writes under the current policy and the imports gate, confirm also under writes; the list needs only the session
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-drafts.test.ts > confirming drafts (B10, A1) > confirming 50 drafts is one command under one revision, and every record carries source slip_import and its slip ref
+AssertionError: expected [] to deeply equal [ [ …(3) ], [ …(3) ], [ …(3) ], …(47) ]
+
+- Expected
++ Received
+
+- [
+-   [
+-     "0068434f9bd6b398d8e04ffb74a98f71060fb0573fe3d84dc7709cce86e19339",
+-     "e2c2ad74-122b-47e4-937b-783d76d89546",
+-     "confirmed",
+-   ],
+-   [
+-     "02cfebc7e11ecb987a5904556333be46d38f9d570f299f09f6e8488421d3e09c",
+-     "1b51304b-d515-4acb-94fe-f0b523eedab4",
+-     "confirmed",
+-   ],
+-   [
+-     "032e8c4e4029caabd0f16de9a61ffd01df4260732f0e6f96d84f02f13e343379",
+-     "51502c46-7c02-47c6-90d2-099e70ecd28a",
+-     "confirmed",
+-   ],
+-   [
+-     "0a27f79b7e62c9aba3c99611d2000640f571300dff0a8a5e06ed875abf63b596",
+-     "bf64ce5b-c6d6-4f42-b0af-7771cc5b1310",
+-     "confirmed",
+-   ],
+-   [
+-     "21ba8e4c631a1e11573d81b5bb7c9b79850619167f500141f829c2c8e1e8b77a",
+-     "8d135975-934e-4c82-bad7-39dc93e4b5ac",
+-     "confirmed",
+-   ],
+-   [
+-     "24001fc9d7af2efb0aa58e56fa012526c8985d802b75fd5dafcb5eaa084b2a79",
+-     "be3c90b8-2678-4052-a523-19045eead1b9",
+-     "confirmed",
+-   ],
+-   [
+-     "2d317128f0aea3a5c5d0a878a72fa9d3b4303fc53889b75289555f2dc76273d7",
+-     "6f6771c3-b0d1-4854-8640-20b0c50ee602",
+-     "confirmed",
+-   ],
+-   [
+-     "2d6c04b4e491dda834ff74ed74d11872b816d9f18b2e400320a52942232ba0dc",
+-     "695ea8c4-3786-4825-acb1-80a1916cece2",
+-     "confirmed",
+-   ],
+-   [
+-     "38aca39662dbc1a10078e65e6eccbb21b688f67d4df2e3e79bc04a3343c1112e",
+-     "d567a8fc-0260-4b7b-9a12-07fe85e78624",
+-     "confirmed",
+-   ],
+-   [
+-     "3a62d7d0cdebe8b50f43d710232b5c09e58663fcecad981345306f8034e015ce",
+-     "2a2d16ce-a469-4a51-9d16-be30c94596a5",
+-     "confirmed",
+-   ],
+-   [
+-     "4ccdbac6d76c8e43514a979b45fcf2d41236348b11e96be34fefcd18447bed38",
+-     "03b7dfa4-73e0-479a-ba35-a37698d9fd01",
+-     "confirmed",
+-   ],
+-   [
+-     "4f4c4fbc34ed81cbb3dabbe9dbb7ffe5f7aeb93aa927f7cd5401d7a83843766d",
+-     "50b240a1-c8b6-41b1-a75a-ff6f9998c4d0",
+-     "confirmed",
+-   ],
+-   [
+-     "566ee8bf5ae7c4d5a9aa719f77d26e7c6c263d380529ef50faa77d6e9e1ba5ec",
+-     "57661636-08f1-4557-8753-401278bb4075",
+-     "confirmed",
+-   ],
+-   [
+-     "5ce7ad1681f871151af7cc00781b7dabef75f745f677709aa4f0f02adb9c361d",
+-     "bdf8a1d6-ec86-453e-8a41-4e3b81ab2d33",
+-     "confirmed",
+-   ],
+-   [
+-     "6074232beabf25c84d2cbedd19d204b4273dfd8c0cc4a35f506edea0099f81d3",
+-     "ff191df7-93b8-49da-98ec-448e6e3d0d1d",
+-     "confirmed",
+-   ],
+-   [
+-     "66e4b2ad37eac03185a9cb2049812af78f1e8fd084fc8d71d6bade15136cfafa",
+-     "14a5c903-51f7-404a-a947-ab9493e83987",
+-     "confirmed",
+-   ],
+-   [
+-     "68b0c54aed50570ac32c239690f1f70fe125b8f42d9f68098764e696b1746ff0",
+-     "87b63c5e-ade0-4caf-961f-1a6cb98ac67e",
+-     "confirmed",
+-   ],
+-   [
+-     "6c87f815f829b6a8783db44981eb40cd24643b494969ba60599b6d2c39ae986f",
+-     "b14bd562-1acd-40c9-b4a0-f19cb730951e",
+-     "confirmed",
+-   ],
+-   [
+-     "73bfa1f28ad63f32827510b529f7d06e1a68b9a049beb42781e1618d7d00cabb",
+-     "387bc72e-7f92-407c-bfa5-18322956722f",
+-     "confirmed",
+-   ],
+-   [
+-     "74388d21071773859dea1f171e1cb4247fa81941e3c52eb189a85d82d31fb244",
+-     "933cfecd-6ed3-4d27-83b3-216d475a03a6",
+-     "confirmed",
+-   ],
+-   [
+-     "78c145ed25009ec7a2511abb031e973a8159787b375a81b56476a7ae8654ab93",
+-     "080a3d25-c543-4434-91f8-4881c89f5f35",
+-     "confirmed",
+-   ],
+-   [
+-     "7c8405cb990f3249bfbd8d69e759f82e3e6e4d3bbd409c5919575030b0c39367",
+-     "5607f34f-9ced-432c-a305-a0b3d9fc6250",
+-     "confirmed",
+-   ],
+-   [
+-     "7d2d2a365a8b81de0c925a0e9bbc11f63b89948e9e4958f9cfc25c161ff091b3",
+-     "a00e4dce-0c28-4f52-bf39-5223e0e62848",
+-     "confirmed",
+-   ],
+-   [
+-     "7eed3bebfd49795c7d4870a1771ea9947f225d39d213e4d920adfbf716e6e1b7",
+-     "06cad1af-15b6-43a2-a4d7-0d16ac527ee2",
+-     "confirmed",
+-   ],
+-   [
+-     "83773ffef82654c2f4138036a0c5a52d1bfdf7c8471151342e22ca8459a838f3",
+-     "bddc108d-a446-474c-a00d-0bd227cd28b3",
+-     "confirmed",
+-   ],
+-   [
+-     "8bc69ed3796ec1e720b70dcf19258758ba85f2e13aaa369273e0a4b92f7b48c3",
+-     "03ff07fd-5c22-41b1-a9d6-04b9ccda66ea",
+-     "confirmed",
+-   ],
+-   [
+-     "8e6ec39d8cf9b26ff6057dbbb1c8119e216b91b5b6ab63da4cf81ca2f4f0a38e",
+-     "715b8363-1d96-453d-8390-2105673b230d",
+-     "confirmed",
+-   ],
+-   [
+-     "9c923eb1d36866ba56f4e912e94c425c38ee5c79e481a0a5633b5edf75af73c5",
+-     "8712b200-16c0-4225-99a8-9bce91ec3e43",
+-     "confirmed",
+-   ],
+-   [
+-     "9e14747e8018e1c6575bdb2079632407cce7c922936d711b7d3c4a27a61d7e69",
+-     "4d90738a-61a2-451f-a0ad-7ad806cb058d",
+-     "confirmed",
+-   ],
+-   [
+-     "a9865e8124d1c5a7f8bc9e40258bb75c035689ad8cd0090c51554e9e306769a1",
+-     "8e647236-4bc7-47ae-9e13-70f94f23c878",
+-     "confirmed",
+-   ],
+-   [
+-     "ac5ad79a2c674b71c5af4cea68a8a1f3f15b4b98b7d9ca54205eaf44feb0cc2a",
+-     "ad704892-a3d0-4486-bef1-a4e7ff57a09b",
+-     "confirmed",
+-   ],
+-   [
+-     "b1b256fb71d2868ccba1e513f23ad7402234b5c783d493929884f501b9fff071",
+-     "600e8efe-dc27-4985-939d-422a37ca2388",
+-     "confirmed",
+-   ],
+-   [
+-     "b4c6a3406af3f279909b9a46e94083d6977ffe7f5c1ad1323b263c000ed4d1e4",
+-     "327a49b6-992d-40fb-95b3-cba0afe374c3",
+-     "confirmed",
+-   ],
+-   [
+-     "ba552b909e87acca2fc2404ecc8b3ceaf95929fee7a97d239ee1ebf126492290",
+-     "86bbde58-33ef-475d-a67d-6a9865e059fc",
+-     "confirmed",
+-   ],
+-   [
+-     "bae99d9450b32cb99bb13f9b8d03e52326d40de0e57dca35123087332f77ed61",
+-     "c9e94a52-4f05-4cb2-85d2-3ed7600ab1b8",
+-     "confirmed",
+-   ],
+-   [
+-     "beb05b949762ca76e052d0965ef343347386320fb1b63b10ee55cab0b034c864",
+-     "12107083-6850-4c96-a2de-93515f96c064",
+-     "confirmed",
+-   ],
+-   [
+-     "c0e9907fa689abc9c0745901ac5d8df480bf3b325beb6459d89f5a9cea49064f",
+-     "fbd420a0-2bfd-4e5b-adae-9942e8a15b1d",
+-     "confirmed",
+-   ],
+-   [
+-     "c438a39165ac877c4d3fbfcfb15dfb5d4f217589830f00c815d2c5db1768ae19",
+-     "4baafb7e-8b98-48cb-8886-6551e0028e28",
+-     "confirmed",
+-   ],
+-   [
+-     "ce2bcd54726d1f72b0219e5050fbd3dc74d5f2f203a6c8001e9c9cd21a7d71f8",
+-     "d6b3f9f7-d49f-459f-a929-722d275eebe3",
+-     "confirmed",
+-   ],
+-   [
+-     "ce30a516f9be84fc211a3209b7103ecf1752ae9ed26a14a478c7433aec904340",
+-     "fe55ad08-8f36-4e8e-906d-a11517156ec6",
+-     "confirmed",
+-   ],
+-   [
+-     "d3fa05b623892570f3b85771914202de56d58fb2dc6028d279d2b1f2c20efbb8",
+-     "623465b2-078e-4a51-8e3d-d9891efab1d9",
+-     "confirmed",
+-   ],
+-   [
+-     "d46c943568edd8b7d17b835a315af53cb56e4a9ad8ac3c657667ff495c07cdea",
+-     "c2d4cc9a-f37c-4883-9059-b87ae0afa208",
+-     "confirmed",
+-   ],
+-   [
+-     "d7ab87412bcc36dfcbcc0dc525afd375ec678e74b8be50d3771f6f3c92dd728c",
+-     "8d1e22ea-907b-4e22-82c2-06e4ae4ec7c9",
+-     "confirmed",
+-   ],
+-   [
+-     "dd3ec71903a4168380118507d752e295e60cc8e8526ea98488cd528e9b98e770",
+-     "f228d4ee-9701-408a-8a26-2301466859ee",
+-     "confirmed",
+-   ],
+-   [
+-     "df7ca6931cef9734c38768bfe762b7a134f54cb6b9bd1a6226474e521754554c",
+-     "132893a1-8f8b-44d7-8d4f-7888a9d1c10f",
+-     "confirmed",
+-   ],
+-   [
+-     "e411bcf40d6ba3f62724fe73221d7fd776664dc9c60aa2874642c278c30158a4",
+-     "c1b40b03-4455-4b8f-b9e3-7ad16bb26a82",
+-     "confirmed",
+-   ],
+-   [
+-     "eda835a8b2c15b0c985d748e0c22a7f56aa679e629a1583fade123d58da12960",
+-     "ed7ca609-0e58-445e-9ede-20977f90bf27",
+-     "confirmed",
+-   ],
+-   [
+-     "ee2bc8ecc206a91f1f3bed25d46a942798fe9d4c2a8fcd3742077ef32590ad5e",
+-     "1ca91ede-02bf-4245-b75e-1897e9d53874",
+-     "confirmed",
+-   ],
+-   [
+-     "f43aa2662cd75017b403c1fa5f003a4ccdf9118f6590ae26efadaebffb1f6c5b",
+-     "b7810eb1-5e45-4042-96b7-330539287790",
+-     "confirmed",
+-   ],
+-   [
+-     "faa16608ed0196c7224c38be2735320739468b83f4d8795b05501be7c9cb9819",
+-     "db99af04-ebfe-4b46-8001-c4df9a25247d",
+-     "confirmed",
+-   ],
+- ]
++ []
+
+ ❯ test/workers/slip-drafts.test.ts:201:76
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  01:47:45
+   Duration  1.99s (transform 702ms, setup 1.41s, import 33ms, tests 61ms, environment 0ms)
+

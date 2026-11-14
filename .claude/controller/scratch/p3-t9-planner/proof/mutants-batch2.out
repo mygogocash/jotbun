@@ -1,0 +1,12 @@
+K17 killed (assertion): Haiku's effort is low (the moved base) [routing] -> 1 failed | 6 passed (7)
+K18 killed (assertion): Opus is given fewer tools [escalation] -> 1 failed | 12 passed (13)
+K19 killed (assertion): Opus's first message differs from Haiku's [escalation] -> 3 failed | 10 passed (13)
+K20 killed (assertion): a tool's numbers do not reach the grounding check [escalation] -> 3 failed | 10 passed (13)
+K21 killed (assertion): a tool's figures are dropped [escalation] -> 5 failed | 8 passed (13)
+K22 killed (assertion): the plain figures prefer Haiku's to Opus's [escalation] -> 1 failed | 12 passed (13)
+K23 killed (assertion): the plain figures never fall back to Haiku's [escalation] -> 1 failed | 12 passed (13)
+K24 killed (assertion): the plain figures say Haiku (the P3-T6 review's X1 and X2) [escalation] -> 4 failed | 9 passed (13)
+K25 killed (assertion): the plain figures after Opus say escalated false [escalation] -> 3 failed | 10 passed (13)
+K26 killed (assertion): Opus's grounded answer says Haiku [escalation] -> 4 failed | 9 passed (13)
+K27 killed (assertion): Opus's grounded answer says escalated false [escalation] -> 4 failed | 9 passed (13)
+11 of 11 killed; survivors []; other failures []; not restored []

@@ -1,0 +1,48 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 27ms
+     × the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the single read keeps P3-T8's shape > the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from
+AssertionError: expected { today: '2026-10-25', locale: 'th' } to deeply equal { today: '2026-10-25', …(3) }
+
+- Expected
++ Received
+
+  {
+-   "categories": [
+-     {
+-       "id": "0c000000-0000-4000-8000-000000000002",
+-       "name": "ข้าวกลางวัน",
+-       "type": "expense",
+-     },
+-   ],
+    "locale": "th",
+    "today": "2026-10-25",
+-   "wallets": [
+-     {
+-       "id": "0c000000-0000-4000-8000-000000000001",
+-       "name": "กระเป๋าลับ",
+-     },
+-   ],
+  }
+
+ ❯ test/slip-read-import.test.ts:514:50
+    512|       expect(model.calls).toHaveLength(1)
+    513|       expect(model.calls[0]).toMatchObject({ system: SLIP_SYSTEM, outp…
+    514|       expect(JSON.parse(textOf(model.calls[0]))).toEqual({ today: TODA…
+       |                                                  ^
+    515|     }
+    516|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:18
+   Duration  243ms (transform 70ms, setup 0ms, import 116ms, tests 27ms, environment 0ms)
+

@@ -1,0 +1,176 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:50307) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:50308) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/lock/Lock.render.test.tsx > with the lock on, the app opens locked and the app below is hidden from screen readers 80ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a successful scan unlocks; a cancel stays locked and says try again 23ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > under the lock Android's back does nothing, so no screen, and no draft on it, leaves under the lock 26ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a lockout says to use the passcode 20ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an unavailable answer re-reads the phone and stays locked while it can still lock 10ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > when the phone can no longer lock, the lock turns off once and says why 40ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > the list shows each wallet with its kind line and amount, the add tile and the archived count 130ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > unarchive sends one command and the wallet returns 72ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an open tray, then a return from the background, shows no tray content 31ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with a tray or a sheet open, the lock screen is drawn inside its own cover, and unlocking there brings it back 69ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > an unarchive whose answer is lost offers Try again under the same key; a refusal says so; a wallet changed on another device says so and is read again 119ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the cover shows no amount and no text 26ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > each opening asks once by itself: the prompt's own inactive asks nothing, a press while a prompt is up asks nothing, every return from the background asks again, and an answer to an earlier opening is dropped 44ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > until the setting is read the app is covered and nothing asks; a setting that cannot be read counts as on 27ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that throws, or a phone that cannot be read after an unavailable answer, never opens the app 17ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the locked screen names the method: Face ID with its passcode link, a fingerprint, or the passcode alone 19ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock on asks to authenticate first and stays off when that fails 41ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning it off asks too 41ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a phone without a passcode cannot turn the lock on, and says why 47ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup screen reads the phone again when it opens, and again each time the app is back in front 35ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the switch asks one prompt at a time, from the gate itself 41ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a prompt that finds the phone can no longer lock: turning the lock on leaves it off and says why; turning it off turns it off and says so 44ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > reorder moves a wallet up and keeps the order front-first for this account 419ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > ?reorder=1 opens the reorder tray 52ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the setup step: the step line, the question and body by method, a masked card, and Next, which keeps the answer and goes back; from Settings, no step and no Next 99ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > every row and arrow is at least 44 pt, and each arrow names its wallet 145ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > Settings shows the lock row only in the wallet area 176ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > when the credit cards have spent more than is held, the total is below zero and says so 10ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > a row opens its wallet, the add tile a new wallet that comes back here, and back goes back or home 13ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > private mode hides every amount on the list, and each row says only that its amount is hidden 27ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > every button and the switch are at least 44 pt 29ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the wallet root mounts the lock with the app's own port only while the wallet area is on 13ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the lock's sections come after the tray's, together, and each draws its screen on a setting it holds 37ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > with the receipt photo open, a return from the background shows the lock screen inside its own cover, and nothing of the photo 33ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > at AX5 a row moves its amount under its name, and the longest name and the largest amount wrap 72ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > a load problem says so in today's words, and Try again reads the wallets again 51ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the first prompt waits until the phone has said how it locks, so it asks in its words; a phone that cannot be read is asked in the passcode's 32ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > back in front while an earlier prompt is up, the new opening asks by itself once that prompt answers 54ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the turned-off notice stays until it is closed, however long it is up 14ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an answer outside the port's types counts as a failed scan: the note says try again, and the button asks again 21ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > the wallets list's sections come right after the saved moment's, and each opens in its state on the catalogue's own account 107ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a reading outside the port's types counts as a phone that could not be read: the lock stays on, and the screen names the passcode 18ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > the switch leaves the lock as it was after a scan that fails or locks out, turning it on or off 85ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock off, an unavailable answer on a phone that can still lock keeps the lock on and says nothing 23ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > asking to turn the lock on while it is on, or off while it is off, asks nothing 24ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > turning the lock on holds only once it is stored: a store that cannot keep it leaves the switch off and says so 37ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > while the cover is up the app below says nothing on iOS; the lock's own notes are said, and the app speaks again once unlocked 41ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > becoming hidden puts the keyboard away, so no typing reaches the screen under the cover 35ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > an app launched behind asks only once it is in front 15ms
+ ✓ src/wallet/lock/Lock.render.test.tsx > a setting that cannot be read, on a phone that cannot lock, opens the app with no notice; a lock turned on since is said 37ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > opening and closing the reorder tray keeps nothing; each press keeps the order once 370ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > the route mounts no looks provider of its own, so a press reaches the provider around it 39ms
+ ✓ src/wallet/wallets/WalletsList.render.test.tsx > wallets the kept order does not name follow by name, as the device diary sorts names 14ms
+(node:50405) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:50407) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/card/CardStack.render.test.tsx > the stack is 54 pt per card plus one whole card 74ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > by day each card casts bw-home's shadow up onto the card behind it; at night, and in the list, none 42ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > pressing a card plays the walletOpen tick and opens that wallet at once 44ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > typing 5 and 0 shows ฿50 and enables Next 166ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > under reduced motion the card opens with no lift 44ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > at full motion a pressed card lifts 12 pt on the gentle spring and settles back in its place; the others stay 33ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > at AX5 the stack is a list with the front card first, and nothing truncates 18ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the keypad's problem shows right under the amount in today's words, and Next waits for an amount it can save 112ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > screen readers meet the cards in the drawn order, each a button with its card's words 62ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > a wallet added later joins the front of the stack at once: the stack plays no drop 13ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > a bank account below zero keeps its minus in the stack and in the list, in words and on screen (P2-T11's review, K5) 9ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > each card's place in the window is known after layout, measured again when the stack lays out, and forgotten when the card leaves 26ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > one view per wallet id: the last registered answers, and a view that leaves never forgets another; outside a provider nothing is kept 18ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > income asks เข้า{wallet} and ชื่อรายการ, and says it is not counted in the budget 141ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > a transfer's amount stands alone, and its Next goes on to choose the two wallets 24ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > the catalogue's stack sections come after the kit's and draw bw-home's stack; the largest-text one is the list at AX5 31ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > a VoiceOver double tap on a card behind the front one runs that card's own press, once (M1) 12ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > a new order keeps each card its own frame, in the stack and in the list: the cards are keyed by wallet 18ms
+ ✓ src/wallet/card/CardStack.render.test.tsx > a view that comes back answers only what is measured after it is back, and frameOf is exactly null until then 0ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > บอกบัน shows only when Bun is on in the companion area 66ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > at AX5 the chips are full-width rows and ฿999,999,999.99 never truncates 42ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the pinned parts leave the middle room: at AX5 the header is the title and the switch sits under the amount and its problem; the footer is the keys and Next 72ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > while income's name field has focus the footer is Next alone, and the keys come back when it lets go, when the keyboard hides and when it leaves 45ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > every key, chip, segment and field is at least 44 pt 112ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the type switch is one named radio group: a new type ticks once and is chosen, and the chosen one does nothing 33ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the keypad types through today's rules: 000 on nothing is one 0, delete takes one digit, each key ticks once, and a disabled keypad takes nothing 33ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > a fill starts over at the first key: a digit begins a new amount and delete clears it, so satang never meets a point the keypad cannot type 62ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the quick chips: at most three, each says its name and amount, and a tap fills the entry through apply 9ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > private mode hides the chips' amounts and a filled amount until a key is pressed, never the amount being typed 29ms
+(node:50456) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/tray/Tray.render.test.tsx > the tray is a named dialog, 8 pt from the edges, radius 34 74ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > close and the backdrop close it, and the title takes focus when it opens 9ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > while locked nothing closes it, and close says it is unavailable 12ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at AX5 it opens full height 13ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under reduced motion a new step shows at once 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the card leaves before the Modal hides, then onClosed fires once 24ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > an onClosed given while the card leaves is the one called 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a hidden lock cover replaces the tray's content 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > under the lock cover nothing asks to close the tray 5ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a drag the lock cover cuts off is gone when the cover lifts 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a card that leaves stays where the finger let it go, even when the lock cover comes and goes 5ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the main button is 54 pt tall, radius 16, ink with white text in light and light with ink text in dark; busy says its busy label 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > every control in the header is at least 44 pt 29ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the swipe follows the finger down, springs back short of the line, and closes past it 15ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the wallet's answer decides the swipe's spring back, not Reanimated's own setting (W6) 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a swipe the system cancels springs back, even past the line 7ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > at full motion the card springs up, and a step change morphs its height and ticks once; opening ticks nothing 10ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > opening at another step in one render, or a step change under the lock cover, ticks nothing 9ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > once the lock cover lifts a step change ticks, even when it lifted on the step it had under the cover 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on a phone the card is the named dialog and the title takes focus, with or without a header; on iOS onClosed waits for the Modal's own dismissal 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends after the tray is shown again says nothing; the next one says it closed 11ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that opens the tray again says nothing 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a dismissal that ends in the commit that hides the tray again says nothing; its own end says it closed 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS a tray with no onClosed closes, its dismissal ends, and it opens again 8ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > on iOS the end calls the onClosed given while the dismissal was under way, once, and never the earlier one 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a text link is at least 44 pt, violet by default or ink, and says its words 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > a header takes the title's place, and screen readers meet the title first 6ms
+ ✓ src/wallet/tray/Tray.render.test.tsx > the catalogue's tray sections come after the kit's, and each tray opens at once 21ms
+ ✓ src/wallet/add/AmountStep.render.test.tsx > the add tray's sections come right after the tray's, and each opens at once on its board's words 525ms
+(node:50505) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a kept look, the wallet order and a category's icon go to this account's store, and two quick changes keep each other 21ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change waits for the account's first read, so the read never hides it 5ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > when the account changes, nothing of the last one shows, its late read is dropped, and a change stays with the account it was made in 12ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a name the store cannot read is never written over, and what fails to store still shows until the app closes 13ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change whose write failed still shows after a later change to the same name is stored, and the store holds only what was stored 3ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change made while its name could not be read still shows after the store reads again and a later change to it is stored 2ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a later change wins over one that was never stored, at every later read of the account's names 5ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a change made from a child's mount effect, whose write fails, still shows once the account's first read lands 3ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > outside the provider looks are derived, no order or icon is kept, and the setters keep nothing 0ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > Bun's five faces are wc-wallet-edit's: cream with an ink outline in both modes, and hidden from screen readers 26ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > each material is materialPaint's gradient from corner to corner, its own in each mode, and only dark titanium has an edge 23ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > a category's tile is its glyph in ink on its hue tinted, or on raised, else its initial; 36 pt with an 11 pt corner, in proportion at 52 14ms
+ ✓ src/wallet/looks/WalletLooks.render.test.tsx > the kit's catalogue sections draw the materials, the cards and the category icons, and the card section's private card never touches the phone's setting 29ms
+(node:50506) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the eye hides every amount and the choice survives a restart 39ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the eye says what it will do, at 44 pt 22ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the tip shows the first time only 20ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > toggling sends one private_mode_toggled with no properties 10ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > each tap tells VoiceOver what changed (ax-voiceover) 10ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > until the setting is read, amounts stay hidden and the eye waits; a store that cannot answer shows them 17ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > outside the wallet root amounts show, and the eye changes nothing 4ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > the catalogue's private section pins its own preview and never touches the phone's setting 18ms
+ ✓ src/wallet/privacy/PrivateMode.render.test.tsx > an icon button is 44 pt and named; a disabled one says so and does nothing 3ms
+(node:50555) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+stderr | src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale
+Bun setting could not be saved.
+Language choice could not be saved.
+
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness nests the providers as the app does 20ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > reducedMotion: 'pending' reads as reduced until answerReducedMotion(false) 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts what it is given: the language, the mode, the text size, the answer and its own fakes 8ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the wallet's two stores live in memory: seeds by scope, every change in stored, and the sign-out erase keeps the account's 2ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part mounted after the answer reads it at mount, since rerender keeps the providers 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the bun intensity can change inside the harness, and a language chosen there leaves the mount in its own locale 3ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > a part that asks the phone itself gets the answer the root gets 2ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the harness mounts the wallet's looks innermost, kept for the diary's account 4ms
+ ✓ src/wallet/testing/walletHarness.render.test.tsx > the catalogue lists the Bun Wallet's sections last, each with a bw- id and a 'Bun Wallet: ' title (R72) 1ms
+
+ Test Files  8 passed (8)
+      Tests  142 passed (142)
+   Start at  00:44:15
+   Duration  5.52s (transform 1.38s, setup 251ms, import 3.32s, tests 5.76s, environment 602ms)
+

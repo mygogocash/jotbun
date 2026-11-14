@@ -1,0 +1,97 @@
+## step 0 RUN: mkdir -p S
+## exit 0
+## step 0 SKIP: /usr/bin/git -C WT fetch origin claude/p1a-vault-core
+## step 0 SKIP: /usr/bin/git -C WT merge --no-edit origin/claude/p1a-vault-core
+## step 0 SKIP: /usr/bin/git -C WT log --oneline -1 --grep "Merge pull request #461"
+## step 0 SKIP: /usr/bin/git -C WT rev-parse --short HEAD
+## step 0 RUN: cd PL && shasum -a 256 -c SHA256SUMS > S/kit-sums.log 2>&1; rc=$?; echo "rc=$rc"; grep -c ': OK$' S/kit-sums.log
+## exit 0
+rc=0
+28
+## step 0 RUN: cd WT && shasum -a 256 -c PL/base-check.sha256
+## exit 0
+apps/edge/src/server/ai/prompts.ts: OK
+apps/edge/src/v1/ai/slip-read.ts: OK
+## step 0 RUN: cd WT && for f in $(cat PL/base-absent.txt); do test -e "$f" && echo "EXISTS $f"; done; echo checked
+## exit 0
+checked
+## step 0 RUN: cd WT && { test -d node_modules || npm ci --ignore-scripts --no-audit --no-fund; }
+## exit 0
+## step 0 RUN: cd WT && { test -d apps/edge/node_modules || npm run install:edge; }
+## exit 0
+## step 0 RUN: cd WT && npm run typecheck:edge > S/typecheck-0-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 1 RUN: PL/place.sh red WT
+## exit 0
+red: real/apps/edge/src/server/ai/prompts.ts
+red: stubs/apps/edge/src/v1/ai/slip-read.ts
+red: stubs/apps/edge/src/v1/ai/slip-import.ts
+red: real/apps/edge/test/slip-read-import.test.ts
+red: 4 files placed
+## step 2 RUN: cd WT && npm run typecheck:edge > S/red-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 3 RUN: cd WT/apps/edge && npx vitest run --reporter=verbose test/slip-read-import.test.ts > S/red-node.log 2>&1; echo "rc=$?"; grep -E "Tests  " S/red-node.log; grep -oE "^[A-Za-z]+Error: " S/red-node.log | sort -u
+## exit 0
+rc=1
+      Tests  47 failed | 1 passed (48)
+AssertionError: 
+## step 3 RUN: grep -E "^ +× " S/red-node.log | sed 's/ [0-9]*ms$//' | sed 's/^ *× test\///' | LC_ALL=C sort | diff - PL/proof/red-failing.txt && echo "the 47 failing cases match"
+## exit 0
+the 47 failing cases match
+## step 4 RUN: PL/place.sh green WT
+## exit 0
+green: real/apps/edge/src/server/ai/prompts.ts
+green: real/apps/edge/src/v1/ai/slip-read.ts
+green: real/apps/edge/src/v1/ai/slip-import.ts
+green: real/apps/edge/test/slip-read-import.test.ts
+green: 4 files placed
+## step 5 RUN: cd WT && npm run typecheck:edge > S/green-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 5 RUN: cd WT/apps/edge && npx vitest run --reporter=verbose test/slip-read-import.test.ts > S/green-node.log 2>&1; echo "rc=$?"; grep -E "Test Files|Tests  " S/green-node.log
+## exit 0
+rc=0
+ Test Files  1 passed (1)
+      Tests  48 passed (48)
+## step 5 RUN: PL/locked.sh S/green-workers.log WT/apps/edge npx vitest run --config vitest.workers.config.ts --reporter=verbose test/workers/slip-read.test.ts test/workers/ai-uses.test.ts test/workers/ai.test.ts test/workers/ai-routing.test.ts test/workers/ask-escalation.test.ts; rc=$?; echo "rc=$rc"; grep -E "Test Files|Tests  " S/green-workers.log
+## exit 0
+locked
+exit 0; unlocked
+rc=0
+ Test Files  5 passed (5)
+      Tests  126 passed (126)
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch 1 > S/mutants-batch1.out 2>&1; echo "rc=$?"; tail -1 S/mutants-batch1.out; grep -c "killed (assertion)" S/mutants-batch1.out
+## exit 0
+rc=0
+35 of 35 killed; survivors []; other failures []; not restored []
+35
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch 2 > S/mutants-batch2.out 2>&1; echo "rc=$?"; tail -1 S/mutants-batch2.out; grep -c "killed (assertion)" S/mutants-batch2.out
+## exit 0
+rc=0
+20 of 20 killed; survivors []; other failures []; not restored []
+20
+## step 6 RUN: cd PL && python3 -I mutants.py --tree WT --out S/mutants --batch 3 > S/mutants-batch3.out 2>&1; echo "rc=$?"; tail -1 S/mutants-batch3.out; grep -c "killed (assertion)" S/mutants-batch3.out
+## exit 0
+rc=0
+3 of 3 killed; survivors []; other failures []; not restored []
+3
+## step 6 SKIP: /usr/bin/git -C WT status --short
+## step 7 RUN: PL/place.sh receipt WT
+## exit 0
+receipt: real/docs/implementation/receipts/P4-T4.md
+receipt: 1 files placed
+## step 8 RUN: cd PL && for f in $(grep -v '^#' files.txt | awk '{print $3}'); do cmp -s "real/$f" "WT/$f" || echo "DIFFERS $f"; done; echo compared
+## exit 0
+compared
+## step 9 RUN: cd WT && npm run typecheck:edge > S/gate-typecheck-edge.log 2>&1; echo "rc=$?"
+## exit 0
+rc=0
+## step 9 RUN: cd WT && npm run test:edge > S/gate-test-edge.log 2>&1; echo "test:edge rc=$?"
+## exit 0
+test:edge rc=0
+## step 9 RUN: cd WT && npm run build:edge > S/gate-build-edge.log 2>&1; echo "build:edge rc=$?"
+## exit 0
+build:edge rc=0
+## step 9 SKIP: /usr/bin/git -C WT diff --check

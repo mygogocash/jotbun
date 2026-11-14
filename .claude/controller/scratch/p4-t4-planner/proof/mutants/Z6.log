@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 28ms
+     × a day is real and from 1970-01-01 to the day after today, else null with date_guessed 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a day is real and from 1970-01-01 to the day after today, else null with date_guessed
+AssertionError: 1969-12-31: expected { amount_minor: '125050', …(5) } to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,8 @@
+  {
+    "amount_minor": "125050",
+-   "flags": [
+-     "date_guessed",
+-   ],
++   "flags": [],
+    "from": {
+      "account_last4": "1234",
+      "bank": "kbank",
+      "name": "นาย กานต์ ใจดี",
+    },
+
+ ❯ test/slip-read-import.test.ts:414:57
+    412|     ]
+    413|     for (const [date, day] of rows) {
+    414|       expect(sanitized(answer({ date })), String(date)).toEqual({ ...R…
+       |                                                         ^
+    415|     }
+    416|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:22
+   Duration  264ms (transform 76ms, setup 0ms, import 128ms, tests 28ms, environment 0ms)
+

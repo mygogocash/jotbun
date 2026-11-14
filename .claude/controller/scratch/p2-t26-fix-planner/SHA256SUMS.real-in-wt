@@ -1,0 +1,7 @@
+c6d2de75fce3efd571542eb35c12c7d3194eacead72c4048e2c3aaea843b804b  apps/app/src/wallet/records/WalletRecordScreen.tsx
+a6cb1de4b80c6441e0130b1bbb24a95103063289b18856d4c89e62c56a30b834  apps/app/src/wallet/records/WalletUndoBar.tsx
+40015a46ab7d0497c4173d94e6e70e7abe547d8ee280c2c63226be8451e41d7e  apps/app/src/dev/catalogue/wallet/recordScreens.tsx
+58fad79ea83ad9f52483a378025d3edf5b413dc7d5557e6d9e38a93e54e3d491  apps/app/src/wallet/records/WalletRecord.render.test.tsx
+d431b3f25081a953146a62f071e36147cac2c396fca297920c42f588db0649ff  apps/app/src/wallet/records/WalletRecordReceipt.render.test.tsx
+d2954209923ac28b74be574a852b28d145cccc1cbbc1c8c7dafdb2c983583a24  docs/implementation/receipts/P2-T26.md
+504544bc4ca2ecfdf98c97f1eab825718368286c406b5ce70de156fd5ce73e7c  docs/implementation/receipts/P2-T26-fix.md

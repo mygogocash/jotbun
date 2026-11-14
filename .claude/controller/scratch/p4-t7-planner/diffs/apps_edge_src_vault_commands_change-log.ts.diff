@@ -1,0 +1,24 @@
+--- a/apps/edge/src/vault/commands/change-log.ts
++++ b/apps/edge/src/vault/commands/change-log.ts
+@@ -14,9 +14,10 @@
+  * shape, and must fit MAX_CHANGE_GROUP_BYTES. The revision is bumped in
+  * sync_state, then each change is written, and each entity head moves forward
+  * (never backwards, never out of purged). Any throw rolls the call back. The
+- * revision stays text from the database to the caller, so it is never a number.
++ * revision stays text from the database to the caller, so it is never a number. It reads only the
++ * SQL, the clock and the registry, so the alarm's slip prune commits through it too (P4-T7).
+  */
+-export function appendChanges(c: VaultContext, commandId: string, changes: readonly EntityChange[]): Revision {
++export function appendChanges(c: Pick<VaultContext, 'sql' | 'now' | 'registry'>, commandId: string, changes: readonly EntityChange[]): Revision {
+   if (changes.length === 0 || changes.length > MAX_CHANGES) throw new Error(`A command commits 1-${MAX_CHANGES} changes.`)
+   // Validate exactly what will be stored: the JSON text, parsed back (a toJSON
+   // or a getter cannot show the validator one thing and store another).
+@@ -66,7 +67,7 @@
+ }
+ 
+ /** Each change checked against its entity's registered DTO, with no entity repeated in the group (ChangeWriter.validate). */
+-function validateChanges(c: VaultContext, changes: readonly EntityChange[]): EntityChange[] {
++function validateChanges(c: Pick<VaultContext, 'registry'>, changes: readonly EntityChange[]): EntityChange[] {
+   const seen = new Set<string>()
+   return changes.map((change, index) => {
+     const definition = c.registry.entity(change.entity)

@@ -1,0 +1,349 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 4 failed) 746ms
+     × a complete slip is read once by Haiku 35ms
+     × Opus re-reads when the amount does not parse 22ms
+     × Opus re-reads when the date is implausible (next year) 22ms
+     × Opus re-reads when a slip has no receiver 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > a complete slip is read once by Haiku
+AssertionError: expected { model: 'claude-haiku-5-5', …(4) } to match object { model: 'claude-haiku-5-5', …(2) }
+(21 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -5,129 +5,10 @@
+      "effort": "medium",
+      "format": {
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+-           "bank": {
+-             "anyOf": [
+-               {
+-                 "type": "string",
+-               },
+-               {
+-                 "type": "null",
+-               },
+-             ],
+-           },
+-           "drafts": {
+-             "items": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "amount_baht": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "category_id": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "confidence": {
+-                   "enum": [
+-                     "high",
+-                     "medium",
+-                     "low",
+-                   ],
+-                   "type": "string",
+-                 },
+-                 "date": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "flags": {
+-                   "items": {
+-                     "enum": [
+-                       "amount_unclear",
+-                       "multiple_amounts",
+-                       "date_guessed",
+-                       "category_guessed",
+-                       "wallet_guessed",
+-                       "not_money",
+-                     ],
+-                     "type": "string",
+-                   },
+-                   "type": "array",
+-                 },
+-                 "merchant": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "note": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "type": {
+-                   "enum": [
+-                     "expense",
+-                     "income",
+-                   ],
+-                   "type": "string",
+-                 },
+-                 "wallet_id": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-               },
+-               "required": [
+-                 "type",
+-                 "amount_baht",
+-                 "date",
+-                 "category_id",
+-                 "wallet_id",
+-                 "merchant",
+-                 "note",
+-                 "confidence",
+-                 "flags",
+-               ],
+-               "type": "object",
+-             },
+-             "type": "array",
+-           },
+            "kind": {
+              "enum": [
+                "slip",
+                "receipt",
+                "unreadable",
+@@ -135,12 +16,16 @@
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+-           "drafts",
+-           "bank",
++           "amount_baht",
++           "date",
++           "time",
++           "from",
++           "to",
++           "flags",
+          ],
+          "type": "object",
+        },
+        "type": "json_schema",
+      },
+
+ ❯ test/workers/slip-read.test.ts:127:19
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the amount does not parse
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when the date is implausible (next year)
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > Opus re-reads when a slip has no receiver
+AssertionError: expected { model: 'claude-opus-5-5', …(6) } to match object { model: 'claude-opus-5-5', …(4) }
+(21 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -9,129 +9,10 @@
+      "effort": "medium",
+      "format": {
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+-           "bank": {
+-             "anyOf": [
+-               {
+-                 "type": "string",
+-               },
+-               {
+-                 "type": "null",
+-               },
+-             ],
+-           },
+-           "drafts": {
+-             "items": {
+-               "additionalProperties": false,
+-               "properties": {
+-                 "amount_baht": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "category_id": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "confidence": {
+-                   "enum": [
+-                     "high",
+-                     "medium",
+-                     "low",
+-                   ],
+-                   "type": "string",
+-                 },
+-                 "date": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "flags": {
+-                   "items": {
+-                     "enum": [
+-                       "amount_unclear",
+-                       "multiple_amounts",
+-                       "date_guessed",
+-                       "category_guessed",
+-                       "wallet_guessed",
+-                       "not_money",
+-                     ],
+-                     "type": "string",
+-                   },
+-                   "type": "array",
+-                 },
+-                 "merchant": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "note": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-                 "type": {
+-                   "enum": [
+-                     "expense",
+-                     "income",
+-                   ],
+-                   "type": "string",
+-                 },
+-                 "wallet_id": {
+-                   "anyOf": [
+-                     {
+-                       "type": "string",
+-                     },
+-                     {
+-                       "type": "null",
+-                     },
+-                   ],
+-                 },
+-               },
+-               "required": [
+-                 "type",
+-                 "amount_baht",
+-                 "date",
+-                 "category_id",
+-                 "wallet_id",
+-                 "merchant",
+-                 "note",
+-                 "confidence",
+-                 "flags",
+-               ],
+-               "type": "object",
+-             },
+-             "type": "array",
+-           },
+            "kind": {
+              "enum": [
+                "slip",
+                "receipt",
+                "unreadable",
+@@ -139,12 +20,16 @@
+              "type": "string",
+            },
+          },
+          "required": [
+            "kind",
+-           "drafts",
+-           "bank",
++           "amount_baht",
++           "date",
++           "time",
++           "from",
++           "to",
++           "flags",
+          ],
+          "type": "object",
+        },
+        "type": "json_schema",
+      },
+
+ ❯ test/workers/slip-read.test.ts:153:18
+    151|     expect(modelsAsked()).toEqual(['claude-haiku-5-5', 'claude-opus-5-…
+    152|     const [haiku, opus] = model.calls
+    153|     expect(opus).toMatchObject({
+       |                  ^
+    154|       model: 'claude-opus-5-5',
+    155|       max_tokens: 8_000,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 42 passed (46)
+   Start at  01:28:43
+   Duration  2.85s (transform 819ms, setup 1.60s, import 36ms, tests 746ms, environment 0ms)
+

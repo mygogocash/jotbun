@@ -1,0 +1,54 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 3ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 11ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 9ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 2ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 3ms
+   → expected [ [ …(2) ], …(5) ] to deeply equal [ [ …(2) ], …(5) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space
+AssertionError: expected [ [ …(2) ], …(5) ] to deeply equal [ [ …(2) ], …(5) ]
+
+- Expected
++ Received
+
+@@ -15,11 +15,11 @@
+      "ÉCOLE",
+      "École",
+    ],
+    [
+      "สาขา ๑๒/3",
+-     "สาขา ๑๒ 3",
++     "สาขา 3",
+    ],
+    [
+      "7-ELEVEN!!!(สาขา)",
+      "7-eleven สาขา",
+    ],
+
+ ❯ test/workers/catalog.test.ts:299:62
+    297|       ['7-ELEVEN!!!(สาขา)', '7-eleven สาขา'],
+    298|     ]
+    299|     expect(cases.map(([text]) => [text, merchantKey(text)])).toEqual(c…
+       |                                                              ^
+    300|   })
+    301| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+   Start at  19:50:25
+   Duration  2.57s (transform 955ms, setup 1.93s, import 17ms, tests 36ms, environment 0ms)
+

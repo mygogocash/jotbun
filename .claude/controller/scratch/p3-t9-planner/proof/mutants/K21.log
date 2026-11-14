@@ -1,0 +1,178 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 5 failed) 332ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 40ms
+     × five Haiku tool turns without an answer go to Opus 28ms
+     × when Opus is not grounded either, the plain figures answer 27ms
+     × a Haiku outage never reaches Opus 27ms
+     × an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+  {
+    "answer": "This month you spent ฿60 on food.",
+    "escalated": true,
+-   "figures": [
+-     {
+-       "amount_minor": "6000",
+-       "count": 1,
+-       "label": Any<String>,
+-       "scope": {
+-         "category_id": "1fc2d7aa-01d8-8922-a20f-0946dc169be9",
+-         "from": "2026-11-01",
+-         "through": "2026-11-13",
+-         "type": "expense",
+-       },
+-     },
+-   ],
++   "figures": [],
+    "model": "claude-opus-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:84:29
+     82|     const res = await ask(who.user)
+     83|     expect(res.status).toBe(200)
+     84|     expect(await body(res)).toEqual({
+       |                             ^
+     85|       answer: 'This month you spent ฿60 on food.',
+     86|       figures: [{ label: expect.any(String), amount_minor: '6000', cou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+AssertionError: expected { …(5) } to match object { …(5) }
+
+- Expected
++ Received
+
+  {
+    "answer": "This month you spent ฿60 on food.",
+    "escalated": true,
+-   "figures": [
+-     {
+-       "amount_minor": "6000",
+-     },
+-   ],
++   "figures": [],
+    "model": "claude-opus-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:119:20
+    117|     const answer = await body(await ask(who.user))
+    118|     // Opus's answer, with the one figure its own tool read.
+    119|     expect(answer).toMatchObject({ answer: 'This month you spent ฿60 o…
+       |                    ^
+    120|     expect(answer.figures).toHaveLength(1)
+    121|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "escalated": true,
+-   "figures": [
+-     {
+-       "amount_minor": "10000",
+-       "count": 2,
+-       "scope": {
+-         "category_id": null,
+-       },
+-     },
+-   ],
++   "figures": [],
+    "model": "rules",
+    "source": "facts",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:130:20
+    128|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    129|     const answer = await body(await ask(who.user))
+    130|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    131|     // Opus's figures, not Haiku's.
+    132|     expect(answer.figures).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+AssertionError: expected 503 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 503
+
+ ❯ test/workers/ask-escalation.test.ts:145:26
+    143|       model.push(total(who.food), apiFailure(429, { 'retry-after': '40…
+    144|       const res = await ask(who.user)
+    145|       expect(res.status).toBe(200)
+       |                          ^
+    146|       expect(await body(res)).toMatchObject({ source: 'facts', model: …
+    147|       expect(modelsAsked()).toEqual([HAIKU, HAIKU])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected { code: 'AI_PAUSED', …(3) } to match object { source: 'facts', …(3) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "escalated": true,
+-   "figures": [
+-     {
+-       "amount_minor": "6000",
+-     },
+-   ],
+-   "model": "rules",
+-   "source": "facts",
++   "code": "AI_PAUSED",
++   "message_key": "errors.ai_paused",
++   "request_id": "41dd7c42-b2f4-46c4-b9a8-d62b77b5ae5b",
++   "retry_after_seconds": 300,
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:162:45
+    160|     const who = await person()
+    161|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+       |                                             ^
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 8 passed (13)
+   Start at  19:30:49
+   Duration  2.69s (transform 891ms, setup 1.79s, import 26ms, tests 332ms, environment 0ms)
+

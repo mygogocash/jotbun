@@ -1,0 +1,124 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 4 failed) 342ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 42ms
+     × a Haiku refusal goes to Opus 29ms
+     × five Haiku tool turns without an answer go to Opus 33ms
+     × an escalated question counts once 18ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+@@ -12,8 +12,8 @@
+          "through": "2026-11-13",
+          "type": "expense",
+        },
+      },
+    ],
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:84:29
+     82|     const res = await ask(who.user)
+     83|     expect(res.status).toBe(200)
+     84|     expect(await body(res)).toEqual({
+       |                             ^
+     85|       answer: 'This month you spent ฿60 on food.',
+     86|       figures: [{ label: expect.any(String), amount_minor: '6000', cou…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+AssertionError: expected { …(5) } to match object { …(4) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "answer": "This month you spent ฿60 on food.",
+    "escalated": true,
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:109:45
+    107|     const who = await person()
+    108|     model.push(refusal(), total(who.food), text('This month you spent …
+    109|     expect(await body(await ask(who.user))).toMatchObject({ answer: 'T…
+       |                                             ^
+    110|     expect(modelsAsked()).toEqual([HAIKU, OPUS, OPUS])
+    111|     expect(model.calls[1].messages).toEqual([model.calls[0].messages[0…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+AssertionError: expected { …(5) } to match object { …(5) }
+
+- Expected
++ Received
+
+@@ -4,8 +4,8 @@
+    "figures": [
+      {
+        "amount_minor": "6000",
+      },
+    ],
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:119:20
+    117|     const answer = await body(await ask(who.user))
+    118|     // Opus's answer, with the one figure its own tool read.
+    119|     expect(answer).toMatchObject({ answer: 'This month you spent ฿60 o…
+       |                    ^
+    120|     expect(answer.figures).toHaveLength(1)
+    121|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an escalated question counts once
+AssertionError: expected { …(5) } to match object { source: 'ai', …(2) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "escalated": true,
+-   "model": "claude-opus-5-5",
++   "model": "claude-haiku-5-5",
+    "source": "ai",
+  }
+
+ ❯ test/workers/ask-escalation.test.ts:179:41
+    177|     const user = await consenting()
+    178|     model.push(refusal(), text('Bun can answer that from your diary.'))
+    179|     expect(await body(await ask(user))).toMatchObject({ source: 'ai', …
+       |                                         ^
+    180|     expect((await remaining(user)).ask).toBe(AI_DAILY_LIMITS.ask - 1)
+    181|     expect(await vaultRows(user, 'SELECT day, feature, uses FROM ai_us…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 9 passed (13)
+   Start at  19:31:05
+   Duration  2.47s (transform 805ms, setup 1.62s, import 24ms, tests 342ms, environment 0ms)
+

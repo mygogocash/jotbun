@@ -1,0 +1,53 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 305ms
+     × when Opus is not grounded either, the plain figures answer 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+AssertionError: expected { …(5) } to match object { source: 'facts', …(3) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,13 +1,13 @@
+  {
+    "escalated": true,
+    "figures": [
+      {
+-       "amount_minor": "10000",
+-       "count": 2,
++       "amount_minor": "6000",
++       "count": 1,
+        "scope": {
+-         "category_id": null,
++         "category_id": "c85fa621-0b58-88e9-9171-6768184f7a45",
+        },
+      },
+    ],
+    "model": "rules",
+    "source": "facts",
+
+ ❯ test/workers/ask-escalation.test.ts:130:20
+    128|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    129|     const answer = await body(await ask(who.user))
+    130|     expect(answer).toMatchObject({ source: 'facts', model: 'rules', es…
+       |                    ^
+    131|     // Opus's figures, not Haiku's.
+    132|     expect(answer.figures).toHaveLength(1)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:30:53
+   Duration  2.46s (transform 826ms, setup 1.65s, import 25ms, tests 305ms, environment 0ms)
+

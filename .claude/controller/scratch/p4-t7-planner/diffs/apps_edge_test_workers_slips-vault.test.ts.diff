@@ -1,0 +1,208 @@
+--- a/apps/edge/test/workers/slips-vault.test.ts
++++ b/apps/edge/test/workers/slips-vault.test.ts
+@@ -2,16 +2,21 @@
+ // answers before slip import opens (S13, S16); the slip accounts wait for SLIP_IMPORT_ENABLED,
+ // which wrangler.jsonc keeps off, so a case that reads or maps them releases it for its own
+ // front door. Only the inbox count is change-logged (S1), and erase leaves no slip row (C7).
+-// Synthetic values only: no slip image, no real reference, no real account.
++// Synthetic values only: no slip image, no real reference, no real account. P4-T7 adds the P4-T3
++// reviews' pins (followups, "P4-T6 and P4-T7"): whole unreleased answers, two faults in R41's order,
++// one account per mapping, a draft counted once, the inbox's own head, and a salt never logged or sent.
+ import { env } from 'cloudflare:workers'
+ import { evictAllDurableObjects, runInDurableObject } from 'cloudflare:test'
+ import { drizzle } from 'drizzle-orm/durable-sqlite'
+ import { migrate } from 'drizzle-orm/durable-sqlite/migrator'
+ import { randomUUID } from 'node:crypto'
+-import { describe, expect, it } from 'vitest'
++import { describe, expect, it, vi } from 'vitest'
+ 
+ import { SLIP_INBOX_ID, isSlipAccountDto, isSlipAccountsDto, isSlipDraftsPage, isSlipSaltDto, isSyncChangesPage, slipRefHash } from '@gogospend/contracts'
+ 
++import { createServerAnalytics } from '../../src/analytics/server-analytics'
++import type { CaptureMessage, PostHogPort } from '../../src/analytics/server-analytics'
++import type { V1Env } from '../../src/v1/env'
+ import { appendChanges } from '../../src/vault/commands/change-log'
+ import { buildVaultRegistry } from '../../src/vault/commands/registry'
+ import { VAULT_MIGRATIONS } from '../../src/vault/migrations'
+@@ -35,6 +40,18 @@
+ const json = async (res: Response): Promise<Json> => (await res.json()) as Json
+ /** A response's status and problem code. */
+ const shape = async (res: Response): Promise<{ status: number; code: unknown }> => ({ status: res.status, code: (await json(res)).code })
++/** A response as a client sees it, but its request id: status, every header and the body. */
++async function seen(res: Response): Promise<{ status: number; headers: [string, string][]; body: unknown }> {
++  const headers = [...res.headers].filter(([name]) => name !== 'x-request-id').sort()
++  const text = await res.text()
++  let body: unknown = text
++  if (text.length > 0) {
++    const parsed = JSON.parse(text) as Json
++    delete parsed.request_id
++    body = parsed
++  }
++  return { status: res.status, headers, body }
++}
+ 
+ describe('the slip salt (S16, S13)', () => {
+   it("the salt is 32 random bytes made on the first read, the same ever after, and another person's differs", async () => {
+@@ -65,16 +82,27 @@
+     expect(isSlipSaltDto(await salt.json())).toBe(true)
+     const put = (body = '{}', headers: Record<string, string> = {}) =>
+       new Request(`${BASE}/v1/slip-accounts/${randomUUID()}`, { method: 'PUT', headers: { 'content-type': 'application/json', ...headers }, body })
+-    // As an unknown path answers: with no token at all, with a malformed body, and signed in.
+-    expect(await shape(await hidden.raw(new Request(`${BASE}/v1/slip-accountz`)))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    expect(await shape(await hidden.raw(new Request(`${BASE}/v1/slip-accounts`)))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    expect(await shape(await hidden.raw(put()))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    expect(await shape(await hidden.raw(put('{')))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    expect(await shape(await hidden.as(user).get('/v1/slip-accounts'))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    // A paused imports gate does not show an unreleased route (the release comes before the gates).
+-    expect(await shape(await (await startV1({ ...CONFIG, gates: { paused: ['imports'] } })).raw(put()))).toEqual({ status: 404, code: 'NOT_FOUND' })
+-    // Only 1 or true releases them.
+-    expect((await (await startV1(CONFIG, { env: { SLIP_IMPORT_ENABLED: 'yes' } })).as(user).get('/v1/slip-accounts')).status).toBe(404)
++    // As an unknown path answers, header for header and body for body but the request id (the P4-T3
++    // reviews' m1 and m2): with no token at all, with a malformed body, signed in, and with a paused
++    // imports gate (the release comes before the gates).
++    const id = randomUUID()
++    const putAt = (path: string, body = '{}') => new Request(`${BASE}${path}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body })
++    const asMissing = async (label: string, path: string, send: (to: string) => Promise<Response>) => {
++      const unreleased = await seen(await send(path))
++      expect(unreleased.status, label).toBe(404)
++      expect(unreleased, label).toEqual(await seen(await send(path.replace('/v1/slip-accounts', '/v1/slip-accountz'))))
++    }
++    await asMissing('GET, no token', '/v1/slip-accounts', (to) => hidden.raw(new Request(`${BASE}${to}`)))
++    await asMissing('PUT, no token', `/v1/slip-accounts/${id}`, (to) => hidden.raw(putAt(to)))
++    await asMissing('PUT, a malformed body', `/v1/slip-accounts/${id}`, (to) => hidden.raw(putAt(to, '{')))
++    await asMissing('GET, signed in', '/v1/slip-accounts', (to) => hidden.as(user).get(to))
++    await asMissing('PUT, signed in', `/v1/slip-accounts/${id}`, (to) => hidden.as(user).put(to, { wallet_id: null }, { ifMatch: 1 }))
++    const pausedImports = await startV1({ ...CONFIG, gates: { paused: ['imports'] } })
++    await asMissing('PUT, imports paused', `/v1/slip-accounts/${id}`, (to) => pausedImports.raw(putAt(to)))
++    // Only 1 or true releases them: a near miss stays hidden (the Opus review's n2).
++    for (const value of ['yes', 'TRUE', ' true', 'true ']) {
++      expect((await (await startV1(CONFIG, { env: { SLIP_IMPORT_ENABLED: value } })).as(user).get('/v1/slip-accounts')).status, JSON.stringify(value)).toBe(404)
++    }
+     expect((await (await startV1(CONFIG, { env: { SLIP_IMPORT_ENABLED: '1' } })).as(user).get('/v1/slip-accounts')).status).toBe(200)
+     // Released, the same requests reach the checks after the release: the body (400), the gates (503), the client (426), the token (401).
+     expect((await (await startV1(CONFIG, RELEASED)).raw(put('{'))).status).toBe(400)
+@@ -84,6 +112,46 @@
+     expect((await open.raw(new Request(`${BASE}/v1/slip-accounts`))).status).toBe(426)
+     expect((await open.raw(new Request(`${BASE}/v1/slip-accounts`, { headers: client }))).status).toBe(401)
+     expect((await open.raw(put('{}', client))).status).toBe(401)
++  })
++
++  it('the salt is never logged or sent to analytics: its first read, later reads, a read after an erase', async () => {
++    const sent: CaptureMessage[] = []
++    const pending: Promise<unknown>[] = []
++    const port: PostHogPort = { captureImmediate: async (message) => void sent.push(message) }
++    const analytics = (e: V1Env) => createServerAnalytics(e, (promise) => void pending.push(promise), () => port)
++    const settle = async () => {
++      while (pending.length > 0) await Promise.all(pending.splice(0))
++    }
++    const client = await startV1(CONFIG, { env: { POSTHOG_PROJECT_TOKEN: 'phc_test', ANALYTICS_ID_KEY: 'test-analytics-key' }, analytics })
++    const money = moneyFixtures(client)
++    const user = await money.member()
++    expect((await client.as(user).put('/v1/me/privacy-preferences', { analytics: true })).status).toBe(200)
++    await settle()
++    sent.length = 0
++    const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) => vi.spyOn(console, method).mockImplementation(() => undefined))
++    let lines = ''
++    let salt = ''
++    try {
++      salt = String((await json(await client.as(user).get('/v1/slips/salt'))).salt)
++      await client.as(user).get('/v1/slips/salt')
++      await settle()
++      await vaultOf(user).erase()
++      expect((await client.as(user).get('/v1/slips/salt')).status).toBe(403)
++    } finally {
++      // Read the lines before restoring: mockRestore clears them.
++      lines = JSON.stringify(spies.flatMap((spy) => spy.mock.calls)).toLowerCase()
++      for (const spy of spies) spy.mockRestore()
++    }
++    expect(salt.length).toBe(43)
++    expect([lines.includes(salt.toLowerCase()), lines.includes(Buffer.from(salt, 'base64url').toString('hex'))]).toEqual([false, false])
++    await settle()
++    expect(sent).toEqual([])
++    // The control: with the same consent, a person's typed record is sent.
++    const other = await money.member()
++    expect((await client.as(other).put('/v1/me/privacy-preferences', { analytics: true })).status).toBe(200)
++    await money.record(other, { type: 'expense', amount_minor: '6500', occurred_on: '2026-10-20', wallet_id: await money.wallet(other), category_id: builtinId(other, 'food') })
++    await settle()
++    expect(sent.map((message) => message.event)).toEqual(['record_saved'])
+   })
+ 
+   it("the Worker's WebCrypto gives the contract's hash vector", async () => {
+@@ -194,6 +262,59 @@
+     expect((await json(await client.as(user).get('/v1/slip-accounts'))).accounts).toEqual([{ ...account, version: 3, wallet_id: null }])
+   })
+ 
++  it('mapping one account changes only that account', async () => {
++    const client = await startV1(CONFIG, RELEASED)
++    const money = moneyFixtures(client)
++    const user = await money.member()
++    const cash = await money.wallet(user, { name: 'Cash' })
++    const [first, second] = await inVault(user, (c) => [ensureSlipAccount(c, 'kbank', '1234'), ensureSlipAccount(c, 'scb', '9876')])
++    const res = await client.as(user).put(`/v1/slip-accounts/${second}`, { wallet_id: cash }, { ifMatch: 1 })
++    expect(res.status).toBe(200)
++    expect((await json(res)).id).toBe(second)
++    expect(await sqlRows(user, 'SELECT id, version, wallet_id FROM slip_accounts ORDER BY bank')).toEqual([
++      { id: first, version: 1, wallet_id: null },
++      { id: second, version: 2, wallet_id: cash },
++    ])
++  })
++
++  it('two faults at once answer the first check in R41 order: If-Match, the id, the body, the version, then the wallet', async () => {
++    const client = await startV1(CONFIG, RELEASED)
++    const money = moneyFixtures(client)
++    const user = await money.member()
++    const cash = await money.wallet(user, { name: 'Cash' })
++    const old = await money.wallet(user, { name: 'Old' })
++    expect((await client.as(user).post(`/v1/wallets/${old}/archive`, {}, { ifMatch: 1 })).status).toBe(200)
++    const id = await inVault(user, (c) => ensureSlipAccount(c, 'kbank', '1234'))
++    expect((await client.as(user).put(`/v1/slip-accounts/${id}`, { wallet_id: cash }, { ifMatch: 1 })).status).toBe(200)
++    const answer = async (res: Response) => {
++      const body = await json(res)
++      return { status: res.status, code: body.code, fields: body.fields ?? null }
++    }
++    const put = (path: string, body: unknown, ifMatch?: number) => client.as(user).put(path, body, { ifMatch })
++    const ifMatch = { status: 422, code: 'VALIDATION_FAILED', fields: { if_match: 'VALIDATION_FAILED' } }
++    // If-Match before the body, and before the id.
++    expect(await answer(await put(`/v1/slip-accounts/${id}`, { wallet_id: cash, bank: 'scb' }))).toEqual(ifMatch)
++    expect(await answer(await put('/v1/slip-accounts/kbank-1234', { wallet_id: cash }))).toEqual(ifMatch)
++    // The id before the body.
++    expect(await answer(await put('/v1/slip-accounts/kbank-1234', { wallet_id: cash, bank: 'scb' }, 2))).toEqual({ status: 404, code: 'NOT_FOUND', fields: null })
++    // The body before the version: stale, with a wallet that is not an id.
++    expect(await answer(await put(`/v1/slip-accounts/${id}`, { wallet_id: 'cash' }, 1))).toEqual({ status: 422, code: 'VALIDATION_FAILED', fields: { wallet_id: 'VALIDATION_FAILED' } })
++    // The version before the wallet: stale with an archived wallet is 409, and an unknown account with an unknown wallet 404.
++    expect((await answer(await put(`/v1/slip-accounts/${id}`, { wallet_id: old }, 1))).status).toBe(409)
++    expect(await answer(await put(`/v1/slip-accounts/${randomUUID()}`, { wallet_id: randomUUID() }, 1))).toEqual({ status: 404, code: 'NOT_FOUND', fields: null })
++    expect(await sqlRows(user, 'SELECT version, wallet_id FROM slip_accounts')).toEqual([{ version: 2, wallet_id: cash }])
++  })
++
++  it('a draft whose two sides are the same account counts once for it', async () => {
++    const client = await startV1(CONFIG, RELEASED)
++    const user = await member(client)
++    await inVault(user, (c) => void ensureSlipAccount(c, 'kbank', '1234'))
++    await seedSlipDraft(user, { from: party('kbank', '1234'), to: party('kbank', '1234') })
++    const res = await client.as(user).get('/v1/slip-accounts')
++    expect(res.status).toBe(200)
++    expect(((await json(res)).accounts as { open_drafts: number }[]).map((account) => account.open_drafts)).toEqual([1])
++  })
++
+   it('mapping is a write under the current policy and the imports gate; the list needs only the session', async () => {
+     const client = await startV1(CONFIG, RELEASED)
+     const user = newUser()
+@@ -230,6 +351,17 @@
+     const page = await json(await (await startV1(CONFIG)).as(user).get('/v1/sync/changes'))
+     expect(isSyncChangesPage(page)).toBe(true)
+     expect((page.groups as { changes: unknown[] }[]).flatMap((group) => group.changes)).toEqual([first, second])
++  })
++
++  it("the inbox version follows its own head, not another entity's", async () => {
++    const client = await startV1(CONFIG)
++    const money = moneyFixtures(client)
++    const user = await money.member()
++    const cash = await money.wallet(user, { name: 'Cash' })
++    expect((await client.as(user).patch(`/v1/wallets/${cash}`, { name: 'Cash 2' }, { ifMatch: 1 })).status).toBe(200)
++    expect((await client.as(user).patch(`/v1/wallets/${cash}`, { name: 'Cash 3' }, { ifMatch: 2 })).status).toBe(200)
++    await seedSlipDraft(user)
++    expect(await inVault(user, (c) => inboxChange(c).version)).toBe(1)
+   })
+ 
+   it("a draft reads back as the contract's DTO, both sides and its flags intact", async () => {

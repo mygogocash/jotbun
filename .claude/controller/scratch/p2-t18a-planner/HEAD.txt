@@ -1,0 +1,1 @@
+90006f03696188a42c889019bfc4237483ba3c09 (proof tree: git archive of origin/claude/p1a-vault-core at 14 Nov 00:36; code ab350e48, #457's merge; node_modules borrowed from scratch/p2-t18-planner/tree by symlink, same lockfile, manifest and contracts)

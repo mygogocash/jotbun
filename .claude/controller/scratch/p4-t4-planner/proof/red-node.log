@@ -1,0 +1,1535 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ × test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale 5ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > the import schema is strict throughout, and the prompt is Bun's voice and then the import task 2ms
+   → expected {} to deeply equal { type: 'object', …(3) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a slip read in import mode fills import with exact satang and clean sides 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > a missing amount re-reads the slip with Opus once, and Opus's read is shown 1ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a missing day re-reads the slip with Opus once, and Opus's read is shown 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a missing sender bank re-reads the slip with Opus once, and Opus's read is shown 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a missing receiver name re-reads the slip with Opus once, and Opus's read is shown 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > Opus's bank slip read is shown even when it misses a field too: one re-read, never a third call 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > what an import read does not need never sends the slip to Opus: the time, the accounts, the sender name and the receiver bank 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > an outage on Haiku throws SlipNotRead with the wait it was given, and calls no Opus 8ms
+   → expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku's import read keeps Haiku's read (A14) 0ms
+   → promise rejected "SlipNotRead: No model read the slip (serv… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait 0ms
+   → expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > with the real transport a 429 is not retried, and its retry-after reaches SlipNotRead 4ms
+   → expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls unreadable is re-read once by Opus, and Opus's read is the draft 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls receipt is re-read once by Opus, and Opus's read is the draft 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a slip both models call unreadable has no import read 0ms
+   → expected [ …(2) ] to deeply equal [ '', '' ]
+ × test/slip-read-import.test.ts > the slip reader's import mode > a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead 0ms
+   → expected [ …(2) ] to deeply equal [ '', '' ]
+ × test/slip-read-import.test.ts > the slip reader's import mode > null as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > an array as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > a string as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > an answer cut short as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > an Opus that calls it unreadable leaves Haiku's read and its bank (the P3-T8 reviews' MC) 1ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > an Opus that answers in broken JSON leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > on a 45000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the other 25 s (P4-T6's per-slip deadline must leave it 2 s) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > on a 22000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the last 2 s (P4-T6's per-slip deadline must leave it 2 s) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > on a 21999 ms deadline, Haiku's import read is capped at 20 s and Opus gets no call, and Haiku's read stands (P4-T6's per-slip deadline must leave it 2 s) 0ms
+   → promise rejected "SlipNotRead: No model read the slip (time… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK) 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3) 0ms
+   → expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+ × test/slip-read-import.test.ts > the slip reader's import mode > tokens count this read's calls only, when its trace already holds another (A16, the P3-T8 reviews' MA) 0ms
+   → promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ × test/slip-read-import.test.ts > the slip reader's import mode > an import read writes no log line, so no image, name or number reaches one 1ms
+   → expected { Object (kind, drafts, ...) } to match object { model: 'claude-opus-5-5', …(1) }
+(8 matching properties omitted from actual)
+ × test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 0ms
+   → expected [ …(2) ] to deeply equal [ '', '' ]
+ × test/slip-read-import.test.ts > the import sanitizer > only a bank slip has an import read 1ms
+   → expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > an amount is exact satang from 1 to 99,999,999,999, else null with amount_unclear 0ms
+   → 1,250.50: expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a day is real and from 1970-01-01 to the day after today, else null with date_guessed 0ms
+   → 1970-01-01: expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a time is HH:MM in 24 hours, else null 0ms
+   → 00:00: expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a bank is a key from the list, else null; 'other' is a key 0ms
+   → bbl: expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > an account keeps only its last four digits, Thai digits read as ASCII 0ms
+   → 012-3-45678-9: expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number 0ms
+   → "  นาย กานต์ ใจดี  ": expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a side that is not an object has no bank, account or name 0ms
+   → expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > known flags are kept once each, in their order, and unknown ones dropped 0ms
+   → expected null to deeply equal { amount_minor: '125050', …(5) }
+ × test/slip-read-import.test.ts > the import sanitizer > a day that is no day for today throws: the caller's bug, which the reader counts as unusable 0ms
+   → expected function to throw an error, but it didn't
+ × test/slip-read-import.test.ts > the import sanitizer > missingImportFields names the required fields a read lacks, in order 0ms
+   → expected [] to deeply equal [ 'amount_minor', 'occurred_on', …(2) ]
+ ✓ test/slip-read-import.test.ts > the single read keeps P3-T8's shape > the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from 1ms
+ × test/slip-read-import.test.ts > the single read keeps P3-T8's shape > a single read's SlipNotRead carries the failed call's wait too 0ms
+   → expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 47 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:102:23
+    100|   it('the import mode asks for the time and both sides, and sends only…
+    101|     const { read, model, trace } = importRead([json(answer())])
+    102|     await expect(read).resolves.toMatchObject({ kind: 'slip', model: H…
+       |                       ^
+    103|     expect(model.calls).toHaveLength(1)
+    104|     const [haiku] = model.calls
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:102:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the import schema is strict throughout, and the prompt is Bun's voice and then the import task
+AssertionError: expected {} to deeply equal { type: 'object', …(3) }
+
+- Expected
++ Received
+
+- {
+-   "additionalProperties": false,
+-   "properties": {
+-     "amount_baht": {
+-       "anyOf": [
+-         {
+-           "type": "string",
+-         },
+-         {
+-           "type": "null",
+-         },
+-       ],
+-     },
+-     "date": {
+-       "anyOf": [
+-         {
+-           "type": "string",
+-         },
+-         {
+-           "type": "null",
+-         },
+-       ],
+-     },
+-     "flags": {
+-       "items": {
+-         "enum": [
+-           "amount_unclear",
+-           "multiple_amounts",
+-           "date_guessed",
+-           "category_guessed",
+-           "wallet_guessed",
+-           "not_money",
+-         ],
+-         "type": "string",
+-       },
+-       "type": "array",
+-     },
+-     "from": {
+-       "additionalProperties": false,
+-       "properties": {
+-         "account_last4": {
+-           "anyOf": [
+-             {
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-         "bank": {
+-           "anyOf": [
+-             {
+-               "enum": [
+-                 "bbl",
+-                 "kbank",
+-                 "ktb",
+-                 "ttb",
+-                 "scb",
+-                 "bay",
+-                 "gsb",
+-                 "ghb",
+-                 "baac",
+-                 "kkp",
+-                 "cimb",
+-                 "uob",
+-                 "lhb",
+-                 "tisco",
+-                 "icbc",
+-                 "tcrb",
+-                 "ibank",
+-                 "other",
+-               ],
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-         "name": {
+-           "anyOf": [
+-             {
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-       },
+-       "required": [
+-         "bank",
+-         "account_last4",
+-         "name",
+-       ],
+-       "type": "object",
+-     },
+-     "kind": {
+-       "enum": [
+-         "slip",
+-         "receipt",
+-         "unreadable",
+-       ],
+-       "type": "string",
+-     },
+-     "time": {
+-       "anyOf": [
+-         {
+-           "type": "string",
+-         },
+-         {
+-           "type": "null",
+-         },
+-       ],
+-     },
+-     "to": {
+-       "additionalProperties": false,
+-       "properties": {
+-         "account_last4": {
+-           "anyOf": [
+-             {
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-         "bank": {
+-           "anyOf": [
+-             {
+-               "enum": [
+-                 "bbl",
+-                 "kbank",
+-                 "ktb",
+-                 "ttb",
+-                 "scb",
+-                 "bay",
+-                 "gsb",
+-                 "ghb",
+-                 "baac",
+-                 "kkp",
+-                 "cimb",
+-                 "uob",
+-                 "lhb",
+-                 "tisco",
+-                 "icbc",
+-                 "tcrb",
+-                 "ibank",
+-                 "other",
+-               ],
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-         "name": {
+-           "anyOf": [
+-             {
+-               "type": "string",
+-             },
+-             {
+-               "type": "null",
+-             },
+-           ],
+-         },
+-       },
+-       "required": [
+-         "bank",
+-         "account_last4",
+-         "name",
+-       ],
+-       "type": "object",
+-     },
+-   },
+-   "required": [
+-     "kind",
+-     "amount_baht",
+-     "date",
+-     "time",
+-     "from",
+-     "to",
+-     "flags",
+-   ],
+-   "type": "object",
+- }
++ {}
+
+ ❯ test/slip-read-import.test.ts:125:32
+    123|       },
+    124|     }
+    125|     expect(SLIP_IMPORT_SCHEMA).toEqual({
+       |                                ^
+    126|       type: 'object',
+    127|       additionalProperties: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip read in import mode fills import with exact satang and clean sides
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:148:23
+    146|   it('a slip read in import mode fills import with exact satang and cl…
+    147|     const { read, model } = importRead([json(answer())])
+    148|     await expect(read).resolves.toStrictEqual(shown(READ, HAIKU, false…
+       |                       ^
+    149|     expect(asked(model)).toEqual([HAIKU])
+    150|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:148:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:154:23
+    152|   it('an account number longer than four digits keeps only its last fo…
+    153|     const { read, model } = importRead([json(answer({ from: { bank: 'k…
+    154|     await expect(read).resolves.toStrictEqual(shown({ ...READ, from: {…
+       |                       ^
+    155|     expect(asked(model)).toEqual([HAIKU])
+    156|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:154:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:160:23
+    158|   it('a bank outside the list becomes null, and an impossible time nul…
+    159|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    160|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    161|     expect(asked(model)).toEqual([HAIKU])
+    162|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:160:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a missing amount re-reads the slip with Opus once, and Opus's read is shown
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a missing day re-reads the slip with Opus once, and Opus's read is shown
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a missing sender bank re-reads the slip with Opus once, and Opus's read is shown
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a missing receiver name re-reads the slip with Opus once, and Opus's read is shown
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:171:23
+    169|   ])("a missing %s re-reads the slip with Opus once, and Opus's read i…
+    170|     const { read, model } = importRead([json(answer(missing)), json(an…
+    171|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    172|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    173|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus's bank slip read is shown even when it misses a field too: one re-read, never a third call
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+    "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": null,
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:177:23
+    175|   it("Opus's bank slip read is shown even when it misses a field too: …
+    176|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    177|     await expect(read).resolves.toStrictEqual(shown({ ...READ, from: {…
+       |                       ^
+    178|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    179|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > what an import read does not need never sends the slip to Opus: the time, the accounts, the sender name and the receiver bank
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:185:23
+    183|     const { read, model } = importRead([json(answer(sparse))])
+    184|     const kept: SlipImportRead = { ...READ, occurred_time: null, from:…
+    185|     await expect(read).resolves.toStrictEqual(shown(kept, HAIKU, false…
+       |                       ^
+    186|     expect(asked(model)).toEqual([HAIKU])
+    187|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:185:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an outage on Haiku throws SlipNotRead with the wait it was given, and calls no Opus
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:198:25
+    196|       const { read, model } = importRead([failure])
+    197|       await expect(read).rejects.toBeInstanceOf(SlipNotRead)
+    198|       await expect(read).rejects.toMatchObject({ name: 'SlipNotRead', …
+       |                         ^
+    199|       expect(asked(model)).toEqual([HAIKU])
+    200|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku's import read keeps Haiku's read (A14)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (serv… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:205:23
+    203|   it("Opus failing after Haiku's import read keeps Haiku's read (A14)"…
+    204|     const { read, model } = importRead([json(answer({ to: { ...PA_DAEN…
+    205|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    206|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    207|   })
+
+Caused by: SlipNotRead: No model read the slip (server_error).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:205:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'server_error', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 30,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:211:31
+    209|   it("Opus failing after Haiku read no bank slip throws SlipNotRead wi…
+    210|     const limited = importRead([json(answer({ kind: 'unreadable' })), …
+    211|     await expect(limited.read).rejects.toMatchObject({ name: 'SlipNotR…
+       |                               ^
+    212|     expect(asked(limited.model)).toEqual([HAIKU, OPUS])
+    213|     const down = importRead([refusal(), apiFailure(529)])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > with the real transport a 429 is not retried, and its retry-after reaches SlipNotRead
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:226:23
+    224|     const start = Date.now()
+    225|     const read = readSlipImage({ image: png, context, locale: 'th' }, …
+    226|     await expect(read).rejects.toMatchObject({ name: 'SlipNotRead', fa…
+       |                       ^
+    227|     expect(fetches).toBe(1)
+    228|     expect(Date.now() - start).toBeLessThan(1_000)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls unreadable is re-read once by Opus, and Opus's read is the draft
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls receipt is re-read once by Opus, and Opus's read is the draft
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:233:23
+    231|   it.each(['unreadable', 'receipt'])("a slip Haiku calls %s is re-read…
+    232|     const { read, model } = importRead([json(answer({ kind })), json(a…
+    233|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    234|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    235|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a slip both models call unreadable has no import read
+AssertionError: expected [ …(2) ] to deeply equal [ '', '' ]
+
+- Expected
++ Received
+
+  [
+-   "",
+-   "",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:242:52
+    240|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    241|     // Both were asked for an import read.
+    242|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    243|   })
+    244|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead
+AssertionError: expected [ …(2) ] to deeply equal [ '', '' ]
+
+- Expected
++ Received
+
+  [
+-   "",
+-   "",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:248:52
+    246|     const { read, model } = importRead([refusal(), refusal()])
+    247|     await expect(read).resolves.toStrictEqual(unreadable(2, true))
+    248|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    249|   })
+    250|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > null as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an array as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a string as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an answer cut short as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:258:23
+    256|   ])("%s as Haiku's whole answer is re-read by Opus (the P3-T8 second …
+    257|     const { read, model } = importRead([whole, json(answer())])
+    258|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    259|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    260|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that calls it unreadable leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that answers in broken JSON leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": null,
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-haiku-5-5",
++   "kind": "unreadable",
++   "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:268:23
+    266|   ])("an Opus that %s leaves Haiku's read and its bank (the P3-T8 revi…
+    267|     const { read } = importRead([json(answer({ to: { ...PA_DAENG, name…
+    268|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    269|   })
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": true,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": null,
+-     },
+-   },
+-   "kind": "slip",
+-   "model": "claude-haiku-5-5",
++   "kind": "unreadable",
++   "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+  }
+
+ ❯ test/slip-read-import.test.ts:268:23
+    266|   ])("an Opus that %s leaves Haiku's read and its bank (the P3-T8 revi…
+    267|     const { read } = importRead([json(answer({ to: { ...PA_DAENG, name…
+    268|     await expect(read).resolves.toStrictEqual(shown({ ...READ, to: { .…
+       |                       ^
+    269|   })
+    270|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": true,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:273:23
+    271|   it("Opus is asked the same way, on Opus's base, and its call is mark…
+    272|     const { read, model, trace } = importRead([refusal(), json(answer(…
+    273|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    274|     expect(model.calls).toHaveLength(2)
+    275|     expect(model.calls[1]).toEqual(importRequest(OPUS_BASE))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > on a 45000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the other 25 s (P4-T6's per-slip deadline must leave it 2 s)
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > on a 22000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the last 2 s (P4-T6's per-slip deadline must leave it 2 s)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:309:25
+    307|       ])
+    308|     } else {
+    309|       await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true…
+       |                         ^
+    310|       expect(given).toEqual([
+    311|         [HAIKU, 20_000],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > on a 21999 ms deadline, Haiku's import read is capped at 20 s and Opus gets no call, and Haiku's read stands (P4-T6's per-slip deadline must leave it 2 s)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (time… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:302:25
+    300|     if (opusMs === null) {
+    301|       // Under 2 s left: Opus is never sent (recorded unsent), and Hai…
+    302|       await expect(read).resolves.toStrictEqual(shown({ ...READ, to: {…
+       |                         ^
+    303|       expect(given).toEqual([[HAIKU, 20_000]])
+    304|       expect(trace.calls.map((call) => [call.requested, call.sent, cal…
+
+Caused by: SlipNotRead: No model read the slip (timeout).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:302:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'timeout', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:319:23
+    317|   it("an old genuine slip keeps its day and is read once: no 90-day wi…
+    318|     const { read, model } = importRead([json(answer({ date: '2024-03-1…
+    319|     await expect(read).resolves.toStrictEqual(shown({ ...READ, occurre…
+       |                       ^
+    320|     expect(asked(model)).toEqual([HAIKU])
+    321|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:319:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3)
+AssertionError: expected { Object (kind, drafts, ...) } to strictly equal { kind: 'slip', drafts: [], …(6) }
+
+- Expected
++ Received
+
+@@ -1,27 +1,11 @@
+  {
+-   "bank": "kbank",
++   "bank": null,
+    "declined": false,
+    "drafts": [],
+    "escalated": true,
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+-   "kind": "slip",
++   "kind": "unreadable",
+    "model": "claude-opus-5-5",
+    "tokens": {
+      "input": 20,
+      "output": 20,
+    },
+
+ ❯ test/slip-read-import.test.ts:326:23
+    324|     const jpeg: Image = { base64: tinyPng, mediaType: 'image/jpeg' }
+    325|     const { read, model } = importRead([json(answer({ kind: 'receipt' …
+    326|     await expect(read).resolves.toStrictEqual(shown(READ, OPUS, true, …
+       |                       ^
+    327|     expect(model.calls).toEqual([importRequest(HAIKU_BASE, jpeg), impo…
+    328|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > tokens count this read's calls only, when its trace already holds another (A16, the P3-T8 reviews' MA)
+AssertionError: promise rejected "SlipNotRead: No model read the slip (othe… { …(2) }" instead of resolving
+ ❯ test/slip-read-import.test.ts:333:94
+    331|     const trace = newTrace()
+    332|     const used = (usage: Record<string, number>) => ({ ...json(answer(…
+    333|     await expect(importRead([used({ input_tokens: 1_000, output_tokens…
+       |                                                                                              ^
+    334|     await expect(importRead([used({ input_tokens: 70, output_tokens: 7…
+    335|   })
+
+Caused by: SlipNotRead: No model read the slip (other).
+ ❯ readSlipImage src/v1/ai/slip-read.ts:105:37
+ ❯ test/slip-read-import.test.ts:333:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { failure: 'other', retryAfterSeconds: null }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > an import read writes no log line, so no image, name or number reaches one
+AssertionError: expected { Object (kind, drafts, ...) } to match object { model: 'claude-opus-5-5', …(1) }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "import": {
+-     "amount_minor": "125050",
+-     "flags": [],
+-     "from": {
+-       "account_last4": "1234",
+-       "bank": "kbank",
+-       "name": "นาย กานต์ ใจดี",
+-     },
+-     "occurred_on": "2026-10-24",
+-     "occurred_time": "18:40",
+-     "to": {
+-       "account_last4": "9876",
+-       "bank": "scb",
+-       "name": "ร้านป้าแดง ข้าวแกง",
+-     },
+-   },
+    "model": "claude-opus-5-5",
+  }
+
+ ❯ test/slip-read-import.test.ts:340:105
+    338|     const spies = (['log', 'info', 'warn', 'error', 'debug'] as const)…
+    339|     try {
+    340|       await expect(importRead([json(answer({ to: { ...PA_DAENG, name: …
+       |                                                                                                         ^
+    341|       await expect(importRead([apiFailure(429, { 'retry-after': '40' }…
+    342|       for (const spy of spies) expect(spy).not.toHaveBeenCalled()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes
+AssertionError: expected [ …(2) ] to deeply equal [ '', '' ]
+
+- Expected
++ Received
+
+  [
+-   "",
+-   "",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
++   "You are Bun (บัน), the small steamed-bun companion inside Jotbun, a private spending diary used mostly in Thailand and Southeast Asia. People log what they spend in Thai baht. Bun is kind, brief and factual: it explains the person's own numbers and never gives advice about financial products, investments, loans, credit or taxes, and never shames anyone about spending.
++
++ Task: read one image the person chose, usually a Thai bank or e-wallet transfer slip (PromptPay, K PLUS, SCB EASY, Krungthai NEXT, Bangkok Bank, TrueMoney and others) or a shop receipt, and turn it into draft diary records.
++
++ Rules:
++ - If the image is not a slip or receipt, return 0 drafts.
++ - kind: \"slip\" for a bank or e-wallet transfer slip, \"receipt\" for a shop receipt or bill, \"unreadable\" when no amount can be read; with \"unreadable\" return 0 drafts.
++ - amount_baht: the total actually paid or received, exactly as printed, in baht with at most 2 decimals. Never guess a blurred amount: use null and \"amount_unclear\".
++ - type: \"expense\" for money the person sent or paid; \"income\" for money they received.
++ - date: the date printed on the slip as YYYY-MM-DD. Thai slips often print Buddhist-era years (2569 = 2026) and Thai month abbreviations (ม.ค. … ธ.ค.).
++ - merchant: the receiving shop or person's display name as printed, without account numbers.
++ - category_id and wallet_id must be ids from the lists given, or null.
++ - bank: the bank or wallet app that issued the slip, or null.
++ - Never copy account numbers, reference numbers, phone numbers or QR contents into any field.",
+  ]
+
+ ❯ test/slip-read-import.test.ts:358:52
+    356|     await expect(read).resolves.toStrictEqual(unreadable(2))
+    357|     expect(asked(model)).toEqual([HAIKU, OPUS])
+    358|     expect(model.calls.map((call) => call.system)).toEqual([SLIP_IMPOR…
+       |                                                    ^
+    359|   })
+    360| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > only a bank slip has an import read
+AssertionError: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:376:33
+    374|       expect(sanitized(raw), JSON.stringify(raw)).toBeNull()
+    375|     }
+    376|     expect(sanitized(answer())).toEqual(READ)
+       |                                 ^
+    377|   })
+    378|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > an amount is exact satang from 1 to 99,999,999,999, else null with amount_unclear
+AssertionError: 1,250.50: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:393:70
+    391|     ]
+    392|     for (const [baht, minor] of rows) {
+    393|       expect(sanitized(answer({ amount_baht: baht })), String(baht)).t…
+       |                                                                      ^
+    394|     }
+    395|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a day is real and from 1970-01-01 to the day after today, else null with date_guessed
+AssertionError: 1970-01-01: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "1970-01-01",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:414:57
+    412|     ]
+    413|     for (const [date, day] of rows) {
+    414|       expect(sanitized(answer({ date })), String(date)).toEqual({ ...R…
+       |                                                         ^
+    415|     }
+    416|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a time is HH:MM in 24 hours, else null
+AssertionError: 00:00: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "00:00",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:429:88
+    427|       [null, null],
+    428|     ]
+    429|     for (const [time, kept] of rows) expect(sanitized(answer({ time })…
+       |                                                                                        ^
+    430|   })
+    431|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a bank is a key from the list, else null; 'other' is a key
+AssertionError: bbl: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "bbl",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:433:103
+    431|
+    432|   it("a bank is a key from the list, else null; 'other' is a key", () …
+    433|     for (const bank of THAI_BANK_KEYS) expect(sanitized(answer({ to: {…
+       |                                                                                                       ^
+    434|     for (const bank of ['KBANK', 'K PLUS', 'promptpay', ' kbank', 7, n…
+    435|       expect(sanitized(answer({ to: { ...PA_DAENG, bank } })), String(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > an account keeps only its last four digits, Thai digits read as ASCII
+AssertionError: 012-3-45678-9: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "6789",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:450:99
+    448|     ]
+    449|     for (const [account, last4] of rows) {
+    450|       expect(sanitized(answer({ to: { ...PA_DAENG, account_last4: acco…
+       |                                                                                                   ^
+    451|     }
+    452|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number
+AssertionError: "  นาย กานต์ ใจดี  ": expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "นาย กานต์ ใจดี",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:475:86
+    473|     ]
+    474|     for (const [name, kept] of rows) {
+    475|       expect(sanitized(answer({ to: { ...PA_DAENG, name } })), JSON.st…
+       |                                                                                      ^
+    476|     }
+    477|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a side that is not an object has no bank, account or name
+AssertionError: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [],
+  "from": {
+    "account_last4": null,
+    "bank": null,
+    "name": null,
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:480:47
+    478|
+    479|   it('a side that is not an object has no bank, account or name', () =…
+    480|     expect(sanitized(answer({ from: null }))).toEqual({ ...READ, from:…
+       |                                               ^
+    481|     expect(sanitized(answer({ to: 'scb' }))).toEqual({ ...READ, to: { …
+    482|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > known flags are kept once each, in their order, and unknown ones dropped
+AssertionError: expected null to deeply equal { amount_minor: '125050', …(5) }
+
+- Expected:
+{
+  "amount_minor": "125050",
+  "flags": [
+    "multiple_amounts",
+    "date_guessed",
+  ],
+  "from": {
+    "account_last4": "1234",
+    "bank": "kbank",
+    "name": "นาย กานต์ ใจดี",
+  },
+  "occurred_on": "2026-10-24",
+  "occurred_time": "18:40",
+  "to": {
+    "account_last4": "9876",
+    "bank": "scb",
+    "name": "ร้านป้าแดง ข้าวแกง",
+  },
+}
+
++ Received:
+null
+
+ ❯ test/slip-read-import.test.ts:485:108
+    483|
+    484|   it('known flags are kept once each, in their order, and unknown ones…
+    485|     expect(sanitized(answer({ flags: ['date_guessed', 'bogus', 'multip…
+       |                                                                                                            ^
+    486|     expect(sanitized(answer({ amount_baht: null, flags: ['not_money'] …
+    487|     expect(sanitized(answer({ flags: 'date_guessed' }))).toEqual(READ)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a day that is no day for today throws: the caller's bug, which the reader counts as unusable
+AssertionError: expected function to throw an error, but it didn't
+ ❯ test/slip-read-import.test.ts:491:66
+    489|
+    490|   it("a day that is no day for today throws: the caller's bug, which t…
+    491|     expect(() => sanitizeSlipImportRead(answer(), 'not-a-date')).toThr…
+       |                                                                  ^
+    492|   })
+    493|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > missingImportFields names the required fields a read lacks, in order
+AssertionError: expected [] to deeply equal [ 'amount_minor', 'occurred_on', …(2) ]
+
+- Expected
++ Received
+
+- [
+-   "amount_minor",
+-   "occurred_on",
+-   "from.bank",
+-   "to.name",
+- ]
++ []
+
+ ❯ test/slip-read-import.test.ts:497:107
+    495|     expect(missingImportFields(READ)).toEqual([])
+    496|     const none = { bank: null, account_last4: null, name: null }
+    497|     expect(missingImportFields({ ...READ, amount_minor: null, occurred…
+       |                                                                                                           ^
+    498|     expect(missingImportFields({ ...READ, to: { ...READ.to, name: null…
+    499|     expect(missingImportFields({ ...READ, occurred_time: null, from: {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/47]⎯
+
+ FAIL  test/slip-read-import.test.ts > the single read keeps P3-T8's shape > a single read's SlipNotRead carries the failed call's wait too
+AssertionError: expected SlipNotRead: No model read the slip (rate… { …(2) } to match object { name: 'SlipNotRead', …(2) }
+
+- Expected
++ Received
+
+- {
++ SlipNotRead {
+    "failure": "rate_limited",
+    "name": "SlipNotRead",
+-   "retryAfterSeconds": 40,
++   "retryAfterSeconds": null,
+  }
+
+ ❯ test/slip-read-import.test.ts:521:69
+    519|     const single = (replies: (ModelMessage | Error)[]) =>
+    520|       readSlipImage({ image: png, context, locale: 'th' }, { transport…
+    521|     await expect(single([apiFailure(429, { 'retry-after': '40' })])).r…
+       |                                                                     ^
+    522|     await expect(single([refusal(), apiFailure(429, { 'retry-after': '…
+    523|     await expect(single([apiFailure(529)])).rejects.toMatchObject({ na…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/47]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  47 failed | 1 passed (48)
+   Start at  01:27:38
+   Duration  360ms (transform 87ms, setup 0ms, import 178ms, tests 33ms, environment 0ms)
+

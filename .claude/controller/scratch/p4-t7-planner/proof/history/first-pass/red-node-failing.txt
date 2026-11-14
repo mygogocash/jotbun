@@ -1,0 +1,2 @@
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the added routes are exactly the ones the plans added: the live socket, the analytics answer, and the slip and catalog routes
+ × test/route-coverage.test.ts > the one Worker covers every NestJS v1 route > the slip drafts and a single read's slip ref are added routes; the drafts wait for SLIP_IMPORT_ENABLED and the slip ref does not (P4-T7, S13)

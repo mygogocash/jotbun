@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/apps/app
+
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag off: exactly the current layout, with no tab bar 18ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > approved: the redesigned layout is the default 16ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: Home and History tabs under the screen, with the add button in the centre 13ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: History is selected on /spend/all and Home navigates back 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/add 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > flag on: no tab bar on /spend/record/0000000b-0000-4000-8000-000000000003/edit 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the legacy flag still wins: no diary provider and no tab bar 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag undefined) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the auth redirect is unchanged (redesign flag core) 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks en, in light and dark, with 44 pt targets 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks th, in light and dark, with 44 pt targets 10ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the tab bar speaks vi, in light and dark, with 44 pt targets 8ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > which tab a path belongs to 0ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > the Home route: the new Home under the flag, the legacy flag first, else the current Home 1ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > planning on: no tab of its own; the bar hides on budget, wallets and categories 7ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > insights on: an Insights tab, selected on /spend/insights; the bar hides on a recap and on reminders 9ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > a never-asked question takes the screens' place only in the analytics area 24ms
+ × src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes 23ms
+   → legacy: device-diary: expected [ <div …(2)>…(1)</div> ] to have a length of +0 but got 1
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > /spend/add?type=income in the wallet area opens the income tray over Home 27ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > a record's copy linked to /spend/add in the wallet area opens in the shell's tray, never today's Quick add 20ms
+ ✓ src/screens/redesign/SpendLayout.render.test.tsx > in the wallet area, a never-asked consent question renders in place of the wallet shell 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  00:59:46
+   Duration  1.55s (transform 875ms, setup 36ms, import 1.13s, tests 207ms, environment 75ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:93726) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/screens/redesign/SpendLayout.render.test.tsx > with EXPO_PUBLIC_REDESIGN=wallet the spend screens sit in the wallet shell; without it nothing changes
+AssertionError: legacy: device-diary: expected [ <div …(2)>…(1)</div> ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ counted src/screens/redesign/SpendLayout.render.test.tsx:350:40
+    348| function counted(testID: string, count: number, at: string): HTMLEleme…
+    349|   const elements = screen.queryAllByTestId(testID);
+    350|   expect(elements, `${at}: ${testID}`).toHaveLength(count);
+       |                                        ^
+    351|   return elements;
+    352| }
+ ❯ src/screens/redesign/SpendLayout.render.test.tsx:395:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

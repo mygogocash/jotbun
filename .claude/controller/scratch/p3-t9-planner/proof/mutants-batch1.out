@@ -1,0 +1,12 @@
+P1 killed (assertion): replay Haiku's turns to Opus (the plan's mutant) [escalation] -> 2 failed | 11 passed (13)
+P2 killed (assertion): escalate on a 429 (the plan's mutant) [escalation] -> 4 failed | 9 passed (13)
+P3 killed (assertion): consume a second use for Opus (the plan's mutant) [escalation] -> 3 failed | 10 passed (13)
+P5 killed (assertion): answer paused whenever no figures exist (the plan's mutant) [escalation] -> 1 failed | 12 passed (13)
+K2 killed (assertion): a failed call is not logged [escalation] -> 1 failed | 12 passed (13)
+K3 killed (assertion): the log line carries the error's message [escalation] -> 1 failed | 12 passed (13)
+K4 killed (assertion): the turn limit is a failure [escalation] -> 1 failed | 12 passed (13)
+K9 killed (assertion): no grounding check: any text is grounded [escalation] -> 5 failed | 8 passed (13)
+K14 killed (assertion): Opus is asked on Haiku's request base [escalation] -> 6 failed | 7 passed (13)
+K15 killed (assertion): Opus's effort is low [escalation] -> 1 failed | 12 passed (13)
+K16 killed (assertion): Opus's answer is cut at 8,000 tokens [escalation] -> 1 failed | 12 passed (13)
+11 of 11 killed; survivors []; other failures []; not restored []

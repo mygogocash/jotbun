@@ -1,0 +1,99 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t2-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > the catalog migrations make bank_albums and merchants, and the seed lists the boards' three bank apps on both platforms 3ms
+ ✓ test/workers/catalog.test.ts > the catalog tables and their seed (P4-T2) > each catalog table takes a well-formed row and refuses one that breaks a rule 10ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > the bank-album list is public, carries an ETag, and answers 304 to the same tag 8ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > an album row of an unknown bank is left out, and the list stays in order of bank, platform and name 3ms
+ ✓ test/workers/catalog.test.ts > GET /v1/catalog/bank-albums (P4-T2) > without CATALOG_DB the route is 503 and merchant patterns are empty 1ms
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own 4ms
+   → expected [ [ { …(2) }, …(6) ], +0 ] to deeply equal [ [ { …(2) }, …(6) ], 1 ]
+ × test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call 0ms
+   → expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal []
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > matchMerchant takes the longest whole-word Latin pattern or a Thai substring, ignoring case and spacing 1ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > the longest pattern wins and the first listed wins a tie; patterns compare as merchant keys, and one with nothing left matches nothing 0ms
+ ✓ test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchantKey keeps letters, marks, digits, '-', '.' and an apostrophe, lowers ASCII letters only, and makes each other run one space 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > merchant patterns are read once an hour per isolate, and each catalog binding keeps its own
+AssertionError: expected [ [ { …(2) }, …(6) ], +0 ] to deeply equal [ [ { …(2) }, …(6) ], 1 ]
+
+- Expected
++ Received
+
+@@ -27,7 +27,7 @@
+      {
+        "category_key": "food",
+        "pattern": "เซเว่น",
+      },
+    ],
+-   1,
++   0,
+  ]
+
+ ❯ test/workers/catalog.test.ts:224:85
+    222|     // Another binding reads its own list.
+    223|     const other = countedCatalog()
+    224|     expect([await merchantPatterns({ CATALOG_DB: other.db }, AT), othe…
+       |                                                                                     ^
+    225|   })
+    226|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/catalog.test.ts > merchant patterns (S3, A30) > a failed read logs catalog_merchants_failed by its class name, keeps the last list, and is tried again on the next call
+AssertionError: expected [ { pattern: '7-eleven', …(1) }, …(6) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "category_key": "food",
++     "pattern": "7-eleven",
++   },
++   {
++     "category_key": "shopping",
++     "pattern": "big c",
++   },
++   {
++     "category_key": "travel",
++     "pattern": "bts",
++   },
++   {
++     "category_key": "shopping",
++     "pattern": "lotus's",
++   },
++   {
++     "category_key": "shopping",
++     "pattern": "makro",
++   },
++   {
++     "category_key": "travel",
++     "pattern": "mrt",
++   },
++   {
++     "category_key": "food",
++     "pattern": "เซเว่น",
++   },
++ ]
+
+ ❯ test/workers/catalog.test.ts:248:65
+    246|       expect(await merchantPatterns({ CATALOG_DB: flaky }, AT + 3_600_…
+    247|       // A binding never read has no list to keep.
+    248|       expect(await merchantPatterns({ CATALOG_DB: never }, AT)).toEqua…
+       |                                                                 ^
+    249|       const line = JSON.stringify({ level: 'error', event: 'catalog_me…
+    250|       expect(errors.mock.calls).toEqual([[line], [line]])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+   Start at  19:50:05
+   Duration  2.30s (transform 852ms, setup 1.75s, import 14ms, tests 30ms, environment 0ms)
+

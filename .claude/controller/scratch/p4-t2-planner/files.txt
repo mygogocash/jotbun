@@ -1,0 +1,20 @@
+# P4-T2's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it (absent, for an A
+# line), later = the receipt, copied at the end). GREEN holds real/ for every line
+# but the receipt. Shared files are marked in the brief's Scope table. The base is
+# the integration head ab350e48 (#457's merge, P3-T3).
+A stub apps/edge/migrations/catalog/0001_catalog.sql
+A stub apps/edge/migrations/catalog/0002_catalog_seed.sql
+A stub apps/edge/src/catalog/catalog.ts
+M real apps/edge/src/cloudflare-workers.d.ts
+M real apps/edge/src/v1/env.ts
+M real apps/edge/src/v1/protocol.ts
+M base apps/edge/src/v1/routes.ts
+M base apps/edge/src/v1/worker-routes.ts
+M base apps/edge/wrangler.jsonc
+M base apps/edge/vitest.workers.config.ts
+A base apps/edge/test/workers/support/apply-catalog-migrations.ts
+A real apps/edge/test/workers/catalog.test.ts
+M real apps/edge/test/route-coverage.test.ts
+M real apps/edge/test/c1-shape.test.ts
+A later docs/implementation/receipts/P4-T2.md

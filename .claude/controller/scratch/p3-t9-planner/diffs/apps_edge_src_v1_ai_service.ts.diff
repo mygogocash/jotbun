@@ -1,0 +1,198 @@
+--- a/apps/edge/src/v1/ai/service.ts
++++ b/apps/edge/src/v1/ai/service.ts
+@@ -1,10 +1,8 @@
+-import type Anthropic from '@anthropic-ai/sdk'
+ import { AI_ROUTE_DEADLINE_MS, bangkokDate } from '@gogospend/contracts'
+ import type {
+   AiAskRequest,
+   AiAskResult,
+   AiFeature,
+-  AiFigure,
+   AiLocale,
+   AiModel,
+   AiNoteResult,
+@@ -20,19 +18,18 @@
+ import { ProblemException } from '@api/common/api-problem.filter'
+ import { failureName } from '@api/common/operational-metrics'
+ 
+-import { draftFromRules, sanitizeDrafts } from '../../server/ai/drafts'
++import { draftChoices, draftFromRules, sanitizeDrafts } from '../../server/ai/drafts'
+ import type { DraftContext } from '../../server/ai/drafts'
+-import { factsText, figuresText } from '../../server/ai/fact-text'
++import { factsText } from '../../server/ai/fact-text'
+ import { AllowedNumbers, formatBaht, isGrounded } from '../../server/ai/grounding'
+-import { ModelUnavailable, finishedJson, finishedText } from '../../server/ai/model'
+-import type { MessageParams } from '../../server/ai/model'
+-import { ASK_SYSTEM, NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM } from '../../server/ai/prompts'
+-import type { AiContext, AiStoredPreferences, AiToolReply, Allowance } from '../../vault/ai'
++import { ModelUnavailable, finishedJson } from '../../server/ai/model'
++import { NOTE_SCHEMA, NOTE_SYSTEM, PARSE_SCHEMA, PARSE_SYSTEM } from '../../server/ai/prompts'
++import type { AiContext, AiStoredPreferences, AiToolReply } from '../../vault/ai'
+ import type { VaultRouteId } from '../protocol'
+ import type { VaultSession } from '../worker-routes'
+-import { HAIKU, HAIKU_ASK_CAP_MS, haikuRequest } from './models'
++import { askWithEscalation } from './ask'
++import { HAIKU, haikuRequest } from './models'
+ import { readSlipImage } from './slip-read'
+-import { ASK_TOOLS } from './tools'
+ import { AiDeadline, newTrace, tracedSend } from './transport'
+ import type { AiTrace, ModelTransport } from './transport'
+ import { shouldRefund } from './uses'
+@@ -43,17 +40,17 @@
+ // use (counted before the model runs), then the model. Every step carries the
+ // route's access, so the vault checks the session (and the current policy on
+ // a current_policy route) before anything is read and before any model call.
+-// Since P3-T6 every call is Haiku 5.5's (models.ts), each request runs under
+-// one deadline (AI_ROUTE_DEADLINE_MS), and every result names its model (H4).
++// Since P3-T6 parse, the note and Ask Bun call Haiku 5.5 first (models.ts),
++// each request runs under one deadline (AI_ROUTE_DEADLINE_MS), and every result
++// names its model (H4).
+ // Since P3-T7 a call that fails with a rate limit, a 5xx, a timeout or no
+ // connection gives its use back (H5, uses.ts) before the route answers.
+ // Since P3-T8 a slip is read by readSlipImage (slip-read.ts): Haiku, then Opus
+ // in the same request when D25 says so; the result names the read's model.
++// Since P3-T9 Ask Bun asks through askWithEscalation (ask.ts): Haiku, then Opus
++// in a fresh conversation when D28 says so, for one use.
+ 
+-/** Ask Bun's turns before it answers from the figures it read (AiService's ASK_MAX_TURNS). */
+-const ASK_MAX_TURNS = 5
+-
+-/** Haiku wrote the words (H4): parse, the note and Ask Bun call Haiku only; Ask Bun's escalation comes with P3-T9. */
++/** Haiku wrote the words (H4): parse and the note call Haiku only. */
+ const BY_HAIKU: { model: AiModel; escalated: boolean } = { model: HAIKU, escalated: false }
+ /** The offline rules or the plain facts wrote them. */
+ const BY_RULES: { model: AiModel; escalated: boolean } = { model: 'rules', escalated: false }
+@@ -74,13 +71,6 @@
+   return reply.body as T
+ }
+ 
+-/** Replays a tool's allowed numbers into the answer's AllowedNumbers, in the order the tool allowed them. */
+-function allowAll(allowed: AllowedNumbers, allow: Allowance): void {
+-  for (const minor of allow.satang) allowed.addSatang(minor)
+-  for (const count of allow.counts) allowed.addCount(count)
+-  for (const date of allow.dates) allowed.addDate(date)
+-}
+-
+ export type VaultAiServiceDeps = {
+   /** Null when AI is not configured or switched off (AI_ENABLED, ANTHROPIC_API_KEY). */
+   transport: ModelTransport | null
+@@ -129,7 +119,7 @@
+           // The base's effort, with the JSON format (the P3-T6 review's n2).
+           output_config: { ...base.output_config, format: { type: 'json_schema', schema: PARSE_SCHEMA } },
+           system: PARSE_SYSTEM,
+-          messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...this.choices(ctx) }) }],
++          messages: [{ role: 'user', content: JSON.stringify({ sentence: request.text, today: ctx.today, locale: request.locale, ...draftChoices(ctx) }) }],
+         },
+       })
+       const drafts = sanitizeDrafts(finishedJson(message), ctx, request.text)
+@@ -209,7 +199,13 @@
+     }
+   }
+ 
+-  /** Ask Bun: a question answered with read-only tools over the person's records, each run in the vault. */
++  /**
++   * Ask Bun: a question answered with read-only tools over the person's
++   * records, each run in the vault. The conversations are ask.ts's (P3-T9):
++   * Haiku first, then Opus in a fresh conversation when Haiku's answer is
++   * ungrounded, declined or unfinished (D28). The question counts one use,
++   * whichever models answer it.
++   */
+   async ask(s: VaultSession, request: AiAskRequest): Promise<AiAskResult> {
+     const { trace, deadline } = this.start('ask')
+     const ctx = await step<AiContext>(s, 'ai.context')
+@@ -218,50 +214,20 @@
+     const use = await this.consume(s, 'ask')
+     const today = trustedToday(request.today, bangkokDate(this.now()))
+     const categories = ctx.categories.map((category) => ({ id: category.id, name: category.label ?? category.builtin_key }))
+-    const allowed = new AllowedNumbers().addDate(today)
+-    const figures: AiFigure[] = []
+-    const fromFigures = (): AiAskResult => ({ answer: figuresText(figures, request.locale), figures, source: 'facts', ...BY_RULES })
+-    const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
+-      { role: 'user', content: JSON.stringify({ question: request.question, today, locale: request.locale, categories }) },
+-    ]
+-    // Every Haiku turn shares one child deadline (H3): at most HAIKU_ASK_CAP_MS of the route's, so Opus keeps the rest (P3-T9).
+-    const haiku = deadline.child(HAIKU_ASK_CAP_MS)
+-    try {
+-      for (let turn = 0; turn < ASK_MAX_TURNS; turn += 1) {
+-        const params: MessageParams = { ...haikuRequest('medium', 12_000), system: ASK_SYSTEM, tools: ASK_TOOLS, messages }
+-        const message = await tracedSend(this.deps.transport, trace, haiku, {
+-          feature: 'ask',
+-          escalated: false,
+-          params,
+-        })
+-        if (message.stop_reason === 'tool_use') {
+-          messages.push({ role: 'assistant', content: message.content as Anthropic.Beta.Messages.BetaContentBlockParam[] })
+-          const results: Anthropic.Beta.Messages.BetaToolResultBlockParam[] = []
+-          for (const block of message.content) {
+-            if (block.type !== 'tool_use') continue
+-            const run = await step<AiToolReply>(s, 'ai.tool', { body: { name: block.name, input: block.input ?? {}, locale: request.locale } })
+-            if ('error' in run) {
+-              results.push({ type: 'tool_result', tool_use_id: block.id, content: run.error, is_error: true })
+-              continue
+-            }
+-            figures.push(...run.figures)
+-            allowAll(allowed, run.allow)
+-            results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(run.result) })
+-          }
+-          messages.push({ role: 'user', content: results })
+-          continue
+-        }
+-        const answer = finishedText(message).trim()
+-        if (answer && isGrounded(answer, allowed)) return { answer, figures, source: 'ai', ...BY_HAIKU }
+-        return fromFigures()
+-      }
+-      return fromFigures()
+-    } catch (error) {
+-      this.logFailure('ask', error)
+-      await this.giveBack(s, use, trace)
+-      if (figures.length > 0) return fromFigures()
+-      throw this.paused()
+-    }
++    const answered = await askWithEscalation(
++      { question: request.question, today, locale: request.locale, categories },
++      {
++        transport: this.deps.transport,
++        trace,
++        deadline,
++        tool: (name, input) => step<AiToolReply>(s, 'ai.tool', { body: { name, input, locale: request.locale } }),
++      },
++    )
++    // H5 (P3-T7's carry, R116): the use goes back when no model's words are shown (the plain figures or 503) and
++    // the last call failed with an outage. A grounded answer's last call answered, so it never gives the use back.
++    await this.giveBack(s, use, trace)
++    if ('paused' in answered) throw this.paused()
++    return answered
+   }
+ 
+   /**
+@@ -290,10 +256,11 @@
+   }
+ 
+   /**
+-   * H5 (P3-T7), on a route's path where a call threw, before it answers with
+-   * the rules, the plain facts or 503: the use goes back to the day it was
+-   * counted on when the request's last call failed with a rate limit, a 5xx, a
+-   * timeout or no connection. A call that answered spends the use, whatever it
++   * H5 (P3-T7), on a route's path where a call threw, and after every Ask Bun
++   * answer (P3-T9), before the route answers: the use goes back to the day it
++   * was counted on when the request's last call failed with a rate limit, a
++   * 5xx, a timeout or no connection (shouldRefund, with R116 for a turn the
++   * deadline never let start). A call that answered spends the use, whatever it
+    * said (a decline, an unusable or ungrounded answer). The vault runs the step
+    * even after the session ended; a refund that fails is logged by name and
+    * never fails the request.
+@@ -314,14 +281,6 @@
+     return { today: trustedToday(clientToday, bangkokDate(this.now())), wallets: ctx.wallets, categories: ctx.categories }
+   }
+ 
+-  /** What the model may choose from: ids with names, never balances or history. */
+-  private choices(ctx: DraftContext) {
+-    return {
+-      wallets: ctx.wallets.filter((w) => !w.archived).map((w) => ({ id: w.id, name: w.name })),
+-      categories: ctx.categories.filter((c) => !c.archived).map((c) => ({ id: c.id, type: c.type, name: c.label ?? c.builtin_key })),
+-    }
+-  }
+-
+   /**
+    * A refusal (any problem but a 500) is the answer and is thrown on. Anything
+    * else is a failure, logged by name, and the caller falls back: the model's,

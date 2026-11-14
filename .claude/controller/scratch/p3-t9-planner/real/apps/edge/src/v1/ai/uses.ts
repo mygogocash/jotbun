@@ -1,0 +1,25 @@
+import type { CallFailure, RecordedCall } from './transport'
+
+// B5 as A14 refines it (H5, P3-T7): when a model call gives its use back. A use
+// is counted before the first call (vault ai.consume); the service asks this
+// before it answers, and gives the use back through the vault's ai.refund.
+// R116 (P3-T9) reads B5's "a failed model call" for a turn the deadline never
+// let start: it gives the use back only when no call before it answered.
+
+/** The failures the person is not charged for: the model, or the way to it, was busy, broken, too slow or gone. */
+const GIVES_BACK: readonly CallFailure[] = ['rate_limited', 'server_error', 'timeout', 'no_connection']
+
+/**
+ * True when the request ends without a model answer (the rules, the plain
+ * facts or 503) and its last call failed with a rate limit, a 5xx, a timeout
+ * or no connection. A decline, an unusable or ungrounded answer, a request the
+ * API rejected (another 4xx) or any other failure spends the use, and so does
+ * a request that recorded no call. A last turn the deadline never let start
+ * (`sent: false`) gives it back only when no call before it answered (R116):
+ * once a model answered, the use is spent, as at Ask Bun's turn limit.
+ */
+export function shouldRefund(calls: readonly RecordedCall[], answeredByModel: boolean): boolean {
+  const last = calls.at(-1)
+  if (answeredByModel || last === undefined || last.failure === null || !GIVES_BACK.includes(last.failure)) return false
+  return last.sent || !calls.some((call) => call.failure === null)
+}

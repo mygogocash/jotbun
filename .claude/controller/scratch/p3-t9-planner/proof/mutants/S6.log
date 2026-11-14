@@ -1,0 +1,43 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+stderr | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stdout | test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+{"level":"error","request_id":"56985ea3-3879-4394-9ab0-3f8abb2ce571","route":"POST /v1/ai/ask","status":500,"error":"Error"}
+
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 353ms
+     × a refund whose vault call itself fails never changes the 503, and is logged by name only 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun gives its use back (the P3-T7 reviews) > a refund whose vault call itself fails never changes the 503, and is logged by name only
+AssertionError: expected 500 to be 503 // Object.is equality
+
+- Expected
++ Received
+
+- 503
++ 500
+
+ ❯ test/workers/ask-escalation.test.ts:220:26
+    218|       // Read as soon as the answer is in: the refund ran before the r…
+    219|       const logged = warnings.mock.calls.map(([line]) => String(line))…
+    220|       expect(res.status).toBe(503)
+       |                          ^
+    221|       expect(await body(res)).toMatchObject({ code: 'AI_PAUSED' })
+    222|       expect(logged.map((line) => JSON.parse(line))).toEqual([{ level:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:32:29
+   Duration  3.08s (transform 980ms, setup 1.96s, import 28ms, tests 353ms, environment 0ms)
+

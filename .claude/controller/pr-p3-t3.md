@@ -25,8 +25,8 @@
   - `test:edge` (214);
   - `build:edge` (the gate is in the bundle);
   - `git diff --check`.
-- [ ] CI on this pull request is green: the nine jobs, with the whole workers suite.
-- [ ] Independent review (Opus), and a second review (Sonnet): who may reach Bun (the gate's order, before the token), what a paused or fail-closed config answers, and the preferences while paused.
+- [x] CI at `2c642055`: 9 of 9, with the whole workers suite.
+- [x] Independent review (Opus) and second review (Sonnet): **both approved** on `2c642055` (`.claude/controller/reviews/P3-T3.md`, `reviews/P3-T3-second.md`), with no blocker, major or minor. Both agree the 503 before the token reveals only the service's state. Their nits and notes are carried in `followups.md`: the fail-closed answer at the front door pinned in parts, consent withdrawal under a pause, `MODEL_ROUTE_WORKERS` kept by hand, and the deploy order in the runbook.
 - [ ] SKIPPED: a hosted config change (the owner's deploy step).
 
 Closes #187 once merged (closed by hand, since the base is not the default branch).

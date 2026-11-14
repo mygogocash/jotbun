@@ -49,6 +49,389 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:32: THE REPO IS PUBLIC (the owner, about 07:25: "i make the repo public now please maximize github actions instead of local machine CICD"). CI runs on GitHub-hosted runners again; ruling R127.**
+  - **What had blocked CI since 13 Nov:**
+    - The repo variable `CI_RUNNER=jotbun-local` (set 10 Nov 23:04Z, when GitHub-hosted runners were refused for billing) sent every job to the three self-hosted runners on the owner's Mac. All three were **offline**, so every job sat queued.
+    - The 13 Nov 20:15 diagnosis (Actions minutes exhausted) was only half the story.
+  - **Done at 07:27 to 07:31:**
+    1. `CI_RUNNER` deleted. Jobs now run on `ubuntu-24.04`, free for a public repo.
+    2. The three runner registrations (`jotbun-runner-1` to `-3`, ids 21 to 23) removed. A public repo must never have self-hosted runners: a fork's pull request could run code on the Mac.
+    3. The twelve stuck runs cancelled, and the eleven task PRs' runs re-run in merge order.
+    4. #464's run 43488344108 refused to cancel (HTTP 500, force-cancel too), so #464 was closed and reopened. That started run 43534597225; the old one may sit queued until GitHub expires it.
+    5. Promotion #458's failed jobs and #459's run re-run behind them.
+  - **Secrets check:** no high-signal secret pattern (AWS, GitHub, Anthropic, Slack, Google keys, private keys, PostHog project keys) in either branch tip or in history, and no committed `.env`. GitHub's secret scanning now runs too.
+  - **R127 in `protocol.md`:**
+    - Locally, only the task's proofs: kit stubs, RED, GREEN and mutants on its own files, the typecheck, and `git diff --check`.
+    - CI's: `test:unit`, `test:app`, other render files, the routes tests and `typecheck:routes`, the exports, `build:edge`, `test:edge`, the workers, database and ops suites, and the image.
+    - The fast local gate (step 6) is narrowed to match. Re-run a PR's CI after a merge it shares code with, rather than proving the merge locally.
+  - **Colima** (the local CI's Docker VM, 10 CPUs and 32 GB) is still running with no containers. It is left for the owner (`colima stop`), since another project may use it. `.claude/controller/local-ci/runners.sh` is retired.
+  - **First CI result:** #460's SQL job failed on the known R-B flake in frozen `apps/api` (`attachments.integration.spec.ts`, "two records retaining one image at once keep one receipt, made by one copy", lessons.md). Re-run its failed job once the run completes. Its other jobs passed or are running.
+  - **Next:** merge as each PR's nine jobs go green, in order:
+    1. #460
+    2. #461
+    3. #462
+    4. #463
+    5. #456
+    6. #464
+    7. #465
+    8. #466
+    9. #467
+    10. #468 and #469, once their reviews approve.
+
+    Promote each merge, and re-run a later PR's CI when an earlier merge touched shared code.
+- **14 Nov 07:24: #469 (P6B-T14, closes #298) opened at `f6c976ca`; its two reviews started.**
+  - The implementer reported DONE in about 7 minutes. The controller checked the commit: all 20 `real/` files are byte-identical, the planner's receipt included.
+    - RED: Node 20 of 64 and render 3 of 16. GREEN: 64 and 16. Mutants: 55 of 55 (46 Node, 9 vitest).
+    - Gate: 35 render files with 676 tests, `test:unit` 1128.
+    - The receipt does not record the controller's acceptance, since it is checksum-pinned. The PR body records it.
+  - **The first push of `p6b/t14-remote-flags` failed with a 403 from GitHub**, while `gh auth` was fine. A plain retry worked, so it was transient. If `open_task_pr.sh` fails on a push, retry the push alone, then rerun the script.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:2720062974f45f4b113d217d5db883063d9094ac5ae58a09828f9bcdc1d944cc`, writing `reviews/P6B-T14.md`;
+    - Sonnet: `mcp:launch:0f581b8a45609a2efd36bda3e56a93dc257bf298c9881ed99050e42ed14c1e9b`, writing `reviews/P6B-T14-second.md`.
+
+    Notes: `scratch/dispatch/P6B-T14-review-notes.md`. The implementer thread is archived.
+  - **Live now:** the #468 and #469 reviews (Opus and Sonnet each).
+- **14 Nov 07:17: #468 (1C-T7, closes #124) opened at `bf3e1259`; its two reviews started.**
+  - The implementer reported DONE in about 12 minutes. The controller checked the commit: all 14 `real/` files are byte-identical. The implementer amended its first commit (`c3a0a4a1`) once before pushing, to fix three receipt sentences.
+    - RED: Node 18 of 20 and render 3 of 15. GREEN: 20 and 15. Mutants: 68 of 68.
+    - Gate: `test:unit` 1127, render 23 of 23, routes 17 of 17, `export:web`, the config introspection equal to the planner's diffs, `release-graph` and the lockfile bindings.
+    - The implementer thread is archived.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:c403dc260e9553133be900c785ccd1fb98d721210505af4d9c31226625e5cbbf`, writing `reviews/1C-T7.md`;
+    - Sonnet: `mcp:launch:7e5480fa9f036c8227ac1ddd0e6c6edc4a22830f6199946d972320080f67c88f`, writing `reviews/1C-T7-second.md`.
+
+    Notes: `scratch/dispatch/1C-T7-review-notes.md`.
+  - **Live now:** the #468 reviews (Opus and Sonnet); the P6B-T14 implementer.
+- **14 Nov 07:16: P6B-T14 READY and building (Haiku). CI is still blocked (07:14: all nine PRs 9 of 9 queued; the CI watcher is re-armed over all nine).**
+  - **P6B-T14 planner done** (thread archived). Brief `briefs/P6B-T14.md`, kit `scratch/p6b-t14-planner/` (82 of 82 sums, `orig/` 11 of 11 at the head). Size L.
+    - RED was 20 of 64 Node and 3 of 16 render cases; GREEN; mutants 55 of 55; a gate of 35 render files (676 tests) covering every user of `recordAnalytics` and `fakeConsent`.
+    - It was proven over each CI-waiting PR's head that uses the helpers (#456, #460, #464 to #467).
+    - With no PostHog key there is no client, so no flags are asked for, every rollout reads off and every experiment reads `control`.
+    - Step 1 checks only the env fields and PostHog versions it reads, so 1C-T7's `env.ts` and lockfile changes cannot block it.
+    - **P1 to P16 accepted.**
+  - **Implementer (Haiku max):** `mcp:launch:5d8586ea89fbd2c99bb29c2dc84fd00ed07dd9b52120f19eb02972900ab8bbbe`, in worktree `p6b-t14` on `p6b/t14-remote-flags`, installed, `--lock`.
+  - **Live now:** the 1C-T7 and P6B-T14 implementers.
+- **14 Nov 07:02: 1C-T7 READY and building (Haiku). Both planners failed once at 06:24, and T3 resumed them at 06:30 (run 2).**
+  - **1C-T7 planner done** (thread archived). Brief `briefs/1C-T7.md` (906 lines), kit `scratch/1c-t7-planner/` (84 of 84 sums, `orig/` 8 of 8 at the head). Size M.
+    - RED was 18 of 20 Node and 3 of 15 render cases; GREEN; mutants 68 of 68. The fast gate passed, as did the iOS export, the routes tests and a dry run of the brief.
+    - **P1 to P17 accepted.** Packages: `expo-apple-authentication` `~58.0.2` (locked at 58.0.2) and `@react-native-google-signin/google-signin` `16.1.5` exact (Q1). The lockfile gains two entries.
+    - Google ships hidden (ids unset) and loads only at the first Google sign-in (P7), since its module throws at load without its native half.
+    - `app.config.js` adds its plugins after `app.json`'s, so #466 first is safe.
+    - Followups carried: lines 62, 98 to 105 (`appServicesWiring.render.test.tsx`), 111 and 205. Line 235 does not apply.
+  - **Owner notes, from 1C-T7:**
+    - (a) The approved Google package 16.1.5 documents Expo up to 57 and RN up to 0.87, while the app is on Expo 58 and RN 0.88. The development build is the proof (SKIPPED). If it fails, 16.2.0 or 17.0.0 (the same JavaScript) is the owner's choice.
+    - (b) From now on every iOS build must be signed by a team with the Sign in with Apple capability (a personal team cannot), as push already requires.
+  - **Implementer (Haiku max):** `mcp:launch:68da4bb1de439e9d379f3e4d453d8146890af8e365c73d90f638a14c8af95ff0`, in worktree `p1-1c-t7` on `p1/1c-t7-native-sign-in`, installed, `--lock`. The disk was 297 GiB free at the install.
+  - **Live now:** the 1C-T7 implementer; the P6B-T14 planner (run 2).
+- **14 Nov 06:03: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114c.md`, head `730cd20f`):
+  - **1C-T7, native Apple and Google sign-in** (critical path, depth 6): `mcp:launch:476d249645df1a2cc08b97ae7c81bb4a67f475a2ab834a565138f2e710d10b1a`, WT `p1-1c-t7` on `p1/1c-t7-native-sign-in`.
+    - Packages and the lockfile change (none in flight changes either).
+    - A new `app.config.js` that must not hardcode `app.json`'s plugins, which #466 changes.
+    - It carries followups lines 62, 98 to 105 and 235.
+    - It may report BLOCKED if it needs owner credentials.
+  - **P6B-T14, remote flags and the rollout layer** (depth 4): `mcp:launch:c73b05aceef7e8fa100bad93b86b362d8e2bac964090eb078bbc93f4874c06e1`, WT `p6b-t14` on `p6b/t14-remote-flags`. It touches `analytics/controller.ts` and the shared `testing/recordAnalytics.ts`.
+  - **Live now:** the 1C-T7 and P6B-T14 planners.
+- **14 Nov 06:01: #467 fully approved (the confirmation of `e3c2ae74` approves). Nine PRs are fully approved and wait only on CI. Disk recovered to 218 GiB free.**
+  - **Merge order once runners return:**
+
+    | Order | PR | Task | Head |
+    | --- | --- | --- | --- |
+    | 1 | #460 | P3-T13 | `14da2b4e` |
+    | 2 | #461 | P3-T9 | `5cb1055e` |
+    | 3 | #462 | source-pins | `d9b4dfb1` |
+    | 4 | #463 | P4-T2 | `19ef67fb` |
+    | 5 | #456 | P2-T26 | `e4313772` |
+    | 6 | #464 | P2-T18a | `7e2ae0dc` |
+    | 7 | #465 | P2-T18 | `74142ebc` |
+    | 8 | #466 | P4-T17 | `b5458587` |
+    | 9 | #467 | 1D-T14 | `e3c2ae74` |
+
+    #467's worktree `p1-1d-t14` uses a link farm onto `p4-t17`, so remove `p4-t17` only after #467 merges, or re-farm first.
+  - **The confirmation** (`reviews/1D-T14.md`, "Confirmation of e3c2ae74") found:
+    - c1: Sonnet's R4 with the mutant U1 is the only case on the real follower for a never-named account's sign-out. Carried to 1D-T15's `AnalyticsUpkeep` round, in followups.
+    - c2: the receipt overstates "Sonnet m1 to m3" (a nit).
+
+    The #467 Opus thread is archived.
+  - **Disk:** free space went from 2.7 to 218 GiB between 05:54 and 06:01. The other project released it. Full installs are fine again; the stale 9.8 GB folder can wait.
+  - **Live now:** nothing. Every PR is approved and waiting on CI, and no planner or builder is running. Next, when CI returns:
+    - merge in order, promoting each into stack #379;
+    - dispatch P4-T4 after #461, and P4-T7 after #463;
+    - plan `saved-pins` after #464, and `shell-carry` after #465.
+- **14 Nov 05:54: #467 approved twice; the controller's pins pushed as `e3c2ae74` (the Opus reviewer confirms). Disk 2.7 GiB free.**
+  - **Sonnet (`reviews/1D-T14-second.md`)** found:
+    - m1 (MX2): the event's place before `await reservation`;
+    - m2 (MX1): the guard admitting `authenticating` and `bootstrap_pending`;
+    - m3: the stand-in is the only cover for four paths;
+    - n1 (a comment) and n2 (the option defaults to sending).
+  - **Opus (`reviews/1D-T14.md`)** found:
+    - m1: after an accepted deletion, Back out of Privacy and a Settings Sign out still send `signed_out`. Carried to a 1D-T13 follow-up or 1D-T15; deletion is not served yet;
+    - m2: the render file lacks M5 and M6;
+    - m3: the reservation ordering and a second tap;
+    - n1: a fresh sign-in and a restore.
+  - **The controller's commit `e3c2ae74`:** five Node cases (PN2, PN4/PC, PN7, PN8, PN9) and two render cases (PR1, PR2), plus the receipt's acceptance and pins bullets. Sonnet's n1 comment is held, so the source stays equal to the kit's `real/`. Proof `scratch/1d-t14-pins/`, farmed from `p4-t17`:
+    - green 52 of 52 and 5 of 5, and `typecheck:app`;
+    - the reviews' 7 mutants each killed, by the case meant for it;
+    - the planner's 12 still killed.
+
+    The PR body and followups are updated. The Sonnet thread is archived. **The Opus reviewer (`mcp:launch:5fec0d47ad23d12c6ef69285d0000af3ca4f8e10e42ff20e6b163a4bd7158a3e`, run 2) confirms `e3c2ae74`.**
+  - **Disk: 2.7 GiB free**, falling through the night with no new installs of ours. Another project is using it. If it drops under about 1.5 GiB, free space; the stale 9.8 GB `controller-stale-20261108-1710` is the candidate, once the probes the old followups cite are checked against it.
+  - **Live now:** the #467 confirmation (Opus).
+- **14 Nov 05:26: #467 (1D-T14, closes #145) opened at `948391f7`; its two reviews started.**
+  - The implementer reported DONE in about 8 minutes. The controller checked the commit: all 8 `real/` files are byte-identical, the planner's receipt included.
+    - RED: Node 9 of 47 and render 3 of 3, on assertions only. GREEN: 47 and 3. Mutants: 12 of 12, equal to the planner's.
+    - Gate: 11 render files with 158 tests, `test:app` 37 and `test:unit` 1118.
+    - Nothing was installed (the link farm).
+    - The receipt does not record the controller's acceptance, since the brief pins its checksum. The PR body records it.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:5fec0d47ad23d12c6ef69285d0000af3ca4f8e10e42ff20e6b163a4bd7158a3e`, writing `reviews/1D-T14.md`;
+    - Sonnet: `mcp:launch:ac04b64617bbc40052153f3039cd2f5c646b71e953eedae9b1b4d0f4d83bbec1`, writing `reviews/1D-T14-second.md`.
+
+    Notes: `scratch/dispatch/1D-T14-review-notes.md`. Their scratch trees must farm from `p4-t17` too. The implementer thread is archived.
+  - **Live now:** the #467 reviews (Opus and Sonnet).
+- **14 Nov 05:16: 1D-T14 READY (R125 in) and building (Haiku) on a node_modules link farm; CI still blocked (05:14: all eight PRs 9 of 9 queued).**
+  - **1D-T14's planner reported READY at 03:08.** The controller saw it only at 05:15: its sums were rewritten before the watcher's `newer:` baseline, so read a reworking planner's thread, not only its sums.
+    - The kit: 41 of 41 sums, `orig/` 6 of 6 at the head. Size M.
+    - Files: `credentialProvider.ts` and its test, `SettingsParts.tsx`, `SettingsScreen.tsx`, `PrivacyParts.tsx` and `PrivacyScreen.tsx` (all shared, none in flight), the new `signOutEvents.render.test.tsx`, and the receipt.
+    - R125 as `signOut({ event: false })`. RED 9 of 47 Node and 3 of 3 render; GREEN; mutants 12 of 12; a gate of 11 render files (158 tests).
+    - **P1 to P12 accepted.**
+  - **Disk: 3.7 GiB free** (it swings with another project's work), so the new worktree `p1-1d-t14` got no install.
+    - `scratch/dispatch/linkfarm-worktree.sh` farms `node_modules` and `apps/app/node_modules`: real folders of symlinks into **`p4-t17`'s fresh install** (same lockfile), with workspace links pointing at the new worktree. `.package-lock.json` is linked so the brief's Step 1.6 check passes.
+    - The base `credentialProvider.test.ts` passes 38 of 38 in it.
+    - The integration worktree's own install is from 25 Oct and is stale: never farm from it.
+    - **Keep `p4-t17` until 1D-T14 has merged**, or re-farm 1D-T14 from another fresh install before removing it.
+  - **Implementer (Haiku max):** `mcp:launch:76e1647e5054323f73bb0ca4088c99e35b17f028bb5e0dc21580c3ff75c5cf41`, `--lock`. Its notes forbid any `npm ci` or `npm install`. The planner thread is archived.
+  - **Live now:** the 1D-T14 implementer.
+- **14 Nov 04:00: #466 fully approved: the confirmation of `b5458587` approves.** Eight PRs are now fully approved and wait only on CI. Merge order once runners return:
+  1. #460 P3-T13 (`14da2b4e`)
+  2. #461 P3-T9 (`5cb1055e`)
+  3. #462 source-pins (`d9b4dfb1`)
+  4. #463 P4-T2 (`19ef67fb`)
+  5. #456 P2-T26 (`e4313772`)
+  6. #464 P2-T18a (`7e2ae0dc`)
+  7. #465 P2-T18 (`74142ebc`)
+  8. #466 P4-T17 (`b5458587`)
+
+  #466 shares no file with the others, but `app/_layout.tsx` and `app.json` are hot files, so check a local merge before it goes.
+  - The confirmation (`reviews/P4-T17.md`, "Confirmation of b5458587") reran the files and 19 mutants, including no-timer variants of the chain's, and found nothing new. The #466 Opus thread is archived.
+  - **Live now:** the 1D-T14 planner (R125 rework; its brief was rewritten at 03:07, and the kit is still being re-proved).
+- **14 Nov 03:51: #466 approved twice; the controller's pins pushed as `b5458587` (the Opus reviewer confirms).**
+  - **Sonnet (`reviews/P4-T17-second.md`)** found m1 (the sign-out race), m2 (the chain unpinned), m3 (quiet delivery reads as granted, the owner's question) and m4 (one handler unpinned), plus n1 to n4.
+  - **Opus (`reviews/P4-T17.md`)** found m1 (the chain unpinned), m2 (quiet delivery read as `granted` by the hook) and m3 (no native config change: `aps-environment` is already at the base; the PR body and the handover are corrected), plus n1 to n3.
+  - **The controller's commit `b5458587`:** the order case and the one-handler Node case. Proof `scratch/p4-t17-pins/`:
+    - green 22 of 22 and 14 of 14, and `typecheck:app`;
+    - R1, OM1 and the controller's X1 each killed, by the case meant for it;
+    - the planner's 48 host and 38 registration mutants still killed.
+
+    The PR body is updated, and Sonnet's probes are copied out to `scratch/p4-t17-second/probes/`. The Sonnet thread is archived. **The Opus reviewer (`mcp:launch:105418bd28cc1ad6ff9224a21fcc57402a9ebdbeaba596716c6eb25b8c4b36d9`, run 2) confirms `b5458587`.**
+  - **Owner item, new (before D33 turns registration on):** does quiet iOS delivery count as the person's yes to server pushes? See the followups' P4-T17 entry. P4-T21 carries it.
+  - **Live now:** the #466 confirmation (Opus); the 1D-T14 planner (R125 rework).
+- **14 Nov 03:19: #466 (P4-T17, closes #226) opened at `7cdb3d9f`; its two reviews started. CI is still blocked.**
+  - The implementer reported DONE in about 10 minutes. The controller checked the commit: all 9 `real/` files are byte-identical.
+    - RED: Node 13 of 13 and render 13 of 21, on assertions only. GREEN: 13 and 21. Mutants: 92 killed, 2 equivalent (H33, M2), every outcome equal to the planner's.
+    - Gate: both typechecks, `test:app`, `test:unit`, the routes render gate 38 of 38, and `export:web`.
+    - The commit's base is `aad380d2` (a fast-forward over controller state). The implementer thread is archived.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:105418bd28cc1ad6ff9224a21fcc57402a9ebdbeaba596716c6eb25b8c4b36d9`, writing `reviews/P4-T17.md`;
+    - Sonnet: `mcp:launch:982a483697e6b9f1b4ffe33b08293ea53072f1531222fb1bc73e980bb206287d`, writing `reviews/P4-T17-second.md`.
+
+    Notes: `scratch/dispatch/P4-T17-review-notes.md`.
+  - **CI:** the watcher hit its cap with no run started. It is re-armed over all seven approved PRs (456 and 460 to 465). #466 joins the queue.
+  - **Live now:** the #466 reviews (Opus and Sonnet); the 1D-T14 planner (R125 rework).
+- **14 Nov 03:07: P4-T17 READY and building (Haiku); the disk is tight.**
+  - **P4-T17 planner done** (thread archived). Brief `briefs/P4-T17.md`, kit `scratch/p4-t17-planner/` (43 of 43 sums, `orig/` 2 of 2 at the head).
+    - RED was 13 of 13 Node cases and 13 render cases. GREEN passes, mutants 92 of 94 killed with 2 equivalent, and the dry run matched every Expected line.
+    - **P1 to P17 accepted.**
+    - **R126 (its P3 (a)):** SDK 58 shows a notification that arrives while the app is open unless a handler says otherwise, so today a local reminder shows in the foreground with a sound. The plan says it shows nothing, and the brief follows the plan: the host hides it. This changes today's foreground reminder. The owner may reverse it with one line in `presentation` and mutants H3 and H4. It is listed as an owner note.
+    - P3 (c), corrected by the Opus review's m3: the plain `expo-notifications` plugin entry changes no native config. `@expo/prebuild-config` already applies the package's plugin with these defaults, so `aps-environment: development` is in today's prebuild too, and signing without the push capability already fails at the base. A store build may need `mode: production` on the entry (D33, P6C).
+  - **Implementer (Haiku max):** `mcp:launch:55b3ad680e789f019ec74708f53552d799e67cc67955357631bd47b5c36f691e`, in worktree `p4-t17` on `p4/t17-push`, installed, `--lock`. Notes: `scratch/dispatch/P4-T17-implementer-notes.md`.
+  - **Disk: 5.3 GiB free** after the install, down from 6.7.
+    - Ours: 9 task and integration worktrees of 1.2 to 1.7 GB each, which stay until their PRs merge. The scratch folder is 9.1 GB, spread over old review folders whose probes followups cite.
+    - The 9.8 GB `.claude/controller-stale-20261108-1710` folder is still there. The 9 Nov takeover said to delete it "when nothing more is wanted from it". It is kept until the probes the old followups cite are checked against it.
+    - `agent-a4e4cbbb8ea6b2a9c` holds 11 uncommitted edits and is left for the owner.
+    - A new worktree costs about 1.2 GB. Check `df` before each one.
+  - **Live now:** the P4-T17 implementer; the 1D-T14 planner (R125 rework).
+- **14 Nov 02:45: 1D-T14's planner reported READY. The controller accepted P1 to P9 and sent the brief back for R125.**
+  - The kit is `scratch/1d-t14-planner/`: 23 of 23 sums OK, and its 2 `orig/` files match the head. RED was 8 of 46, GREEN 46 of 46, mutants 7 of 7.
+  - **P4, the planner's guard:** `signed_out` is sent only from an active session. Without it, Settings' Sign out from an ended session would hold the event and send it under the next account's yes (M5). Accepted.
+  - **R125 (the planner's P10, ruled in):** `signOut()` sends no `signed_out` on two paths.
+    - Settings' sign-out everywhere (`SettingsScreen.tsx:250`): the plan's own rule, "sends nothing in phase 1".
+    - Privacy's Done after an accepted deletion (`PrivacyScreen.tsx:436`): an event under the deleted person's id could recreate the PostHog person after 1D-T13's step 6 (Global Constraints, Q11).
+
+    `signOut` gets an option that skips the event, passed from those two callers only. Both are pinned with a yes, and Settings' plain Sign out stays pinned to send it. Neither screen is touched by anything in flight.
+  - The same thread (`mcp:launch:be2008fe0f8556f9d69a56d0100a74eeffa078534354318b690700999ffa6726`, run 2) revises the brief and the kit, then reports READY again.
+  - Then: worktree `p1-1d-t14` on `p1/1d-t14-account-events` (`install`), and a Haiku implementer. It depends on no PR in flight, so it can build while CI is blocked.
+- **14 Nov 02:25: #465 fully approved: the confirmation of `74142ebc` approves.** Seven PRs are now fully approved and wait only on CI. Merge order once runners return:
+  1. #460 P3-T13 (`14da2b4e`)
+  2. #461 P3-T9 (`5cb1055e`)
+  3. #462 source-pins (`d9b4dfb1`)
+  4. #463 P4-T2 (`19ef67fb`)
+  5. #456 P2-T26 (`e4313772`)
+  6. #464 P2-T18a (`7e2ae0dc`)
+  7. #465 P2-T18 (`74142ebc`; CI runs again once #464 has merged)
+
+  - The confirmation (`reviews/P2-T18.md`, "Confirmation of 74142ebc") reran 20 mutants and a compat run with #464's files laid over (34 of 34, 6 of 6). It confirms Sonnet's m1 from the installed source: on iOS no Magic Tap reaches JS (Fabric only), so the + is the working path. That device check is first on P2-T38's list.
+  - The #465 Opus thread is archived.
+  - **After each merge:** run `promote_pr.sh`, update followups' headers (P2-T18a and P2-T18 are already written), copy the probes, and dispatch the ready briefs. That means P4-T4 after #461 and P4-T7 after #463, then plan `saved-pins` after #464 and `shell-carry` after #465.
+  - **Live now:** the P4-T17 and 1D-T14 planners.
+- **14 Nov 02:15: #464 fully approved (the confirmation of `7e2ae0dc` approves); #465 approved twice, its pins pushed as `74142ebc`.**
+  - **#464 (P2-T18a)** waits only on CI. The confirmation (`reviews/P2-T18a.md`, "Confirmation of 7e2ae0dc") reran 15 mutants, each killed by the case meant for it. Its optional n2 (race A's opening part dressed as an online save) goes to `saved-pins` in followups. Both #464 review threads are archived.
+  - **#465 (P2-T18):**
+    - **The Sonnet second review approves** (`reviews/P2-T18-second.md`): m1 Magic Tap on Fabric iOS (a device check decides), m2 the add route's `addRequestOf` unpinned, m3 the + and icon looks, m4 Insights' 52 pt, n1 to n4.
+    - **The controller's commit `74142ebc`** holds both reviews' test pins and the receipt corrections. Proof `scratch/p2-t18-pins/`:
+      - green 34 of 34 and 6 of 6, and `typecheck:app`;
+      - the reviews' 10 mutants each killed;
+      - the planner's A, B, D, S10 to S12 and L still killed.
+    - One new case first failed on the real code (no wallet in the fakes, so no amount step). It was fixed in the scratch tree, and green and N3 were rerun cleanly.
+    - **The Opus reviewer (`mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, run 2) confirms `74142ebc`** in a new section of `reviews/P2-T18.md`. The Sonnet thread is archived.
+    - The followups entry for P2-T18 is written. The controller's `shell-carry` task, to plan once #465 merges, holds the looks shared across spend layouts (Opus m1), Insights' inset (Opus n2, Sonnet m4) and the hint's words (Sonnet n1).
+  - **Live now:** the P4-T17 and 1D-T14 planners; the #465 confirmation (Opus).
+- **14 Nov 02:05: #465's Opus review approves; two planners started (P4-T17, 1D-T14).**
+  - **#465 (P2-T18), `reviews/P2-T18.md`:** no blocker or major.
+    - Test-only pins, each proved in the reviewer's scratch: m2 (the chip reads `อาหาร−฿50`, `WalletShell.render.test.tsx:336`, kills V1 and V2), n1 (a sixth `spendLayoutOrder.test.ts` case scanning `<WalletShell\b`, kills V9) and n3 (the + at `0.4` opacity while blocked, kills V4).
+    - m1: Settings' diary links push a second spend layout, so each has its own shell, tray host and looks provider, and looks changed under Settings are stale below.
+    - **The controller adds m2, n1, n3's V4 and m1's receipt correction itself** once the Sonnet second review lands, then asks the Opus reviewer (`mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, kept open) to confirm.
+    - **m1's carry is the controller's** (settle before P2-T24's card stack, at the latest before P2-T38). Its leaning: share the looks between providers, one store per account with subscribers as `DeviceDiaryProvider` shares its diary. That keeps today's Back; the other option, one spend layout, changes Back and would be the owner's call.
+    - n2: Insights under the + overlaps 18 pt with a 34 pt inset and 52 pt without; name an owner (P2-T24 or a small follow-up).
+  - **Planners (Opus xhigh)**, common notes `scratch/dispatch/planner-common-notes-20261114b.md`, head `988669e7`:
+    - **P4-T17, push on the phone** (critical path, depth 6): `mcp:launch:8fecf2cdbd19737baaec6aeb76665a3c7819fa03cfc3b8bfdda6607e7a94f449`, WT `p4-t17` on `p4/t17-push`. It shares no file with anything in flight; `expo-notifications` ~58.1.4 is already installed.
+    - **1D-T14, the account events** (size S): `mcp:launch:be2008fe0f8556f9d69a56d0100a74eeffa078534354318b690700999ffa6726`, WT `p1-1d-t14` on `p1/1d-t14-account-events`. It carries followups line 770 (`signed_out` first).
+  - **Live now:** the P4-T17 and 1D-T14 planners; the #465 Sonnet second review; the #464 confirmation (Opus).
+- **14 Nov 02:00: #464's pins pushed as `7e2ae0dc` (the Opus reviewer confirms); P4-T7's brief READY (waits on #463).**
+  - **#464 (P2-T18a):** the controller's commit `7e2ae0dc` holds both reviews' pins and the comment, test-only plus the comment. Proof `scratch/p2-t18a-pins/`, all under the heavy lock:
+    - the three render files 56 of 56, and `typecheck:app`;
+    - the reviews' mutants O1, O2, O6, O9, OF1, R1 and R3 each killed on an assertion, by the case meant for it;
+    - the planner's H1 to H7 and W1 to W5 still killed.
+
+    The PR body is updated. **The Opus reviewer (`mcp:launch:94c5884601504349cb697d18f6b873d2e2bd3acbb7212a5253684ae148b304a4`, run 2) confirms `7e2ae0dc`** in a new section of `reviews/P2-T18a.md`, ending with a new VERDICT line. The Sonnet thread is archived. Followups are written (P2-T22 for n3; `saved-pins`, a new pins-only task to plan once #464 merges, owns the P2-T17 carry).
+  - **P4-T7 planner done** (thread archived). Brief `briefs/P4-T7.md`, kit `scratch/p4-t7-planner/` (78 of 78 sums).
+    - `check_kit` reports `routes.ts`, `route-coverage.test.ts` and `protocol.ts` as DIFFERS. That is expected: their `orig/` equals #463's head `19ef67fb` for all three, and the other 8 `orig/` files equal the head.
+    - Its base is the head plus #461, #462 and #463 in merge order. **P1 to P17 accepted.** Confirm follows B10 as A1 amends it; that default stands while owner Q4 is open.
+    - Dispatch the Haiku implementer (`--lock`, worktree `p4-t7` on `p4/t7-slip-drafts`, `install-edge`) only after #463 merges.
+  - **Live now:** the #465 reviews (Opus and Sonnet) and the #464 confirmation (Opus). No planner or builder is running.
+- **14 Nov 01:55: #464 approved twice; P4-T4's brief READY (waits on #461); #465's head is `a47a2876`.**
+  - **#464 (P2-T18a):** Opus (`reviews/P2-T18a.md`) and Sonnet (`reviews/P2-T18a-second.md`) both approve. Their findings overlap and are all test pins plus one comment:
+    - Opus m1 = Sonnet m1a (R3/O6, the revision handed to `todayOutMinor`): race B's case with the diary at `'8'` (probe B1);
+    - Opus m2 = Sonnet m1c (R1/O2): the closed-diary case over `locked`, `opening` and `unavailable`;
+    - Sonnet m1b (O1, PS1: a diary opening mid-read), m1d (O9, PS6: the online save), n1 (OF1, PF2: `canGoBack` false);
+    - Opus n1 = Sonnet n2: the comment at `NewWalletFlow.tsx:388-390`.
+    - **The controller adds them itself** (test-only plus the comment, while CI is blocked), proves them under the lock (proof `scratch/p2-t18a-pins/`), and asks the Opus reviewer to confirm. Sonnet's n3 (the editor's loading-state back, PE1) goes to P2-T22 in followups.
+  - **P4-T4 planner done** (thread archived). Brief `briefs/P4-T4.md`, kit `scratch/p4-t4-planner/` (28 of 28 sums). `check_kit` says `slip-read.ts` DIFFERS at the head: expected, because its `orig/` is #461's text (`orig/` sha256 equals `5cb1055e`'s file for both base files). **P1 to P15 accepted.** Dispatch the Haiku implementer (`--lock`, worktree `p4-t4` on `p4/t4-slip-import`, `install-edge`) only after #461 merges; its Step 0 checks the merge.
+  - **#465's head is `a47a2876`, not `179d03cb`:** the implementer amended its commit before pushing (one wording line in `receipts/P2-T18.md`). Both #465 reviewers were told to review `a47a2876`.
+- **14 Nov 01:40: #465 (P2-T18, closes #164 after #464) opened at `179d03cb` (pushed as `a47a2876`, see 01:55).**
+  - All 12 `real/` files are byte-identical. RED was Node 8 of 8 and render 15 of 39; GREEN passes. 87 mutants: 86 killed and 1 equivalent, identical to the planner's.
+  - Gate: `typecheck:app` and `:routes`, `test:unit` 1117, kit eight 142, routes 17, neighbours 131, `export:web`.
+  - Reviews: Opus `mcp:launch:7b2c9f33ab1adb89175e8cab373a84ea855a03c7adee3594b41bb9aefebc85c2`, Sonnet `mcp:launch:b699098f4b6f9f2e876f0fc036e922a2f25326b7da301688d934e8cf8f9d84cb`. The implementer thread is archived.
+  - **Live now:** reviews on #464 and #465 (Opus and Sonnet each); the P4-T4 and P4-T7 planners (Opus). No builder is running.
+- **14 Nov 01:35: #464 (P2-T18a, part of #164) opened at `fc58825a`.**
+  - All 10 `real/` files are byte-identical. RED was Node 1 of 8 and render 6 of 54; GREEN passes. Mutants 20 of 20, identical to the planner's. Gate: `test:unit` 1110, kit eight 142, routes 17, catalogue 24.
+  - Reviews: Opus `mcp:launch:94c5884601504349cb697d18f6b873d2e2bd3acbb7212a5253684ae148b304a4`, Sonnet `mcp:launch:e467e1140cf5fde54a0e8d8d90ed65c09b84862e98f7490b67534a1af3a445eb`. The implementer thread is archived.
+- **14 Nov 01:25: P2-T18 was split in two, P2-T18a and P2-T18, and both are building (Haiku). P2-T18a merges first.**
+  - **P2-T18a, shell guards (size M):**
+    - kit `scratch/p2-t18a-planner/`, `check_kit` 51 of 51, `orig/` 10 of 10;
+    - it carries followups line 838 (P2-T17's today's-total races A and B, the closed diary, PV1) and lines 699 to 701 (P2-T21's flow left once, `nativeID`, n1, n2, receipts);
+    - **P1 to P16 accepted.** Worktree `p2-t18a` on `p2/t18a-shell-guards`. Implementer `mcp:launch:81da4972f6d0674793e85b15d578cd28da6b58e694a92397ab55aee1396f0e72`.
+  - **P2-T18, the shell (size L):**
+    - kit `scratch/p2-t18-planner/`, `check_kit` 50 of 50, `orig/` 5 of 5;
+    - **P13 closes the copy leak:** every `/spend/*` route sits inside the shell's host, and `/spend/add` opens the tray;
+    - **P6:** `EXPO_PUBLIC_REDESIGN=all` now draws the shell;
+    - **P1 to P22 accepted.** Worktree `p2-t18` on `p2/t18-wallet-shell`. Implementer `mcp:launch:8387bf605027dd45756415e1a30d4bd244fb3daedbe5c6ca80c89228fe0dd4c8`.
+    - Follow-up: Insights needs `useWalletTabInset()`, since the + covers about 18 pt of its last row (P2-T31's file).
+  - The planner thread is archived.
+  - **Live now:** the P2-T18a and P2-T18 implementers (Haiku); the P4-T4 and P4-T7 planners (Opus).
+- **14 Nov 01:10: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114a.md`, head `fda09f7b`):
+  - **P4-T4, the slip reader's import mode (AI lane):** `mcp:launch:0bed034027fc9e2fddaae20829e12d424ab4102e9bb0b81f3662572ab28773a7`, WT `p4-t4` on `p4/t4-slip-import`. It builds on P3-T9's `real/` `slip-read.ts` (#461), and carries followups lines 896 and 905.
+  - **P4-T7, slip drafts (routes lane):** `mcp:launch:7e8b41d4cbac185778098afd8c665ba0045db64d5cd32b93d408b3e4baa6f56b`, WT `p4-t7` on `p4/t7-slip-drafts`. It builds on P4-T2's `real/` `v1/routes.ts`, `protocol.ts` and `route-coverage.test.ts` (#463), and carries lines 868 and 880 plus source-pins' H9 pin.
+  - **Live now:** the P2-T18, P4-T4 and P4-T7 planners (Opus).
+- **14 Nov 01:00: #456 (P2-T26) fully approved; five PRs are ready and waiting only on CI.**
+  - **#456's confirming review (Opus) approved `e4313772`**, with no blocker, major or minor; nits n1 and n2 are optional. Probes are in `scratch/p2-t26-confirm/probes/`.
+  - The P2-T18 planner was steered about the copy-to-Quick-add privacy leak outside a tray host, which must be closed before P2-T24.
+  - **Merge order when CI returns:** #460 (P3-T13), #461 (P3-T9), #462 (source-pins), #463 (P4-T2), #456 (P2-T26). Rerun promotion #458's failed SQL job. Record each merge's followups (P2-T26: the three reviews, plus Sonnet's real n1, `after.current`).
+  - **Live now:** only the P2-T18 planner (Opus). No builder or reviewer is running.
+- **14 Nov 00:45: #456 (P2-T26) fix round is in, and its confirming review is running.**
+  - The fixer committed `0c062e3d`. All 7 fix-kit files are byte-identical, and the 139-mutant log is identical to the planner's. RED was 7 of 39, GREEN 39.
+  - The controller merged the integration head as `e4313772`, with no conflicts, and pushed. Gate on the merged tree: `typecheck:app`, `test:unit` 1110, record files 167, kit and add and saved 180, routes 18, catalogue 20 (`scratch/p2-t26-merge/gate.out`).
+  - Confirming review (Opus high) `mcp:launch:24a5f091f8ce180b56789a77f3e58dfc6d1ac1a946045ded7752234df8f2c13e`. The fixer thread is archived.
+  - **P4-T2's reviewer confirmed `19ef67fb`.** So #460, #461, #462 and #463 are all fully approved and wait only on CI.
+- **14 Nov 00:30: four PRs are reviewed and approved, and waiting only on CI (queued org-wide).**
+  - **#460 (P3-T13):** both approved.
+  - **#461 (P3-T9):** both approved (the Sonnet review at 00:15).
+  - **#462 (source-pins):** approved, and the reviewer confirmed the controller's m1 commit `d9b4dfb1`.
+  - **#463 (P4-T2):** approved. The controller added the review's m1 rows itself (test-only, `19ef67fb`; proof `scratch/p4-t2-m1/`, MY1 and MY2 killed), and the same reviewer is confirming.
+  - **When CI returns:** merge in order #460, #461, #462, #463. Rerun promotion #458's failed SQL job. Each merge needs the usual followups, probe copies (done for P4-T2: `scratch/p4-t2-review/probes/`) and promotion.
+  - **Live now:** the P2-T26 fixer (Haiku), the P2-T18 planner (Opus), and the P4-T2 reviewer's confirmation.
+- **14 Nov 00:20: the P2-T26 fixer is building; source-pins gained its review's m1 case; P3-T9's Opus review approved.**
+  - **P2-T26 fix brief READY** (`briefs/P2-T26-fix.md`, kit `scratch/p2-t26-fix-planner/`, proved on the PR head `52110318`).
+    - RED was 7 of 39, GREEN 39, mutants 139 of 139. It implements R123, R124, the pins and the late-answer guard.
+    - `orig/` 5 of 5 equal `52110318`; `check_kit` says "NOT AT HEAD", which is expected for a fix kit.
+    - Fixer (Haiku) `mcp:launch:f411e4ae27cc1da4788bb85aa87add712e515f9d930896f5227137c6b643aa37`, in worktree `p2-t26`, with no sync merge. The planner thread is archived.
+    - My dispatch named the wrong Sonnet n1 (the If-Match regex is P4-T3's). P2-T26's real Sonnet n1 is `after.current` not being cleared after `actionsClosed`; it goes to followups when #456 merges.
+  - **#462 (source-pins):** the Opus review **approved** with m1 (no case held "a record made without a source stays without one"; V5 to V7 survived).
+    - The controller added that one case itself, test-only, as `d9b4dfb1`. Proof in `scratch/source-pins-m1/`: 12 of 12, with V5, V6 and V7 each killed alone.
+    - The same reviewer was asked to confirm `d9b4dfb1`.
+  - **#461 (P3-T9):** the Opus review **approved**; the Sonnet review is pending.
+  - **CI is still queued org-wide.**
+- **14 Nov 00:05: the usage reset at 00:00 resumed exactly the six live agents** (the P2-T26 fix and P2-T18 planners; the P3-T9 Opus and Sonnet, source-pins and P4-T2 reviews). No finished thread resumed. CI is still queued org-wide.
+- **13 Nov 21:30: the usage limit paused all six agents at about 20:58. T3 snoozed them until 00:00 (17:00Z) and will resume them then.**
+  - Paused:
+    - the P3-T9 reviews (Opus `585ae86c…`, Sonnet `9f345364…`);
+    - the source-pins review `58da09d7…`;
+    - the P4-T2 review `51afe059…`;
+    - the P2-T26 fix planner `59db110d…` (its brief and kit were partly written at 20:04 to 20:07);
+    - the P2-T18 planner `7dd87572…`.
+  - CI is still queued org-wide; the #460 watch hit its cap.
+  - **At the reset:** check that no finished thread resumed, re-arm the watchers, and read each agent's result as it lands.
+- **13 Nov 20:30: P2-T18's planner started (the wallet shell, depth 13, the critical path):** `mcp:launch:7dd87572c7dffd10cf58f085d915b6e1ab70d213b0793dca5906b8ce6279f0cd`, WT `p2-t18` on `p2/t18-wallet-shell`.
+  - It carries followups lines 239, 359, 379, 414, 698 to 701, 777 and 838. Among them: P2-T17's first step (the today's-total races and the PV1 pin), P2-T16's must-carries (one host, PROBE-C1 and C3), and P2-T21's m2 (`leave()` once-only).
+  - It builds on P3-T13's `real/` `AddTrayHost.tsx` (#460), and on P2-T26's `real/` if it shares `SpendRoutes.render.test.tsx`. It was asked to propose a split if the task is too large.
+- **13 Nov 20:25: #463 (P4-T2, issue #210) opened at `4e95b987`.**
+  - 14 of 15 `real/` files are byte-identical; the receipt adds the install line. RED was Node 2 of 14 and Workers 10 of 10, all assertions.
+  - Mutants: 70 of 70 (SQL 8, code 42, Node 20), each batch identical to the planner's. Neighbours 168; `test:edge` 215; `build:edge` binds `CATALOG_DB`.
+  - One Opus review (public catalog data, so no second review): `mcp:launch:51afe0596bf025013f64f39956a18627a7a16ad4de7a7816b1b7cff48edffa0f`. CI is queued. The implementer thread is archived.
+  - **Live now:** reviews on #461 (P3-T9, both), #462 (source-pins) and #463 (P4-T2); the P2-T26 fix planner (Opus). No builder is running.
+  - **Next to plan:** P5-T9 (routes lane: trips in the vault). It shares `v1/routes.ts`, `protocol.ts`, `vault/routes.ts` and `registry.ts` with P4-T2's files, so it builds on P4-T2's `real/`. It must carry the P4-T3 followup to add `trip` to `sync.test.ts`.
+- **13 Nov 20:20: #462 (source-pins) opened at `a5d93d8a`.**
+  - Both `real/` files are byte-identical. RED was exactly the three new cases failing on assertions; mutants 3 of 3, identical to the planner's. Gate: `test:edge` 214, `test:unit` 1109.
+  - One Opus review, since it is test-only: `mcp:launch:58da09d717c1a431e33a66d7695fa18c41bd36b26d8dec5d084d6d50d4ef32e0`. CI is queued, as for every PR. The implementer thread is archived.
+  - **Live now:** the P4-T2 implementer (Haiku); reviews on #461 (P3-T9) and #462; the P2-T26 fix planner (Opus).
+- **13 Nov 20:15: CI IS BLOCKED ORG-WIDE (owner's call).**
+  - Every GitHub Actions run in mygogocash has been queued without a runner since about 09:30: jotbun 3, gogocash-monorepo 5, NotNotch 3, nothing in progress. GitHub's status page says Actions is operational.
+  - The org's billing usage shows 2,924 Linux minutes used in November against what looks like a 3,000-minute included allowance, and November storage is now charged. So the included minutes are very likely used up, with a $0 limit.
+  - The last jotbun run to complete was promotion #458's at 09:21. Its SQL job failed, probably the `retry_after` flake; rerun it once runners return.
+  - **Owner:**
+    - raise the org's Actions budget or spending limit, or wait for the 1 Dec reset, or approve a self-hosted runner (an infra change);
+    - the controller buys nothing (standing rule).
+  - **Until then:** builds and reviews go on locally, and merges wait for green CI.
+  - Queued: #460 (P3-T13; both reviews approved), #461 (P3-T9), promotion #459.
+- **13 Nov 20:10: #461 (P3-T9) opened; source-pins and P4-T2 building; #460's Opus review approved.**
+  - **#461 (P3-T9, issue #193)** at `5cb1055e`: all 20 `real/` files byte-identical. RED was phone 3 of 4, edge Node 6 of 46 and Workers 26 of 126. Mutants: 79 of 79 in six batches, each identical to the planner's.
+    - Reviews: Opus `mcp:launch:585ae86cc8c795e7b9408bbe54d85f51228361ee34ab13782d3fb13d3ad47946`, Sonnet `mcp:launch:9f345364b995bb1e1d5196f13a324e2c91df3c08ee4bd73380171da441fc532a`.
+  - **#460 (P3-T13):** the Opus review **approved**; the Sonnet review and CI are pending.
+  - **source-pins building (Haiku)** `mcp:launch:23f203d563e809b37aa689a4284bc79fcbf6fc03aa8fe42427c90ebc0d160034`, worktree `source-pins` on `fix/source-pins` at `a0aa42e3`, `install-edge`, heavy lock.
+    - Test-only: two edge cases and three app lines; no source change, no finding.
+    - **P1 to P10 accepted.** P3: the import-confirmation pin waits for P4-T11.
+  - **P4-T2 building (Haiku)** `mcp:launch:a7de68dd82efbad0f0bba136c732f09362f3f9ddf188cbc8c64ce11e05a82f3e`, worktree `p4-t2` on `p4/t2-catalog-db` at `a0aa42e3`, `install-edge`, heavy lock.
+    - `check_kit` 57 of 57, `orig/` 9 of 9. **P1 to P15 accepted.**
+    - **Owner item (new):** create the Cloudflare D1 database `jotbun-catalog` (D33, `apac` hint) and apply `migrations/catalog` before any deploy. Nothing waits on it: the binding uses a local placeholder id, as `AUTH_DB` and `ERASURE_DB` do.
+  - **Live now:** the source-pins and P4-T2 implementers (Haiku); reviews on #460 (Sonnet) and #461 (both); the P2-T26 fix planner (Opus).
+- **13 Nov 19:50: P3-T9's brief is READY and its implementer is building (Haiku).**
+  - Size L, 20 files. It carries every P3-T8 review item (P14): the `isRealDate` guard, the `readOnce` catch, the MO2 rows, PC2, one `draftChoices` and the test pins.
+  - **P6, R116 extended to every route through `shouldRefund`** (the slip's "Haiku answered, Opus never started" is now spent): **accepted** by the controller.
+  - `check_kit` at `fb6aa0bd`: 76 of 76, `orig/` 16 of 16. **P1 to P16 accepted.** Client minimum 0.2.0 (owner item 7).
+  - Worktree `p3-t9` on `p3/t9-ask-escalation`, `install-edge`, heavy lock. Implementer `mcp:launch:124faaff65d8b8c9f09c9bb0320623119e62b87eeaebc1e904944472096cd5e9`. The planner thread is archived.
+  - **source-pins:** its kit and brief exist (19:49), and the planner is finishing its report.
+  - **Live now:** the P3-T9 implementer (Haiku); reviews on #460 (P3-T13); the P2-T26-fix, P4-T2 and source-pins planners (Opus).
+- **13 Nov 19:35: #460 (P3-T13, issue #197) opened at `14da2b4e`.**
+  - All 10 `real/` files are byte-identical. RED was Node 3 of 17 and render 7 of 38, all assertions. GREEN was Node 77 and render 38. Mutants 48 of 48, identical to the planner's. Gate: `test:unit` 1112, kit eight 142, routes 17.
+  - The implementer noted `app.json` is 0.3.0, not 0.2.0 as the brief says; P10's 0.2.0 client minimum still holds. It also noted `fromSheet` has no lock check (reasoned unreachable); the reviews are asked about it.
+  - Reviews (notes `scratch/dispatch/P3-T13-review-notes.md`): Opus `mcp:launch:372a9900f8ed3b73fc7ac31e81105c5742b6ebc5bedb4e8bca96ca7662cdd82c`, Sonnet `mcp:launch:dba8ee736316abacdeb75070acbb05bc2b8a5b9796acc639b4ffa3f22a6325b0`. The implementer thread is archived.
+  - **Live now:** reviews on #460; the P3-T9, P2-T26-fix, P4-T2 and source-pins planners (Opus).
+- **13 Nov 19:25: #457 (P3-T3) MERGED as `ab350e4`; the source-pins follow-up is planning.**
+  - **#457:** both reviews approved `2c642055` with no blocker, major or minor (nits and notes only), and CI was 9 of 9.
+    - The probes are in `scratch/p3-t3-review/probes/` and `scratch/p3-t3-second/probes/`.
+    - Issue #187 closed, worktree and branch removed, promoted as **#459** (stack #379 holds 43). Followups recorded; the review threads are archived.
+    - P3-T3's code files are at the head byte for byte, so the P4-T2 planner was told to prove on the head.
+  - **source-pins planner** `mcp:launch:9090027814b3f09dbb7b3988d54156e6d306d36ac495151d3ceec372de269855` (WT `source-pins` on `fix/source-pins`): followups line 637's edge-only pins, test-only and size S.
+  - **Live now:** the P3-T13 implementer (Haiku); the P3-T9, P2-T26-fix, P4-T2 and source-pins planners (Opus). **No open task PR except #456**, which is waiting for its fix round.
 - **13 Nov 19:20: the build resumed after a pause from about 09:25 to 19:05 (the usage limit); T3 resumed exactly the four live agents.**
   - **#457 (P3-T3):** CI 9 of 9 at `2c642055`. The Sonnet second review **approved**; the Opus review is running.
   - **#456 (P2-T26):** the Opus review also says **Needs fixes** (M1 = R123; m1 to m3, n1 to n3).

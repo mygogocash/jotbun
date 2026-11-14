@@ -1,0 +1,22 @@
+# P4-T7's files. Column 1: M (modified) or A (added). Column 2: what RED holds
+# (stub = stubs/, real = real/, base = left as the base has it (absent, for an A
+# line), later = the receipt, copied at the end). GREEN holds real/ for every line
+# but the receipt. Shared files are marked in the brief's Scope table. The base is
+# the integration head 30b65ec9 with #461 (P3-T9), #462 (source-pins) and #463
+# (P4-T2) applied: the head this task starts from once #463 has merged.
+A stub apps/edge/src/vault/slips/drafts.ts
+A stub apps/edge/src/vault/slips/refs.ts
+A stub apps/edge/src/vault/slips/prune.ts
+M base apps/edge/src/vault/domain/transactions.ts
+M base apps/edge/src/vault/commands/registry.ts
+M base apps/edge/src/vault/commands/change-log.ts
+M base apps/edge/src/vault/files/jobs.ts
+M real apps/edge/src/vault/user-vault.ts
+M real apps/edge/src/v1/protocol.ts
+M base apps/edge/src/v1/routes.ts
+M base apps/edge/src/vault/routes.ts
+M real apps/edge/test/workers/support/slips.ts
+A real apps/edge/test/workers/slip-drafts.test.ts
+M real apps/edge/test/workers/slips-vault.test.ts
+M real apps/edge/test/route-coverage.test.ts
+A later docs/implementation/receipts/P4-T7.md

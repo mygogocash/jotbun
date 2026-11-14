@@ -1,0 +1,12 @@
+new apps/app/src/wallet/home/shellRoutes.ts
+new apps/app/src/wallet/home/shellRoutes.test.ts
+new apps/app/src/wallet/home/spendLayoutOrder.test.ts
+new apps/app/src/wallet/home/WalletTabBar.tsx
+new apps/app/src/wallet/home/AddButton.tsx
+new apps/app/src/wallet/home/WalletShell.tsx
+new apps/app/src/wallet/home/WalletShell.render.test.tsx
+shared apps/app/src/wallet/home/copy.ts
+shared apps/app/app/spend/_layout.tsx
+shared apps/app/app/spend/add.tsx
+shared apps/app/src/screens/redesign/SpendLayout.render.test.tsx
+shared apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx

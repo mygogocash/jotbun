@@ -1,0 +1,37 @@
+R1 KILLED: the bar shows on /spend/all (the plan's mutant) [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R2 KILLED: a trailing slash hides the bar [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R3 KILLED: Insights selects the wallets tab [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R4 KILLED: the bar shows everywhere [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R5 KILLED: Insights is a History route [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R6 KILLED: a hidden bar keeps an inset [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R7 KILLED: the largest sizes keep the standard inset [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R8 KILLED: the standard inset is 83 [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R9 KILLED: the largest inset is 84 [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R10 KILLED: any type in the link passes [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R11 KILLED: an empty wallet or copy passes [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R12 KILLED: the link's wallet is dropped [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+R13 KILLED: the link's copy is dropped [shellRoutes.ts / shellRoutes.test.ts] -> Tests tests 3 pass 2 fail 1; 1 AssertionError; restored sha256 equal
+S10 KILLED: no looks kept by the shell [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+S11 KILLED: the shell's screens on another route's resources [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+S12 KILLED: the looks below the toast's host [WalletShell.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L1 KILLED: the shell above the diary (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L2 KILLED: the terms gate in the screens element only (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L3 KILLED: the question in the screens element only (the plan's mutant) [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L3b KILLED: the question in the screens element only, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L4 KILLED: the question inside the shell (the plan's mutant): the order's consent case [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L4b KILLED: the question inside the shell (the plan's mutant): the layout's consent case [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L5 KILLED: the wallet branch after the core branch [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L5b KILLED: the wallet branch after the core branch, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 4 failed | 18 passed (22); 4 AssertionError; restored sha256 equal
+L6 KILLED: the wallet branch before the legacy build [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L6b KILLED: the wallet branch before the legacy build, in the wallet area [_layout.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+L7 KILLED: History's keep around the shell [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 3 fail 2; 2 AssertionError; restored sha256 equal
+L8 KILLED: no History keep in the wallet area [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+L9 KILLED: the wallet branch asks on a condition of its own [_layout.tsx / spendLayoutOrder.test.ts] -> Tests tests 5 pass 4 fail 1; 1 AssertionError; restored sha256 equal
+D1 KILLED: the wallet area ignores the legacy build [add.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+D2 KILLED: the wallet area keeps Quick add [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D3 KILLED: the link's type is lost [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D4 KILLED: the route stays in place of Home [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D5 KILLED: Home is pushed over the route [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D6 KILLED: the route opens the tray again at each redraw [add.tsx / SpendLayout.render.test.tsx] -> Tests 2 failed | 20 passed (22); 2 AssertionError; restored sha256 equal
+D7 KILLED: the link's copy is dropped by the route [add.tsx / SpendLayout.render.test.tsx] -> Tests 1 failed | 21 passed (22); 1 AssertionError; restored sha256 equal
+36 killed, 0 survived, 0 not as expected

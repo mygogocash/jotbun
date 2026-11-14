@@ -1,0 +1,13 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/ai-gate.test.ts > the ai gate > a paused ai gate answers 503 AI_PAUSED with Retry-After on parse, slip, note and ask, before authentication 24ms
+ ✓ test/workers/ai-gate.test.ts > the ai gate > AI preferences stay open and say available false while ai is paused 21ms
+ ✓ test/workers/ai-gate.test.ts > the ai gate > pausing writes leaves AI open, and pausing ai leaves writes open 25ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  19:28:43
+   Duration  2.40s (transform 875ms, setup 1.76s, import 12ms, tests 71ms, environment 0ms)
+

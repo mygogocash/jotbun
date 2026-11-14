@@ -1,0 +1,176 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 6 failed) 306ms
+     × an answer that fails the grounding check is asked again of Opus in a fresh conversation 37ms
+     × a Haiku refusal goes to Opus 23ms
+     × five Haiku tool turns without an answer go to Opus 24ms
+     × when Opus is not grounded either, the plain figures answer 23ms
+     × an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 24ms
+     × the prompts carry no account, session or device identifier (both conversations) 36ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an answer that fails the grounding check is asked again of Opus in a fresh conversation
+AssertionError: expected [ 'claude-haiku-5-5', …(3) ] to deeply equal [ 'claude-haiku-5-5', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:91:27
+     89|       escalated: true,
+     90|     })
+     91|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
+       |                           ^
+     92|     const [haiku, , opus, opusAgain] = model.calls
+     93|     // Fresh: Opus's first request is the person's question alone, as …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku refusal goes to Opus
+AssertionError: expected [ 'claude-haiku-5-5', …(2) ] to deeply equal [ 'claude-haiku-5-5', …(2) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:110:27
+    108|     model.push(refusal(), total(who.food), text('This month you spent …
+    109|     expect(await body(await ask(who.user))).toMatchObject({ answer: 'T…
+    110|     expect(modelsAsked()).toEqual([HAIKU, OPUS, OPUS])
+       |                           ^
+    111|     expect(model.calls[1].messages).toEqual([model.calls[0].messages[0…
+    112|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > five Haiku tool turns without an answer go to Opus
+AssertionError: expected [ 'claude-haiku-5-5', …(6) ] to deeply equal [ 'claude-haiku-5-5', …(6) ]
+
+- Expected
++ Received
+
+@@ -2,8 +2,8 @@
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:121:27
+    119|     expect(answer).toMatchObject({ answer: 'This month you spent ฿60 o…
+    120|     expect(answer.figures).toHaveLength(1)
+    121|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, HAIKU, HAIKU, HAIKU, …
+       |                           ^
+    122|     expect(model.calls[5].messages).toEqual([model.calls[0].messages[0…
+    123|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > when Opus is not grounded either, the plain figures answer
+AssertionError: expected [ 'claude-haiku-5-5', …(3) ] to deeply equal [ 'claude-haiku-5-5', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:135:27
+    133|     expect(answer.answer).toContain('฿100')
+    134|     expect(answer.answer).not.toContain('฿60')
+    135|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
+       |                           ^
+    136|   })
+    137|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected [ 'claude-haiku-5-5', …(2) ] to deeply equal [ 'claude-haiku-5-5', …(2) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:163:27
+    161|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+       |                           ^
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+    165|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > the prompts carry no account, session or device identifier (both conversations)
+AssertionError: expected [ 'claude-haiku-5-5', …(3) ] to deeply equal [ 'claude-haiku-5-5', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "claude-haiku-5-5",
+    "claude-haiku-5-5",
+-   "claude-opus-5-5",
+-   "claude-opus-5-5",
++   "claude-haiku-5-5",
++   "claude-haiku-5-5",
+  ]
+
+ ❯ test/workers/ask-escalation.test.ts:188:27
+    186|     model.push(total(who.food), text('This month you spent ฿999 on foo…
+    187|     expect((await ask(who.user)).status).toBe(200)
+    188|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS, OPUS])
+       |                           ^
+    189|     // Only the question, the day and the names to choose from, then t…
+    190|     const wire = JSON.stringify(model.calls)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 7 passed (13)
+   Start at  19:30:10
+   Duration  2.83s (transform 985ms, setup 1.94s, import 31ms, tests 306ms, environment 0ms)
+

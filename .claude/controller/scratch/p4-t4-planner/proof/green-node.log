@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > the import mode asks for the time and both sides, and sends only today and the locale 4ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > the import schema is strict throughout, and the prompt is Bun's voice and then the import task 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a slip read in import mode fills import with exact satang and clean sides 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an account number longer than four digits keeps only its last four, and a name holding seven digits in a row is dropped 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a bank outside the list becomes null, and an impossible time null 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a missing amount re-reads the slip with Opus once, and Opus's read is shown 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a missing day re-reads the slip with Opus once, and Opus's read is shown 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a missing sender bank re-reads the slip with Opus once, and Opus's read is shown 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a missing receiver name re-reads the slip with Opus once, and Opus's read is shown 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > Opus's bank slip read is shown even when it misses a field too: one re-read, never a third call 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > what an import read does not need never sends the slip to Opus: the time, the accounts, the sender name and the receiver bank 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an outage on Haiku throws SlipNotRead with the wait it was given, and calls no Opus 8ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku's import read keeps Haiku's read (A14) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > Opus failing after Haiku read no bank slip throws SlipNotRead with Opus's failure and wait 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > with the real transport a 429 is not retried, and its retry-after reaches SlipNotRead 4ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls unreadable is re-read once by Opus, and Opus's read is the draft 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a slip Haiku calls receipt is re-read once by Opus, and Opus's read is the draft 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a slip both models call unreadable has no import read 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a decline from both models is unreadable and declined: a decline is an answer, never SlipNotRead 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > null as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an array as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a string as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an answer cut short as Haiku's whole answer is re-read by Opus (the P3-T8 second review's MJ) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an Opus that calls it unreadable leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an Opus that declines leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an Opus that answers in broken JSON leaves Haiku's read and its bank (the P3-T8 reviews' MC) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > Opus is asked the same way, on Opus's base, and its call is marked escalated in the trace 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > on a 45000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the other 25 s (P4-T6's per-slip deadline must leave it 2 s) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > on a 22000 ms deadline, Haiku's import read is capped at 20 s and Opus gets the last 2 s (P4-T6's per-slip deadline must leave it 2 s) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > on a 21999 ms deadline, Haiku's import read is capped at 20 s and Opus gets no call, and Haiku's read stands (P4-T6's per-slip deadline must leave it 2 s) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an old genuine slip keeps its day and is read once: no 90-day window (the P3-T8 review's PK) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > the image's media type reaches both calls (the P3-T8 reviews' MO3) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > tokens count this read's calls only, when its trace already holds another (A16, the P3-T8 reviews' MA) 0ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > an import read writes no log line, so no image, name or number reaches one 1ms
+ ✓ test/slip-read-import.test.ts > the slip reader's import mode > a read the sanitizer cannot take is unusable, so Opus reads it again, and nothing crashes 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > only a bank slip has an import read 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > an amount is exact satang from 1 to 99,999,999,999, else null with amount_unclear 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a day is real and from 1970-01-01 to the day after today, else null with date_guessed 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a time is HH:MM in 24 hours, else null 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a bank is a key from the list, else null; 'other' is a key 1ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > an account keeps only its last four digits, Thai digits read as ASCII 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a name is one line of 1 to 120 code points, NFC and trimmed, and never holds a long number 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a side that is not an object has no bank, account or name 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > known flags are kept once each, in their order, and unknown ones dropped 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > a day that is no day for today throws: the caller's bug, which the reader counts as unusable 0ms
+ ✓ test/slip-read-import.test.ts > the import sanitizer > missingImportFields names the required fields a read lacks, in order 0ms
+ ✓ test/slip-read-import.test.ts > the single read keeps P3-T8's shape > the single mode is unchanged: no import key, and the drafts prompt with the wallets and categories to choose from 1ms
+ ✓ test/slip-read-import.test.ts > the single read keeps P3-T8's shape > a single read's SlipNotRead carries the failed call's wait too 0ms
+
+ Test Files  1 passed (1)
+      Tests  48 passed (48)
+   Start at  01:27:51
+   Duration  246ms (transform 74ms, setup 0ms, import 120ms, tests 25ms, environment 0ms)
+

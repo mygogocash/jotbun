@@ -1,0 +1,62 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t7-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ↓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is 32 random bytes made on the first read, the same ever after, and another person's differs
+ ↓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt answers while slip import is unreleased, and the other slip routes are 404
+ ↓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the salt is never logged or sent to analytics: its first read, later reads, a read after an erase
+ ↓ test/workers/slips-vault.test.ts > the slip salt (S16, S13) > the Worker's WebCrypto gives the contract's hash vector
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a slip account is made once per bank and last four digits
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > the slip accounts list shows each account with its open drafts
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping an account needs its version and a live wallet, and null unmaps
+ × test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping one account changes only that account 40ms
+   → expected [ { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > two faults at once answer the first check in R41 order: If-Match, the id, the body, the version, then the wallet
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > a draft whose two sides are the same account counts once for it
+ ↓ test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping is a write under the current policy and the imports gate; the list needs only the session
+ ↓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox change carries the open count, and its version only moves forward
+ ↓ test/workers/slips-vault.test.ts > the slip inbox (S1) > the inbox version follows its own head, not another entity's
+ ↓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft reads back as the contract's DTO, both sides and its flags intact
+ ↓ test/workers/slips-vault.test.ts > the slip inbox (S1) > a draft names the oldest live record with its amount and date as a possible duplicate
+ ↓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > erasing the vault leaves no salt, slip reference, slip account or draft (C7)
+ ↓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > a vault the previous release wrote gains the slip tables and the column in place: every record, receipt link and import link keeps its row
+ ↓ test/workers/slips-vault.test.ts > the slip tables (§6.2, C7) > each slip table takes a well-formed row and refuses one that breaks a rule
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slips-vault.test.ts > slip accounts (S2, S1) > mapping one account changes only that account
+AssertionError: expected [ { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,10 @@
+  [
+    {
+      "id": "88b0960e-19c8-4e23-8214-9cc0f0ae52df",
+-     "version": 1,
+-     "wallet_id": null,
++     "version": 2,
++     "wallet_id": "68485ac7-ed5f-4a81-a173-7abf37d30c9e",
+    },
+    {
+      "id": "f6394704-54fa-432d-9176-f0b0c6771e98",
+      "version": 2,
+      "wallet_id": "68485ac7-ed5f-4a81-a173-7abf37d30c9e",
+
+ ❯ test/workers/slips-vault.test.ts:274:99
+    272|     expect(res.status).toBe(200)
+    273|     expect((await json(res)).id).toBe(second)
+    274|     expect(await sqlRows(user, 'SELECT id, version, wallet_id FROM sli…
+       |                                                                                                   ^
+    275|       { id: first, version: 1, wallet_id: null },
+    276|       { id: second, version: 2, wallet_id: cash },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 skipped (18)
+   Start at  01:51:02
+   Duration  2.34s (transform 882ms, setup 1.75s, import 33ms, tests 41ms, environment 0ms)
+

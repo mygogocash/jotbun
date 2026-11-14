@@ -1,0 +1,38 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ❯ test/workers/slip-read.test.ts (46 tests | 1 failed) 704ms
+     × both calls carry the image's media type, a phone's JPEG included (the P3-T8 reviews' n1 and MO3) 23ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/slip-read.test.ts > reading one slip through the front door > both calls carry the image's media type, a phone's JPEG included (the P3-T8 reviews' n1 and MO3)
+AssertionError: expected [ 'image/png', 'image/png' ] to deeply equal [ 'image/jpeg', 'image/jpeg' ]
+
+- Expected
++ Received
+
+  [
+-   "image/jpeg",
+-   "image/jpeg",
++   "image/png",
++   "image/png",
+  ]
+
+ ❯ test/workers/slip-read.test.ts:400:38
+    398|     model.push(refusal(), slipReply('slip', [drafted(who)]))
+    399|     expect((await client.as(who.user).post('/v1/ai/slip', { image_base…
+    400|     expect(model.calls.map(mediaOf)).toEqual(['image/jpeg', 'image/jpe…
+       |                                      ^
+    401|   })
+    402|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
+   Start at  19:35:03
+   Duration  3.06s (transform 891ms, setup 1.78s, import 29ms, tests 704ms, environment 0ms)
+

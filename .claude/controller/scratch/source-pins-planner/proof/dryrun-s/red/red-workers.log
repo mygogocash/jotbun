@@ -1,0 +1,93 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/dry/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/source-pins-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made with a source keeps it, and every read shows it 56ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a record made without a source, or with null, reads without the key 34ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an unknown source is 422 VALIDATION_FAILED on source, and nothing is written 30ms
+ ✓ test/workers/transaction-source.test.ts > a record source > the same command key with another source is 409 IDEMPOTENCY_MISMATCH 34ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a create without a source is digested as the release before gave it, so a command queued then still replays 28ms
+ ✓ test/workers/transaction-source.test.ts > a record source > an edit cannot set the source 30ms
+ ✓ test/workers/transaction-source.test.ts > a record source > a row without a source reads as before, with its receipt link 27ms
+ ✓ test/workers/transaction-source.test.ts > the source column > takes each of the seven sources or NULL, and refuses anything else 29ms
+ ✓ test/workers/transaction-source.test.ts > the source column > a vault the previous release wrote gains the column in place: every record, receipt link and import link keeps its row 25ms
+ × test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed 30ms
+   → expected { …(10) } to match object { deleted_at: null, version: 3, …(1) }
+(8 matching properties omitted from actual)
+ × test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed 48ms
+   → expected [ [ 'retain', 200, 2, …(2) ], …(2) ] to deeply equal [ [ 'retain', 200, 2, …(2) ], …(2) ]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a restore keeps the source, in the record and in the sync feed
+AssertionError: expected { …(10) } to match object { deleted_at: null, version: 3, …(1) }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "deleted_at": null,
+-   "source": "tell_bun",
+    "version": 3,
+  }
+
+ ❯ test/workers/transaction-source.test.ts:234:39
+    232|     expect(await json(await client.as(s.user).del(`/v1/transactions/${…
+    233|     expect(await json(await client.as(s.user).post(`/v1/transactions/$…
+    234|     expect(await record(s, lunch.id)).toMatchObject({ deleted_at: null…
+       |                                       ^
+    235|     expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snaps…
+    236|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/transaction-source.test.ts > the write paths that never name the source keep it > a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed
+AssertionError: expected [ [ 'retain', 200, 2, …(2) ], …(2) ] to deeply equal [ [ 'retain', 200, 2, …(2) ], …(2) ]
+
+- Expected
++ Received
+
+@@ -2,22 +2,22 @@
+    [
+      "retain",
+      200,
+      2,
+      "624d9654-21e3-409d-916b-1629cfe79c26",
+-     "typed",
++     undefined,
+    ],
+    [
+      "replace",
+      200,
+      3,
+      "4a8a20b8-60fc-4eef-ab85-b4289374b68f",
+-     "typed",
++     undefined,
+    ],
+    [
+      "remove",
+      200,
+      4,
+      null,
+-     "typed",
++     undefined,
+    ],
+  ]
+
+ ❯ test/workers/transaction-source.test.ts:257:18
+    255|       seen.push([step, status, got.version, got.attachment_id ?? null,…
+    256|     }
+    257|     expect(seen).toEqual([
+       |                  ^
+    258|       ['retain', 200, 2, first.attachmentId, 'typed'],
+    259|       ['replace', 200, 3, second.attachmentId, 'typed'],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  19:46:16
+   Duration  3.51s (transform 1.27s, setup 2.41s, import 42ms, tests 372ms, environment 0ms)
+

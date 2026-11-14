@@ -1,0 +1,10 @@
+rebuilt: apps/edge/src/cloudflare-workers.d.ts
+rebuilt: apps/edge/src/v1/env.ts
+rebuilt: apps/edge/src/v1/protocol.ts
+rebuilt: apps/edge/src/v1/routes.ts
+rebuilt: apps/edge/src/v1/worker-routes.ts
+rebuilt: apps/edge/wrangler.jsonc
+rebuilt: apps/edge/vitest.workers.config.ts
+rebuilt: apps/edge/test/route-coverage.test.ts
+rebuilt: apps/edge/test/c1-shape.test.ts
+applycheck: ok

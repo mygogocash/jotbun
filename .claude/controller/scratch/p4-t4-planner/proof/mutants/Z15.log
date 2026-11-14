@@ -1,0 +1,34 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 1 failed) 28ms
+     × a side that is not an object has no bank, account or name 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > a side that is not an object has no bank, account or name
+AssertionError: expected [Function] to not throw an error but 'TypeError: Cannot read properties of …' was thrown
+
+- Expected:
+undefined
+
++ Received:
+"TypeError: Cannot read properties of null (reading 'bank')"
+
+ ❯ sanitized test/slip-read-import.test.ts:368:12
+    366|     expect(() => {
+    367|       out = sanitizeSlipImportRead(raw, today)
+    368|     }).not.toThrow()
+       |            ^
+    369|     return out
+    370|   }
+ ❯ test/slip-read-import.test.ts:480:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+   Start at  01:28:27
+   Duration  258ms (transform 74ms, setup 0ms, import 124ms, tests 28ms, environment 0ms)
+

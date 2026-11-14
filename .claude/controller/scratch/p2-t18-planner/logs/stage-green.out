@@ -1,0 +1,13 @@
+OK  real    apps/app/src/wallet/home/shellRoutes.ts 7198ec10dde7
+OK  real    apps/app/src/wallet/home/shellRoutes.test.ts c697798810be
+OK  real    apps/app/src/wallet/home/spendLayoutOrder.test.ts 1f0ab8f6c3ef
+OK  real    apps/app/src/wallet/home/WalletTabBar.tsx 89d358a71c67
+OK  real    apps/app/src/wallet/home/AddButton.tsx 24215c473081
+OK  real    apps/app/src/wallet/home/WalletShell.tsx dfb5a2a7577d
+OK  real    apps/app/src/wallet/home/WalletShell.render.test.tsx 402df1dabe88
+OK  real    apps/app/src/wallet/home/copy.ts 9fb645d6dcb7
+OK  real    apps/app/app/spend/_layout.tsx fa998b0dae93
+OK  real    apps/app/app/spend/add.tsx d5247e87d27c
+OK  real    apps/app/src/screens/redesign/SpendLayout.render.test.tsx c90e6f031236
+OK  real    apps/app/src/screens/redesign/account/AnalyticsConsentScreen.render.test.tsx f743ee099f14
+green: 12 files, 0 not as expected

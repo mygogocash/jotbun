@@ -1,0 +1,67 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/sim/wt/apps/edge
+
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > reads Thai digits, separators and satang as hundredths 1ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > a list with a non-thousands comma reads each number 0ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > money is grounded only when it is an allowed amount 0ms
+ ✓ test/ai-grounding.test.ts > numbersIn and isGrounded > an overspend is allowed as its absolute amount 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 0 → ฿0 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 6000 → ฿60 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 125050 → ฿1,250.50 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > 99999999999 → ฿999,999,999.99 0ms
+ ✓ test/ai-grounding.test.ts > formatBaht > -12005 → -฿120.05 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > bahtToSatang > %p → %p 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > keeps a grounded draft as it is 2ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > drops an amount the person never wrote 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > accepts an amount written in Thai words through the rules 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > drops ids that are not the account’s own, archived or of the other type 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > uses the only active wallet when the model names an unknown one, and flags a real choice 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > a future, ancient or impossible date becomes today, flagged 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > a date that is no calendar date becomes today, flagged, and never throws (the P3-T8 second review's m1) 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > cleans text, drops unknown flags and keeps at most five drafts 1ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > ignores drafts of other types and non-objects 0ms
+ ✓ test/ai-grounding.test.ts > sanitizeDrafts > slip drafts (no sentence) keep the printed amount 0ms
+ ✓ test/ai-grounding.test.ts > draftFromRules > maps the rule guess onto the account’s own built-in category and sole wallet 0ms
+ ✓ test/ai-grounding.test.ts > draftFromRules > flags what it could not tell 1ms
+ ✓ test/ai-grounding.test.ts > plain facts > reads in Thai and English, and Vietnamese falls back to English 0ms
+ ✓ test/ai-grounding.test.ts > plain facts > names built-in categories as the app does and joins at most two facts 0ms
+ ✓ test/ai-grounding.test.ts > plain facts > figures stand in for an answer Bun could not ground 0ms
+ ✓ test/ai-grounding.test.ts > figure labels > say a period with its year, Buddhist era in Thai 0ms
+ ✓ test/ai-grounding.test.ts > figure labels > use the words of the screens beside them 0ms
+stderr | test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > an outage
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a request the API rejected
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"DeadlinePassed"}
+
+ ✓ test/ask-deadline.test.ts > Ask Bun's deadline > a slow Haiku conversation is cut at 25 s and Opus still answers 2ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a grounded answer 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an answer with a number no tool read 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a refusal 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an answer cut short 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an empty answer 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > five tool turns 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > an outage 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a request the API rejected 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > takes five turns at most 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a turn the deadline never let start is no answer, recorded as never sent 0ms
+ ✓ test/ask-deadline.test.ts > how one conversation ends (D28) > a tool step that failed ends the conversation as a failure, logged by name; a vault refusal is thrown on as the answer 1ms
+
+ Test Files  2 passed (2)
+      Tests  46 passed (46)
+   Start at  19:40:48
+   Duration  297ms (transform 155ms, setup 0ms, import 272ms, tests 14ms, environment 0ms)
+

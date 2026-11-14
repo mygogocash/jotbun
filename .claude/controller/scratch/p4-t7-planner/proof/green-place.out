@@ -1,0 +1,16 @@
+green: real/apps/edge/src/vault/slips/drafts.ts
+green: real/apps/edge/src/vault/slips/refs.ts
+green: real/apps/edge/src/vault/slips/prune.ts
+green: real/apps/edge/src/vault/domain/transactions.ts
+green: real/apps/edge/src/vault/commands/registry.ts
+green: real/apps/edge/src/vault/commands/change-log.ts
+green: real/apps/edge/src/vault/files/jobs.ts
+green: real/apps/edge/src/vault/user-vault.ts
+green: real/apps/edge/src/v1/protocol.ts
+green: real/apps/edge/src/v1/routes.ts
+green: real/apps/edge/src/vault/routes.ts
+green: real/apps/edge/test/workers/support/slips.ts
+green: real/apps/edge/test/workers/slip-drafts.test.ts
+green: real/apps/edge/test/workers/slips-vault.test.ts
+green: real/apps/edge/test/route-coverage.test.ts
+green: 15 files placed

@@ -1,0 +1,58 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 505ms
+     × figures carry their record count and scope 51ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+AssertionError: expected [ { …(4) }, { …(4) } ] to match object [ …(2) ]
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,19 +1,19 @@
+  [
+    {
+      "amount_minor": "41000",
+-     "count": 41,
++     "count": null,
+      "scope": {
+        "category_id": "e014a99e-56c5-8b6b-9cc4-bd8748bc0819",
+        "from": "2026-10-01",
+        "through": "2026-10-24",
+        "type": "expense",
+      },
+    },
+    {
+      "amount_minor": "7000",
+-     "count": 1,
++     "count": null,
+      "scope": {
+        "category_id": "7dd125a1-0f07-8118-974d-dd97d195aefb",
+        "from": "2026-10-01",
+        "through": "2026-10-24",
+        "type": "expense",
+
+ ❯ test/workers/ask-escalation.test.ts:281:97
+    279|     ])
+    280|     // Per category: each row's records, and a scope naming that categ…
+    281|     expect(figuresOf(await tool(who.user, 'category_totals', { ...octo…
+       |                                                                                                 ^
+    282|       { amount_minor: '41000', count: 41, scope: { ...october, type: '…
+    283|       { amount_minor: '7000', count: 1, scope: { ...october, type: 'ex…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:33:52
+   Duration  3.18s (transform 1.08s, setup 2.10s, import 37ms, tests 505ms, environment 0ms)
+

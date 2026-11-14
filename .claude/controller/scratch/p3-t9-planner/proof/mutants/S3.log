@@ -1,0 +1,63 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+stderr | test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+{"level":"warn","event":"ai_fallback","feature":"ask","failure":"Error"}
+
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 2 failed) 360ms
+     × a Haiku outage never reaches Opus 28ms
+     × an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back 29ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > a Haiku outage never reaches Opus
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ask-escalation.test.ts:155:45
+    153|     }
+    154|     // The use is given back.
+    155|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                             ^
+    156|   })
+    157|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > Ask Bun asks Opus again in a fresh conversation > an ungrounded Haiku answer followed by an Opus outage answers Haiku's figures and gives the use back
+AssertionError: expected 19 to be 20 // Object.is equality
+
+- Expected
++ Received
+
+- 20
++ 19
+
+ ❯ test/workers/ask-escalation.test.ts:164:45
+    162|     expect(await body(await ask(who.user))).toMatchObject({ source: 'f…
+    163|     expect(modelsAsked()).toEqual([HAIKU, HAIKU, OPUS])
+    164|     expect((await remaining(who.user)).ask).toBe(AI_DAILY_LIMITS.ask)
+       |                                             ^
+    165|   })
+    166|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  19:32:15
+   Duration  2.80s (transform 948ms, setup 1.88s, import 25ms, tests 360ms, environment 0ms)
+

@@ -1,0 +1,59 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing shows the wallet's card, its fields, its look and why archive waits, in both modes and languages 139ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > look changes are kept at once and need no command 42ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > editing a wallet with records asks why before a correction is sent 574ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > archive is offered only at ฿0; otherwise the screen says why 100ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > nothing changed goes back once with nothing sent, and two presses on บันทึก send one update 100ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2) 23ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > a save whose answer is lost offers Try again under the same key; a wallet changed on another device says so and starts over; an archive refused because the balance moved says so 284ms
+ × src/wallet/wallets/WalletEdit.render.test.tsx > once the person has left, a save or an archive that lands takes them nowhere more 113ms
+   → expected [ 1, 1, [] ] to deeply equal [ 1, +0, [] ]
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > delete on the stored opening balance clears it to ฿0, and ฿0 is what is sent, with its reason 47ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > two presses on Try again resend once, and the save that lands goes back once 45ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > while a save's answer is unknown archive is held, and a press on it sends nothing 40ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > the next save clears the notice that the wallet changed on another device, so it never sits beside that save's answer 57ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archive refused because the balance moved says its ฿0 in words, and in private mode masks it as the line below does 134ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > private mode hides every amount on the edit screen, and the opening balance until a key is pressed 42ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > an archived or unknown wallet says it is gone; a load problem says so, and Try again reads again 60ms
+ ✓ src/wallet/wallets/WalletEdit.render.test.tsx > every control on the edit screen is at least 44 pt, and the tray's reasons are named 136ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  00:52:40
+   Duration  3.09s (transform 726ms, setup 36ms, import 951ms, tests 1.94s, environment 71ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:74274) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/wallets/WalletEdit.render.test.tsx > once the person has left, a save or an archive that lands takes them nowhere more
+AssertionError: expected [ 1, 1, [] ] to deeply equal [ 1, +0, [] ]
+
+- Expected
++ Received
+
+  [
+    1,
+-   0,
++   1,
+    [],
+  ]
+
+ ❯ src/wallet/wallets/WalletEdit.render.test.tsx:479:92
+    477|   await act(async () => { landing(); });
+    478|   await settle();
+    479|   expect([updates(gone).length, router.back.mock.calls.length, router.…
+       |                                                                                            ^
+    480|
+    481|   // An archive that lands after back goes nowhere either.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

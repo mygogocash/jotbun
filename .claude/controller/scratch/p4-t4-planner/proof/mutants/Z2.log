@@ -1,0 +1,71 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p4-t4-planner/tree/apps/edge
+
+ ❯ test/slip-read-import.test.ts (48 tests | 2 failed) 29ms
+     × an amount is exact satang from 1 to 99,999,999,999, else null with amount_unclear 3ms
+     × known flags are kept once each, in their order, and unknown ones dropped 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > an amount is exact satang from 1 to 99,999,999,999, else null with amount_unclear
+AssertionError: 0: expected { amount_minor: null, …(5) } to deeply equal { amount_minor: null, …(5) }
+
+- Expected
++ Received
+
+@@ -1,10 +1,8 @@
+  {
+    "amount_minor": null,
+-   "flags": [
+-     "amount_unclear",
+-   ],
++   "flags": [],
+    "from": {
+      "account_last4": "1234",
+      "bank": "kbank",
+      "name": "นาย กานต์ ใจดี",
+    },
+
+ ❯ test/slip-read-import.test.ts:393:70
+    391|     ]
+    392|     for (const [baht, minor] of rows) {
+    393|       expect(sanitized(answer({ amount_baht: baht })), String(baht)).t…
+       |                                                                      ^
+    394|     }
+    395|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/slip-read-import.test.ts > the import sanitizer > known flags are kept once each, in their order, and unknown ones dropped
+AssertionError: expected { amount_minor: null, …(5) } to deeply equal { amount_minor: null, …(5) }
+
+- Expected
++ Received
+
+@@ -1,9 +1,8 @@
+  {
+    "amount_minor": null,
+    "flags": [
+-     "amount_unclear",
+      "not_money",
+    ],
+    "from": {
+      "account_last4": "1234",
+      "bank": "kbank",
+
+ ❯ test/slip-read-import.test.ts:486:76
+    484|   it('known flags are kept once each, in their order, and unknown ones…
+    485|     expect(sanitized(answer({ flags: ['date_guessed', 'bogus', 'multip…
+    486|     expect(sanitized(answer({ amount_baht: null, flags: ['not_money'] …
+       |                                                                            ^
+    487|     expect(sanitized(answer({ flags: 'date_guessed' }))).toEqual(READ)
+    488|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+   Start at  01:28:19
+   Duration  267ms (transform 78ms, setup 0ms, import 131ms, tests 29ms, environment 0ms)
+

@@ -1,0 +1,17 @@
+rebuilt: packages/contracts/src/v1/ai.ts
+rebuilt: packages/contracts/src/index.ts
+rebuilt: apps/edge/src/server/ai/drafts.ts
+rebuilt: apps/edge/src/v1/ai/service.ts
+rebuilt: apps/edge/src/v1/ai/slip-read.ts
+rebuilt: apps/edge/src/v1/ai/uses.ts
+rebuilt: apps/edge/src/vault/ai.ts
+rebuilt: apps/edge/test/workers/ai.test.ts
+rebuilt: apps/edge/test/workers/ai-uses.test.ts
+rebuilt: apps/edge/test/workers/slip-read.test.ts
+rebuilt: apps/edge/test/ai-grounding.test.ts
+rebuilt: apps/app/src/spend/v1/ai/aiResources.ts
+rebuilt: apps/app/src/spend/v1/ai/aiResources.test.ts
+rebuilt: apps/app/src/dev/catalogue/companion/companionSections.tsx
+rebuilt: apps/app/src/screens/redesign/ai/AskBunScreen.render.test.tsx
+rebuilt: docs/implementation/receipts/P3-T8.md
+applycheck: ok

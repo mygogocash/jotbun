@@ -1,0 +1,57 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18a-planner/tree/apps/app
+
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a new wallet: kind, name, face, material and opening balance, then the ceremony 319ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a look is not kept when the create is refused 154ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow offers four kinds, never e-wallet 133ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > opened with ?setup=1 the ceremony returns to /spend/setup 166ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > every face, material and key is at least 44 pt, and each is named 103ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > two presses on เพิ่มกระเป๋า send one create and one wallet_added; a lost answer offers Try again under the same key 159ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > step 2's back is held only while the create is out; once its answer is unknown, or its resend is blocked, back leaves the flow and keeps no look 172ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the flow is left once: two quick presses on a back pop one screen, on step 1 and on step 2 once a create's answer is unknown 57ms
+ × src/wallet/wallets/NewWallet.render.test.tsx > after a refusal, held or not, step 2's back goes to the kinds and leaves nothing 49ms
+   → signed_out: expected [ …(3) ] to deeply equal [ …(3) ]
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > while a create's answer is unknown the faces and the materials are held, so the look kept is the one wallet_added reported 57ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > one wallet id per flow, however often the flow draws: the card it shows is the wallet it creates 40ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > a name or an opening balance the create cannot take says so on its field, and sends nothing 79ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > private mode hides the preview card's amount and the ceremony's, while what the person types shows 87ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > with no account open the look is not offered, and the wallet shows the look it will have 31ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > under Reduce Motion the card fades in, and walletAdded still plays once 45ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new card drops in a place of its own, so it falls about one card's height to where it rests 44ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > at AX5 nothing is clamped to a line, and the kinds and the looks wrap 54ms
+ ✓ src/wallet/wallets/NewWallet.render.test.tsx > the new wallet's and editing's sections come right after the wallets list's, and each opens in its state on the catalogue's own account 1648ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  00:52:26
+   Duration  4.64s (transform 828ms, setup 37ms, import 1.04s, tests 3.40s, environment 71ms)
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.render.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/StatusBar.js" points to missing source files
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p2-t18-planner/tree/node_modules/expo-status-bar/build/NativeStatusBarWrapper.js" points to missing source files
+(node:73580) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/wallet/wallets/NewWallet.render.test.tsx > after a refusal, held or not, step 2's back goes to the kinds and leaves nothing
+AssertionError: signed_out: expected [ …(3) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+-   "กระเป๋าใหม่ · ขั้นที่ 1 จาก 3",
+-   0,
++   "กระเป๋าใหม่ · ขั้นที่ 2 จาก 3",
++   1,
+    [],
+  ]
+
+ ❯ src/wallet/wallets/NewWallet.render.test.tsx:520:119
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

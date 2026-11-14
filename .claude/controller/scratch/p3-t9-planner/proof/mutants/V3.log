@@ -1,0 +1,49 @@
+
+ RUN  v4.1.12 /Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge
+
+Sourcemap for "/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/standardwebhooks/dist/index.js" points to missing source files
+uncaught exception; source = Uncaught (in promise); stack = Error: the vault call failed
+    at UserVault.__vite_ssr_import_5__.UserVault.call (/Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/test/workers/ask-escalation.test.ts:211:45)
+    at Users/kunanonjarat/Developer/jotbun/.claude/controller/scratch/p3-t9-planner/tree/apps/edge/node_modules/@cloudflare/vitest-plugin/dist/worker/lib/cloudflare/test-internal.mjs:369:47
+ ❯ test/workers/ask-escalation.test.ts (13 tests | 1 failed) 356ms
+     × figures carry their record count and scope 35ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/workers/ask-escalation.test.ts > each figure's count and scope > figures carry their record count and scope
+AssertionError: expected [ { …(4) } ] to match object [ { amount_minor: '48000', …(2) } ]
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  [
+    {
+      "amount_minor": "48000",
+      "count": 42,
+      "scope": {
+-       "category_id": null,
++       "category_id": "18e5a5e4-2ac0-437d-b968-51b10033e421",
+        "from": "2026-10-01",
+        "through": "2026-10-24",
+        "type": "expense",
+      },
+    },
+
+ ❯ test/workers/ask-escalation.test.ts:272:121
+    270|     // Over every category, the taxi joins; an id that is none of the …
+    271|     for (const category of [null, randomUUID()]) {
+    272|       expect(figuresOf(await tool(who.user, 'spending_total', { ...oct…
+       |                                                                                                                         ^
+    273|         { amount_minor: '48000', count: 42, scope: { ...october, type:…
+    274|       ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  19:33:45
+   Duration  2.88s (transform 1.02s, setup 2.00s, import 27ms, tests 356ms, environment 0ms)
+

@@ -1,0 +1,100 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jotbun-edge",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // The one Worker (C1): TanStack Start pages, Better Auth at /api/auth/*, the
+  // PostHog proxy at /ingest/*, and every /v1 route on the UserVault, one SQLite
+  // Durable Object per person (src/vault). The vault's two Workflows, its parse
+  // queue's consumer and the parser's container run here too (src/vault-worker.ts,
+  // whose classes and queue handler src/server.ts re-exports).
+  "main": "src/server.ts",
+  "observability": { "enabled": true },
+  // Ruling R30 (1B-T6): the largest invocations are the ten-times export and
+  // snapshot build (1B-T8 measures them, expected a few seconds of CPU). 120
+  // seconds leaves wide room and still bounds runaway work; enforced only when deployed.
+  "limits": { "cpu_ms": 120000 },
+  "vars": {
+    // Non-secret settings. Secrets are set with `wrangler secret put`:
+    // COMMAND_DIGEST_KEY, BETTER_AUTH_SECRET and ERASURE_KEY, and
+    // ANTHROPIC_API_KEY and AI_GATEWAY_TOKEN for AI (locally in `.dev.vars`, scripts/dev.mjs);
+    // ANTHROPIC_BASE_URL is the gateway URL.
+    "JOTBUN_ENV": "local",
+    // AI stays off until it is switched on with an ANTHROPIC_API_KEY secret (1B-T7, B10).
+    "AI_ENABLED": "false",
+    "GOGOCASH_BRIDGE_ENABLED": "false",
+    "IMPORT_UPLOADS_ENABLED": "false",
+    // Slip import stays 404 until the owner's release step turns it on (P4-T3, S13; P6C-T14b).
+    "SLIP_IMPORT_ENABLED": "false",
+    "AUTH_BASE_URL": "http://localhost:8092",
+    "AUTH_ISSUER": "http://localhost:8092",
+    "AUTH_AUDIENCE": "jotbun-v1",
+    // The app scheme only. Expo dev origins stay in `.dev.vars` (M4).
+    "AUTH_TRUSTED_ORIGINS": "gogospend://"
+  },
+  // Published policies, gates and client minimums (config:v1). The ids here are
+  // local placeholders until the owner creates the resources.
+  "kv_namespaces": [{ "binding": "CONFIG", "id": "00000000000000000000000000000000" }],
+  // The owner creates both databases with the `apac` location hint
+  // (default pending owner Q6).
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "jotbun-auth",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations/auth"
+    },
+    {
+      "binding": "ERASURE_DB",
+      "database_name": "jotbun-erasure",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations/erasure"
+    }
+  ],
+  // `remote` stays unset: setting it would reach the real Email Service from `wrangler dev`.
+  "send_email": [{ "name": "EMAIL" }],
+  // The one private bucket (§6.3): receipts, exports, statement uploads and resync snapshots, under the vault's keys.
+  "r2_buckets": [{ "binding": "OBJECTS", "bucket_name": "jotbun-private-objects" }],
+  // Statement parses (1B-T5, B6): the vault sends { vault, job } once an upload is
+  // accepted, and this Worker consumes it one message at a time. The vault counts
+  // real attempts (3); max_retries is the Queues maximum because gate holds retry
+  // without spending one, and the vault re-sends a message the queue discarded (R32).
+  "queues": {
+    "producers": [{ "binding": "PARSE_QUEUE", "queue": "jotbun-statement-parse" }],
+    "consumers": [{ "queue": "jotbun-statement-parse", "max_batch_size": 1, "max_concurrency": 1, "max_retries": 100, "retry_delay": 30 }]
+  },
+  // Exports (1B-T6, B5): the vault records a request and starts one instance per
+  // export, named by its id; each step calls the vault, which writes the file to R2.
+  // Resync snapshots (1B-T8) run the same way, one instance per snapshot. A finished
+  // instance is kept 1 day (7 after an error), so a resent request whose old instance
+  // is gone starts afresh (createOnce, 1B-T4; the 1B-T12 review's n1).
+  "workflows": [
+    { "name": "jotbun-export", "binding": "EXPORT_WORKFLOW", "class_name": "ExportWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } },
+    { "name": "jotbun-snapshot", "binding": "SNAPSHOT_WORKFLOW", "class_name": "SnapshotWorkflow", "default_retention": { "success_retention": "1 day", "error_retention": "7 days" } }
+  ],
+  // The stateless parser (B3): the API's release image started as its parse
+  // server (apps/api/src/imports/parse-server.ts), with no secrets, no bindings
+  // and no internet. One at a time, as today's single parser runs.
+  "containers": [
+    {
+      "class_name": "StatementParser",
+      "image": "../api/Dockerfile",
+      "image_build_context": "../..",
+      "instance_type": "basic",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "VAULT", "class_name": "UserVault" },
+      { "name": "PARSER", "class_name": "StatementParser" }
+    ]
+  },
+  // Nothing is deployed yet, so both classes start fresh in this Worker's script.
+  "migrations": [
+    { "tag": "v1-user-vault", "new_sqlite_classes": ["UserVault"] },
+    { "tag": "v2-statement-parser", "new_sqlite_classes": ["StatementParser"] }
+  ],
+  // Local runs and the Workers-runtime tests start no container; a parse then asks to be retried.
+  "dev": { "enable_containers": false }
+}
