@@ -16,6 +16,7 @@
 // while a save's answer is unknown (Y6), the notice cleared by the next save
 // (Y9), and the refused archive's ฿0 in private mode (n2, PR5).
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { afterEach, expect, test, vi } from 'vitest';
 
 // The real safe-area package loads React Native itself, which vitest cannot run.
@@ -321,6 +322,18 @@ test('nothing changed goes back once with nothing sent, and two presses on บ�
   fireEvent.click(named('button', 'บันทึก'));
   await settle();
   expect([found('wallet-name-problem').textContent, updates(blank)]).toEqual([translateCopy('Enter a wallet name', 'th'), []]);
+});
+
+test("under React's development double run (StrictMode) back still leaves, once (P2-T21's confirming review n2)", async () => {
+  const fake = board();
+  mountWallet(<StrictMode><WalletEditScreen walletId={W.main} now={NOW} /></StrictMode>, { resources: fake.resources, account: KEPT });
+  await settle();
+  const back = named('button', 'กลับ');
+  act(() => {
+    fireEvent.click(back);
+    fireEvent.click(back);
+  });
+  expect([router.back.mock.calls.length, router.replace.mock.calls]).toEqual([1, []]);
 });
 
 test('a save whose answer is lost offers Try again under the same key; a wallet changed on another device says so and starts over; an archive refused because the balance moved says so', async () => {

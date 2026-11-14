@@ -31,8 +31,8 @@
 - **n1, the card's own place (R115.5):**
   - The ceremony's card enters inside a view of its own (`new-wallet-card-place`). Reanimated animates an entering view's `originY` to its `targetOriginY`, which is in the parent's coordinates. So `walletAddedEntering`'s `originY: -200` is 200 pt above the card's place only when the card's parent starts where the card does.
   - Before, the card was a child of the scroll content and fell about `insets.top + 268` pt (about 327 pt with a 59 pt inset), with about 70 pt of overshoot.
-  - It now falls 200 pt. The bouncy spring (damping 14, stiffness 260, mass 1, a damping ratio of about 0.43) overshoots by about 22% of that, about 44 pt, as `P2-T21.md`'s note said.
-  - The place has a test id, which also keeps Fabric from flattening it away: in React Native 0.88's `ViewShadowNode`, a view with a `testID` forms a view. So on a phone too, the place stays the card's parent.
+  - It now falls 200 pt on the web, and on a phone since P2-T18a. The bouncy spring (damping 14, stiffness 260, mass 1, a damping ratio of about 0.43) overshoots by about 22% of that, about 44 pt, as `P2-T21.md`'s note said.
+  - Corrected by P2-T18a (P2-T21's confirming review, m1): a test id alone does not keep the place on a phone. In React Native 0.88's `ViewShadowNode` a `testID` makes a view but not a stacking context, and Fabric hoists such a view's children into the nearest ancestor that forms one, so the card still fell about `insets.top + 268` pt. P2-T18a gives the place a `nativeID`, which forms a stacking context, so on a phone too the place stays the card's parent.
   - The case: the card's parent is the place, and the place holds only the card.
 - **n2, the refused archive's ฿0 (R115.6):**
   - The refused archive's line (`ArchiveRefused`) masks its ฿0 in private mode as the line below does: ฿•••• on screen, and ซ่อนยอดเงินอยู่ in its spoken words. Out of private mode it says the amount in words (0 บาท), as `ArchiveLater` does.
@@ -76,6 +76,7 @@
   - The tracking start (m3): a wallet made here starts today, so earlier dates cannot be logged to it, and nothing in the wallet area can change that until the owner decides.
   - A save that lands after the person left is not shown to them. A refusal or an unknown answer then goes unseen, and the screen they return to shows what Jotbun holds.
   - With a create's answer unknown, back leaves the flow, and whether the wallet was made shows only in the list on return. A person who starts a new wallet instead makes a second one, with a new id.
+  - Leaving then also loses the chosen look for good if the create had in fact committed: the look carries the kind, which nothing else holds, so the wallet shows as a plain wallet, and its `wallet_added` is never sent. Try again keeps both. The owner decides at E2-B (P2-T21's confirming review, m3; added by P2-T18a).
 - **Notes for later tasks:**
   - **P2-T18:** once `walletTab` hides the bar on `/spend/wallet/*`, step 2's back is the flow's way out while a create's answer is unknown. Keep it there.
   - **P2-T22:** the edit screen leaves once (`leave()`), so a detail that pushes the edit route gets one pop per back or save. Where an archive lands is still P2-T22's to decide (the first review's note).
