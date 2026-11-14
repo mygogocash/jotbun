@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:16: P6B-T14 READY and building (Haiku). CI is still blocked (07:14: all nine PRs 9 of 9 queued; the CI watcher is re-armed over all nine).**
+  - **P6B-T14 planner done** (thread archived). Brief `briefs/P6B-T14.md`, kit `scratch/p6b-t14-planner/` (82 of 82 sums, `orig/` 11 of 11 at the head). Size L.
+    - RED was 20 of 64 Node and 3 of 16 render cases; GREEN; mutants 55 of 55; a gate of 35 render files (676 tests) covering every user of `recordAnalytics` and `fakeConsent`.
+    - It was proven over each CI-waiting PR's head that uses the helpers (#456, #460, #464 to #467).
+    - With no PostHog key there is no client, so no flags are asked for, every rollout reads off and every experiment reads `control`.
+    - Step 1 checks only the env fields and PostHog versions it reads, so 1C-T7's `env.ts` and lockfile changes cannot block it.
+    - **P1 to P16 accepted.**
+  - **Implementer (Haiku max):** `mcp:launch:5d8586ea89fbd2c99bb29c2dc84fd00ed07dd9b52120f19eb02972900ab8bbbe`, in worktree `p6b-t14` on `p6b/t14-remote-flags`, installed, `--lock`.
+  - **Live now:** the 1C-T7 and P6B-T14 implementers.
 - **14 Nov 07:02: 1C-T7 READY and building (Haiku). Both planners failed once at 06:24, and T3 resumed them at 06:30 (run 2).**
   - **1C-T7 planner done** (thread archived). Brief `briefs/1C-T7.md` (906 lines), kit `scratch/1c-t7-planner/` (84 of 84 sums, `orig/` 8 of 8 at the head). Size M.
     - RED was 18 of 20 Node and 3 of 15 render cases; GREEN; mutants 68 of 68. The fast gate passed, as did the iOS export, the routes tests and a dry run of the brief.
