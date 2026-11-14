@@ -43,8 +43,12 @@ describe('C1: the vault moves into the HTTP Worker', () => {
     // consumers and containers only. A Cron Trigger added here would need leaving out there too.
     expect(config.triggers).toBeUndefined()
     expect([config.r2_buckets[0].binding, config.kv_namespaces[0].binding]).toEqual(['OBJECTS', 'CONFIG'])
-    // Better Auth's databases and the email binding (1C-T1) stay with the merge.
-    expect([config.d1_databases.map((d: { binding: string }) => d.binding), config.send_email.map((e: { name: string }) => e.name)]).toEqual([['AUTH_DB', 'ERASURE_DB'], ['EMAIL']])
+    // Better Auth's databases and the email binding (1C-T1) stay with the merge; the catalog (P4-T2) joins them.
+    expect([config.d1_databases.map((d: { binding: string }) => d.binding), config.send_email.map((e: { name: string }) => e.name)]).toEqual([['AUTH_DB', 'ERASURE_DB', 'CATALOG_DB'], ['EMAIL']])
+    // The catalog's migrations are the folder the Workers-runtime tests apply, so the tests run the tables wrangler deploys.
+    const catalog = config.d1_databases.find((d: { binding: string }) => d.binding === 'CATALOG_DB')
+    expect([catalog.database_name, catalog.migrations_dir]).toEqual(['jotbun-catalog', 'migrations/catalog'])
+    expect(read('vitest.workers.config.ts')).toContain(`readD1Migrations('./${catalog.migrations_dir}')`)
     for (const gone of ['wrangler.vault.jsonc', 'wrangler.jobs.jsonc', 'wrangler.security.jsonc', 'wrangler.deletion.jsonc', 'src/roles', 'src/server/app', 'src/server/db', 'src/server/jobs', 'src/server/worker.ts']) {
       expect(existsSync(join(EDGE, gone)), gone).toBe(false)
     }

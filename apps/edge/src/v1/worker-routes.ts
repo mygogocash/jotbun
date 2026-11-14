@@ -1,5 +1,6 @@
 import type { AiFeature } from '@gogospend/contracts'
 
+import { handleBankAlbums } from '../catalog/catalog'
 import type { UserVault } from '../vault/user-vault'
 import { bridgeCatalogue } from './bridge'
 import { uploadRoute } from './files/uploads'
@@ -63,6 +64,7 @@ export const WORKER_HANDLERS: Partial<Record<WorkerRouteId, WorkerHandler>> = {
   'ai.slip': aiSlipRoute,
   'ai.note': aiNoteRoute,
   'ai.ask': aiAskRoute,
+  'catalog.bankAlbums': handleBankAlbums,
 }
 
 export function vaultSession(env: V1Env, claims: VaultClaims, policies: PublishedPolicies, access: VaultAccess, charge: 'read' | 'write'): VaultSession {

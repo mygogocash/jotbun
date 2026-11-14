@@ -18,11 +18,12 @@ export default mergeConfig(
         // The paths are relative to apps/edge, which is the workers test cwd.
         const authMigrations = await readD1Migrations('./migrations/auth')
         const erasureMigrations = await readD1Migrations('./migrations/erasure')
+        const catalogMigrations = await readD1Migrations('./migrations/catalog')
         return {
           main: './src/vault-worker.ts',
           wrangler: { configPath: './wrangler.jsonc' },
           miniflare: {
-            // AUTH_DB and ERASURE_DB come from wrangler.jsonc; the reference database is the tests' own.
+            // AUTH_DB, ERASURE_DB and CATALOG_DB come from wrangler.jsonc; the reference database is the tests' own.
             d1Databases: ['AUTH_DB_REFERENCE'],
             bindings: {
               JOTBUN_ENV: 'test',
@@ -37,6 +38,7 @@ export default mergeConfig(
               ERASURE_KEY: 'synthetic-erasure-key-0123456789abcdef0123',
               TEST_AUTH_MIGRATIONS: authMigrations,
               TEST_ERASURE_MIGRATIONS: erasureMigrations,
+              TEST_CATALOG_MIGRATIONS: catalogMigrations,
             },
           },
         }
@@ -44,7 +46,7 @@ export default mergeConfig(
     ],
     test: {
       include: ['test/workers/**/*.test.ts'],
-      setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts'],
+      setupFiles: ['test/workers/auth/support/apply-auth-migrations.ts', 'test/workers/support/apply-catalog-migrations.ts'],
     },
   }),
 )

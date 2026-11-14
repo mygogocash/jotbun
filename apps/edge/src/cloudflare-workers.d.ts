@@ -188,8 +188,10 @@ declare namespace Cloudflare {
     AUTH_DB: D1Database
     AUTH_DB_REFERENCE: D1Database
     ERASURE_DB: D1Database
+    CATALOG_DB: D1Database
     TEST_AUTH_MIGRATIONS: { name: string; queries: string[] }[]
     TEST_ERASURE_MIGRATIONS: { name: string; queries: string[] }[]
+    TEST_CATALOG_MIGRATIONS: { name: string; queries: string[] }[]
     AUTH_BASE_URL?: string
     AUTH_ISSUER?: string
     AUTH_AUDIENCE?: string
