@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { AREAS, JOBS, areasOf, changedFiles, decide } from './changed-areas.mjs';
@@ -40,6 +40,8 @@ test('each app runs its own area, and the docs that tests read run the reading a
   assert.deepEqual(areasOf('apps/api/src/attachments/attachments.integration.spec.ts'), ['api']);
   assert.deepEqual(areasOf('apps/edge/src/vault/slips/drafts.ts'), ['edge']);
   assert.deepEqual(areasOf('apps/edge/package-lock.json'), ['edge']);
+  // The release image installs the API with the app's manifest beside it (apps/api/Dockerfile).
+  assert.deepEqual(areasOf('apps/app/package.json'), ['app', 'api']);
   assert.deepEqual(areasOf('docs/design/bun-wallet/wc-category-edit.dc.html'), ['app']);
   assert.deepEqual(areasOf('docs/operations/release.md'), ['api']);
   assert.deepEqual(areasOf('docs/implementation/handover.md'), ['ops']);
@@ -62,7 +64,9 @@ test('a pull request runs the jobs its areas need', () => {
   const pr = (files) => decide({ event: 'pull_request', ref: 'refs/pull/481/merge', files });
   // P4-T7 (#481): edge files and its receipt.
   assert.deepEqual(pr(['apps/edge/src/v1/routes.ts', 'apps/edge/test/workers/slip-drafts.test.ts', 'docs/implementation/receipts/P4-T7.md']), { ...NONE, edge: true });
-  assert.deepEqual(pr(['apps/app/src/wallet/home/WalletShell.tsx']), { ...NONE, checks: true, exports: true, render: true });
+  // test:db's app-adapter spec imports app modules, and test:ops reads app files.
+  assert.deepEqual(pr(['apps/app/src/wallet/home/WalletShell.tsx']), { ...NONE, checks: true, exports: true, render: true, database: true });
+  assert.deepEqual(pr(['apps/app/package.json']), ALL);
   assert.deepEqual(pr(['apps/api/src/health/readiness-receipts.ts']), { ...NONE, checks: true, database: true, edge: true, image: true });
   assert.deepEqual(pr(['docs/implementation/handover.md']), { ...NONE, database: true });
   assert.deepEqual(pr(['docs/implementation/receipts/P4-T7.md', '.claude/controller/followups.md']), NONE);
@@ -86,6 +90,98 @@ test('a push to the integration branch runs every job, unless it changed only fi
   assert.deepEqual(push(['.claude/controller/handover.md', '.claude/controller/followups.md']), NONE);
   assert.deepEqual(push(['.claude/controller/handover.md', 'apps/edge/src/v1/routes.ts']), ALL);
   assert.deepEqual(push(null), ALL);
+});
+
+/** The folder a file belongs to: `apps/<name>` or `packages/<name>`, or `scripts`. */
+function homeOf(file) {
+  return file.startsWith('apps/') || file.startsWith('packages/') ? file.split('/').slice(0, 2).join('/') : 'scripts';
+}
+
+/**
+ * Every `[reader, target]` where tracked code under apps/, packages/ or scripts/ names a repo path outside its own
+ * folder: a `../` path, a `join(__dirname, ...)` or `join(import.meta.dirname, ...)` path, or a path from the repo
+ * root (`'apps/...'`, `${ROOT}docs/...`). node_modules and the repo root itself come from the lockfiles, which run
+ * every job. The map and this file name paths as data, not reads, so they are left out.
+ */
+export function crossReads() {
+  const data = new Set(['scripts/ci/changed-areas.mjs', 'scripts/ci/changed-areas.test.mjs']);
+  const files = execFileSync('git', ['ls-files', '-z', 'apps', 'packages', 'scripts'], { encoding: 'utf8' }).split('\0').filter((file) => /\.(?:m|c)?[jt]sx?$/.test(file) && !data.has(file));
+  const reads = [];
+  for (const file of files) {
+    const text = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+    const dir = posix.dirname(file);
+    const home = homeOf(file);
+    const targets = [
+      ...[...text.matchAll(/['"`]((?:\.\.\/)+[^'"`\s$]*)['"`]/g)].map((match) => posix.join(dir, match[1])),
+      ...[...text.matchAll(/\b(?:join|resolve)\(\s*(?:__dirname|import\.meta\.dirname)\s*((?:,\s*['"][^'"]*['"]\s*)+)\)/g)].map((match) => posix.join(dir, ...[...match[1].matchAll(/['"]([^'"]*)['"]/g)].map((part) => part[1]))),
+      ...[...text.matchAll(/(?:\$\{ROOT\}|['"`])((?:apps|docs|packages|\.claude)\/[^'"`\s$]*)/g)].map((match) => match[1]),
+    ].map((target) => posix.normalize(target));
+    for (const target of targets) {
+      if (target.startsWith('..') || target === '.' || target === './' || target === home || target.startsWith(`${home}/`) || target.split('/').includes('node_modules')) continue;
+      reads.push([file, target]);
+    }
+  }
+  return reads;
+}
+
+/** The jobs that run a reading file: its own test suite's job, or, for code that is not a test, its area's jobs. */
+function jobsReading(file) {
+  const jobsOf = (area) => Object.keys(JOBS).filter((job) => JOBS[job].includes(area));
+  if (file.startsWith('apps/api/')) return file.endsWith('.integration.spec.ts') ? ['database'] : file.endsWith('.spec.ts') ? ['checks'] : jobsOf('api');
+  if (file.startsWith('apps/app/')) return /\.render\.test\.tsx?$/.test(file) ? ['render'] : /\.test\.tsx?$/.test(file) ? ['checks'] : jobsOf('app');
+  if (file.startsWith('apps/edge/')) return ['edge'];
+  if (/^scripts\/(?:ci|ops)\//.test(file)) return ['database'];
+  if (/^scripts\/dev/.test(file)) return ['checks'];
+  return Object.keys(JOBS);
+}
+
+test('every file the code reads outside its own folder runs the reading test\'s job when it changes', () => {
+  const reads = crossReads();
+  // The reads known today, so a scan that stops seeing them fails too.
+  for (const [reader, prefix] of [
+    ['apps/api/src/v1/app-adapter.integration.spec.ts', 'apps/app/src/'],
+    ['apps/api/src/spend/spend-compare-readiness.spec.ts', 'apps/app/src/'],
+    ['apps/api/src/common/operational-hardening.spec.ts', 'docs/operations/'],
+    ['apps/app/src/wallet/looks/WalletLooks.render.test.tsx', 'docs/design/'],
+    ['apps/edge/test/route-coverage.test.ts', 'apps/api/'],
+    ['scripts/ops/readiness-receipts.mjs', 'apps/api/'],
+    ['scripts/ci/backend-workflow.test.mjs', 'apps/app/'],
+    ['scripts/ci/backend-workflow.test.mjs', 'docs/implementation/handover.md'],
+  ]) {
+    assert.ok(reads.some(([file, target]) => file === reader && target.startsWith(prefix)), `${reader} reads ${prefix}`);
+  }
+  const unrouted = reads
+    .filter(([reader, target]) => {
+      const answer = decide({ event: 'pull_request', ref: 'refs/pull/1/merge', files: [target] });
+      return !jobsReading(reader).every((job) => answer[job]);
+    })
+    .map(([reader, target]) => `${reader} reads ${target}`);
+  assert.deepEqual(unrouted, []);
+});
+
+test('the map prints a file named like a workflow command only where the runner reads no commands', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ci-areas-'));
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=ci', '-c', 'user.email=ci@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim();
+  try {
+    git('init', '-q', '-b', 'base');
+    writeFileSync(join(dir, 'README.md'), 'one\n');
+    git('add', '.');
+    git('commit', '-q', '-m', 'one');
+    git('checkout', '-q', '-b', 'feature');
+    writeFileSync(join(dir, '::error title=CI result::every needed job passed'), 'x\n');
+    git('add', '.');
+    git('commit', '-q', '-m', 'two');
+    git('checkout', '-q', 'base');
+    git('merge', '-q', '--no-ff', '-m', 'merge', 'feature');
+    const stdout = execFileSync(process.execPath, [SCRIPT], { cwd: dir, encoding: 'utf8', env: { ...process.env, EVENT: 'pull_request', REF: 'refs/pull/1/merge', GITHUB_OUTPUT: '', GITHUB_STEP_SUMMARY: '' }, stdio: 'pipe' });
+    const lines = stdout.split('\n');
+    const at = lines.indexOf('::error title=CI result::every needed job passed');
+    const token = /^::stop-commands::(\S+)$/.exec(lines[lines.findIndex((line) => line.startsWith('::stop-commands::'))])?.[1];
+    assert.ok(token && at > 0, stdout);
+    assert.ok(lines.indexOf(`::stop-commands::${token}`) < at && at < lines.indexOf(`::${token}::`), stdout);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('every area runs at least one job, and every job is started by some area', () => {

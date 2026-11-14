@@ -11,8 +11,9 @@
 // The workflow runs this file as the base commit has it (`git show <base>:scripts/ci/changed-areas.mjs`), so a pull
 // request cannot change the map its own run uses. A change to this file runs every job, and takes effect once merged.
 import { execFileSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { randomUUID } from 'node:crypto';
+import { appendFileSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 /** What a changed file can affect: the app, the frozen API, the edge Worker, or the ops and CI suites (test:ops). */
 export const AREAS = ['app', 'api', 'edge', 'ops'];
@@ -20,16 +21,20 @@ export const AREAS = ['app', 'api', 'edge', 'ops'];
 /**
  * The gate jobs, by the output each one reads, and the areas that make it run. The render output starts every render
  * job (the render shards and the three per-section jobs).
- * - checks: `test:api` reads an app file (apps/api/src/spend/spend-compare-readiness.spec.ts reads the app's
- *   kitCatalog.ts), and `test:dev` starts the app.
- * - database: `test:db` is the API's, and `test:ops` reads the API's migrations and health code.
+ * - checks: `test:api`'s specs read app files (spend-compare-readiness.spec.ts reads the app's kitCatalog.ts, and
+ *   legacy-session-fetch.spec.ts imports the app's api/client), and `test:dev` starts the app.
+ * - database: `test:db` is the API's, and its app-adapter.integration.spec.ts imports the app's api/client, money,
+ *   resources and viewModels. `test:ops` reads the API's migrations and health code, and its CI guard reads the
+ *   app's render test files.
  * - edge: the edge job builds the API and runs its PostgreSQL suites against the built NestJS server.
+ * changed-areas.test.mjs scans the code for every file read outside its own folder and checks this map runs the
+ * reading test's job when that file changes.
  */
 export const JOBS = {
   checks: ['app', 'api'],
   exports: ['app'],
   render: ['app'],
-  database: ['api', 'ops'],
+  database: ['api', 'ops', 'app'],
   edge: ['edge', 'api'],
   image: ['api'],
 };
@@ -49,6 +54,8 @@ export function areasOf(file) {
   if (file.startsWith('docs/design/')) return ['app'];
   // apps/api/src/common/operational-hardening.spec.ts reads docs/operations/release.md.
   if (file.startsWith('docs/operations/')) return ['api'];
+  // apps/api/Dockerfile copies it for `npm ci --workspace gogospend-api`.
+  if (file === 'apps/app/package.json') return ['app', 'api'];
   if (file.startsWith('apps/app/')) return ['app'];
   if (file.startsWith('apps/api/')) return ['api'];
   if (file.startsWith('apps/edge/')) return ['edge'];
@@ -98,9 +105,20 @@ function main() {
   const answer = decide({ event, ref, files });
   const lines = Object.entries(answer).map(([key, value]) => `${key}=${value}`);
   const listed = files === null ? '(not listed: every job runs)' : files.length === 0 ? '(none)' : files.slice(0, 200).join('\n') + (files.length > 200 ? `\n... and ${files.length - 200} more` : '');
-  console.log(`event ${event}, ref ${ref}\nchanged files:\n${listed}\n\njobs:\n${lines.join('\n')}`);
+  // The file names come from the change, so the runner must not read one as a workflow command.
+  const token = randomUUID();
+  console.log(`event ${event}, ref ${ref}\nchanged files:\n::stop-commands::${token}\n${listed}\n::${token}::\n\njobs:\n${lines.join('\n')}`);
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${lines.join('\n')}\n`);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Jobs this change runs\n\n${lines.map((line) => `- ${line}`).join('\n')}\n`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
+/** Whether node was asked to run this file, also when the path goes through a symlink (macOS's temp folders do). */
+function isEntry() {
+  try {
+    return Boolean(process.argv[1]) && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isEntry()) main();

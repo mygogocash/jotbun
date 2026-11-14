@@ -10,12 +10,14 @@
 // ci-selective-jobs (14 November 2026): a change map decides which gate jobs a
 // change runs (scripts/ci/changed-areas.mjs). The cases below keep it the one
 // way a job is switched off: the only `if:` lines are each gate job's change
-// map output and ci-ok's always(), nothing ignores a failure, ci-ok needs
-// every job and lets a full run skip none, and every job runs on GitHub's
-// ubuntu-24.04.
+// map output and ci-ok's always(), however the key is spelled; no shell,
+// defaults or continue-on-error; ci-ok needs every job and lets a full run
+// skip none; one read-only permissions block; and every job runs on GitHub's
+// ubuntu-24.04. This file also runs in the whitespace job, which every change
+// runs, so the guard never depends on the map.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -228,7 +230,14 @@ export function renderSplitProblems(runs) {
   return problems;
 }
 
-/** Each gate job and the change-map output that starts it; `changes` and `ci-ok` always run. */
+/** The lines that set `key`, however it is spelled: quoted or not, with or without a space before the colon. */
+function keyLines(key) {
+  return workflow.split('\n').filter((line) => new RegExp(`^\\s*(?:-\\s+)?["']?${key}["']?\\s*:`).test(line));
+}
+
+const indentOf = (line) => line.length - line.trimStart().length;
+
+/** Each gate job and the change-map output that starts it; `changes`, `whitespace` and `ci-ok` always run. */
 const GATE_JOBS = {
   checks: 'checks',
   exports: 'exports',
@@ -245,8 +254,8 @@ const GATE_JOBS = {
 test('the workflow parser sees steps, their settings and the jobs they run in', () => {
   const runs = workflowRuns(workflow);
   assert.ok(runs.length >= 14, `found ${runs.length} run steps`);
-  assert.deepEqual(new Set(runs.map((entry) => entry.job)), new Set(['changes', ...Object.keys(GATE_JOBS), 'ci-ok']));
-  assert.deepEqual(Object.keys(jobSettings(workflow)), ['changes', ...Object.keys(GATE_JOBS), 'ci-ok']);
+  assert.deepEqual(new Set(runs.map((entry) => entry.job)), new Set(['changes', 'whitespace', ...Object.keys(GATE_JOBS), 'ci-ok']));
+  assert.deepEqual(Object.keys(jobSettings(workflow)), ['changes', 'whitespace', ...Object.keys(GATE_JOBS), 'ci-ok']);
   assert.ok(runs.every((entry) => entry.env.NODE_VERSION === '26.9.0'));
 });
 
@@ -307,16 +316,18 @@ const EXCLUDES = '--exclude src/dev/catalogue/CatalogueScreen.render.test.tsx --
 const ID_3N = 'section (?:[a-z0-9-]{3})+(?![a-z0-9-])';
 const ID_3N_1 = 'section (?:[a-z0-9-]{3})*[a-z0-9-](?![a-z0-9-])';
 const INSTALL = 'npm ci --ignore-scripts --no-audit --no-fund';
-// The change map as the base commit has it; when that fails, every job runs.
-const MAP_STEP = String.raw`git show "$MAP_BASE:scripts/ci/changed-areas.mjs" > "$RUNNER_TEMP/changed-areas.mjs" && node "$RUNNER_TEMP/changed-areas.mjs" || printf 'checks=true\nexports=true\nrender=true\ndatabase=true\nedge=true\nimage=true\nfull=true\n' >> "$GITHUB_OUTPUT"`;
-const CI_OK_STEP = String.raw`echo "$NEEDS" | jq -r 'to_entries[] | "\(.key)=\(.value.result)"' && echo "$NEEDS" | jq -e --arg full "$FULL" '[to_entries[] | select(.value.result != "success") | select(.key == "changes" or $full != "false" or .value.result != "skipped")] | length == 0'`;
+// The change map as the base commit has it; when that fails or writes no answer, every job runs.
+const MAP_STEP = String.raw`git show "$MAP_BASE:scripts/ci/changed-areas.mjs" > "$RUNNER_TEMP/changed-areas.mjs" && node "$RUNNER_TEMP/changed-areas.mjs" && grep -q '^full=' "$GITHUB_OUTPUT" || printf 'checks=true\nexports=true\nrender=true\ndatabase=true\nedge=true\nimage=true\nfull=true\n' >> "$GITHUB_OUTPUT"`;
+const CI_OK_STEP = String.raw`echo "$NEEDS" | jq -r 'to_entries[] | "\(.key)=\(.value.result)"' && echo "$NEEDS" | jq -e --arg full "$FULL" '[to_entries[] | select(.value.result != "success") | select(.key == "changes" or .key == "whitespace" or $full != "false" or .value.result != "skipped")] | length == 0'`;
+const GUARDS = 'node --test scripts/ci/backend-workflow.test.mjs scripts/ci/changed-areas.test.mjs';
 
 // ci-parallel-jobs: which job runs each step, in order. A change to the layout
 // changes this list in the same commit.
 test('each job runs its own steps, in order', () => {
   assert.deepEqual(workflowRuns(workflow).map((entry) => `${entry.job}: ${entry.run}`), [
     `changes: ${MAP_STEP}`,
-    "changes: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD",
+    "whitespace: git diff --check ${{ github.event.pull_request.base.sha || 'HEAD^' }} HEAD",
+    `whitespace: ${GUARDS}`,
     `checks: ${INSTALL}`,
     'checks: npm run typecheck',
     'checks: npm run typecheck:app',
@@ -378,12 +389,13 @@ test('the edge steps run in the edge job in order, the workers suite between the
 
 // 1A-T10 review, minor 1: `continue-on-error:` can stop a failure from failing
 // the run, and an `if:` can stop a job or step from running, while every other
-// case here still passes. ci-selective-jobs keeps one kind of `if:`: a job's
-// own, at the job's level, as the next case pins it.
+// case here still passes. A `shell:` or `defaults:` can make every step exit 0
+// without running (GitHub runs a custom shell's first word with the script's
+// path). ci-selective-jobs keeps one kind of `if:`: a job's own, at the job's
+// level, as the next case pins it. Each key is matched however it is spelled.
 test('nothing ignores a failure, and no step can be switched off: every if: is a job\'s own', () => {
-  assert.doesNotMatch(workflow, /^\s*(?:-\s+)?continue-on-error:/m);
-  const ifLines = workflow.split('\n').filter((line) => /^\s*(?:-\s+)?if:/.test(line));
-  assert.deepEqual(ifLines.map((line) => line.length - line.trimStart().length), Array(Object.keys(GATE_JOBS).length + 1).fill(4));
+  for (const key of ['continue-on-error', 'shell', 'defaults']) assert.deepEqual(keyLines(key), [], key);
+  assert.deepEqual(keyLines('if').map(indentOf), Array(Object.keys(GATE_JOBS).length + 1).fill(4));
 });
 
 test('each gate job runs on its change-map output, after the changes job, and on nothing else', () => {
@@ -392,34 +404,62 @@ test('each gate job runs on its change-map output, after the changes job, and on
     assert.equal(jobs[job].settings.needs, 'changes', job);
     assert.equal(jobs[job].settings.if, `needs.changes.outputs.${output} == 'true'`, job);
   }
-  assert.equal(jobs.changes.settings.if, undefined);
-  assert.equal(jobs.changes.settings.needs, undefined);
+  for (const job of ['changes', 'whitespace']) {
+    assert.equal(jobs[job].settings.if, undefined, job);
+    assert.equal(jobs[job].settings.needs, undefined, job);
+  }
   // The map decides exactly the outputs the jobs read.
   assert.deepEqual([...new Set(Object.values(GATE_JOBS))].sort(), Object.keys(JOBS).sort());
 });
 
-test('the changes job runs the base commit\'s map, and every job runs when it cannot', () => {
+/** Runs the map step as the changes job does, in a temp folder reached through a symlink (as macOS's are). */
+function runMapStep(env) {
+  const dir = mkdtempSync(join(tmpdir(), 'ci-map-'));
+  try {
+    mkdirSync(join(dir, 'real'));
+    symlinkSync(join(dir, 'real'), join(dir, 'link'));
+    const output = join(dir, 'output');
+    const [map] = workflowRuns(workflow).filter((entry) => entry.job === 'changes');
+    const stdout = execFileSync('bash', ['-c', map.run], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, RUNNER_TEMP: join(dir, 'link'), GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: '', ...env }, stdio: 'pipe' });
+    return { stdout, outputs: readFileSync(output, 'utf8').split('\n').filter(Boolean) };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('the changes job runs the base commit\'s map for a pull request or a push, and no map for any other event', () => {
   const { changes } = jobSettings(workflow);
   const outputs = [...Object.keys(JOBS), 'full'];
   assert.deepEqual(changes.outputs, Object.fromEntries(outputs.map((name) => [name, `\${{ steps.map.outputs.${name} }}`])));
   const [map] = workflowRuns(workflow).filter((entry) => entry.job === 'changes');
   assert.equal(map.run, MAP_STEP);
-  assert.equal(map.env.MAP_BASE, "${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before || 'HEAD' }}");
-  // Without the base's map, the step writes every output true.
-  const dir = mkdtempSync(join(tmpdir(), 'ci-map-'));
-  try {
-    const output = join(dir, 'output');
-    execFileSync('bash', ['-c', map.run], { cwd: ROOT, env: { ...process.env, MAP_BASE: 'no-such-ref-ci-selective-jobs', RUNNER_TEMP: dir, GITHUB_OUTPUT: output }, stdio: 'pipe' });
-    assert.deepEqual(readFileSync(output, 'utf8').split('\n').filter(Boolean), outputs.map((name) => `${name}=true`));
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  assert.deepEqual(map.env, {
+    NODE_VERSION: '26.9.0',
+    EVENT: '${{ github.event_name }}',
+    REF: '${{ github.ref }}',
+    BEFORE: '${{ github.event.before }}',
+    // A merge group or a manual run has no base map: the zero commit makes `git show` fail, so every job runs.
+    MAP_BASE: "${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event_name == 'push' && github.event.before || '0000000000000000000000000000000000000000' }}",
+  });
+  // Without a base map, the step writes every output true and prints nothing of the map's.
+  const none = runMapStep({ MAP_BASE: '0000000000000000000000000000000000000000' });
+  assert.deepEqual(none.outputs, outputs.map((name) => `${name}=true`));
+  assert.doesNotMatch(none.stdout, /jobs:/);
+});
+
+test('the map step runs the map itself when it can, through a symlinked temp folder, and prints file names inert', () => {
+  // HEAD holds the map once this file is committed; a manual run's event answers every job without reading git.
+  const { stdout, outputs } = runMapStep({ MAP_BASE: 'HEAD', EVENT: 'workflow_dispatch', REF: 'refs/heads/claude/p1a-vault-core', BEFORE: '' });
+  assert.deepEqual(outputs, [...Object.keys(JOBS), 'full'].map((name) => `${name}=true`));
+  const token = /::stop-commands::([0-9a-f-]{36})\n/.exec(stdout)?.[1];
+  assert.ok(token, stdout);
+  assert.match(stdout, new RegExp(`::stop-commands::${token}\\n\\(not listed: every job runs\\)\\n::${token}::\\n\\njobs:\\n`));
 });
 
 test('ci-ok needs every job, runs even when one failed, and passes only when each passed or the map skipped it', () => {
   const jobs = jobSettings(workflow);
   const ciOk = jobs['ci-ok'].settings;
-  assert.deepEqual(listOf(ciOk.needs).sort(), ['changes', ...Object.keys(GATE_JOBS)].sort());
+  assert.deepEqual(listOf(ciOk.needs).sort(), ['changes', 'whitespace', ...Object.keys(GATE_JOBS)].sort());
   // always(), not !cancelled(): a skipped ci-ok would count as passed.
   assert.equal(ciOk.if, 'always()');
   const [step] = workflowRuns(workflow).filter((entry) => entry.job === 'ci-ok');
@@ -433,10 +473,13 @@ test('ci-ok needs every job, runs even when one failed, and passes only when eac
       return 'fail';
     }
   };
-  const every = (result) => Object.fromEntries(['changes', ...Object.keys(GATE_JOBS)].map((job) => [job, { result }]));
+  const every = (result) => Object.fromEntries(['changes', 'whitespace', ...Object.keys(GATE_JOBS)].map((job) => [job, { result }]));
   assert.equal(verdict(every('success'), 'true'), 'pass');
-  const edgeOnly = { ...every('skipped'), changes: { result: 'success' }, edge: { result: 'success' } };
+  const edgeOnly = { ...every('skipped'), changes: { result: 'success' }, whitespace: { result: 'success' }, edge: { result: 'success' } };
   assert.equal(verdict(edgeOnly, 'false'), 'pass');
+  // The whitespace job (and the guards in it) must pass, and is never skipped.
+  assert.equal(verdict({ ...edgeOnly, whitespace: { result: 'failure' } }, 'false'), 'fail');
+  assert.equal(verdict({ ...edgeOnly, whitespace: { result: 'skipped' } }, 'false'), 'fail');
   // A full run (or no answer from the map) may skip none.
   assert.equal(verdict(edgeOnly, 'true'), 'fail');
   assert.equal(verdict(edgeOnly, ''), 'fail');
@@ -463,7 +506,7 @@ test('the triggers: pull requests, the merge queue, pushes to main and the integ
 // state sync) must not cancel it, while a pull request's newer push cancels
 // its older run.
 test('a newer push to a pull request cancels its older run, and no push cancels another push\'s run', () => {
-  assert.match(workflow, /^concurrency:\n {2}group: backend-\$\{\{ github\.event_name == 'push' && github\.sha \|\| github\.ref \}\}\n {2}cancel-in-progress: true\n/m);
+  assert.match(workflow, /^concurrency:\n {2}group: backend-\$\{\{ github\.event_name == 'push' && format\('\{0\}@\{1\}', github\.ref, github\.sha\) \|\| github\.ref \}\}\n {2}cancel-in-progress: true\n/m);
 });
 
 test('the ops suite in CI fails, not skips, when its database is unreachable', () => {
@@ -473,6 +516,8 @@ test('the ops suite in CI fails, not skips, when its database is unreachable', (
 
 test('read-only, no secrets, every action pinned by commit', () => {
   assert.match(workflow, /^permissions:\n {2}contents: read\n/m);
+  // One permissions block, the workflow's: a job's own could grant a writing token.
+  assert.deepEqual(keyLines('permissions').map(indentOf), [0]);
   assert.doesNotMatch(workflow, /secrets\./);
   const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((match) => match[1]);
   assert.ok(uses.length > 0);
