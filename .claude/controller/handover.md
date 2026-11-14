@@ -49,6 +49,15 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:39: #461 (P3-T9) MERGED as `37877cb` (CI 9 of 9 on GitHub's runners); promotion #470 (stack #379 now 44). P4-T4 building.**
+  - **#461 before #460, on purpose:** #461 went green first. The two share no file. #461 changes `AiFigure` in the contracts, which #460 does not use; #460 uses `AiDraft`, which #461 leaves unchanged. So the order is safe. Issue #193 is closed, and the worktree and branch are removed. The followups entry for P3-T9 is written.
+  - **P4-T4 implementer (Haiku max):** `mcp:launch:0e23f6c5192a7fbc768890eea19e655c818a7264e588438a743f1de1141c40ae`, in worktree `p4-t4` on `p4/t4-slip-import` (install-edge) at `37877cb2`. Its kit is 28 of 28, and both `orig/` files now match the head. Under R127 its notes skip `test:edge`, `build:edge` and the five neighbouring AI workers files, which CI's edge job runs.
+  - **#464's stuck run** (43488344108) cannot be cancelled (HTTP 500, force-cancel too) or deleted (403 while queued). It holds the PR's concurrency group (`backend-refs/pull/464/merge`), so the reopened PR's run 43534597225 is stuck queued behind it.
+    - The workaround: a `workflow_dispatch` run on the branch (run 43535574193, head `7e2ae0dc`, group `backend-refs/heads/p2/t18a-shell-guards`).
+    - When it is 9 of 9 green, merge #464 by hand: `gh pr merge 464 --merge --match-head-commit 7e2ae0dc178...`. `merge_task_pr.sh` would refuse on the queued check runs.
+    - Then do its cleanup by hand: remove worktree `p2-t18a`, delete the branch, prune `scratch/p2-t18a*` `node_modules`, and promote.
+    - The dispatch run tests the branch head, not the merge with the moved base. #464 shares no file with anything merged before it.
+  - **#460:** its SQL flake is re-running.
 - **14 Nov 07:32: THE REPO IS PUBLIC (the owner, about 07:25: "i make the repo public now please maximize github actions instead of local machine CICD"). CI runs on GitHub-hosted runners again; ruling R127.**
   - **What had blocked CI since 13 Nov:**
     - The repo variable `CI_RUNNER=jotbun-local` (set 10 Nov 23:04Z, when GitHub-hosted runners were refused for billing) sent every job to the three self-hosted runners on the owner's Mac. All three were **offline**, so every job sat queued.

@@ -1004,3 +1004,29 @@ The review reports these came from were under /private/tmp and were lost on 8 No
   - **1D-T15's `AnalyticsUpkeep` round (both, and the confirmation's c1):** hoist `accountFollower` into a pure module that the component and the Node file both import, so the stand-in cannot drift. Or adopt Sonnet's R4 (`scratch/1d-t14-second/probes/zzReview.render.test.tsx:158`, about 15 lines with its `signedIn({ named, first })` and `mount(..., waitForIdentify)` options), with the mutant U1. U1 marks a session seen only after its account read succeeds (`AnalyticsUpkeep.tsx:55-59`), and it survives every committed render case: under it, a never-named account's held `signed_up` and `signed_out` go out with the next account's yes. The render file's two new cases hold M5 and M6 on the real component meanwhile. The receipt's "Sonnet m1 to m3" overstates m3 (c2, a nit for its next touch).
   - **1D-T15 (device run, Sonnet):** confirm in PostHog's live events that `signed_out` lands under the person's analytics id, not an anonymous one.
   - **1D-T13 and 1D-T15 (Sonnet):** `reset()` keeps the SDK's queue, so events captured just before a deletion's step 6 can still flush after it; Q15's daily retry for 7 days covers that.
+- P3-T9 (#461, merged 14 Nov as 37877cb at 5cb1055e, after the CI switch to GitHub-hosted runners; promotion #470). The reviews are `reviews/P3-T9.md` (Opus, approved: m1, n1 to n5) and `reviews/P3-T9-second.md` (Sonnet, approved: m1 to m4, n1 to n3). The probes are `scratch/p3-t9-review/zz-review-p3t9.test.ts` and `scratch/p3-t9-second/probes/zz-second-t9.test.ts`, `zz-second-deadline.test.ts` and `zz-second-base.test.ts`. Carried:
+  - **P3-T20 and P3-T21 (the Ask Bun screens), must carry:**
+    - **Sonnet m1:** a figure's `scope` days are the model's own, checked for shape only (`vault/ai.ts:210-216`). So `2026-02-30` reaches the phone, since V8 reads it as 2 March. Before "see all" reads `scope`, have `dates()` refuse a day that is no calendar date with a `ToolInputError`, using `isRealDate` from `drafts.ts`. It can ride with P3-T20.
+    - `escalated` can be true on a plain-figures answer, even when no model was asked (Opus PA). `count` is null for a budget line; `scope` is null for a place's total and a budget line.
+    - Older than P3-T9: the phone refuses an answer over 2,000 characters (`aiResources.ts:97`), and nothing on the edge bounds one. Cap it on the edge, or align the two limits.
+    - Opus n3: the phone's comment says `escalated` means "an Opus call ran" (`aiResources.ts:56`); P7 reads it as "the question went to Opus". Match the contract's comment (`packages/contracts/src/v1/ai.ts:213`).
+  - **The next task that edits `ask.ts` or `ask-escalation.test.ts` (test pins; the code is right today):**
+    - Sonnet m4: Y9 (a Haiku refusal after a tool turn escalates), Y3 and Y4 (both models' first message keeps `locale` and `today`), Y5 (a 403 mid-conversation is thrown on) and Y1 (today's date is an allowed number). From `scratch/p3-t9-second/probes/zz-second-t9.test.ts`.
+    - Opus m1: the PJ rows. A first Haiku call failing with a 400 is 503 and spends the use; one failing with `APIConnectionError` is 503 and gives it back. They kill RM7b and RM7c.
+    - Opus n1: PA, where no model can be asked in time, kills RM3. Opus n2: PM, an answer naming today stays Haiku's, kills RM2.
+    - All three are from `scratch/p3-t9-review/zz-review-p3t9.test.ts`.
+  - **Sonnet m3, for the same task (a decision):** no catch-all is left around Ask Bun's loop, so an unexpected throw (a malformed provider reply) is now a 500 `INTERNAL_ERROR` with no `ai_` line, where the base answered 503 and logged by class name. Either wrap `askWithEscalation`'s two conversations as a `failed` outcome, or accept the 500 and say so in a receipt. No money difference.
+  - **P6C and the owner's refund-caps item (B27):**
+    - An escalated Ask Bun is up to 10 model calls for one use.
+    - Sonnet m2: the 25 s cap splits a slow Haiku two ways. A third turn that cannot start ends `no_answer` and Opus answers; a third turn cut in flight is a timeout, so no Opus, and the use refunds after billed turns. The code follows H7. Whether a timeout in Haiku's capped conversation should count as `no_answer` while the parent deadline still has `MIN_CALL_MS` is a ruling for the refund caps.
+    - The refunds after billed calls stay uncapped on three paths.
+    - `AI_MIN_CLIENT_VERSION` 0.2.0 against `app.json` 0.3.0 holds only while no 0.2.x build without P3-T9 has shipped.
+    - If the owner wants a failed vault step refunded, `shouldRefund` needs the step's failure as an input.
+  - **P3-T10 (`$ai_generation`):** both conversations share one trace, Opus's turns marked `escalated: true`. A turn the deadline never let start is `sent: false` and gets no event.
+  - **P4-T4 (building now):** the per-slip deadline must leave Opus at least 2 s after Haiku's 20 s cap. Its brief pins this.
+  - **Housekeeping, the next edit of each file:**
+    - Opus n4: `receipts/P3-T8.md:37`'s stale "the slip's `shouldRefund` is unchanged";
+    - Opus n5: `draftChoices` (`drafts.ts:68-73`) can reuse `activeWallets`;
+    - Sonnet n1: `readOnce`'s new `catch` (`slip-read.ts:165`) logs nothing;
+    - Sonnet n2: the could-not-find line, when no model could be asked, says Bun looked;
+    - Sonnet n3: the receipt's third risk bullet is narrower than the behaviour.
