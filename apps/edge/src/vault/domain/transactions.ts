@@ -21,7 +21,7 @@ import {
   parseTransactionSource,
   validateOccurredOn,
 } from '@gogospend/contracts'
-import type { CommandAck, TransactionDto, TransactionSource, TransactionType } from '@gogospend/contracts'
+import type { CommandAck, EntityChange, TransactionDto, TransactionSource, TransactionType } from '@gogospend/contracts'
 
 import { routeId, stateProblem } from '@api/commands/versioned-entity'
 import { ProblemException } from '@api/common/api-problem.filter'
@@ -113,13 +113,14 @@ function sameWallet(draft: Draft): void {
   }
 }
 
-/** The mutation that commits one record's new version. A deleted row's head state is `deleted`. */
+/** One record's change at its version. A deleted row's head state is `deleted`. */
+function changeOf(row: TransactionRow): EntityChange {
+  return { entity: ENTITY, id: row.id, version: row.version, state: row.deleted_at ? 'deleted' : 'active', snapshot: toDto(row) }
+}
+
+/** The mutation that commits one record's new version. */
 function changed(row: TransactionRow): VaultMutation {
-  return {
-    entityId: row.id,
-    version: row.version,
-    changes: [{ entity: ENTITY, id: row.id, version: row.version, state: row.deleted_at ? 'deleted' : 'active', snapshot: toDto(row) }],
-  }
+  return { entityId: row.id, version: row.version, changes: [changeOf(row)] }
 }
 
 /** One record by id, or undefined. Task 8's purge reads the row through this. */
@@ -174,12 +175,19 @@ function checkReferences(c: VaultContext, draft: Draft, newlyReferenced: Readonl
   }
 }
 
-function insertRow(c: VaultContext, draft: Draft, source: TransactionSource | null): TransactionRow | undefined {
+/**
+ * What a create writes beside the record's own fields: how it was made (P3-T2), and the slip
+ * reference of a confirmed slip draft (P4-T7). Only the vault sets them: createTransaction reads
+ * `source` from its own body, and createTransactionRow's caller passes both.
+ */
+export type CreateExtras = { source: TransactionSource | null; slipRefId: string | null }
+
+function insertRow(c: VaultContext, draft: Draft, extras: CreateExtras): TransactionRow | undefined {
   const now = c.now.toISOString()
   return c.sql
     .exec<TransactionRow>(
-      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, source, version, created_at, updated_at)
-       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `INSERT INTO transactions (id, type, amount_minor, occurred_on, wallet_id, category_id, source_wallet_id, destination_wallet_id, note, merchant, source, slip_ref_id, version, created_at, updated_at)
+       VALUES (?, ?, CAST(? AS INTEGER), ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
        ON CONFLICT DO NOTHING RETURNING ${COLUMNS}`,
       draft.id,
       draft.type,
@@ -191,7 +199,8 @@ function insertRow(c: VaultContext, draft: Draft, source: TransactionSource | nu
       draft.destination_wallet_id,
       draft.note,
       draft.merchant,
-      source,
+      extras.source,
+      extras.slipRefId,
       now,
       now,
     )
@@ -228,15 +237,20 @@ export function getTransaction(c: VaultContext, id: string): TransactionDto {
   return toDto(row)
 }
 
-/** POST /v1/transactions: an expense, an income or a transfer, on a client-chosen id. */
-export function createTransaction(c: VaultContext, call: VaultCall): CommandAck {
-  const command = commandInput(call, 'transaction.create', undefined, 'forbidden')
-  const type = (call.body as { type?: unknown } | null)?.type
+/**
+ * A create's record, checked as transactions.create checks it, in its order (R41): the type, the
+ * known fields, the id, the amount, the date, the note and merchant, each reference, then (with
+ * `withSource`, createTransaction's own body) the source, then that a transfer moves between two
+ * wallets. Without `withSource` a `source` key is UNKNOWN_FIELD, and a `slip_ref_id` key always is:
+ * the vault sets both (P4-T7).
+ */
+function parseCreate(c: VaultContext, body: unknown, withSource: boolean): { draft: Draft; source: TransactionSource | null } {
+  const type = (body as { type?: unknown } | null)?.type
   if (!TRANSACTION_TYPES.includes(type as TransactionType)) {
     throw new ContractValidationError('VALIDATION_FAILED', 'type must be expense, income or transfer.', 'type')
   }
   const refs = refsOf(type as TransactionType)
-  const input = assertKnownFields(call.body, ['id', 'type', ...COMMON_FIELDS, ...refs, 'source'])
+  const input = assertKnownFields(body, ['id', 'type', ...COMMON_FIELDS, ...refs, ...(withSource ? ['source'] : [])])
   const today = bangkokDate(c.now)
   const draft: Draft = {
     id: uuidField(input.id, 'id'),
@@ -251,21 +265,48 @@ export function createTransaction(c: VaultContext, call: VaultCall): CommandAck 
     merchant: normalizeMerchant(input.merchant),
   }
   for (const ref of refs) draft[ref] = uuidField(input[ref], ref)
-  // How the record was made (P3-T2), set only here. It joins the digested payload only when one is
-  // sent, so a create the phone queued before this field existed keeps its digest and still replays.
-  const source = parseTransactionSource(input.source)
+  // How the record was made (P3-T2), set only at create.
+  const source = withSource ? parseTransactionSource(input.source) : null
   sameWallet(draft)
-  return runCommand(c, { ...command, payload: source === null ? draft : { ...draft, source } }, () => {
-    // A purged record leaves no row but keeps its head: its id is spent.
-    if (entityHead(c, ENTITY, draft.id)?.state === 'purged') throw new ProblemException(410, 'ENTITY_PURGED')
-    checkReferences(c, draft, new Set(refs))
-    const row = insertRow(c, draft, source)
-    if (!row) {
-      const existing = transactionRow(c, draft.id)
-      throw new ProblemException(409, 'VERSION_CONFLICT', { current: existing ? toDto(existing) : undefined })
-    }
-    return changed(row)
-  })
+  return { draft, source }
+}
+
+/**
+ * The one insert path of a new record (createTransaction and createTransactionRow): a purged id
+ * is spent (410), every reference is checked as a create checks it, and an id already used is 409
+ * with the current record.
+ */
+function insertCreated(c: VaultContext, draft: Draft, extras: CreateExtras): TransactionRow {
+  // A purged record leaves no row but keeps its head: its id is spent.
+  if (entityHead(c, ENTITY, draft.id)?.state === 'purged') throw new ProblemException(410, 'ENTITY_PURGED')
+  checkReferences(c, draft, new Set(refsOf(draft.type)))
+  const row = insertRow(c, draft, extras)
+  if (!row) {
+    const existing = transactionRow(c, draft.id)
+    throw new ProblemException(409, 'VERSION_CONFLICT', { current: existing ? toDto(existing) : undefined })
+  }
+  return row
+}
+
+/**
+ * A new record inside the caller's command (P4-T7's slip confirm, then P4-T11's statement rows):
+ * `input` is checked and inserted as transactions.create checks and inserts one, with the source
+ * and slip reference the caller gives, so a `source` or `slip_ref_id` key in it is UNKNOWN_FIELD.
+ * Returns the record's change for the caller's group.
+ */
+export function createTransactionRow(c: VaultContext, input: unknown, extras: CreateExtras): EntityChange {
+  const { draft } = parseCreate(c, input, false)
+  return changeOf(insertCreated(c, draft, extras))
+}
+
+/** POST /v1/transactions: an expense, an income or a transfer, on a client-chosen id. */
+export function createTransaction(c: VaultContext, call: VaultCall): CommandAck {
+  const command = commandInput(call, 'transaction.create', undefined, 'forbidden')
+  // The body is checked before the command, as before P4-T7: the digested payload is the checked record.
+  const { draft, source } = parseCreate(c, call.body, true)
+  // The source joins the digested payload only when one is sent, so a create the phone queued before
+  // this field existed keeps its digest and still replays (P3-T2).
+  return runCommand(c, { ...command, payload: source === null ? draft : { ...draft, source } }, () => changed(insertCreated(c, draft, { source, slipRefId: null })))
 }
 
 /** PATCH /v1/transactions/:id. The type never changes. If-Match is the current version. */
