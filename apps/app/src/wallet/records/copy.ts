@@ -39,4 +39,22 @@ export const COPY = {
     th: '{title} กลับมาอยู่ในประวัติแล้ว',
     en: '{title} is back in History.',
   },
+  // The record (P2-T26, bw-record, rh-actions, rh-undo). The Thai is the boards'; the English lines are drafts for E2-B.
+  'records.status': { th: 'สถานะ', en: 'Status' },
+  'records.wallet': { th: 'กระเป๋า', en: 'Wallet' },
+  'records.category': { th: 'หมวด', en: 'Category' },
+  'records.note': { th: 'โน้ต', en: 'Note' },
+  'records.more': { th: 'ตัวเลือกเพิ่มเติม', en: 'More options' },
+  'records.edit': { th: 'แก้ไข', en: 'Edit' },
+  'records.copyToday': { th: 'ทำซ้ำวันนี้', en: 'Again today' },
+  'records.delete': { th: 'ลบ', en: 'Delete' },
+  'records.actionEditLine': { th: 'ยอด หมวด กระเป๋า วันที่ หรือโน้ต', en: 'Amount, category, wallet, date or note' },
+  'records.actionCopy': { th: 'ทำซ้ำ', en: 'Log it again' },
+  'records.actionCopyLine': { th: 'จดใหม่เป็นของวันนี้', en: 'A new entry for today' },
+  'records.actionDeleteLine': { th: 'กู้คืนได้ภายใน 30 วัน', en: 'You can restore it for 30 days' },
+  'records.deletedBar': { th: 'ลบ {title} {amount} แล้ว', en: 'Deleted {title} {amount}' },
+  // Private mode (R114, as records.restoredHidden): the undo bar names the entry without its amount, and a note
+  // is not drawn. No board shows either: Thai and English are drafts for E2-B.
+  'records.deletedBarHidden': { th: 'ลบ {title} แล้ว', en: 'Deleted {title}' },
+  'records.noteHidden': { th: 'ซ่อนอยู่', en: 'Hidden' },
 } as const satisfies DraftTable;

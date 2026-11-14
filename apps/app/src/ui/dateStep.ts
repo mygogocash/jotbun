@@ -251,3 +251,13 @@ export function shortDayName(date: string, locale: DateLocale): string {
   if (locale === 'vi') return `${words.weekdaysNarrow[index]}, ${day.day}`;
   return `${words.weekdaysShort[index]} ${day.day}`;
 }
+
+/**
+ * A record's day as bw-record writes it: the short weekday, the day, the
+ * short month and always the year, Buddhist era in Thai: "เสาร์ 24 ต.ค. 2569",
+ * "Sat 24 Oct 2026", "Thứ 7, 24 thg 10, 2026". No time: v1 records carry a
+ * date only (W12).
+ */
+export function shortDateWithYear(date: string, locale: DateLocale): string {
+  return shortDate(partsOf(date), locale, true);
+}
