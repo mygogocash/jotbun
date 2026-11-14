@@ -11,10 +11,11 @@ import { migrate } from 'drizzle-orm/durable-sqlite/migrator'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { CommandDigester } from '@api/commands/command-digest'
-import { TRANSACTION_SOURCES, isTransactionSnapshot } from '@gogospend/contracts'
+import { RECEIPT_RETENTION_CONSENT, TRANSACTION_SOURCES, isTransactionSnapshot } from '@gogospend/contracts'
 
 import { VAULT_MIGRATIONS } from '../../src/vault/migrations'
 import { TEST_DIGEST_KEY, countRows, sqlExec, sqlRows } from './support/command-fixtures'
+import { seedImportImage } from './support/files'
 import { migrateBefore } from './support/migrations'
 import { builtinId, moneyFixtures } from './support/money-fixtures'
 import { startV1 } from './support/v1-client'
@@ -215,5 +216,84 @@ describe('the source column', () => {
       expect(rows(records)).toEqual(before.records.map((row) => ({ ...row, ...unset })))
       expect(rows('SELECT count(*) AS n FROM __drizzle_migrations')).toEqual([{ n: VAULT_MIGRATIONS.journal.entries.length }])
     })
+  })
+})
+
+// P3-T2's reviews (m1; brief source-pins): a restore (restoreTransaction) and a receipt's
+// retain, replace and remove (attachments.ts, nextVersion) bump the version with an UPDATE
+// that never names source. Each keeps the record's source (H9: set once, at create); these
+// cases hold it. An import confirmation writes only new records, and the source it gives
+// them is P4-T11's (statement).
+describe('the write paths that never name the source keep it', () => {
+  it('a restore keeps the source, in the record and in the sync feed', async () => {
+    const s = await setup()
+    const lunch = s.expense({ source: 'tell_bun' })
+    expect((await client.as(s.user).post('/v1/transactions', lunch)).status).toBe(201)
+    expect(await json(await client.as(s.user).del(`/v1/transactions/${String(lunch.id)}`, { ifMatch: 1 }))).toMatchObject({ outcome: 'deleted', version: 2 })
+    expect(await json(await client.as(s.user).post(`/v1/transactions/${String(lunch.id)}/restore`, {}, { ifMatch: 2 }))).toMatchObject({ outcome: 'restored', version: 3 })
+    expect(await record(s, lunch.id)).toMatchObject({ deleted_at: null, version: 3, source: 'tell_bun' })
+    expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snapshot.version, snapshot.source])).toEqual([[1, 'tell_bun'], [2, 'tell_bun'], [3, 'tell_bun']])
+  })
+
+  it('a receipt kept, replaced and removed leaves the source as it was: a typed record stays typed', async () => {
+    const s = await setup()
+    const lunch = s.expense({ source: 'typed' })
+    expect((await client.as(s.user).post('/v1/transactions', lunch)).status).toBe(201)
+    const first = await seedImportImage(s.user)
+    const second = await seedImportImage(s.user)
+    const receipt = `/v1/transactions/${String(lunch.id)}/attachment`
+    const steps: [string, () => Promise<Response>][] = [
+      ['retain', () => client.as(s.user).post(receipt, { attachment_id: first.attachmentId, consent: RECEIPT_RETENTION_CONSENT }, { ifMatch: 1 })],
+      ['replace', () => client.as(s.user).put(receipt, { attachment_id: second.attachmentId, consent: RECEIPT_RETENTION_CONSENT }, { ifMatch: 2 })],
+      ['remove', () => client.as(s.user).del(receipt, { ifMatch: 3 })],
+    ]
+    // Each command's answer, then the record as read after it.
+    const seen: unknown[][] = []
+    for (const [step, send] of steps) {
+      const status = (await send()).status
+      const got = await record(s, lunch.id)
+      seen.push([step, status, got.version, got.attachment_id ?? null, got.source])
+    }
+    expect(seen).toEqual([
+      ['retain', 200, 2, first.attachmentId, 'typed'],
+      ['replace', 200, 3, second.attachmentId, 'typed'],
+      ['remove', 200, 4, null, 'typed'],
+    ])
+    expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snapshot.version, snapshot.source])).toEqual([[1, 'typed'], [2, 'typed'], [3, 'typed'], [4, 'typed']])
+  })
+
+  // The source-pins review's m1: no write path adds a source to a record made without one (H9: set once, at create).
+  it('a record made without a source stays without one through an edit, a delete and restore, and a receipt kept, replaced and removed', async () => {
+    const s = await setup()
+    const lunch = s.expense()
+    expect((await client.as(s.user).post('/v1/transactions', lunch)).status).toBe(201)
+    const first = await seedImportImage(s.user)
+    const second = await seedImportImage(s.user)
+    const path = `/v1/transactions/${String(lunch.id)}`
+    const receipt = `${path}/attachment`
+    const steps: [string, () => Promise<Response>][] = [
+      ['edit', () => client.as(s.user).patch(path, { note: 'ข้าวมันไก่' }, { ifMatch: 1 })],
+      ['delete', () => client.as(s.user).del(path, { ifMatch: 2 })],
+      ['restore', () => client.as(s.user).post(`${path}/restore`, {}, { ifMatch: 3 })],
+      ['retain', () => client.as(s.user).post(receipt, { attachment_id: first.attachmentId, consent: RECEIPT_RETENTION_CONSENT }, { ifMatch: 4 })],
+      ['replace', () => client.as(s.user).put(receipt, { attachment_id: second.attachmentId, consent: RECEIPT_RETENTION_CONSENT }, { ifMatch: 5 })],
+      ['remove', () => client.as(s.user).del(receipt, { ifMatch: 6 })],
+    ]
+    // Each command's answer, then the record as read after it (a deleted one from Recently deleted): its version, and whether it names a source.
+    const seen: unknown[][] = []
+    for (const [step, send] of steps) {
+      const status = (await send()).status
+      const got = step === 'delete' ? ((await deletedItem(s, lunch.id)) ?? { version: 'missing' }) : await record(s, lunch.id)
+      seen.push([step, status, got.version, 'source' in got])
+    }
+    expect(seen).toEqual([
+      ['edit', 200, 2, false],
+      ['delete', 200, 3, false],
+      ['restore', 200, 4, false],
+      ['retain', 200, 5, false],
+      ['replace', 200, 6, false],
+      ['remove', 200, 7, false],
+    ])
+    expect((await syncSnapshots(s, lunch.id)).map((snapshot) => [snapshot.version, 'source' in snapshot])).toEqual([[1, false], [2, false], [3, false], [4, false], [5, false], [6, false], [7, false]])
   })
 })
