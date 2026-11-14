@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:02: 1C-T7 READY and building (Haiku). Both planners failed once at 06:24, and T3 resumed them at 06:30 (run 2).**
+  - **1C-T7 planner done** (thread archived). Brief `briefs/1C-T7.md` (906 lines), kit `scratch/1c-t7-planner/` (84 of 84 sums, `orig/` 8 of 8 at the head). Size M.
+    - RED was 18 of 20 Node and 3 of 15 render cases; GREEN; mutants 68 of 68. The fast gate passed, as did the iOS export, the routes tests and a dry run of the brief.
+    - **P1 to P17 accepted.** Packages: `expo-apple-authentication` `~58.0.2` (locked at 58.0.2) and `@react-native-google-signin/google-signin` `16.1.5` exact (Q1). The lockfile gains two entries.
+    - Google ships hidden (ids unset) and loads only at the first Google sign-in (P7), since its module throws at load without its native half.
+    - `app.config.js` adds its plugins after `app.json`'s, so #466 first is safe.
+    - Followups carried: lines 62, 98 to 105 (`appServicesWiring.render.test.tsx`), 111 and 205. Line 235 does not apply.
+  - **Owner notes, from 1C-T7:**
+    - (a) The approved Google package 16.1.5 documents Expo up to 57 and RN up to 0.87, while the app is on Expo 58 and RN 0.88. The development build is the proof (SKIPPED). If it fails, 16.2.0 or 17.0.0 (the same JavaScript) is the owner's choice.
+    - (b) From now on every iOS build must be signed by a team with the Sign in with Apple capability (a personal team cannot), as push already requires.
+  - **Implementer (Haiku max):** `mcp:launch:68da4bb1de439e9d379f3e4d453d8146890af8e365c73d90f638a14c8af95ff0`, in worktree `p1-1c-t7` on `p1/1c-t7-native-sign-in`, installed, `--lock`. The disk was 297 GiB free at the install.
+  - **Live now:** the 1C-T7 implementer; the P6B-T14 planner (run 2).
 - **14 Nov 06:03: two more Opus planners started** (common notes `scratch/dispatch/planner-common-notes-20261114c.md`, head `730cd20f`):
   - **1C-T7, native Apple and Google sign-in** (critical path, depth 6): `mcp:launch:476d249645df1a2cc08b97ae7c81bb4a67f475a2ab834a565138f2e710d10b1a`, WT `p1-1c-t7` on `p1/1c-t7-native-sign-in`.
     - Packages and the lockfile change (none in flight changes either).
