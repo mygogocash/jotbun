@@ -14,17 +14,34 @@ import type { AppStateStatus } from 'react-native';
 import { afterEach, expect, test, vi } from 'vitest';
 
 type Captured = { name: string; properties: Record<string, unknown> };
-const posthog = vi.hoisted(() => ({ captured: [] as Captured[] }));
+type Flags = Record<string, boolean | string>;
+// Each client keeps its own pushed flags (P6B-T14), so a case reads only its own client's.
+const posthog = vi.hoisted(() => ({ captured: [] as Captured[], clients: [] as { pushed: Flags[] }[] }));
 vi.mock('./posthogClient', () => ({
-  createPostHogClient: () => ({
-    capture: (name: string, properties?: Record<string, unknown>) => { posthog.captured.push({ name, properties: properties ?? {} }); },
-    screen: () => undefined,
-    identify: () => undefined,
-    reset: () => undefined,
-    startSessionRecording: () => undefined,
-    stopSessionRecording: () => undefined,
-  }),
+  createPostHogClient: () => {
+    const own = { pushed: [] as Flags[], flags: {} as Flags };
+    posthog.clients.push(own);
+    return {
+      capture: (name: string, properties?: Record<string, unknown>) => { posthog.captured.push({ name, properties: properties ?? {} }); },
+      screen: () => undefined,
+      identify: () => undefined,
+      reset: () => { own.flags = {}; },
+      startSessionRecording: () => undefined,
+      stopSessionRecording: () => undefined,
+      updateFlags: (flags: Flags) => {
+        own.pushed.push(flags);
+        own.flags = { ...flags };
+      },
+      getFeatureFlag: (key: string) => own.flags[key],
+    };
+  },
 }));
+// The /flags answer through the proxy (P6B-T14), so no case reaches a network.
+const proxy = vi.hoisted(() => ({ requests: [] as { url: string; body: unknown }[] }));
+vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+  proxy.requests.push({ url: String(url), body: JSON.parse(String(init?.body)) });
+  return new Response(JSON.stringify({ flags: { 'rollout-travel': { key: 'rollout-travel', enabled: true } } }), { status: 200 });
+});
 const secure = vi.hoisted(() => ({ values: new Map<string, string>() }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: async (key: string) => secure.values.get(key) ?? null,
@@ -52,6 +69,7 @@ vi.mock('@mobile/api/sharedV1', () => ({
 vi.mock('expo-router', () => ({ useSegments: () => ['onboarding'] }));
 
 import { setSession } from '@mobile/auth/session';
+import { installStoreBackend } from '@mobile/wallet/store/deviceWalletStore';
 import { AnalyticsUpkeep } from './AnalyticsUpkeep';
 import { installAppAnalytics } from './appAnalytics';
 import { getAnalytics, setAnalytics, takeEarlyEvents } from './bus';
@@ -70,6 +88,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
   setAnalytics(null);
   posthog.captured.length = 0;
+  posthog.clients.length = 0;
+  proxy.requests.length = 0;
+  installStoreBackend(null);
   secure.values.clear();
   net.online = true;
   net.account = ACCOUNT;
@@ -192,4 +213,39 @@ test("U3: A's session restored at launch, A's account unread offline; A saves, a
   setSession({ access_token: 'token-b', userId: ACCOUNT_B, binding: 'session-b' });
   await waitFor(() => expect(getAnalytics()?.status()).toBe('yes'));
   expect(names()).toEqual([]);
+});
+
+// P6B-T14: the app's remote flags, answered by the stubbed fetch above.
+test("remote flags are asked for through PostHog's host only with a project key, under the analytics id, and kept in the account's store", async () => {
+  const stored = new Map<string, string>();
+  installStoreBackend({
+    getItem: async (key) => stored.get(key) ?? null,
+    setItem: async (key, value) => { stored.set(key, value); },
+    removeItem: async (key) => { stored.delete(key); },
+    getAllKeys: async () => [...stored.keys()],
+    multiRemove: async (keys) => { for (const key of keys) stored.delete(key); },
+  });
+  vi.stubEnv('EXPO_PUBLIC_POSTHOG_HOST', 'https://api.jotbun.test/ingest');
+  // Only this case's requests: an earlier case's install asked another host.
+  const asked = () => proxy.requests.filter((request) => request.url.startsWith('https://api.jotbun.test/'));
+  // A phone without a project key has no client: its yes asks for no flags, and every flag reads undefined.
+  Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true, writable: true });
+  vi.stubEnv('EXPO_PUBLIC_POSTHOG_KEY', '');
+  setAnalytics(null);
+  const keyless = await installAppAnalytics();
+  await keyless.setAccount(ACCOUNT);
+  await flush();
+  expect(keyless.status()).toBe('yes');
+  expect(posthog.clients).toEqual([]);
+  expect(asked()).toEqual([]);
+  expect(keyless.flag('rollout-travel')).toBeUndefined();
+  // With a key: one request to the proxy under the analytics id; the answer is pushed, and kept for the account.
+  phoneWithKey();
+  const analytics = await installAppAnalytics();
+  const client = posthog.clients.at(-1);
+  await analytics.setAccount(ACCOUNT);
+  await waitFor(() => expect(client?.pushed).toEqual([{ 'rollout-travel': true }]), { timeout: 1000 });
+  expect(asked()).toEqual([{ url: 'https://api.jotbun.test/ingest/flags/?v=2', body: { api_key: 'phc_test_key', distinct_id: 'a'.repeat(64) } }]);
+  expect(analytics.flag('rollout-travel')).toBe(true);
+  expect(JSON.parse(stored.get(`jotbun.account.${ACCOUNT}.remote-flags`) ?? 'null')).toEqual({ flags: { 'rollout-travel': true }, payloads: {} });
 });

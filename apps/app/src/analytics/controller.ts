@@ -2,8 +2,15 @@
 // The server's answer is the truth, except a "no" this phone has not delivered yet.
 // PostHog can still be holding the previous person's id after a restart, so a new
 // controller starts as `loading` and reset() runs whenever the state is not yes.
+// Remote flags (P6B-T14, X5, B25) are asked for only in yes, under the analytics
+// id, and pushed into the client with updateFlags. The last answer is kept per
+// account, so the next yes shows it at once, offline included. A no, an open
+// question or a sign-out drops them; reset() empties the client's.
+import type { KeyValueStore } from '../wallet/store/walletStore.ts';
 import type { AppEventName, CleanProps, CommonProps } from './catalog.ts';
 import { cleanCommon, cleanEvent, screenPattern } from './catalog.ts';
+import { REMOTE_FLAGS_NAME, parseKeptFlags } from './remoteFlags.ts';
+import type { JsonValue, RemoteFlags } from './remoteFlags.ts';
 
 export type ConsentAnswer = 'yes' | 'no';
 export type ConsentStatus = 'signed_out' | 'loading' | 'unanswered' | 'yes' | 'no';
@@ -17,12 +24,18 @@ export type PostHogLike = {
   reset(): void;
   startSessionRecording(resumeCurrent?: boolean): unknown;
   stopSessionRecording(): unknown;
+  /** Replaces the client's flags (P6B-T14); reset() empties them. */
+  updateFlags(flags: Record<string, boolean | string>, payloads?: Record<string, JsonValue>): void;
+  /** A pushed flag's value; PostHog records the read as `$feature_flag_called`. */
+  getFeatureFlag(key: string): boolean | string | undefined;
 };
 export type AnalyticsDeps = {
   client: PostHogLike | null;
   replay: boolean;
   store: { read(): Promise<StoredConsent | null>; write(value: StoredConsent): Promise<void>; erase(): Promise<void> };
   server: { read(): Promise<ServerAnalyticsState>; setConsent(analytics: boolean): Promise<void> };
+  /** Remote flags (P6B-T14): `load` asks for them under an analytics id; `kept` is the account's store (P2-T3). */
+  flags?: { load(distinctId: string): Promise<RemoteFlags | null>; kept(accountId: string): KeyValueStore };
 };
 export interface Analytics {
   /**
@@ -55,6 +68,12 @@ export interface Analytics {
   track(name: string, properties?: Record<string, unknown>): void;
   screen(segments: readonly string[]): void;
   refresh(): Promise<void>;
+  /**
+   * A remote flag's value (P6B-T14): undefined unless the answer is yes and flags
+   * were pushed since the client's last reset. Only then is the client read, so
+   * PostHog's `$feature_flag_called` is only ever made after yes.
+   */
+  flag(key: string): boolean | string | undefined;
 }
 
 export const HELD_LIMIT = 50;
@@ -90,6 +109,11 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
   // Server and store work runs one call at a time, in call order, so a yes still
   // on its way cannot land after a later no, at the server or in the store.
   let queue: Promise<void> = Promise.resolve();
+  // Remote flags (P6B-T14): whether flags were pushed since the client's last reset.
+  let flagsPushed = false;
+  // Moves whenever the flags are dropped or the account changes, so a kept read or a
+  // load still on its way is never pushed or kept after.
+  let flagsEpoch = 0;
 
   function serialize(work: () => Promise<void>): Promise<void> {
     const run = queue.then(work);
@@ -113,6 +137,51 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     return { ...properties, ...cleanCommon(common), origin: 'app' };
   }
 
+  /** Pushes flags into the client; every listener hears it, so useRollout reads again. */
+  function pushFlags(remote: RemoteFlags): void {
+    client?.updateFlags(remote.flags, remote.payloads);
+    flagsPushed = true;
+    for (const listener of [...listeners]) listener();
+  }
+
+  /**
+   * Drops the flags: those pushed (reset() has emptied the client's) and those kept for
+   * `account`, so a no, an open question or a sign-out leaves none to show or send.
+   */
+  function dropFlags(account: string | null | undefined): void {
+    flagsEpoch += 1;
+    flagsPushed = false;
+    if (deps.flags !== undefined && typeof account === 'string') {
+      deps.flags.kept(account).remove(REMOTE_FLAGS_NAME).catch(() => undefined);
+    }
+  }
+
+  /**
+   * In yes: entering it pushes the account's kept flags at once, so a launch, offline
+   * included, shows the last rollouts; then, with an analytics id, a load pushes and
+   * keeps its answer, and a failure keeps the old. Never without a client. Outside the
+   * consent queue, so no consent call waits for the network.
+   */
+  async function syncFlags(entering: boolean): Promise<void> {
+    const flags = deps.flags;
+    const account = accountId;
+    if (client === null || flags === undefined || typeof account !== 'string') return;
+    const epoch = flagsEpoch;
+    const store = flags.kept(account);
+    if (entering) {
+      // A kept read that fails counts as none, so the load still runs (P6B-T14's second review, m1).
+      const kept = parseKeptFlags(await store.get(REMOTE_FLAGS_NAME).catch(() => null));
+      if (epoch !== flagsEpoch) return;
+      if (kept !== null) pushFlags(kept);
+    }
+    const distinctId = identifiedId;
+    if (distinctId === null) return;
+    const answer = await flags.load(distinctId);
+    if (answer === null || epoch !== flagsEpoch) return;
+    pushFlags(answer);
+    await store.set(REMOTE_FLAGS_NAME, JSON.stringify(answer));
+  }
+
   /** `pending`: the server does not have this no yet. */
   function applyNo(pending: boolean): void {
     client?.stopSessionRecording();
@@ -121,6 +190,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     client?.reset();
     identifiedId = null;
     held.length = 0;
+    dropFlags(accountId);
     setStatus('no', pending);
   }
 
@@ -136,6 +206,8 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     const queued = held.splice(0, held.length);
     for (const item of queued) client?.capture(item.name, payload(item.properties));
     if (entering && onDisplay !== null) client?.screen(onDisplay, payload({}));
+    // Remote flags after yes (P6B-T14): each entry into yes, and each refresh in it.
+    syncFlags(entering).catch(() => undefined);
   }
 
   function openQuestion(): void {
@@ -144,6 +216,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       client?.stopSessionRecording();
       identifiedId = null;
     }
+    dropFlags(accountId);
     setStatus('unanswered');
   }
 
@@ -218,6 +291,9 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       // signing in; a sign-out drops it whether or not its account was named, and so does
       // a switch (A to B) (R119, R120).
       const keepHeld = !signedOut && (accountId === undefined || (accountId === null && id !== null));
+      // The account whose session ends here: its kept flags go with it (P6B-T14). The
+      // launch's first account has none before it, so its kept flags stay.
+      const previous = accountId;
       accountId = id;
       generation += 1;
       const token = generation;
@@ -225,6 +301,7 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       client?.stopSessionRecording();
       identifiedId = null;
       if (!keepHeld) held.length = 0;
+      dropFlags(previous);
       if (id === null) {
         setStatus('signed_out');
         return;
@@ -317,6 +394,11 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
       generation += 1;
       const token = generation;
       await serialize(() => load(token));
+    },
+
+    flag(key) {
+      if (current !== 'yes' || !flagsPushed) return undefined;
+      return client?.getFeatureFlag(key);
     },
   };
 }

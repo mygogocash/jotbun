@@ -28,6 +28,8 @@ test('nothing a person typed leaves through an event, a screen or an exception',
       reset() {},
       startSessionRecording() {},
       stopSessionRecording() {},
+      updateFlags() {},
+      getFeatureFlag: () => undefined,
     },
     replay: false,
     store: { read: async () => null, write: async () => {}, erase: async () => {} },
@@ -91,4 +93,66 @@ test('nothing a person typed leaves through an event, a screen or an exception',
   assert.ok(left.some((event) => event.event === '$screen' && event.properties?.$screen_name === '/spend/settings'));
   const blob = JSON.stringify(left);
   for (const needle of NEEDLES) assert.equal(blob.includes(needle), false, needle);
+});
+
+test('a flag exposure leaves with no payload, no device name and nothing a person typed', async () => {
+  const policy = { analytics: true, crashReportsWithoutConsent: true };
+  const left: OutgoingEvent[] = [];
+  const accept = (event: OutgoingEvent) => {
+    const gated = gateOutgoing(event, policy);
+    if (gated) left.push(gated);
+  };
+  // An owner's payload holding what a person might type, on the flag and as a bootstrap.
+  const payload = { note: SENTINEL, email: 'kan@example.com' };
+  let pushed: Record<string, boolean | string> = {};
+  const analytics = createAnalytics({
+    client: {
+      capture(event, properties) { accept({ event, properties }); },
+      screen() {},
+      identify() {},
+      reset() { pushed = {}; },
+      startSessionRecording() {},
+      stopSessionRecording() {},
+      updateFlags(flags) { pushed = { ...flags }; },
+      // As PostHog does, the read is captured as `$feature_flag_called`, here with every property it may carry.
+      getFeatureFlag(key) {
+        const value = pushed[key];
+        accept({
+          event: '$feature_flag_called',
+          properties: {
+            $feature_flag: key,
+            $feature_flag_response: value,
+            $feature_flag_payload: payload,
+            $feature_flag_bootstrapped_payload: payload,
+            $feature_flag_bootstrapped_response: value,
+            $used_bootstrap_value: false,
+            $device_name: "Kan's iPhone",
+            $set: { email: 'kan@example.com', name: 'กานต์' },
+            $set_once: { phone: '0812345678' },
+          },
+        });
+        return value;
+      },
+    },
+    replay: false,
+    store: { read: async () => null, write: async () => {}, erase: async () => {} },
+    server: {
+      read: async () => ({ consent: 'yes', analyticsId: 'a'.repeat(64), weeksSinceSignup: 1 }),
+      setConsent: async () => {},
+    },
+    flags: {
+      load: async () => ({ flags: { 'rollout-bun-ai': true, 'exp-save-celebration': 'still' }, payloads: { 'rollout-bun-ai': payload } }),
+      kept: () => ({ get: async () => null, set: async () => {}, remove: async () => {}, eraseAll: async () => {} }),
+    },
+  });
+  await analytics.setAccount(ACCOUNT);
+  await new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+  assert.equal(analytics.flag('rollout-bun-ai'), true);
+  assert.equal(analytics.flag('exp-save-celebration'), 'still');
+  const exposures = left.filter((event) => event.event === '$feature_flag_called');
+  assert.deepEqual(exposures.map((event) => event.properties?.$feature_flag), ['rollout-bun-ai', 'exp-save-celebration']);
+  const blob = JSON.stringify(left);
+  for (const needle of NEEDLES) assert.equal(blob.includes(needle), false, needle);
+  assert.equal(blob.includes("Kan's iPhone"), false);
+  assert.equal(blob.includes('_payload'), false);
 });
