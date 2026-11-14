@@ -49,6 +49,35 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 08:21: #469's fix pushed as `899f6652` (the Opus reviewer confirms; fresh CI on GitHub's runners); followups written for all ten merges; four planners started.**
+  - **#469 (P6B-T14):** the controller's commit `899f6652`, proof `scratch/p6b-t14-fix/`:
+    - green 64 of 64 and `typecheck:app`;
+    - F1 to F4 and Sonnet's M10 each killed;
+    - `scrubException` drops `$active_feature_flags` and `$feature/*` before yes, and the kept read has `.catch(() => null)`;
+    - the redirect comments are corrected.
+
+    **The Opus reviewer (`mcp:launch:2720062974f45f4b113d217d5db883063d9094ac5ae58a09828f9bcdc1d944cc`, run 2) confirms `899f6652`.** The Sonnet thread is archived. m3 (a late-installed `useRollout`) goes to P6B-T15, and m2's host rule to P6C.
+  - **Followups:** entries are written for P3-T13, source-pins, P4-T2, P2-T26 and 1C-T7, and the headers of P2-T18a, P2-T18, P4-T17 and 1D-T14 are updated. P3-T13's probe is copied out of its tree.
+  - **Planners (Opus xhigh)**, common notes `scratch/dispatch/planner-common-notes-20261114d.md` (R127 for kits and gates), head `42cadcce`:
+
+    | Task | Thread | WT and branch | Notes |
+    | --- | --- | --- | --- |
+    | P2-T22, wallet detail and the streak | `mcp:launch:85dd91bad7ee9bff23a5b1319aec0a2e2cc2ae599a8c06b3a997837b6afbc253` | `p2-t22`, `p2/t22-wallet-detail` | critical path, depth 12 |
+    | P2-T30, budget | `mcp:launch:d474d37bcb3e5baa75854769f72ba9ba110eefa79ee2008172e9a24e23be932c` | `p2-t30`, `p2/t30-budget` | touches `WalletShell.tsx` |
+    | P2-T28, history | `mcp:launch:043d053d2969b427cb8378e32f692ac8947c980953b117ba5e3390877cd8727f` | `p2-t28`, `p2/t28-history` | |
+    | P3-T10, `$ai_generation` | `mcp:launch:2c1f01b8971febe599718f9219a2d2972be40888b9f10761f641f6fdeb5cf01a` | `p3-t10`, `p3/t10-ai-generations` | builds on P4-T4's `real/` if it needs `slip-read.ts` |
+
+  - **Not started yet:**
+    - P4-T14 (it shares `WalletShell.tsx` with P2-T30);
+    - P2-T27 and P3-T19 (they share `WalletRecordScreen.tsx`);
+    - P5-T6 and P5-T9 (the routes lane, after P4-T7);
+    - P3-T18 (it shares `analytics/events.ts` with P4-T14, and the saved moment with `saved-pins`);
+    - P3-T15, P6B-T10, P6A-T7, P2-T34 and P5-T19;
+    - the follow-up tasks `saved-pins` and `shell-carry`.
+  - **Live now:**
+    - the P4-T4 and P4-T7 implementers;
+    - the #469 confirmation;
+    - the four planners above.
 - **14 Nov 08:12: TEN PRs MERGED since CI came back.** The integration head is `a7070ae`, and stack #379 holds 53. Only #469 is open, with a fix in proof.
 
   | PR | Task | Merged as | Promotion | Issue closed |
