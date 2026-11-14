@@ -231,7 +231,8 @@ export function SettingsScreen({ services, areas: givenAreas }: SettingsScreenPr
       return;
     }
     try {
-      await services.signOut();
+      // Signed out everywhere: no signed_out, as the plan sends nothing for sign out everywhere in phase 1 (R125).
+      await services.signOut({ event: !afterEverywhere });
     } catch {
       setNote({ tone: 'alert', text: tc("Couldn't finish signing out. Try again.") });
     }
