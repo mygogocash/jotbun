@@ -7,6 +7,10 @@ export function getMobileEnv() {
     frontendUrl: process.env.EXPO_PUBLIC_FRONTEND_URL?.trim() || 'http://localhost:8081',
     /** Better Auth. Defaults to the v1 API: one Worker serves both. */
     authUrl: process.env.EXPO_PUBLIC_AUTH_URL?.trim() || v1ApiUrl,
+    /** Google sign-in's web client id: Google is offered only once it is set (Q1, after the development-build check). */
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '',
+    /** Google sign-in's iOS client id: on iOS, Google also needs this one. */
+    googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim() ?? '',
     /** PostHog's project key: empty until the PostHog project exists (plan 1D, Q5), and then nothing is sent. */
     posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY?.trim() ?? '',
     /** PostHog's host: the Worker's /ingest proxy (1D-T2) unless set. */
