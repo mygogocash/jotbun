@@ -49,6 +49,17 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:17: #468 (1C-T7, closes #124) opened at `bf3e1259`; its two reviews started.**
+  - The implementer reported DONE in about 12 minutes. The controller checked the commit: all 14 `real/` files are byte-identical. The implementer amended its first commit (`c3a0a4a1`) once before pushing, to fix three receipt sentences.
+    - RED: Node 18 of 20 and render 3 of 15. GREEN: 20 and 15. Mutants: 68 of 68.
+    - Gate: `test:unit` 1127, render 23 of 23, routes 17 of 17, `export:web`, the config introspection equal to the planner's diffs, `release-graph` and the lockfile bindings.
+    - The implementer thread is archived.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:c403dc260e9553133be900c785ccd1fb98d721210505af4d9c31226625e5cbbf`, writing `reviews/1C-T7.md`;
+    - Sonnet: `mcp:launch:7e5480fa9f036c8227ac1ddd0e6c6edc4a22830f6199946d972320080f67c88f`, writing `reviews/1C-T7-second.md`.
+
+    Notes: `scratch/dispatch/1C-T7-review-notes.md`.
+  - **Live now:** the #468 reviews (Opus and Sonnet); the P6B-T14 implementer.
 - **14 Nov 07:16: P6B-T14 READY and building (Haiku). CI is still blocked (07:14: all nine PRs 9 of 9 queued; the CI watcher is re-armed over all nine).**
   - **P6B-T14 planner done** (thread archived). Brief `briefs/P6B-T14.md`, kit `scratch/p6b-t14-planner/` (82 of 82 sums, `orig/` 11 of 11 at the head). Size L.
     - RED was 20 of 64 Node and 3 of 16 render cases; GREEN; mutants 55 of 55; a gate of 35 render files (676 tests) covering every user of `recordAnalytics` and `fakeConsent`.
