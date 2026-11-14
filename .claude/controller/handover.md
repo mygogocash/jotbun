@@ -49,6 +49,18 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:24: #469 (P6B-T14, closes #298) opened at `f6c976ca`; its two reviews started.**
+  - The implementer reported DONE in about 7 minutes. The controller checked the commit: all 20 `real/` files are byte-identical, the planner's receipt included.
+    - RED: Node 20 of 64 and render 3 of 16. GREEN: 64 and 16. Mutants: 55 of 55 (46 Node, 9 vitest).
+    - Gate: 35 render files with 676 tests, `test:unit` 1128.
+    - The receipt does not record the controller's acceptance, since it is checksum-pinned. The PR body records it.
+  - **The first push of `p6b/t14-remote-flags` failed with a 403 from GitHub**, while `gh auth` was fine. A plain retry worked, so it was transient. If `open_task_pr.sh` fails on a push, retry the push alone, then rerun the script.
+  - **Reviews (privacy path):**
+    - Opus: `mcp:launch:2720062974f45f4b113d217d5db883063d9094ac5ae58a09828f9bcdc1d944cc`, writing `reviews/P6B-T14.md`;
+    - Sonnet: `mcp:launch:0f581b8a45609a2efd36bda3e56a93dc257bf298c9881ed99050e42ed14c1e9b`, writing `reviews/P6B-T14-second.md`.
+
+    Notes: `scratch/dispatch/P6B-T14-review-notes.md`. The implementer thread is archived.
+  - **Live now:** the #468 and #469 reviews (Opus and Sonnet each).
 - **14 Nov 07:17: #468 (1C-T7, closes #124) opened at `bf3e1259`; its two reviews started.**
   - The implementer reported DONE in about 12 minutes. The controller checked the commit: all 14 `real/` files are byte-identical. The implementer amended its first commit (`c3a0a4a1`) once before pushing, to fix three receipt sentences.
     - RED: Node 18 of 20 and render 3 of 15. GREEN: 20 and 15. Mutants: 68 of 68.
