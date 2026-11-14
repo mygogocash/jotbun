@@ -69,6 +69,8 @@ export type VaultRouteId =
   | 'me.analytics'
   // P4-T3: the slip salt and the slip accounts.
   | 'slips.salt' | 'slipAccounts.list' | 'slipAccounts.update'
+  // P4-T7: the slip drafts' list, confirm and dismiss, and a single read's slip ref.
+  | 'drafts.list' | 'drafts.confirm' | 'drafts.dismiss' | 'slips.refs'
 
 export type VaultCall = {
   route: VaultRouteId
