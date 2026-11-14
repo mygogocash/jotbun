@@ -12,6 +12,31 @@
 >
 > Agents no longer run those whole suites locally, and no longer write or check whole-suite totals as "Expected" lines; totals drift whenever the head moves. The local gate is the "Fast local gate" below. A brief written before this note keeps its own steps, except that its whole-suite steps (full render, full workers, exports) are skipped: record them as "CI" in the receipt.
 
+> **R127 (controller, 14 November 2026; the owner: "i make the repo public now please maximize github actions instead of local machine CICD"): GitHub's hosted runners are the CI, and the local machine runs only what proves the task.**
+>
+> **The runners:**
+> - The repo is public, so GitHub-hosted runners cost nothing.
+> - The repo variable `CI_RUNNER` (which had sent every job to self-hosted runners on the owner's Mac) is deleted, and the three `jotbun-local` runners are removed. Every job runs on `ubuntu-24.04`.
+> - **Never register a self-hosted runner on this repo again:** on a public repo, a fork's pull request could run code on it.
+>
+> **What stays local:**
+> - **Planners:** the kit's typed stubs, the RED typecheck, RED and GREEN on the task's own files, the mutants, and a dry run of the brief.
+> - **Implementers:** the brief's focused files (RED, GREEN, mutants), `typecheck:app` or `typecheck:edge`, and `git diff --check`.
+> - **Reviewers:** probes and their own mutants on the focused files, and a sample of the planner's mutants.
+>
+> **What is CI's (read it on the PR with `gh pr checks <n>` and the job logs):**
+> - `test:unit` and `test:app`;
+> - render files beyond the task's own;
+> - the routes tests and `typecheck:routes`;
+> - `export:web` and the iOS export;
+> - `build:edge`, `test:edge` and the workers suite;
+> - the database suites and `test:ops`;
+> - the release image.
+>
+> **Briefs written before this note** keep their focused steps. Their steps that run the suites above are skipped and recorded as "CI" in the receipt.
+>
+> **Re-running CI is free:** when a merge into the base touches code a later PR shares, re-run that PR's checks (`gh run rerun <id>`) rather than proving the merge locally.
+
 > **8 November 2026:** macOS cleared `/private/tmp`, which held the old briefs, planner files and checksums. From now on, briefs live in `/Users/kunanonjarat/Developer/jotbun/.claude/controller/briefs/`, reviews in `.../controller/reviews/`, and each agent's scratch files in `.../controller/scratch/<task>/`. Never put anything you need to keep under `/private/tmp`. The heavy lock stays at `/private/tmp/claude-501/jotbun-heavy.lock`.
 
 > **R87 (controller, 8 November 2026): receipts go in their own file.** Every receipt appended to the end of `docs/implementation/premium-progress.md` made every other open pull request conflict there and rerun CI. From now on a task (or a fix round started after this date) writes its receipt to `docs/implementation/receipts/<task-id>.md` (for example `receipts/1B-T5.md`, `receipts/1B-T4-followup.md`), in the same house style, starting with a `# <task-id>: <title>` heading, and does not edit `premium-progress.md`. Wherever this protocol or a brief says "the receipt in `premium-progress.md`", read it as that file. Briefs written before this date keep their own instructions.
@@ -41,12 +66,11 @@ The orchestrator (not you) pushes, opens pull requests, merges and closes issues
 3. **RED:** behavioural tests that fail on assertions against compile-safe seams (a missing module is not a RED). Record the failing counts.
 4. **GREEN:** the smallest code that passes, exactly as the plan says.
 5. **Mutation check:** mutate each new guard or branch, run the focused tests, see them fail, restore the file and confirm `git diff` shows only your intended change. Add a test for every survivor, or explain why it is equivalent.
-6. **Fast local gate (R100), for what your change touches:**
-   - **Typecheck:** `typecheck:app` and/or `typecheck:edge`, plus `typecheck:routes` when routes change.
+6. **Fast local gate (R100, narrowed by R127 on 14 November 2026), for what your change touches:**
+   - **Typecheck:** `typecheck:app` and/or `typecheck:edge`.
    - **The task's focused test files:** RED to GREEN. For edge workers files, run them focused, under the lock.
-   - **Fast whole suites:** `test:app` and `test:unit` (app), or `test:edge` (edge).
-   - **Builds:** `build:edge` for edge tasks; `export:web` only when routes, config or the app entry change.
    - **Always:** `git diff --check`.
+   - Since R127, `test:app`, `test:unit`, `test:edge`, `typecheck:routes`, `build:edge` and `export:web` are CI's. Run one of them locally only when the brief says so, for a reason it names.
 
    CI runs the rest. The list below is what CI runs. Run any of it locally only when the brief explicitly says so, for a reason it names.
    **CI gate:**

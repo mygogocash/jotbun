@@ -49,6 +49,36 @@ The owner answered the controller's question at about 20:20 with "Resume the bui
   - The controller accepted P1 to P18.
   - **Fixer dispatched (Flash):** `mcp:launch:8439970203930e74e21addc5f60a722f9fcc769db43c899310e3b366ea70e00b`, in worktree `p2-t25`. Step 1 merges `a00fff7c`.
   - The controller pushes its commit and updates #412's body. The Opus confirming review follows after 14 Nov 03:00.
+- **14 Nov 07:32: THE REPO IS PUBLIC (the owner, about 07:25: "i make the repo public now please maximize github actions instead of local machine CICD"). CI runs on GitHub-hosted runners again; ruling R127.**
+  - **What had blocked CI since 13 Nov:**
+    - The repo variable `CI_RUNNER=jotbun-local` (set 10 Nov 23:04Z, when GitHub-hosted runners were refused for billing) sent every job to the three self-hosted runners on the owner's Mac. All three were **offline**, so every job sat queued.
+    - The 13 Nov 20:15 diagnosis (Actions minutes exhausted) was only half the story.
+  - **Done at 07:27 to 07:31:**
+    1. `CI_RUNNER` deleted. Jobs now run on `ubuntu-24.04`, free for a public repo.
+    2. The three runner registrations (`jotbun-runner-1` to `-3`, ids 21 to 23) removed. A public repo must never have self-hosted runners: a fork's pull request could run code on the Mac.
+    3. The twelve stuck runs cancelled, and the eleven task PRs' runs re-run in merge order.
+    4. #464's run 43488344108 refused to cancel (HTTP 500, force-cancel too), so #464 was closed and reopened. That started run 43534597225; the old one may sit queued until GitHub expires it.
+    5. Promotion #458's failed jobs and #459's run re-run behind them.
+  - **Secrets check:** no high-signal secret pattern (AWS, GitHub, Anthropic, Slack, Google keys, private keys, PostHog project keys) in either branch tip or in history, and no committed `.env`. GitHub's secret scanning now runs too.
+  - **R127 in `protocol.md`:**
+    - Locally, only the task's proofs: kit stubs, RED, GREEN and mutants on its own files, the typecheck, and `git diff --check`.
+    - CI's: `test:unit`, `test:app`, other render files, the routes tests and `typecheck:routes`, the exports, `build:edge`, `test:edge`, the workers, database and ops suites, and the image.
+    - The fast local gate (step 6) is narrowed to match. Re-run a PR's CI after a merge it shares code with, rather than proving the merge locally.
+  - **Colima** (the local CI's Docker VM, 10 CPUs and 32 GB) is still running with no containers. It is left for the owner (`colima stop`), since another project may use it. `.claude/controller/local-ci/runners.sh` is retired.
+  - **First CI result:** #460's SQL job failed on the known R-B flake in frozen `apps/api` (`attachments.integration.spec.ts`, "two records retaining one image at once keep one receipt, made by one copy", lessons.md). Re-run its failed job once the run completes. Its other jobs passed or are running.
+  - **Next:** merge as each PR's nine jobs go green, in order:
+    1. #460
+    2. #461
+    3. #462
+    4. #463
+    5. #456
+    6. #464
+    7. #465
+    8. #466
+    9. #467
+    10. #468 and #469, once their reviews approve.
+
+    Promote each merge, and re-run a later PR's CI when an earlier merge touched shared code.
 - **14 Nov 07:24: #469 (P6B-T14, closes #298) opened at `f6c976ca`; its two reviews started.**
   - The implementer reported DONE in about 7 minutes. The controller checked the commit: all 20 `real/` files are byte-identical, the planner's receipt included.
     - RED: Node 20 of 64 and render 3 of 16. GREEN: 64 and 16. Mutants: 55 of 55 (46 Node, 9 vitest).
