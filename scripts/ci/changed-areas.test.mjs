@@ -3,7 +3,7 @@
 // here run none, and a merge group, a push to main or a manual run always runs every job.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -233,6 +233,21 @@ test('run as the workflow runs it, the script answers for the merge commit again
     // A push to the integration branch names its range with BEFORE, and runs every job for a code change.
     assert.deepEqual(run({ EVENT: 'push', REF: 'refs/heads/claude/p1a-vault-core', BEFORE: three }), ['checks=true', 'exports=true', 'render=true', 'database=true', 'edge=true', 'image=true', 'full=true']);
     assert.deepEqual(run({ EVENT: 'merge_group', REF: 'refs/heads/gh-readonly-queue/base/pr-1-x' }).at(-1), 'full=true');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the script runs when started through a symlinked folder, as from macOS\'s temp folders', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ci-areas-'));
+  try {
+    mkdirSync(join(dir, 'real'));
+    writeFileSync(join(dir, 'real', 'changed-areas.mjs'), readFileSync(SCRIPT));
+    symlinkSync(join(dir, 'real'), join(dir, 'link'));
+    const output = join(dir, 'output');
+    execFileSync(process.execPath, [join(dir, 'link', 'changed-areas.mjs')], { cwd: dir, env: { ...process.env, EVENT: 'workflow_dispatch', REF: 'refs/heads/main', GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: '' }, stdio: 'pipe' });
+    assert.ok(existsSync(output), 'the script exited without writing its answer');
+    assert.equal(readFileSync(output, 'utf8').split('\n').filter(Boolean).at(-1), 'full=true');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
