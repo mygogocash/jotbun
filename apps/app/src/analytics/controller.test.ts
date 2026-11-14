@@ -28,7 +28,7 @@ function harness(options?: {
    * Remote flags (P6B-T14): what each load answers (null: it fails), what is kept per
    * account, and whether loads or kept reads wait for `releaseLoads` or `releaseKept`.
    */
-  flags?: { answer: RemoteFlags | null; kept?: Readonly<Record<string, RemoteFlags>>; holdLoads?: boolean; holdKept?: boolean };
+  flags?: { answer: RemoteFlags | null; kept?: Readonly<Record<string, RemoteFlags>>; holdLoads?: boolean; holdKept?: boolean; failKeptGet?: boolean };
 }) {
   const sent: Sent[] = [];
   // What the client was given (updateFlags) and asked (getFeatureFlag), apart from `sent`.
@@ -129,6 +129,7 @@ function harness(options?: {
         kept: (account: string) => ({
           // A held read answers what was kept when it was asked, as a read on its way would.
           get: async (name: string) => {
+            if (options.flags?.failKeptGet) throw new Error('storage read failed');
             const value = keptOf(account).get(name) ?? null;
             if (options.flags?.holdKept) await new Promise<void>((resolve) => { heldKept.push(resolve); });
             return value;
@@ -1259,4 +1260,14 @@ test('flags still on their way when a no comes are never pushed or kept', async 
   await kept.releaseLoads(LOADED);
   assert.deepEqual(kept.pushed, [LOADED]);
   assert.deepEqual(JSON.parse(kept.kept(ACCOUNT_A) ?? 'null'), LOADED);
+});
+
+test('a kept read that fails counts as none: the load still runs and its answer shows', async () => {
+  const h = harness({ consent: 'yes', flags: { answer: LOADED, failKeptGet: true } });
+  await h.analytics.setAccount(ACCOUNT_A);
+  await settle();
+  assert.equal(h.analytics.status(), 'yes');
+  assert.deepEqual(h.loads, [ANALYTICS_ID]);
+  assert.deepEqual(h.pushed, [LOADED]);
+  assert.equal(h.analytics.flag('rollout-travel'), true);
 });

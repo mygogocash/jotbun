@@ -83,6 +83,32 @@ test('before yes, only scrubbed exceptions leave, without a person profile', () 
   assert.equal(gateOutgoing({ event: '$identify', properties: {} }, OFF), null);
 });
 
+test('before yes a crash report carries no flag the SDK kept from an earlier yes, and no payload either way', () => {
+  // After a relaunch the SDK holds the last yes's flags and adds them to every event until the controller resets it.
+  const withFlags = (): OutgoingEvent => {
+    const event = crash();
+    Object.assign(event.properties as Record<string, unknown>, {
+      $active_feature_flags: ['rollout-travel', 'exp-budget-question'],
+      '$feature/rollout-travel': true,
+      '$feature/exp-budget-question': 'no_presets',
+      $feature_flag_payload: { note: 'ค่าเช่า ฿4,500' },
+      $feature_flag_bootstrapped_payload: { note: 'ค่าเช่า ฿4,500' },
+    });
+    return event;
+  };
+  const before = JSON.stringify(gateOutgoing(withFlags(), OFF));
+  for (const text of ['$active_feature_flags', '$feature/', 'rollout-travel', 'no_presets', '$feature_flag_payload', '$feature_flag_bootstrapped_payload', 'ค่าเช่า']) {
+    assert.equal(before.includes(text), false, text);
+  }
+  // After yes the flags may ride, and the payloads still never do.
+  const after = (gateOutgoing(withFlags(), { analytics: true, crashReportsWithoutConsent: false })?.properties ?? {}) as Record<string, unknown>;
+  assert.deepEqual(
+    [after.$active_feature_flags, after['$feature/rollout-travel'], after['$feature/exp-budget-question']],
+    [['rollout-travel', 'exp-budget-question'], true, 'no_presets'],
+  );
+  assert.equal('$feature_flag_payload' in after || '$feature_flag_bootstrapped_payload' in after, false);
+});
+
 test('with the switch off, exceptions also wait for yes', () => {
   assert.equal(gateOutgoing(crash(), { analytics: false, crashReportsWithoutConsent: false }), null);
 });

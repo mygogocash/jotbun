@@ -169,7 +169,8 @@ export function createAnalytics(deps: AnalyticsDeps): Analytics {
     const epoch = flagsEpoch;
     const store = flags.kept(account);
     if (entering) {
-      const kept = parseKeptFlags(await store.get(REMOTE_FLAGS_NAME));
+      // A kept read that fails counts as none, so the load still runs (P6B-T14's second review, m1).
+      const kept = parseKeptFlags(await store.get(REMOTE_FLAGS_NAME).catch(() => null));
       if (epoch !== flagsEpoch) return;
       if (kept !== null) pushFlags(kept);
     }

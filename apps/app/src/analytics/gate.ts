@@ -70,6 +70,9 @@ function scrubException<E extends OutgoingEvent>(event: E, policy: GatePolicy): 
   const properties: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(source)) {
     if (key.startsWith('$exception') || key.startsWith('$issue')) continue;
+    // Before yes, no flag rides: after a relaunch the SDK still holds an earlier yes's flags and puts them on
+    // every event until the controller's first reset (P6B-T14's second review, M1).
+    if (!policy.analytics && (key === '$active_feature_flags' || key.startsWith('$feature/'))) continue;
     properties[key] = value;
   }
   properties.$exception_list = scrubList(source.$exception_list);

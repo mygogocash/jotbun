@@ -3,9 +3,10 @@
 // so PostHog never asks for flags itself; the controller asks here, only in
 // yes, under the analytics id, and pushes the answer with `updateFlags`. The
 // request goes to 1D-T2's proxy and carries the project key and the analytics
-// id, nothing else. A redirect fails the request instead of being followed, so
-// none can send the phone to PostHog itself. Any failure answers null, and the
-// controller keeps the last answer.
+// id, nothing else. It asks for `redirect: 'error'`, but React Native's fetch
+// (whatwg-fetch over XHR) ignores that and follows a redirect, so the proxy host
+// must never redirect (P6C sets it). Any failure answers null, and the controller
+// keeps the last answer.
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type RemoteFlags = { flags: Record<string, boolean | string>; payloads: Record<string, JsonValue> };
@@ -43,7 +44,7 @@ function readAnswer(body: unknown): RemoteFlags | null {
 
 /**
  * POST `${host}/flags/?v=2` (as @posthog/core asks) with `{ api_key, distinct_id }`
- * and `redirect: 'error'`. Null on any failure, a status outside 2xx, a timeout
+ * and `redirect: 'error'` (which React Native's fetch ignores). Null on any failure, a status outside 2xx, a timeout
  * (default 5000 ms; the request is then aborted) or a malformed answer.
  */
 export async function fetchRemoteFlags(input: {
