@@ -7,7 +7,7 @@ import { getMobileEnv } from '../config/env.ts';
 import { createBetterAuthPort, createdOf } from './betterAuthPort.ts';
 import type { BetterAuthPort, ClientResult, DeviceDto, SignInMethod } from './betterAuthPort.ts';
 import { jotbunAccountClient } from './jotbunAccountClient.ts';
-import { NO_NATIVE_SIGN_IN } from './nativeSignIn.ts';
+import { appNativeSignIn } from './nativeModules';
 import type { NativeIdToken } from './nativeSignIn.ts';
 
 const storage = {
@@ -56,10 +56,10 @@ const client = createAuthClient({
   plugins: [expoClient({ scheme: 'gogospend', storagePrefix: 'jotbun', storage }), emailOTPClient(), jwtClient(), jotbunAccountClient()],
 });
 
-/** iOS and Android. Task 7 fills in the native Apple and Google sheets; until then those methods are not offered. */
+/** iOS and Android: Apple's sheet on iOS, and Google's once this build has its client ids (1C-T7). */
 export function createAppAuthPort(): BetterAuthPort {
   return createBetterAuthPort({
-    native: NO_NATIVE_SIGN_IN,
+    native: appNativeSignIn(),
     client: {
       async sendSignInCode(email) {
         return answered(await client.emailOtp.sendVerificationOtp({ email, type: 'sign-in' }));
