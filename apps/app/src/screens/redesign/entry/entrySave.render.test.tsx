@@ -1,5 +1,7 @@
 // useEntrySave, probed without the Quick add screen: a fixed expense draft,
-// the diary or the online command, and what the caller is told afterwards.
+// the diary or the online command, what the caller is told afterwards, and how
+// the entry was made (P3-T13): the source the create carries and record_saved's
+// photo flag.
 // Then Quick add itself, for what the move must keep: a sum worked out the
 // moment Save is pressed, and Tell Bun's often-logged chips.
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -16,7 +18,7 @@ vi.mock('expo-router', () => ({ useRouter: () => ({ push: () => undefined, repla
 vi.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 vi.mock('react-native-safe-area-context', () => import('../../../dev/catalogue/safeAreaTestStub'));
 
-import type { TransactionDto, WalletSnapshot } from '@gogospend/contracts';
+import type { TransactionDto, TransactionSource, WalletSnapshot } from '@gogospend/contracts';
 import { recordAnalytics } from '@mobile/analytics/testing/recordAnalytics';
 import { haptics } from '@mobile/lib/haptics';
 import { installBrowserStorage } from '@mobile/mascot/mascotTestHarness';
@@ -81,6 +83,7 @@ function Probe({
   wallets,
   keypad,
   track,
+  source,
   onSaved,
   savedHaptic,
   onAttempt,
@@ -89,6 +92,7 @@ function Probe({
   wallets: readonly WalletSnapshot[];
   keypad: KeypadState;
   track?: EntryTrack;
+  source?: TransactionSource;
   onSaved?: (saved: SavedEntry) => void;
   savedHaptic?: 'quickAdd' | 'success';
   onAttempt?: (attempt: SaveAttempt) => void;
@@ -102,7 +106,7 @@ function Probe({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Save entry"
-        onPress={() => { void entrySave.save({ draft, keypad, wallets, track }).then(onAttempt); }}
+        onPress={() => { void entrySave.save({ draft, keypad, wallets, track, source }).then(onAttempt); }}
       >
         <Text>Save entry</Text>
       </Pressable>
@@ -210,6 +214,36 @@ test('the track a caller passes reaches onSaved, and a resend keeps the first at
   await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
   expect(onSaved.mock.calls[0][0].track).toEqual(first);
   expect(onSaved.mock.calls[0][0].via).toBe('online');
+});
+
+test('the create carries its source, and record_saved its source and photo flag', async () => {
+  const recorded = await recordAnalytics();
+  restoreAnalytics = recorded.restore;
+  const saved = () => recorded.sent.filter((event) => event.name === 'record_saved').map((event) => event.properties);
+  // Kept on the phone: the outbox entry says how it was made, and record_saved says so, with the photo it carries.
+  const diary = createFakeDiary({ phase: 'ready', wallets: [...WALLETS], categories: [FOOD] });
+  const photo: EntryTrack = { source: 'photo', categoryKey: 'food', openedAt: Date.now(), hasPhoto: true };
+  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={photo} source="photo" />, resources(), diary.diary);
+  fireEvent.click(saveButton());
+  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
+  expect(diary.saves).toEqual([expect.objectContaining({ id: RECORD_ID, amount_minor: '6500', source: 'photo' })]);
+  expect(saved()).toEqual([expect.objectContaining({ kind: 'expense', source: 'photo', category_key: 'food', has_photo: true })]);
+  cleanup();
+  // Sent online: the create carries it too, and a track that names no photo sends has_photo false.
+  const fake = createFakeResources({ wallets: [...WALLETS], categories: [FOOD] });
+  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={{ source: 'tell_bun', categoryKey: 'food', openedAt: Date.now() }} source="tell_bun" />, fake.resources, null);
+  fireEvent.click(saveButton());
+  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
+  expect(fake.callsOf('createTransaction').map((call) => (call.args[0] as Record<string, unknown>).source)).toEqual(['tell_bun']);
+  expect(saved()).toEqual([expect.anything(), expect.objectContaining({ source: 'tell_bun', has_photo: false })]);
+  cleanup();
+  // No source named (Quick add's way, H9): the outbox entry has no source key, though the track says typed.
+  const plain = createFakeDiary({ phase: 'ready', wallets: [...WALLETS], categories: [FOOD] });
+  mount(<Probe draft={expenseDraft()} wallets={WALLETS} keypad={KEYPAD} track={{ source: 'typed', categoryKey: 'food', openedAt: Date.now() }} />, resources(), plain.diary);
+  fireEvent.click(saveButton());
+  await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('saved'));
+  expect(plain.saves.map((entry) => 'source' in entry)).toEqual([false]);
+  expect(saved().map((properties) => [properties.source, properties.has_photo])).toEqual([['photo', true], ['tell_bun', false], ['typed', false]]);
 });
 
 test('savedHaptic success plays success for a phone-kept save; Quick add\'s default stays light', async () => {
